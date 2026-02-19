@@ -1,65 +1,14 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ice Cubo - Master Live</title>
-    <script src="https://download.agora.io"></script>
-    <style>
-        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .card { background: #1e1e1e; border-radius: 15px; padding: 20px; margin-bottom: 15px; border: 1px solid #333; }
-        .video-container { width: 100%; height: 350px; background: #000; border-radius: 15px; border: 2px solid #444; margin: 15px 0; }
-        button { width: 100%; padding: 15px; margin: 5px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-live { background: #ff4757; color: white; }
-        .btn-assistir { background: #2f3542; color: white; }
-    </style>
-</head>
-<body>
-
-    <div class="card">
-        <h2 style="margin:0; color: #ffd700;">🌟 MASTER LIVE 🌟</h2>
-        <h1 id="userSaldo">R$ 0,00</h1>
-    </div>
-
-    <div class="video-container" id="videoPlayer"></div>
-
-    <button class="btn-live" onclick="iniciarLive()">🔴 INICIAR MINHA LIVE</button>
-    <button class="btn-assistir" onclick="assistirLive()">📺 ASSISTIR LIVE</button>
-
-    <script>
-        const APP_ID = "7b19088e300240398467a90076aaebbc"; 
-        const CHANNEL = "canal_ice_cubo";
-        let client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
-        let localTracks = { videoTrack: null, audioTrack: null };
-
-        async function load() {
-            try {
-                const res = await fetch('/api/user/1');
-                const data = await res.json();
-                document.getElementById('userSaldo').innerText = `R$ ${data.blue.toFixed(2).replace('.', ',')}`;
-            } catch (e) { console.log("Erro ao carregar saldo"); }
-        }
-
-        async function iniciarLive() {
-            client.setClientRole("host");
-            await client.join(APP_ID, CHANNEL, null, null);
-            localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-            localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
-            localTracks.videoTrack.play("videoPlayer");
-            await client.publish([localTracks.audioTrack, localTracks.videoTrack]);
-            alert("VOCÊ ESTÁ AO VIVO!");
-        }
-
-        async function assistirLive() {
-            client.setClientRole("audience");
-            await client.join(APP_ID, CHANNEL, null, null);
-            client.on("user-published", async (user, mediaType) => {
-                await client.subscribe(user, mediaType);
-                if (mediaType === "video") user.videoTrack.play("videoPlayer");
-                if (mediaType === "audio") user.audioTrack.play();
-            });
-        }
-        load();
-    </script>
-</body>
-</html>
+{
+  "name": "ice-cubo",
+  "version": "1.0.0",
+  "main": "servidor.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.2",
+    "better-sqlite3": "^9.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "scripts": {
+    "start": "node servidor.js"
+  }
+}
