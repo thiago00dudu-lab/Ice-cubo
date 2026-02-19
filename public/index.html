@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Saldo Blue</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background: white; width: 100%; max-width: 400px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: #007bff; color: white; padding: 25px; text-align: center; }
+        .balance-container { padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
+        .balance-label { color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-value { color: #007bff; font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .saque-section { padding: 25px; background: #fafafa; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #218838; }
+        #msg { margin-top: 15px; font-size: 14px; text-align: center; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h2 id="username">Meu Painel Blue</h2>
+    </div>
+    
+    <div class="balance-container">
+        <div class="balance-label">Saldo Disponível</div>
+        <div class="balance-value">R$ <span id="saldo">0,00</span></div>
+    </div>
+
+    <div class="saque-section">
+        <h4 style="margin-top: 0;">Sacar via PIX Automático</h4>
+        <input type="number" id="valorSaque" placeholder="Quanto deseja sacar? (R$)" step="0.01">
+        <input type="text" id="pixKey" placeholder="Sua Chave PIX">
+        <button onclick="solicitarSaque()">REALIZAR SAQUE AGORA</button>
+        <div id="msg"></div>
+    </div>
+</div>
+
+<script>
+    // Busca dados do usuário (Exemplo ID 1)
+    async function carregarDados() {
+        try {
+            const res = await fetch('/api/user/1');
+            const data = await res.json();
+            if (data.blue !== undefined) {
+                document.getElementById('saldo').innerText = data.blue.toFixed(2).replace('.', ',');
+            }
+        } catch (e) { console.error("Erro ao carregar saldo"); }
+    }
+
+    async function solicitarSaque() {
+        const valor = document.getElementById('valorSaque').value;
+        const pix = document.getElementById('pixKey').value;
+        const msgDiv = document.getElementById('msg');
+
+        if(!valor || !pix) return alert("Preencha todos os campos!");
+
+        msgDiv.innerText = "Processando saque automático...";
+        msgDiv.style.color = "blue";
+
+        try {
+            const res = await fetch('/api/saque', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: 1, valor: parseFloat(valor), pixKey: pix })
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                msgDiv.innerText = "✅ Sucesso! Dinheiro enviado.";
+                msgDiv.style.color = "green";
+                carregarDados();
+            } else {
+                msgDiv.innerText = "❌ Erro: " + (result.error || "Falha no saque");
+                msgDiv.style.color = "red";
+            }
+        } catch (e) {
+            msgDiv.innerText = "❌ Erro ao conectar com o servidor.";
+            msgDiv.style.color = "red";
+        }
+    }
+
+    carregarDados();
+    setInterval(carregarDados, 5000); // Atualiza saldo a cada 5 segundos
+</script>
+
+</body>
+</html>
