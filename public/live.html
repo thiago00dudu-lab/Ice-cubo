@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice-Cubo | Live Ao Vivo</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* Área do Vídeo */
+        .video-container { background: black; flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .video-placeholder { color: #58a6ff; font-weight: bold; }
+        .badge-live { position: absolute; top: 10px; left: 10px; background: red; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+
+        /* Área do Chat */
+        .chat-container { height: 300px; background: #161b22; border-top: 1px solid #30363d; display: flex; flex-direction: column; }
+        #chat-messages { flex: 1; overflow-y: auto; padding: 10px; font-size: 14px; }
+        
+        /* Estilos de Mensagens */
+        .msg { margin-bottom: 8px; padding: 5px; border-radius: 4px; }
+        .msg-master { background: rgba(255, 215, 0, 0.1); border-left: 3px solid gold; }
+        .msg-master b::before { content: "⭐ "; }
+        .msg-mod { border-left: 3px solid #007bff; }
+        .msg-mod b::before { content: "🔹 "; }
+        
+        /* Input de Mensagem */
+        .chat-input-area { padding: 10px; display: flex; gap: 5px; background: #0d1117; }
+        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #30363d; background: #161b22; color: white; }
+        button { background: #238636; border: none; color: white; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
+        .btn-pimenta { background: #f85149; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="video-container">
+        <div class="badge-live">AO VIVO</div>
+        <div class="video-placeholder">🎥 AGUARDANDO CONEXÃO DA CÂMERA...</div>
+        <!-- Aqui entrará o código do WebRTC / Agora.io depois -->
+    </div>
+
+    <div class="chat-container">
+        <div id="chat-messages">
+            <div class="msg msg-master"><b>Thiago (Master):</b> Bem-vindos à minha live! 🔥</div>
+            <div class="msg msg-mod"><b>Moderador_Azul:</b> Respeitem as regras do chat pessoal.</div>
+            <div class="msg"><b>Usuario123:</b> Top demais! 🌶️</div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="btn-pimenta" onclick="enviarPimenta()">🌶️</div>
+            <input type="text" id="textoMsg" placeholder="Digite uma mensagem...">
+            <button onclick="enviarMensagem()">ENVIAR</button>
+        </div>
+    </div>
+
+    <script>
+        function enviarMensagem() {
+            const input = document.getElementById('textoMsg');
+            const chat = document.getElementById('chat-messages');
+            
+            if(input.value.trim() !== "") {
+                const novaMsg = document.createElement('div');
+                novaMsg.className = "msg";
+                novaMsg.innerHTML = `<b>Você:</b> ${input.value}`;
+                chat.appendChild(novaMsg);
+                chat.scrollTop = chat.scrollHeight;
+                input.value = "";
+            }
+        }
+
+        function enviarPimenta() {
+            alert("Você enviou uma pimenta! 🌶️");
+        }
+    </script>
+</body>
+</html>
