@@ -1,81 +1,104 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ice-Cubo | Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Controle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
 
-    <!-- LOGIN CARD -->
-    <div id="login-card" class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
-        <h1 class="text-3xl font-bold text-center mb-6 text-blue-400">🧊 Ice-Cubo</h1>
-        <div class="space-y-4">
-            <input id="user" type="text" placeholder="Usuário" class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-blue-500">
-            <input id="pass" type="password" placeholder="Senha" class="w-full p-3 rounded bg-slate-700 border border-slate-600 focus:outline-none focus:border-blue-500">
-            <button onclick="fazerLogin()" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold transition">Entrar / Registrar</button>
-        </div>
+  <!-- LOGIN -->
+  <div id="login-card" class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+    <h1 class="text-3xl font-bold text-center mb-6 text-blue-400">Cubo de Gelo</h1>
+
+    <div class="space-y-4">
+      <input id="usuario" type="text" placeholder="Usuário"
+        class="w-full p-3 rounded bg-slate-700 border border-slate-600">
+
+      <input id="senha" type="password" placeholder="Senha"
+        class="w-full p-3 rounded bg-slate-700 border border-slate-600">
+
+      <button onclick="fazerLogin()"
+        class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold transition">
+        Entrar
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="painel" class="hidden w-full max-w-4xl">
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-6">
+      <h2 class="text-xl font-bold">
+        Olá, <span id="nome-exibicao" class="text-blue-400"></span>
+      </h2>
+      <p class="text-green-400 text-2xl mt-2">
+        Saldo: R$ <span id="saldo">0</span>
+      </p>
     </div>
 
-    <!-- DASHBOARD (Invisível até logar) -->
-    <div id="dashboard" class="hidden w-full max-w-4xl space-y-6">
-        <div class="flex justify-between items-center bg-slate-800 p-6 rounded-xl border border-slate-700">
-            <h2 class="text-xl font-bold">Olá, <span id="display-name" class="text-blue-400">Usuário</span></h2>
-            <div class="text-right">
-                <p class="text-sm text-slate-400">Saldo Atual</p>
-                <p class="text-2xl font-bold text-green-400"><span id="blue-count">0</span> BLUE</p>
-            </div>
-        </div>
+    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <h3 class="font-bold mb-4">Adicionar Créditos</h3>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                <h3 class="font-bold mb-4">💰 Adicionar Créditos</h3>
-                <input id="valor" type="number" placeholder="Valor R$" class="w-full p-3 rounded bg-slate-700 mb-3">
-                <button onclick="comprar()" class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold">Gerar PIX</button>
-            </div>
-        </div>
+      <input id="valor" type="number" placeholder="Valor em R$"
+        class="w-full p-3 rounded bg-slate-700 border border-slate-600 mb-4">
+
+      <button onclick="comprar()"
+        class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold">
+        Gerar PIX
+      </button>
     </div>
+  </div>
 
-    <script>
-        let token = "";
+<script>
+let token = "";
 
-        async function fazerLogin() {
-            const username = document.getElementById('user').value;
-            const password = document.getElementById('pass').value;
+async function fazerLogin() {
+  const usuario = document.getElementById("usuario").value;
+  const senha = document.getElementById("senha").value;
 
-            // Tenta registrar primeiro, se falhar tenta login
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, password })
-            });
+  const res = await fetch("/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ usuario, senha })
+  });
 
-            if(res.ok) {
-                const data = await res.json();
-                token = data.token;
-                document.getElementById('login-card').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('display-name').innerText = username;
-                document.getElementById('blue-count').innerText = data.blue;
-            } else {
-                alert("Erro ao entrar. Verifique os dados.");
-            }
-        }
+  if (res.ok) {
+    const dados = await res.json();
+    token = dados.token;
 
-        async function comprar() {
-            const amount = document.getElementById('valor').value;
-            const res = await fetch('/api/buy', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token
-                },
-                body: JSON.stringify({ amount })
-            });
-            const data = await res.json();
-            if(data.invoiceUrl) window.open(data.invoiceUrl, '_blank');
-        }
-    </script>
+    document.getElementById("login-card").classList.add("hidden");
+    document.getElementById("painel").classList.remove("hidden");
+    document.getElementById("nome-exibicao").innerText = usuario;
+    document.getElementById("saldo").innerText = dados.saldo;
+  } else {
+    alert("Erro ao entrar. Verifique os dados.");
+  }
+}
+
+async function comprar() {
+  const valor = document.getElementById("valor").value;
+
+  const res = await fetch("/api/comprar", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": token
+    },
+    body: JSON.stringify({ valor })
+  });
+
+  const dados = await res.json();
+
+  if (dados.url) {
+    window.open(dados.url, "_blank");
+  } else {
+    alert("Erro ao gerar pagamento.");
+  }
+}
+</script>
+
 </body>
 </html>
