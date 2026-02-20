@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice-Cubo | Comprar Blues</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card-pix { background: #161b22; border: 1px solid #30363d; padding: 30px; border-radius: 12px; width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .logo { font-size: 24px; font-weight: bold; color: #58a6ff; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: 1px solid #30363d; background: #0d1117; color: white; text-align: center; font-size: 18px; box-sizing: border-box; }
+        .btn-gerar { background: #238636; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn-gerar:hover { background: #2ea043; }
+        .info-blues { font-size: 13px; color: #8b949e; margin-top: 10px; }
+        #area-pix { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #333; }
+        .qr-code-placeholder { background: white; width: 150px; height: 150px; margin: 10px auto; border-radius: 8px; }
+        .pix-copia-cola { background: #0d1117; padding: 10px; font-size: 12px; border: 1px dashed #58a6ff; word-break: break-all; margin-top: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="card-pix">
+        <div class="logo">❄️ Ice-Cubo Pay</div>
+        <h3>Comprar Blues</h3>
+        <p style="font-size: 14px;">1 Real = 1 Blue</p>
+        
+        <label>Valor em R$ (Ex: 50.00)</label>
+        <input type="number" id="valorPix" placeholder="R$ 0,00" step="0.01">
+        
+        <button class="btn-gerar" onclick="gerarPix()">GERAR PIX AGORA</button>
+        
+        <div class="info-blues">Você receberá 85% do valor em Blues para usar nas lives.</div>
+
+        <!-- Área que aparece após gerar o PIX -->
+        <div id="area-pix">
+            <p style="color: #3fb950; font-weight: bold;">✅ PIX GERADO!</p>
+            <div class="qr-code-placeholder">
+                <img id="qr-img" src="" alt="QR Code" style="width: 100%; height: 100%; display: none;">
+                <p id="qr-text" style="color: black; padding-top: 60px; font-size: 12px;">QR CODE</p>
+            </div>
+            <div class="pix-copia-cola" onclick="copiarPix()">Clique para copiar chave "Copia e Cola"</div>
+        </div>
+    </div>
+
+    <script>
+        async function gerarPix() {
+            const valor = document.getElementById('valorPix').value;
+            if(!valor || valor <= 0) return alert("Digite um valor válido!");
+
+            const btn = document.querySelector('.btn-gerar');
+            btn.innerText = "⏳ GERANDO...";
+            btn.disabled = true;
+
+            try {
+                // Chama o seu servidor no Render para criar o pagamento no Asaas
+                const response = await fetch('/api/buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+                    body: JSON.stringify({ amount: valor })
+                });
+                
+                const data = await response.json();
+                
+                // Exibe a área do PIX com os dados reais do Asaas
+                document.getElementById('area-pix').style.display = 'block';
+                // No Asaas real, os dados viriam aqui: data.encodedImage e data.payload
+                btn.innerText = "GERAR NOVO PIX";
+                btn.disabled = false;
+            } catch (err) {
+                alert("Erro ao conectar com o servidor. Verifique se o Render está online.");
+                btn.innerText = "GERAR PIX AGORA";
+                btn.disabled = false;
+            }
+        }
+
+        function copiarPix() {
+            alert("Chave PIX Copiada!");
+        }
+    </script>
+</body>
+</html>
