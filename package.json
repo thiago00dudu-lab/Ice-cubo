@@ -1,6 +1,7 @@
 {
   "name": "ice-cubo",
   "version": "1.0.0",
+  "description": "Sistema Cubo de Gelo",
   "main": "servidor.js",
   "scripts": {
     "start": "node servidor.js"
