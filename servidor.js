@@ -4,18 +4,27 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Database = require("better-sqlite3");
 const axios = require("axios");
+const path = require("path");
 
 const app = express();
-const db = new Database("db.db"); // Banco SQLite local
-const PORT = process.env.PORT || 10000; // Porta obrigatória do Render
+const db = new Database("db.db");
+const PORT = process.env.PORT || 10000;
 
-// ⚙️ Configurações e Variáveis de Ambiente
+// ⚙️ Configurações e Variáveis
 const { JWT_SECRET, ASAAS_KEY, NODE_ENV } = process.env;
 const ASAAS_URL = NODE_ENV === "production" ? "https://api.asaas.com" : "https://sandbox.asaas.com";
 
 app.use(express.json());
 
-// 🗄️ Tabelas do Banco (Simplificadas)
+// 📂 NOVO: Faz o servidor entregar seu index.html e outros arquivos da pasta
+app.use(express.static("."));
+
+// 📂 NOVO: Rota principal que abre o seu site automaticamente
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// 🗄️ Tabelas do Banco
 db.exec(`
   CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'user', blue INTEGER DEFAULT 0, asaas_id TEXT, is_blocked INTEGER DEFAULT 0);
   CREATE TABLE IF NOT EXISTS lives(id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, price INTEGER, adult INTEGER, creator_id INTEGER, active INTEGER DEFAULT 1);
@@ -32,7 +41,7 @@ const auth = (req, res, next) => {
   } catch { res.sendStatus(401); }
 };
 
-// 👤 Rotas de Usuário
+// 👤 Rotas de Usuário (Login/Registro)
 app.post("/api/register", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -67,9 +76,5 @@ app.post("/api/webhook/asaas", (req, res) => {
   res.sendStatus(200);
 });
 
-// 🎥 Lives
-app.get("/api/lives/list", (req, res) => res.json(db.prepare("SELECT * FROM lives WHERE active=1").all()));
-
-// 🚀 Inicialização
+// 🚀 Inicialização (Importante: 0.0.0.0 é obrigatório no Render)
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor ON: Porta ${PORT}`));
-
