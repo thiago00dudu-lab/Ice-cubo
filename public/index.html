@@ -55,3 +55,63 @@
 
 </body>
 </html>
+<style>
+    /* Estrela padrão: Transparente/Cinza */
+    .estrela { 
+        cursor: pointer; 
+        font-size: 20px; 
+        color: rgba(255,255,255,0.2); /* Transparente */
+        transition: 0.3s;
+    }
+
+    /* Estrela Azul (Super Mod) */
+    .user-mod .estrela { 
+        color: #007bff; 
+        text-shadow: 0 0 10px #007bff; 
+    }
+
+    /* Estrela Dourada (Master - Você) */
+    .user-master .estrela { 
+        color: gold; 
+        text-shadow: 0 0 10px gold; 
+        cursor: default;
+    }
+</style>
+
+<div id="lista-usuarios">
+    <!-- Exemplo de como aparecerá na lista -->
+    <div class="user-card" id="user-2">
+        <span class="estrela" onclick="promoverUsuario(2)">★</span> 
+        <span>Usuario_Exemplo</span>
+    </div>
+</div>
+
+<script>
+    async function promoverUsuario(targetId) {
+        // Verifica se QUEM está clicando é o Master (ID 1)
+        const meuId = localStorage.getItem('userId');
+        if (meuId !== "1") {
+            alert("Apenas o Master Thiago pode promover moderadores!");
+            return;
+        }
+
+        const confirmacao = confirm("Deseja promover este usuário a Super Moderador (Estrela Azul)?");
+        
+        if (confirmacao) {
+            // Envia para o seu servidor no Render
+            const response = await fetch('/api/admin/promote', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token') 
+                },
+                body: JSON.stringify({ userId: targetId, newRole: 'super_mod' })
+            });
+
+            if (response.ok) {
+                alert("Usuário promovido! A estrela agora ficará AZUL.");
+                location.reload(); // Atualiza a página para ver a mudança
+            }
+        }
+    }
+</script>
