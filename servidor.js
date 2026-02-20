@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs"); // Trocado para bcryptjs para evitar erro no Render
 const jwt = require("jsonwebtoken");
 const Database = require("better-sqlite3");
 const axios = require("axios");
@@ -8,14 +8,16 @@ const axios = require("axios");
 const app = express();
 const db = new Database("db.db");
 
-// Variáveis vindas do painel "Environment" do Render
-const JWT_SECRET = process.env.JWT_SECRET || "chave_mestre_123";
+const JWT_SECRET = process.env.JWT_SECRET || "chave_secreta_padrao";
 const ASAAS_KEY = process.env.ASAAS_KEY;
 const ASAAS_URL = process.env.NODE_ENV === "production" ? "https://api.asaas.com" : "https://sandbox.asaas.com";
 
 app.use(express.json());
 
-// 🗄️ Criação Automática das Tabelas
+// Rota de Health Check (Obrigatório para o Render não dar erro de deploy)
+app.get("/", (req, res) => res.status(200).send("Servidor Online 🚀"));
+
+// Criar tabelas se não existirem
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,32 +30,24 @@ db.exec(`
   );
 `);
 
-// 🔐 Login com Retorno de Cargo (Role)
-app.post("/api/login", async (req, res) => {
-    const { username, password } = req.body;
-    const user = db.prepare("SELECT * FROM users WHERE username=?").get(username);
-    if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: "Erro" });
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "7d" });
-    res.json({ token, role: user.role, blue: user.blue });
-});
+// Middleware de Autenticação
+const auth = (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) return res.sendStatus(401);
+        const token = authHeader.split(" ")[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = db.prepare("SELECT * FROM users WHERE id=?").get(decoded.id);
+        if (!user || user.is_blocked) return res.sendStatus(403);
+        req.user = user;
+        next();
+    } catch { res.sendStatus(401); }
+};
 
-// 🔔 Recebimento PIX Asaas (Lógica 85/10/5%)
-app.post("/api/webhook/asaas", (req, res) => {
-    if (req.body.event === "PAYMENT_RECEIVED") {
-        const payment = req.body.payment;
-        const total = payment.value;
-        const user = db.prepare("SELECT * FROM users WHERE asaas_id=?").get(payment.customer);
-        if (user) {
-            db.prepare("UPDATE users SET blue = blue + ? WHERE id = ?").run(total * 0.85, user.id); // 85% Usuário
-            if (user.pai_id) db.prepare("UPDATE users SET blue = blue + ? WHERE id = ?").run(total * 0.05, user.pai_id); // 5% Pai
-        }
-    }
-    res.sendStatus(200);
-});
-
-// 👑 Garantir que o Login 1 seja Master
+// Login Master Automático (ID 1)
 db.prepare("UPDATE users SET role='master' WHERE id=1").run();
 
-// 🚀 PORTA DINÂMICA (Isso corrige o erro de travamento no Render)
+// Iniciar Servidor na porta do Render
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor voando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
+          
