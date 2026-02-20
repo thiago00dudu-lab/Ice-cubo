@@ -1,16 +1,112 @@
-{
-  "name": "cubo-de-gelo",
-  "version": "1.0.0",
-  "main": "servidor.js",
-  "scripts": {
-    "start": "node servidor.js"
-  },
-  "dependencies": {
-    "axios": "^1.6.0",
-    "bcrypt": "^5.1.1",
-    "better-sqlite3": "^9.0.0",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.2"
+require("dotenv").config();
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const Database = require("better-sqlite3");
+const axios = require("axios");
+const app = express();
+const db = new Database("ice.db");
+
+// Configurações de Segurança (Variáveis Ocultas)
+const JWT_SECRET = process.env.JWT_SECRET || "mudar_isso_no_render";
+const ASAAS_KEY = process.env.ASAAS_KEY;
+const ASAAS_URL = "https://api.asaas.com"; // Mude para sandbox se for teste
+
+app.use(express.json());
+
+// --- BANCO DE DADOS ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    role TEXT DEFAULT 'filho', -- master, super, filho
+    blues REAL DEFAULT 0,
+    pai_id INTEGER,
+    asaas_id TEXT,
+    is_blocked INTEGER DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS lives (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    price REAL,
+    is_adult INTEGER DEFAULT 0,
+    creator_id INTEGER,
+    active INTEGER DEFAULT 1
+  );
+`);
+
+// --- LOGICA DE PORCENTAGEM E DIVISÃO (85% / 10% / 5%) ---
+const processarDivisao = (valorTotal, usuarioId, paiId) => {
+  const valorFilho = valorTotal * 0.85;
+  const valorApp = valorTotal * 0.10;
+  const valorPai = valorTotal * 0.05;
+
+  db.prepare("UPDATE users SET blues = blues + ? WHERE id = ?").run(valorFilho, usuarioId);
+  if (paiId) {
+    db.prepare("UPDATE users SET blues = blues + ? WHERE id = ?").run(valorPai, paiId);
   }
-}
+  // Os 10% do App ficam acumulados no saldo do Master (ID 1)
+  db.prepare("UPDATE users SET blues = blues + ? WHERE id = 1").run(valorApp);
+};
+
+// --- FRONT-END INTEGRADO ---
+const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ICE PLATFORM</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; padding: 15px; }
+        .user-card { border: 1px solid #334155; padding: 15px; border-radius: 10px; position: relative; }
+        .estrela-gold::after { content: '⭐'; position: absolute; top: -10px; left: 10px; color: gold; font-size: 20px; }
+        .estrela-blue::after { content: '⭐'; position: absolute; top: -10px; left: 10px; color: #3b82f6; font-size: 20px; }
+        .pimenta::after { content: '🌶️'; }
+        .live-stream { width: 100%; height: 200px; background: black; border-radius: 8px; margin: 10px 0; border: 2px solid red; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+        .admin-panel { background: #1e293b; padding: 10px; margin-top: 20px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2 align="center">ICE PLATFORM</h2>
+        <div id="perfil" class="user-card">
+            <!-- Renderizado via JS conforme o Cargo -->
+        </div>
+
+        <h3>Lives Ativas</h3>
+        <div id="lives-list"></div>
+
+        <div id="admin" class="admin-panel" style="display:none">
+            <h4>Painel de Controle</h4>
+            <button class="btn" style="background:red">Bloquear Usuário</button>
+        </div>
+    </div>
+
+    <script>
+        // Lógica de chat, câmera e carregamento de saldo
+        async function entrarLive(id) {
+            alert("Pagando entrada para assistir...");
+            // Chama API para descontar Blues e liberar Câmera/Áudio
+        }
+    </script>
+</body>
+</html>
+`;
+
+// --- ROTAS API ---
+app.get('/', (req, res) => res.send(html));
+
+// Webhook para Automação de Depósito (Asaas)
+app.post("/webhook", async (req, res) => {
+  if (req.body.event === "PAYMENT_RECEIVED") {
+    const p = req.body.payment;
+    const user = db.prepare("SELECT * FROM users WHERE asaas_id = ?").get(p.customer);
+    processarDivisao(p.value, user.id, user.pai_id);
+  }
+  res.sendStatus(200);
+});
+
+// Forçar Master ID 1
+db.prepare("UPDATE users SET role='master' WHERE id=1").run();
+
+app.listen(process.env.PORT || 3000, () => console.log("ICE Rodando!"));
