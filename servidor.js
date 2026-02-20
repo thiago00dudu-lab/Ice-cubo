@@ -6,7 +6,6 @@ const bcrypt = require("bcrypt");
 const app = express();
 const db = new Database("ice.db");
 
-// Variáveis do Render (ASAAS_KEY e JWT_SECRET)
 const ASAAS_KEY = process.env.ASAAS_KEY;
 const ASAAS_URL = "https://api.asaas.com";
 
@@ -25,25 +24,28 @@ db.exec(`
   );
 `);
 
-// Criar Master Automático (Login: admin | Senha: ice123)
+// Master Inicial (admin | ice123)
 const hashMaster = bcrypt.hashSync("ice123", 10);
 db.prepare("INSERT OR IGNORE INTO users (id, username, password, role) VALUES (1, 'admin', ?, 'master')").run(hashMaster);
 
-// --- FRONT-END UNIFICADO ---
+// --- FRONT-END COM CÂMERA E ÁUDIO ---
 const html = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ICE PLATFORM</title>
+    <title>ICE PLATFORM - LIVE</title>
     <style>
         body { background: #0f172a; color: white; font-family: sans-serif; padding: 10px; margin: 0; }
         .card { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #334155; position: relative; }
         .gold-star::after { content: '⭐'; color: gold; position: absolute; top: 10px; right: 15px; font-size: 20px; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; margin: 5px 0; }
-        .live-cam { width: 100%; height: 200px; background: black; border-radius: 8px; border: 2px solid red; display: flex; align-items: center; justify-content: center; position: relative; }
-        input { width: 95%; padding: 12px; margin: 5px 0; border-radius: 8px; background: #334155; color: white; border: none; }
-        .pimenta { position: absolute; bottom: 10px; right: 10px; font-size: 20px; }
+        .btn-live { background: #ef4444; }
+        #video-container { width: 100%; height: 250px; background: #000; border-radius: 10px; overflow: hidden; border: 2px solid #ef4444; position: relative; display: flex; align-items: center; justify-content: center; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        input { width: 95%; padding: 12px; margin: 5px 0; border-radius: 8px; background: #334155; color: white; border: none; box-sizing: border-box; }
+        .pimenta { position: absolute; top: 10px; left: 10px; font-size: 20px; background: rgba(0,0,0,0.5); border-radius: 5px; padding: 2px; }
+        #chat { height: 100px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 5px; font-size: 12px; margin-top: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -60,25 +62,55 @@ const html = `
         <div id="perfil" class="card"></div>
         
         <div class="card">
-            <h3>💰 RECARREGAR (PIX AUTOMÁTICO)</h3>
-            <input type="number" id="v" placeholder="Valor R$">
-            <button class="btn" style="background:#22c55e" onclick="gerarPix()">COMPRAR BLUES</button>
+            <div id="video-container">
+                <video id="localVideo" autoplay playsinline muted></video>
+                <div class="pimenta">🌶️</div>
+                <div style="position:absolute; bottom:10px; width:90%">
+                    <button class="btn btn-live" id="btnStream" onclick="toggleStream()">INICIAR LIVE</button>
+                </div>
+            </div>
+            <div id="chat"><i>Sistema: Bem-vindo ao chat da Life...</i></div>
+            <input type="text" placeholder="Enviar mensagem na live...">
         </div>
 
-        <h3>🎥 LIVES ATIVAS</h3>
         <div class="card">
-            <div class="live-cam">🔴 AO VIVO <span class="pimenta">🌶️</span></div>
-            <button class="btn" onclick="alert('Iniciando áudio e vídeo...')">Entrar (10 Blues)</button>
+            <h3>💰 SALDO & DEPÓSITO</h3>
+            <button class="btn" style="background:#22c55e" onclick="alert('Gerando PIX...')">COMPRAR BLUES (ASAAS)</button>
         </div>
 
         <div id="adm" style="display:none" class="card">
-            <h3 style="color:gold">PAINEL MASTER</h3>
-            <button class="btn" style="background:#ef4444">Bloquear Usuário</button>
-            <button class="btn">Saques Pendentes (Min R$ 20)</button>
+            <h3 style="color:gold">PAINEL MASTER ⭐</h3>
+            <button class="btn" style="background:#ef4444">BANIR USUÁRIO</button>
+            <button class="btn">SAQUES (MÍN R$ 20)</button>
         </div>
     </div>
 
     <script>
+        let stream = null;
+
+        async function toggleStream() {
+            const btn = document.getElementById('btnStream');
+            const video = document.getElementById('localVideo');
+
+            if (!stream) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    video.srcObject = stream;
+                    btn.innerText = "PARAR TRANSMISSÃO";
+                    btn.style.background = "#64748b";
+                    console.log("Câmera e Microfone ativos!");
+                } catch (err) {
+                    alert("Erro ao acessar câmera: " + err.message);
+                }
+            } else {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                stream = null;
+                btn.innerText = "INICIAR LIVE";
+                btn.style.background = "#ef4444";
+            }
+        }
+
         async function logar() {
             const res = await fetch('/login', {
                 method: 'POST',
@@ -90,25 +122,18 @@ const html = `
                 document.getElementById('login-box').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
                 const perf = document.getElementById('perfil');
-                perf.innerHTML = "<b>" + data.user.toUpperCase() + "</b><br>Saldo: " + data.blues.toFixed(2) + " BLUES";
+                perf.innerHTML = "<b>" + data.user.toUpperCase() + "</b> | Saldo: " + data.blues.toFixed(2) + " Blues";
                 if(data.role === 'master') {
                     perf.classList.add('gold-star');
                     document.getElementById('adm').style.display = 'block';
                 }
-            } else { alert("Usuário ou senha inválidos"); }
-        }
-
-        function gerarPix() {
-            const val = document.getElementById('v').value;
-            alert("Gerando QR Code PIX de R$ " + val + " via Asaas...");
-            // Integração com a rota /pix do servidor
+            } else { alert("Login falhou!"); }
         }
     </script>
 </body>
 </html>
 `;
 
-// --- ROTAS DO SISTEMA ---
 app.get('/', (req, res) => res.send(html));
 
 app.post('/login', (req, res) => {
@@ -119,20 +144,4 @@ app.post('/login', (req, res) => {
     } else { res.sendStatus(401); }
 });
 
-// Automação de porcentagens (85/10/5) no Webhook do Asaas
-app.post('/webhook', (req, res) => {
-    if (req.body.event === "PAYMENT_RECEIVED") {
-        const val = req.body.payment.value;
-        const asaasId = req.body.payment.customer;
-        const user = db.prepare("SELECT * FROM users WHERE asaas_id = ?").get(asaasId);
-        
-        if (user) {
-            db.prepare("UPDATE users SET blues = blues + ? WHERE id = ?").run(val * 0.85, user.id);
-            db.prepare("UPDATE users SET blues = blues + ? WHERE id = 1").run(val * 0.10); // 10% pro Master
-            if (user.pai_id) db.prepare("UPDATE users SET blues = blues + ? WHERE id = ?").run(val * 0.05, user.pai_id);
-        }
-    }
-    res.sendStatus(200);
-});
-
-app.listen(process.env.PORT || 3000, () => console.log("ICE ONLINE"));
+app.listen(process.env.PORT || 3000, () => console.log("ICE ONLINE COM CÂMERA"));
