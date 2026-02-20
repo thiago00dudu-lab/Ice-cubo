@@ -1,80 +1,69 @@
-require("dotenv").config();
-const express = require("express");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const Database = require("better-sqlite3");
-const axios = require("axios");
-const path = require("path");
-
+const express = require('express');
+const axios = require('axios');
 const app = express();
-const db = new Database("db.db");
-const PORT = process.env.PORT || 10000;
-
-// ⚙️ Configurações e Variáveis
-const { JWT_SECRET, ASAAS_KEY, NODE_ENV } = process.env;
-const ASAAS_URL = NODE_ENV === "production" ? "https://api.asaas.com" : "https://sandbox.asaas.com";
 
 app.use(express.json());
 
-// 📂 NOVO: Faz o servidor entregar seu index.html e outros arquivos da pasta
-app.use(express.static("."));
+// CONFIGURAÇÃO DO ASAAS
+const ASAAS_API_KEY = 'SUA_CHAVE_AQUI'; // <--- COLOQUE SUA CHAVE AQUI
+const BASE_URL = 'https://sandbox.asaas.com';
 
-// 📂 NOVO: Rota principal que abre o seu site automaticamente
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+// 1. ESSA PARTE É O VISUAL (INTERFACE CUBO DE GELO)
+const htmlPagina = `
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(45deg, #001f3f, #0074D9); font-family: sans-serif; }
+        .ice-cube { width: 320px; padding: 40px; background: rgba(255, 255, 255, 0.1); border-radius: 20px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); text-align: center; color: white; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: rgba(255, 255, 255, 0.2); border: none; border-radius: 5px; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; cursor: pointer; background: #00d4ff; border: none; border-radius: 5px; color: #001f3f; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="ice-cube">
+        <h2>Entrar no Cubo</h2>
+        <input type="email" id="email" placeholder="Seu e-mail">
+        <input type="password" placeholder="Sua senha">
+        <button onclick="pagar()">Pagar e Entrar</button>
+    </div>
+    <script>
+        async function pagar() {
+            const email = document.getElementById('email').value;
+            if(!email) return alert('Digite seu e-mail');
+            const res = await fetch('/pagar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if(data.url) window.location.href = data.url;
+            else alert('Erro ao gerar pagamento');
+        }
+    </script>
+</body>
+</html>
+`;
+
+// 2. ESSA PARTE É A AUTOMAÇÃO DO ASAAS
+app.get('/', (req, res) => res.send(htmlPagina));
+
+app.post('/pagar', async (req, res) => {
+    try {
+        // Cria o pagamento (usando um ID de cliente fixo para teste)
+        const response = await axios.post(`${BASE_URL}/payments`, {
+            customer: "cus_000006042120", // <--- Você precisa de um ID de cliente real do seu Asaas
+            billingType: "PIX",
+            value: 10.00,
+            dueDate: "2025-12-31"
+        }, { headers: { 'access_token': ASAAS_API_KEY } });
+
+        res.json({ url: response.data.invoiceUrl });
+    } catch (e) {
+        res.status(500).json({ erro: 'Erro no Asaas' });
+    }
 });
 
-// 🗄️ Tabelas do Banco
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'user', blue INTEGER DEFAULT 0, asaas_id TEXT, is_blocked INTEGER DEFAULT 0);
-  CREATE TABLE IF NOT EXISTS lives(id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, price INTEGER, adult INTEGER, creator_id INTEGER, active INTEGER DEFAULT 1);
-`);
-
-// 🔐 Middleware de Autenticação
-const auth = (req, res, next) => {
-  try {
-    const token = req.headers.authorization;
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = db.prepare("SELECT * FROM users WHERE id=?").get(decoded.id);
-    if (!req.user || req.user.is_blocked) return res.sendStatus(403);
-    next();
-  } catch { res.sendStatus(401); }
-};
-
-// 👤 Rotas de Usuário (Login/Registro)
-app.post("/api/register", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const hash = await bcrypt.hash(password, 10);
-    const customer = await axios.post(`${ASAAS_URL}/customers`, { name: username }, { headers: { access_token: ASAAS_KEY } });
-    db.prepare("INSERT INTO users(username, password, asaas_id) VALUES(?,?,?)").run(username, hash, customer.data.id);
-    res.json({ ok: true });
-  } catch { res.status(400).json({ error: "Erro no registro" }); }
-});
-
-app.post("/api/login", (req, res) => {
-  const user = db.prepare("SELECT * FROM users WHERE username=?").get(req.body.username);
-  if (!user || !bcrypt.compareSync(req.body.password, user.password)) return res.sendStatus(401);
-  const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "1d" });
-  res.json({ token, role: user.role, blue: user.blue });
-});
-
-// 💰 Pagamento e Webhook
-app.post("/api/buy", auth, async (req, res) => {
-  try {
-    const pay = await axios.post(`${ASAAS_URL}/payments`, {
-      customer: req.user.asaas_id, billingType: "PIX", value: req.body.amount, dueDate: new Date().toISOString().split("T")[0], description: "Recarga BLUE"
-    }, { headers: { access_token: ASAAS_KEY } });
-    res.json(pay.data);
-  } catch { res.sendStatus(500); }
-});
-
-app.post("/api/webhook/asaas", (req, res) => {
-  if (req.body.event === "PAYMENT_RECEIVED") {
-    db.prepare("UPDATE users SET blue=blue+? WHERE asaas_id=?").run(Math.floor(req.body.payment.value * 0.85), req.body.payment.customer);
-  }
-  res.sendStatus(200);
-});
-
-// 🚀 Inicialização (Importante: 0.0.0.0 é obrigatório no Render)
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor ON: Porta ${PORT}`));
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log('Rodando!'));
