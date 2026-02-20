@@ -1,5 +1,5 @@
 {
-  "name": "ice-cubo",
+  "name": "cubo-de-gelo",
   "version": "1.0.0",
   "description": "Sistema de Lives e Créditos",
   "main": "servidor.js",
