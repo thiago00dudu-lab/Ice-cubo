@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Ice-Cubo | Criar Conta</title>
+    <style>
+        body { background: #0d1117; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .reg-card { background: #161b22; padding: 30px; border-radius: 12px; border: 1px solid #30363d; width: 320px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #238636; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .pai-info { font-size: 12px; color: #8b949e; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="reg-card">
+        <h2 style="text-align: center;">❄️ Criar Conta</h2>
+        <input type="text" id="user" placeholder="Nome de Usuário">
+        <input type="password" id="pass" placeholder="Crie uma Senha">
+        
+        <!-- Campo invisível que guarda o ID do Pai -->
+        <input type="hidden" id="pai_id">
+        
+        <button onclick="registrar()">CRIAR MINHA CONTA</button>
+        <div id="msg-pai" class="pai-info"></div>
+    </div>
+
+    <script>
+        // 🕵️ Lógica para pegar o ID do Pai na URL (ex: ?id=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        const paiId = urlParams.get('id');
+        
+        if (paiId) {
+            document.getElementById('pai_id').value = paiId;
+            document.getElementById('msg-pai').innerText = "Você está sendo indicado pelo usuário ID: " + paiId;
+        }
+
+        async function registrar() {
+            const username = document.getElementById('user').value;
+            const password = document.getElementById('pass').value;
+            const convite_id = document.getElementById('pai_id').value;
+
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, convite_id })
+            });
+
+            if (res.ok) {
+                alert("Conta criada com sucesso! Agora faça login.");
+                window.location.href = 'login.html';
+            } else {
+                alert("Erro ao criar conta. Usuário já existe?");
+            }
+        }
+    </script>
+</body>
+</html>
