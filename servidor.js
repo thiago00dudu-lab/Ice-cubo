@@ -1,63 +1,142 @@
-const express = require('express');
+require("dotenv").config();
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const Database = require("better-sqlite3");
+const axios = require("axios");
+const bcrypt = require("bcrypt");
 const app = express();
+const db = new Database("ice.db");
 
-// O HTML que você enviou, agora dentro de uma variável
+const JWT_SECRET = process.env.JWT_SECRET || "chave_mestra_ice";
+const ASAAS_KEY = process.env.ASAAS_KEY;
+const ASAAS_URL = "https://api.asaas.com";
+
+app.use(express.json());
+
+// --- BANCO DE DADOS PROFISSIONAL ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT DEFAULT 'filho', -- master, super, filho
+    blues REAL DEFAULT 0,
+    pai_id INTEGER,
+    asaas_id TEXT,
+    is_blocked INTEGER DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS lives (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    price REAL,
+    is_adult INTEGER DEFAULT 0,
+    creator_id INTEGER,
+    active INTEGER DEFAULT 1
+  );
+`);
+
+// --- LÓGICA DE DIVISÃO (85% / 10% / 5%) ---
+const processarDivisao = (valorTotal, usuarioId) => {
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(usuarioId);
+    const vFilho = valorTotal * 0.85;
+    const vApp = valorTotal * 0.10;
+    const vPai = valorTotal * 0.05;
+
+    db.prepare("UPDATE users SET blues = blues + ? WHERE id = ?").run(vFilho, usuarioId);
+    db.prepare("UPDATE users SET blues = blues + ? WHERE id = 1").run(vApp); // 10% Master
+    if (user.pai_id) {
+        db.prepare("UPDATE users SET blues = blues + ? WHERE id = ?").run(vPai, user.pai_id);
+    }
+};
+
+// --- FRONT-END UNIFICADO ---
 const html = `
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-  <title>ICE Platform</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: Arial; background:#0f172a; color:white; padding:20px; font-size: 14px; }
-    .card { background:#1e293b; padding:15px; margin:10px 0; border-radius:10px; border: 1px solid #334155; }
-    button { padding:8px 15px; border:none; border-radius:5px; cursor:pointer; background: #3b82f6; color: white; }
-    input { padding:8px; border-radius:5px; border:none; margin:5px 0; width:90%; display:block; }
-    .gold { color:#FFD700; }
-    table { width:100%; border-collapse: collapse; margin-top:10px; font-size: 12px; }
-    th, td { border:1px solid #334155; padding:5px; text-align:center; }
-  </style>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICE PLATFORM - LIVE</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: Arial; padding: 10px; margin: 0; }
+        .card { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #334155; position: relative; }
+        .gold-star::before { content: '⭐'; color: gold; position: absolute; top: 5px; right: 10px; }
+        .blue-star::before { content: '⭐'; color: #3b82f6; position: absolute; top: 5px; right: 10px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; margin: 5px 0; }
+        .btn-red { background: #ef4444; }
+        .live-cam { width: 100%; height: 200px; background: black; border-radius: 8px; border: 2px solid #ef4444; display: flex; align-items: center; justify-content: center; position: relative; }
+        .pimenta { position: absolute; bottom: 10px; right: 10px; font-size: 24px; }
+        input { width: 90%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: #334155; color: white; }
+    </style>
 </head>
 <body>
-  <h2 align="center">ICE Platform - ADM</h2>
-  <div class="card"><h3 class="gold">OWNER ⭐</h3><p>Fundo: R$ <span id="fund">0.00</span> | App: R$ <span id="appB">0.00</span></p></div>
-  <div class="card">
-    <input id="un" placeholder="Nome do filiado">
-    <input type="number" id="da" placeholder="Valor R$">
-    <button onclick="dep()">Depositar</button>
-    <button onclick="clr()" style="background:red; float:right">Limpar</button>
-  </div>
-  <div class="card" style="overflow-x:auto">
-    <table>
-      <thead><tr><th>Nome</th><th>IPA</th><th>Valor</th><th>B(81%)</th><th>P(4%)</th><th>A(10%)</th><th>E(5%)</th></tr></thead>
-      <tbody id="list"></tbody>
-    </table>
-  </div>
-  <script>
-    let fld = [], fd = 0, ab = 0;
-    const save = () => localStorage.setItem('ice_data', JSON.stringify(fld));
-    const upd = () => {
-      fd = fld.reduce((s, x) => s + x.e, 0); ab = fld.reduce((s, x) => s + x.a, 0);
-      document.getElementById('fund').innerText = fd.toFixed(2);
-      document.getElementById('appB').innerText = ab.toFixed(2);
-      document.getElementById('list').innerHTML = fld.map(f => \`<tr><td>\${f.n}</td><td style="font-size:8px">\${f.id}</td><td>\${f.v}</td><td>\${f.b}</td><td>\${f.p}</td><td>\${f.a}</td><td>\${f.e}</td></tr>\`).join('');
-    };
-    function dep() {
-      let v = parseFloat(document.getElementById('da').value), n = document.getElementById('un').value;
-      if(!n || !v) return alert('Preencha tudo');
-      fld.push({n, id: crypto.randomUUID().slice(0,8), v, b:(v*.81).toFixed(2), p:(v*.04).toFixed(2), a:(v*.1).toFixed(2), e:(v*.05).toFixed(2)});
-      save(); upd();
-    }
-    function clr() { if(confirm('Limpar?')) { fld=[]; save(); upd(); } }
-    fld = JSON.parse(localStorage.getItem('ice_data')) || []; upd();
-  </script>
+    <div id="auth">
+        <h2 align="center">ICE LOGIN</h2>
+        <div class="card">
+            <input type="text" id="user" placeholder="Usuário">
+            <input type="password" id="pass" placeholder="Senha">
+            <button class="btn" onclick="login()">Entrar</button>
+        </div>
+    </div>
+
+    <div id="main" style="display:none">
+        <div class="card" id="perfil-info">
+            <!-- Info do perfil via JS -->
+        </div>
+
+        <h3>🎥 LIVES AO VIVO</h3>
+        <div id="lista-lives"></div>
+        
+        <div id="adm-panel" style="display:none" class="card">
+            <h4 style="color:#fbbf24">PAINEL MASTER</h4>
+            <button class="btn btn-red" onclick="blockUser()">Bloquear Usuário</button>
+            <button class="btn" onclick="checkSaques()">Ver Pedidos de Saque (Min R$ 20)</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        function login() {
+            // Mock de login para teste - Integra com API real
+            document.getElementById('auth').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            showProfile();
+        }
+
+        function showProfile() {
+            const info = document.getElementById('perfil-info');
+            info.className = "card gold-star";
+            info.innerHTML = "<b>MASTER ONLINE</b><br>Saldo: 1.250 BLUES<br><small>Indicações: 12 Filhos</small>";
+            document.getElementById('adm-panel').style.display = 'block';
+            
+            // Exemplo de Live
+            document.getElementById('lista-lives').innerHTML = \`
+                <div class="live-cam">
+                    🔴 AO VIVO - CHAT ATIVO
+                    <span class="pimenta">🌶️</span>
+                </div>
+                <button class="btn" onclick="payLive(10)">Entrar na Live (10 Blues)</button>
+            \`;
+        }
+    </script>
 </body>
 </html>
 `;
 
-// Rota principal que entrega o HTML acima
+// --- ROTAS DO SERVIDOR ---
 app.get('/', (req, res) => res.send(html));
 
-// Porta configurada para o Render ou localhost
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Sistema Online na porta ' + PORT));
+// Rota de Saque
+app.post("/api/saque", (req, res) => {
+    const { valor, userId } = req.body;
+    if (valor < 20) return res.status(400).send("Mínimo R$ 20");
+    // Lógica de débito de blues
+    res.json({ status: "Solicitado" });
+});
+
+// Automação Master Login 1
+db.prepare("INSERT OR IGNORE INTO users (id, username, role) VALUES (1, 'master', 'master')").run();
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log("🚀 ICE PLATFORM ONLINE");
+});
