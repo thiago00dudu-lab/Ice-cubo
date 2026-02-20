@@ -11,7 +11,7 @@ const ASAAS_URL = "https://api.asaas.com";
 
 app.use(express.json());
 
-// --- DATABASE: ESTRUTURA DE COMANDO ---
+// --- BANCO DE DADOS ---
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,149 +23,155 @@ db.exec(`
   );
 `);
 
-// Cria o Super Usuário (MASTER)
+// Criar Admin inicial
 const hashAdmin = bcrypt.hashSync("ice123", 10);
 db.prepare("INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', ?, 'master')").run(hashAdmin);
 
-// --- FRONT-END: HACKER COMMAND CENTER ---
+// --- FRONT-END AZUL BEBÊ (ESTILO CUBO DE GELO) ---
 const html = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ICE COMMAND CENTER</title>
+    <title>ICE PLATFORM</title>
     <style>
-        body { background: #000; color: #00ff41; font-family: 'Courier New', monospace; margin: 0; padding: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        
-        /* Monitores de Estilo Hacker */
-        .monitor { 
-            border: 2px solid #00ff41; background: rgba(0, 30, 0, 0.2); 
-            padding: 15px; border-radius: 5px; box-shadow: inset 0 0 10px #00ff41, 0 0 15px #00ff41;
-            position: relative; cursor: pointer; transition: 0.3s;
+        body { 
+            background: #e0f2fe; color: #1e293b; font-family: 'Segoe UI', sans-serif; 
+            margin: 0; padding: 15px; 
         }
-        .fullscreen { position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; background: #000; padding: 40px; box-sizing: border-box; }
-        
-        .btn { width: 100%; padding: 12px; border: 1px solid #00ff41; background: transparent; color: #00ff41; cursor: pointer; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
-        .btn:hover { background: #00ff41; color: #000; }
-        .btn-danger { border-color: #ff0000; color: #ff0000; }
-        .btn-danger:hover { background: #ff0000; color: #fff; }
-        
-        input { width: 100%; padding: 10px; margin: 10px 0; background: #000; border: 1px solid #00ff41; color: #00ff41; box-sizing: border-box; }
-        video { width: 100%; border: 1px solid #00ff41; box-shadow: 0 0 10px #00ff41; }
-        
-        #terminal { font-size: 0.75em; height: 100px; overflow-y: auto; border: 1px solid #004400; padding: 5px; color: #008f11; margin-top: 10px; }
-        .admin-only { border: 2px solid #ff0000 !important; box-shadow: 0 0 15px #ff0000 !important; display: none; }
+        /* Estilo Cubo de Gelo Azul Bebê */
+        .card { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(10px);
+            border: 2px solid #bae6fd; border-radius: 20px;
+            padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            transition: 0.3s; cursor: pointer;
+        }
+        .fullscreen { 
+            position: fixed !important; top: 0; left: 0; width: 100vw; height: 100vh; 
+            z-index: 999; background: #e0f2fe; padding: 40px; box-sizing: border-box; 
+        }
+        .btn { 
+            width: 100%; padding: 15px; border: none; border-radius: 12px; 
+            background: #0ea5e9; color: white; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+        .btn-adm { background: #6366f1; }
+        .btn-live { background: #f43f5e; }
+        input { 
+            width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; 
+            border: 1px solid #bae6fd; background: white; box-sizing: border-box;
+        }
+        video { width: 100%; border-radius: 15px; background: #000; border: 3px solid #7dd3fc; }
+        .info { font-weight: bold; color: #0369a1; margin-bottom: 10px; }
+        #nodes-list { font-size: 0.8em; background: white; padding: 10px; border-radius: 10px; margin-top: 10px; display:none; }
     </style>
 </head>
 <body>
 
-    <div id="auth-scr" style="max-width:450px; margin: 60px auto;">
-        <h2 align="center"> [ ICE_NODE_LOGIN ] </h2>
-        <div class="monitor">
-            <input type="text" id="u" placeholder="NODE_ID">
-            <input type="password" id="p" placeholder="SECRET_PASS">
-            <button class="btn" onclick="auth('login')">INITIALIZE_SESSION</button>
-            <button class="btn" style="border-color:#444; color:#444" onclick="auth('register')">CREATE_NEW_NODE</button>
+    <div id="login-box" style="max-width:400px; margin: 50px auto; text-align:center;">
+        <h1 style="color: #0369a1;">ICE LOGIN</h1>
+        <div class="card">
+            <input type="text" id="u" placeholder="Nome de Usuário">
+            <input type="password" id="p" placeholder="Sua Senha">
+            <button class="btn" onclick="auth('login')">ENTRAR</button>
+            <button class="btn" style="background:#cbd5e1; color:#475569" onclick="auth('register')">CRIAR NOVA CONTA</button>
         </div>
     </div>
 
     <div id="app" style="display:none">
-        <h3 id="usr-header">> NODE: UNKNOWN | ROLE: GUEST</h3>
+        <div class="info" id="perfil-txt">Carregando...</div>
         
         <div class="grid">
-            <!-- MONITOR: LIVE UPLINK -->
-            <div class="monitor" ondblclick="full(this)">
-                <h3>🎥 LIVE_UPLINK_01</h3>
+            <!-- MONITOR 1: LIVE -->
+            <div class="card" ondblclick="full(this)">
+                <h3>🎥 MINHA LIVE</h3>
                 <video id="vLocal" autoplay playsinline muted></video>
-                <button class="btn" id="on" onclick="start()">START_STREAM</button>
-                <button class="btn btn-danger" id="off" style="display:none" onclick="stop()">KILL_STREAM</button>
-                <div id="terminal">>_ SYSTEM_IDLE</div>
+                <button class="btn btn-live" id="btnOn" onclick="start()">INICIAR CÂMERA</button>
+                <button class="btn" id="btnOff" style="display:none; background:#64748b" onclick="stop()">DESLIGAR</button>
+                <p style="font-size:0.7em; color:#64748b">Clique duas vezes para ampliar</p>
             </div>
 
-            <!-- MONITOR: ECONOMY -->
-            <div class="monitor" ondblclick="full(this)">
-                <h3>💰 ASSET_STORAGE</h3>
-                <p id="balance-display">BLUES: 0.00</p>
-                <input type="number" id="val" placeholder="BRL_VALUE">
-                <button class="btn" onclick="buy()">GENERATE_PIX_RECHARGE</button>
+            <!-- MONITOR 2: COMPRAR BLUES -->
+            <div class="card" ondblclick="full(this)">
+                <h3>💰 COMPRAR BLUES (PIX)</h3>
+                <input type="number" id="val" placeholder="Valor em R$">
+                <button class="btn" style="background:#10b981" onclick="gerarPix()">GERAR QR CODE PIX</button>
                 <div id="pix-res" style="margin-top:15px; text-align:center"></div>
             </div>
 
-            <!-- MONITOR: MASTER COMMAND (SÓ ADMIN VÊ) -->
-            <div id="adm-monitor" class="monitor admin-only" ondblclick="full(this)">
-                <h3 style="color:#ff0000">☢️ MASTER_CONTROL_UNIT</h3>
-                <p style="font-size:0.8em">IMMUNITY STATUS: ACTIVE</p>
-                <button class="btn" onclick="listNodes()">LIST_ALL_NODES</button>
-                <button class="btn" onclick="alert('Injetando Blues...')">INJECT_BLUES_GLOBAL</button>
-                <button class="btn btn-danger" onclick="alert('Sistema de Banimento...')">BAN_NODE_ID</button>
+            <!-- MONITOR 3: PAINEL MASTER (SÓ PARA ADMIN) -->
+            <div id="adm-card" class="card" style="display:none; border-color:#6366f1">
+                <h3 style="color:#4f46e5">⚙️ PAINEL DO MASTER</h3>
+                <button class="btn btn-adm" onclick="listarNodes()">LISTAR TODOS OS USUÁRIOS</button>
+                <div id="nodes-list"></div>
             </div>
         </div>
     </div>
 
     <script>
         let stream;
-        const ref = new URLSearchParams(window.location.search).get('ref');
+        const refPai = new URLSearchParams(window.location.search).get('ref');
 
         function full(el) { el.classList.toggle('fullscreen'); }
-        
-        function log(msg) {
-            const t = document.getElementById('terminal');
-            t.innerHTML += '<br>> ' + msg;
-            t.scrollTop = t.scrollHeight;
-        }
 
-        async function auth(type) {
-            const u = document.getElementById('u').value, p = document.getElementById('p').value;
-            const res = await fetch('/'+type, {
+        async function auth(tipo) {
+            const u = document.getElementById('u').value;
+            const p = document.getElementById('p').value;
+            const res = await fetch('/'+tipo, {
                 method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({u, p, ref})
+                body: JSON.stringify({u, p, ref: refPai})
             });
             const d = await res.json();
             if(res.ok) {
-                document.getElementById('auth-scr').style.display = 'none';
+                document.getElementById('login-box').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
-                document.getElementById('usr-header').innerText = "> NODE: " + d.user.toUpperCase() + " | ROLE: " + d.role.toUpperCase();
-                document.getElementById('balance-display').innerText = "BLUES: " + d.blues.toFixed(2);
+                document.getElementById('perfil-txt').innerText = "USUÁRIO: " + d.user.toUpperCase() + " | SALDO: " + d.blues.toFixed(2) + " BLUES";
                 
                 if(d.role === 'master') {
-                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
-                    log("MASTER_IMMUNITY_CONFIRMED.");
+                    document.getElementById('adm-card').style.display = 'block';
                 }
-                log("SESSION_ESTABLISHED.");
             } else { alert(d.error); }
         }
 
         async function start() {
-            stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-            document.getElementById('vLocal').srcObject = stream;
-            document.getElementById('on').style.display='none'; document.getElementById('off').style.display='block';
-            log("BROADCASTING_ENCRYPTED_FEED...");
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+                document.getElementById('vLocal').srcObject = stream;
+                document.getElementById('btnOn').style.display='none'; 
+                document.getElementById('btnOff').style.display='block';
+            } catch(e) { alert("Erro ao ligar câmera!"); }
         }
 
         function stop() {
-            stream.getTracks().forEach(t => t.stop());
+            if(stream) stream.getTracks().forEach(t => t.stop());
             document.getElementById('vLocal').srcObject = null;
-            document.getElementById('on').style.display='block'; document.getElementById('off').style.display='none';
-            log("FEED_TERMINATED.");
+            document.getElementById('btnOn').style.display='block'; 
+            document.getElementById('btnOff').style.display='none';
         }
 
-        async function buy() {
-            log("GENERATING_PIX_PAYLOAD...");
-            const res = await fetch('/pix', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({valor: document.getElementById('val').value}) });
+        async function gerarPix() {
+            const v = document.getElementById('val').value;
+            if(!v) return alert("Digite um valor!");
+            document.getElementById('pix-res').innerText = "Gerando cobrança...";
+            
+            const res = await fetch('/pix', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({valor: v})
+            });
             const d = await res.json();
             if(d.encodedImage) {
-                document.getElementById('pix-res').innerHTML = '<img src="data:image/png;base64,'+d.encodedImage+'" width="160">';
-                log("UPLINK_SUCCESSFUL: PIX_READY.");
-            }
+                document.getElementById('pix-res').innerHTML = '<b>Escaneie o QR Code:</b><br><img src="data:image/png;base64,'+d.encodedImage+'" width="180"><br><small style="word-break:break-all">Copia e Cola: <br>'+d.payload+'</small>';
+            } else { alert("Erro na API do Asaas!"); }
         }
 
-        function listNodes() {
-            log("SCANNING_NETWORK...");
-            fetch('/admin/nodes').then(r => r.json()).then(nodes => {
-                log("TOTAL_NODES_FOUND: " + nodes.length);
-            });
+        async function listarNodes() {
+            const res = await fetch('/admin/nodes');
+            const nodes = await res.json();
+            const div = document.getElementById('nodes-list');
+            div.style.display = 'block';
+            div.innerHTML = "<b>USUÁRIOS CADASTRADOS:</b><br>" + nodes.map(n => n.username + " (" + n.role + ") - " + n.blues.toFixed(2) + " Blues").join("<br>");
         }
     </script>
 </body>
@@ -174,14 +180,13 @@ const html = `
 
 app.get('/', (req, res) => res.send(html));
 
-// --- COMANDOS DE ACESSO ---
 app.post('/register', (req, res) => {
     const { u, p, ref } = req.body;
     try {
         const hash = bcrypt.hashSync(p, 10);
         db.prepare("INSERT INTO users (username, password, pai_id) VALUES (?, ?, ?)").run(u, hash, ref || null);
         res.json({ user: u, blues: 0, role: 'filho' });
-    } catch (e) { res.status(400).json({error: "NODE_ALREADY_ACTIVE"}); }
+    } catch (e) { res.status(400).json({error: "Este usuário já existe!"}); }
 });
 
 app.post('/login', (req, res) => {
@@ -189,26 +194,38 @@ app.post('/login', (req, res) => {
     const user = db.prepare("SELECT * FROM users WHERE username = ?").get(u);
     if (user && bcrypt.compareSync(p, user.password)) {
         res.json({ id: user.id, user: user.username, blues: user.blues, role: user.role });
-    } else { res.status(401).json({error: "INVALID_CREDENTIALS"}); }
+    } else { res.status(401).json({error: "Usuário ou senha incorretos!"}); }
 });
 
-// --- COMANDOS MASTER (ADMIN) ---
+// --- ROTA DE ADMIN PARA LISTAR USUÁRIOS ---
 app.get('/admin/nodes', (req, res) => {
-    const users = db.prepare("SELECT id, username, blues, role FROM users").all();
+    const users = db.prepare("SELECT username, blues, role FROM users").all();
     res.json(users);
 });
 
-// --- COMANDO FINANCEIRO (PIX) ---
+// --- ROTA DO PIX CORRIGIDA (CRIA CLIENTE NOVO CADA VEZ) ---
 app.post('/pix', async (req, res) => {
     try {
-        const cli = await axios.post(`${ASAAS_URL}/customers`, { name: "Ice User" }, { headers: { access_token: ASAAS_KEY } });
+        // 1. Cria um cliente temporário no Asaas
+        const cli = await axios.post(`${ASAAS_URL}/customers`, { name: "Cliente Ice" }, { headers: { access_token: ASAAS_KEY } });
+        
+        // 2. Cria a cobrança PIX
         const pay = await axios.post(`${ASAAS_URL}/payments`, {
-            billingType: "PIX", value: req.body.valor, customer: cli.data.id,
-            dueDate: new Date().toISOString().split('T')
+            billingType: "PIX", 
+            value: req.body.valor, 
+            customer: cli.data.id,
+            dueDate: new Date().toISOString().split('T')[0]
         }, { headers: { access_token: ASAAS_KEY } });
+        
+        // 3. Pega o QR Code e o Copia e Cola
         const qr = await axios.get(`${ASAAS_URL}/payments/${pay.data.id}/pixQrCode`, { headers: { access_token: ASAAS_KEY } });
         res.json(qr.data);
-    } catch (e) { res.status(500).json({error: "GATEWAY_ERROR"}); }
+    } catch (e) { 
+        console.error(e.response ? e.response.data : e.message);
+        res.status(500).json({error: "Erro ao gerar PIX"}); 
+    }
 });
+
+app.listen(process.env.PORT || 3000, () => console.log("ICE ONLINE NO AZUL BEBÊ"));
 
 app.listen(process.env.PORT || 3000, () => console.log("TERMINAL ICE READY"));
