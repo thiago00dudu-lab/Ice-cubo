@@ -9,7 +9,7 @@ const app = express();
 const db = new Database("ice_cubo.db");
 const PORT = process.env.PORT || 3000;
 
-// Configurações (Vão estar escondidas no Render)
+// Puxa a chave do Asaas das configurações do Render
 const ASAAS_KEY = process.env.ASAAS_KEY; 
 const ASAAS_URL = "https://api.asaas.com";
 
@@ -17,19 +17,18 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static(__dirname));
 
-// --- CRIAÇÃO DO BANCO DE DADOS ---
+// --- CRIAÇÃO DAS TABELAS (MEMÓRIA DO APP) ---
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     blue REAL DEFAULT 0,
-    asaas_customer_id TEXT,
-    referred_by INTEGER, -- ID de quem indicou
-    role TEXT DEFAULT 'user'
+    role TEXT DEFAULT 'user',
+    referred_by INTEGER
 );
 `);
 
-// --- ROTA: DIVISÃO 85% / 10% / 5% ---
+// --- ROTA DE DIVISÃO (85% CRIADOR / 10% SITE / 5% INDICADOR) ---
 app.post("/api/enviar-presente", (req, res) => {
     const { doadorId, criadorId, valorBlue } = req.body;
 
@@ -38,7 +37,7 @@ app.post("/api/enviar-presente", (req, res) => {
 
     const criador = db.prepare("SELECT * FROM users WHERE id = ?").get(criadorId);
 
-    // Cálculos da sua regra
+    // Cálculos
     const paraCriador = valorBlue * 0.85;
     const paraSite = valorBlue * 0.10;
     const paraIndicador = valorBlue * 0.05;
@@ -52,7 +51,7 @@ app.post("/api/enviar-presente", (req, res) => {
     // 3. Dá 10% para o Site (Master)
     db.prepare("UPDATE users SET blue = blue + ? WHERE role = 'master'").run(paraSite);
 
-    // 4. Dá 5% para o Indicador (ou para o site se não houver indicador)
+    // 4. Dá 5% para o Indicador (ou site se não tiver)
     if (criador && criador.referred_by) {
         db.prepare("UPDATE users SET blue = blue + ? WHERE id = ?").run(paraIndicador, criador.referred_by);
     } else {
@@ -62,25 +61,9 @@ app.post("/api/enviar-presente", (req, res) => {
     res.json({ success: true, message: "Valor dividido com sucesso!" });
 });
 
-// Entrega a página visual
+// Entrega a página visual (index.html)
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.listen(PORT, () => console.log(`🚀 Servidor Ice-Cubo Online na porta ${PORT}`));
-{
-  "name": "ice-cubo",
-  "version": "1.0.0",
-  "main": "servidor.js",
-  "dependencies": {
-    "express": "^4.18.2",
-    "better-sqlite3": "^9.4.3",
-    "axios": "^1.6.0",
-    "dotenv": "^16.3.1",
-    "cors": "^2.8.5"
-  },
-  "scripts": {
-    "start": "node servidor.js"
-  }
-}
-
+app.listen(PORT, () => console.log(`🚀 Servidor Ice-Cubo Online!`));
