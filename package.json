@@ -1,16 +1,141 @@
-{
-  "name": "ice-cubo",
-  "version": "1.0.0",
-  "main": "servidor.js",
-  "scripts": {
-    "start": "node servidor.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "dotenv": "^16.3.1",
-    "jsonwebtoken": "^9.0.2",
-    "better-sqlite3": "^9.4.3",
-    "axios": "^1.6.2",
-    "bcrypt": "^5.1.1"
-  }
-}
+require("dotenv").config();
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const Database = require("better-sqlite3");
+const axios = require("axios");
+const bcrypt = require("bcrypt");
+const app = express();
+const db = new Database("ice.db");
+
+const JWT_SECRET = process.env.JWT_SECRET || "ice_secret";
+const ASAAS_KEY = process.env.ASAAS_KEY;
+const ASAAS_URL = "https://api.asaas.com";
+
+app.use(express.json());
+
+// --- BANCO DE DADOS ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT DEFAULT 'filho',
+    blues REAL DEFAULT 0,
+    pai_id INTEGER,
+    asaas_id TEXT
+  );
+`);
+
+// Cria Master inicial: Usuário 'admin' | Senha 'ice123'
+const hash = bcrypt.hashSync("ice123", 10);
+db.prepare("INSERT OR IGNORE INTO users (id, username, password, role) VALUES (1, 'admin', ?, 'master')").run(hash);
+
+// --- FRONT-END COMPLETO ---
+const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ICE PLATFORM</title>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; padding: 10px; }
+        .card { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #334155; position: relative; }
+        .gold-star::after { content: '⭐'; color: gold; position: absolute; top: 10px; right: 15px; font-size: 20px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; margin: 5px 0; }
+        .live-cam { width: 100%; height: 200px; background: black; border-radius: 8px; border: 2px solid red; display: flex; align-items: center; justify-content: center; }
+        input { width: 90%; padding: 12px; margin: 5px 0; border-radius: 8px; background: #334155; color: white; border: none; }
+        .pimenta { font-size: 20px; position: absolute; bottom: 10px; right: 10px; }
+    </style>
+</head>
+<body>
+    <div id="login-screen">
+        <h2 align="center">ICE LOGIN</h2>
+        <div class="card">
+            <input type="text" id="u" placeholder="Usuário">
+            <input type="password" id="p" placeholder="Senha">
+            <button class="btn" onclick="entrar()">ENTRAR</button>
+        </div>
+    </div>
+
+    <div id="app" style="display:none">
+        <div id="perfil" class="card"></div>
+        
+        <div class="card">
+            <h3>💰 RECARREGAR BLUES</h3>
+            <input type="number" id="valor-pix" placeholder="Valor em R$">
+            <button class="btn" style="background:#22c55e" onclick="gerarPix()">GERAR PIX (85% BLUES)</button>
+        </div>
+
+        <h3>🎥 LIVES AO VIVO</h3>
+        <div class="card">
+            <div class="live-cam">🔴 AO VIVO <span class="pimenta">🌶️</span></div>
+            <button class="btn" onclick="alert('Conectando câmera...')">Assistir (10 Blues)</button>
+        </div>
+
+        <div id="master-area" style="display:none">
+            <h3 style="color:gold">PAINEL MASTER</h3>
+            <button class="btn" style="background:#ef4444" onclick="alert('Lista de usuários para banir')">Bloquear Usuário</button>
+            <button class="btn" onclick="alert('Nenhum saque pendente')">Ver Saques (Mín. R$20)</button>
+        </div>
+    </div>
+
+    <script>
+        async function entrar() {
+            const user = document.getElementById('u').value;
+            const pass = document.getElementById('p').value;
+            
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user, pass})
+            });
+
+            if(res.ok) {
+                const data = await res.json();
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                
+                const perf = document.getElementById('perfil');
+                perf.innerHTML = "<b>" + data.user.toUpperCase() + "</b><br>Saldo: " + data.blues + " BLUES";
+                if(data.role === 'master') {
+                    perf.classList.add('gold-star');
+                    document.getElementById('master-area').style.display = 'block';
+                }
+            } else { alert("Erro no login!"); }
+        }
+
+        async function gerarPix() {
+            const v = document.getElementById('valor-pix').value;
+            alert("Solicitando PIX de R$ " + v + " ao Asaas... Aguarde o QR Code.");
+            // Aqui chama a rota /api/pix que criamos no servidor
+        }
+    </script>
+</body>
+</html>
+`;
+
+// --- ROTAS API ---
+app.get('/', (req, res) => res.send(html));
+
+app.post('/api/login', (req, res) => {
+    const { user, pass } = req.body;
+    const u = db.prepare("SELECT * FROM users WHERE username = ?").get(user);
+    if(u && bcrypt.compareSync(pass, u.password)) {
+        res.json({ ok: true, user: u.username, role: u.role, blues: u.blues });
+    } else { res.sendStatus(401); }
+});
+
+// Rota para Gerar PIX Real via Asaas
+app.post('/api/pix', async (req, res) => {
+    try {
+        const response = await axios.post(\`\${ASAAS_URL}/payments\`, {
+            billingType: "PIX",
+            value: req.body.valor,
+            dueDate: new Date().toISOString().split('T')[0]
+            // Adicione os dados do cliente aqui conforme sua necessidade
+        }, { headers: { access_token: ASAAS_KEY } });
+        res.json(response.data);
+    } catch (e) { res.status(500).send("Erro na API Asaas"); }
+});
+
+app.listen(process.env.PORT || 3000, () => console.log("ICE ONLINE!"));
