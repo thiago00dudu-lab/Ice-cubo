@@ -1,15 +1,24 @@
-// Exemplo de rota de cadastro no servidor.js
-const bcrypt = require('bcrypt');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 
-app.post('/cadastro', async (req, res) => {
-    const { username, password } = req.body;
-    const hash = await bcrypt.hash(password, 10);
-    
-    try {
-        const stmt = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-        stmt.run(username, hash);
-        res.status(201).send("Usuário cadastrado!");
-    } catch (e) {
-        res.status(400).send("Usuário já existe.");
-    }
+const app = express(); // ← ESSA LINHA estava faltando
+
+app.use(cors());
+app.use(express.json());
+
+// ROTA TESTE
+app.get("/", (req, res) => {
+  res.send("Servidor funcionando 🚀");
+});
+
+// SUA ROTA
+app.post("/cadastro", async (req, res) => {
+  res.json({ mensagem: "Cadastro funcionando!" });
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Servidor rodando na porta " + PORT);
 });
