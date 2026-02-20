@@ -1,163 +1,118 @@
 require("dotenv").config()
-
 const express = require("express")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const Database = require("better-sqlite3")
 const axios = require("axios")
+const http = require("http")
+const { Server } = require("socket.io")
+
+const db = require("./database")
+const auth = require("./auth")
+const { distribute } = require("./finance")
 
 const app = express()
-const db = new Database("db.db")
+const server = http.createServer(app)
+const io = new Server(server)
 
-const JWT_SECRET = process.env.JWT_SECRET
-const ASAAS_KEY = process.env.ASAAS_KEY
-const IS_PROD = process.env.NODE_ENV === "production"
+app.use(express.json())
+app.use(express.static("public"))
 
-if (!JWT_SECRET || !ASAAS_KEY) {
-  console.error("❌ Variáveis não configuradas!")
+if (!process.env.JWT_SECRET || !process.env.ASAAS_KEY) {
+  console.error("Variáveis não configuradas")
   process.exit(1)
 }
 
-const ASAAS_URL = IS_PROD
-  ? "https://api.asaas.com"
-  : "https://sandbox.asaas.com"
+const ASAAS_URL = "https://api.asaas.com"
 
-app.use(express.json())
+// REGISTRO
+app.post("/api/register", async (req, res) => {
+  const { username, password, parent } = req.body
+  const hash = await bcrypt.hash(password, 10)
 
-// Página inicial
-app.get("/", (req, res) => {
-  res.send("🔥 Cubo de Gelo API Online 🚀")
+  const parentUser = parent
+    ? db.prepare("SELECT id FROM users WHERE username=?").get(parent)
+    : null
+
+  db.prepare(`
+    INSERT INTO users(username,password,parent_id)
+    VALUES(?,?,?)
+  `).run(username, hash, parentUser?.id || null)
+
+  res.json({ ok: true })
 })
 
-// Banco
-db.exec(`
-CREATE TABLE IF NOT EXISTS users(
-  id INTEGER PRIMARY KEY,
-  username TEXT UNIQUE,
-  password TEXT,
-  role TEXT DEFAULT 'user',
-  blue INTEGER DEFAULT 0,
-  asaas_id TEXT,
-  is_blocked INTEGER DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS lives(
-  id INTEGER PRIMARY KEY,
-  title TEXT,
-  price INTEGER,
-  adult INTEGER,
-  creator_id INTEGER,
-  active INTEGER DEFAULT 1
-);
-`)
-
-// Middleware de autenticação
-function auth(req,res,next){
-  try{
-    const token=req.headers.authorization
-    if(!token) return res.sendStatus(401)
-
-    const decoded=jwt.verify(token,JWT_SECRET)
-    const user=db.prepare("SELECT * FROM users WHERE id=?").get(decoded.id)
-
-    if(!user||user.is_blocked) return res.sendStatus(403)
-
-    req.user=user
-    next()
-  }catch{
-    res.sendStatus(401)
-  }
-}
-
-// Registro
-app.post("/api/register",async(req,res)=>{
-  try{
-    const{username,password}=req.body
-    const hash=await bcrypt.hash(password,10)
-
-    const customer=await axios.post(
-      `${ASAAS_URL}/customers`,
-      {name:username},
-      {headers:{access_token:ASAAS_KEY}}
-    )
-
-    db.prepare("INSERT INTO users(username,password,asaas_id) VALUES(?,?,?)")
-      .run(username,hash,customer.data.id)
-
-    res.json({ok:true})
-  }catch{
-    res.status(400).json({error:"Erro ao registrar"})
-  }
-})
-
-// Login
-app.post("/api/login",(req,res)=>{
-  const{username,password}=req.body
-
-  const user=db.prepare("SELECT * FROM users WHERE username=?")
+// LOGIN
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body
+  const user = db.prepare("SELECT * FROM users WHERE username=?")
     .get(username)
 
-  if(!user||!bcrypt.compareSync(password,user.password))
+  if (!user || !bcrypt.compareSync(password, user.password))
     return res.sendStatus(401)
 
-  const token=jwt.sign({id:user.id},JWT_SECRET,{expiresIn:"1d"})
-
-  res.json({token,role:user.role,blue:user.blue})
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET)
+  res.json({ token })
 })
 
-// Comprar crédito
-app.post("/api/buy",auth,async(req,res)=>{
-  try{
-    const{amount}=req.body
+// CRIAR LIVE
+app.post("/api/live/start", auth, (req, res) => {
+  const { title, price } = req.body
+  db.prepare(`
+    INSERT INTO lives(title,price,creator_id)
+    VALUES(?,?,?)
+  `).run(title, price, req.user.id)
 
-    const payment=await axios.post(
-      `${ASAAS_URL}/payments`,
-      {
-        customer:req.user.asaas_id,
-        billingType:"PIX",
-        value:amount,
-        dueDate:new Date().toISOString().split("T")[0],
-        description:"BLUE"
-      },
-      {headers:{access_token:ASAAS_KEY}}
-    )
-
-    res.json(payment.data)
-  }catch{
-    res.sendStatus(500)
-  }
+  res.json({ ok: true })
 })
 
-// Webhook
-app.post("/api/webhook/asaas",(req,res)=>{
-  if(req.body.event==="PAYMENT_RECEIVED"){
-    db.prepare("UPDATE users SET blue=blue+? WHERE asaas_id=?")
-      .run(
-        Math.floor(req.body.payment.value*0.85),
-        req.body.payment.customer
-      )
-  }
+// ENTRAR NA LIVE
+app.post("/api/live/join/:id", auth, (req, res) => {
+  const live = db.prepare("SELECT * FROM lives WHERE id=?")
+    .get(req.params.id)
 
-  res.sendStatus(200)
+  if (!live) return res.sendStatus(404)
+  if (req.user.blue < live.price) return res.sendStatus(400)
+
+  db.prepare("UPDATE users SET blue=blue-? WHERE id=?")
+    .run(live.price, req.user.id)
+
+  distribute(live.price, live.creator_id)
+
+  res.json({ ok: true })
 })
 
-// Criar live
-app.post("/api/lives/start",auth,(req,res)=>{
-  db.prepare("INSERT INTO lives(title,price,adult,creator_id) VALUES(?,?,?,?)")
-    .run(req.body.title||"Live",0,0,req.user.id)
+// SAQUE
+app.post("/api/withdraw", auth, (req, res) => {
+  if (req.user.blue < 20)
+    return res.status(400).json({ error: "Minimo 20" })
 
-  res.json({ok:true})
+  db.prepare(`
+    INSERT INTO withdraws(user_id,amount)
+    VALUES(?,?)
+  `).run(req.user.id, req.user.blue)
+
+  db.prepare("UPDATE users SET blue=0 WHERE id=?")
+    .run(req.user.id)
+
+  res.json({ ok: true })
 })
 
-// Listar lives
-app.get("/api/lives/list",auth,(req,res)=>{
-  const lives=db.prepare("SELECT * FROM lives WHERE active=1").all()
-  res.json(lives)
+// SOCKET CHAT + SINALIZAÇÃO WEBRTC
+io.on("connection", socket => {
+  socket.on("join-room", room => {
+    socket.join(room)
+  })
+
+  socket.on("signal", data => {
+    socket.to(data.room).emit("signal", data)
+  })
+
+  socket.on("chat", data => {
+    io.to(data.room).emit("chat", data.message)
+  })
 })
 
-// Master automático
-db.prepare("UPDATE users SET role='master' WHERE id=1").run()
-
-// Porta do Render
 const PORT = process.env.PORT || 3000
-app.listen(PORT,()=>console.log("🚀 Online na porta "+PORT))
+server.listen(PORT, () =>
+  console.log("Servidor rodando na porta " + PORT)
+)
