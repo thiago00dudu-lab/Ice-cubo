@@ -1,51 +1,93 @@
-require("dotenv").config()
 const express = require("express")
+const cors = require("cors")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const Database = require("better-sqlite3")
 const axios = require("axios")
+require("dotenv").config()
 
 const app = express()
 app.use(express.json())
-app.use(express.static("publico"))
+app.use(cors())
 
-const db = new Database("db.db")
+// ===== VARIÁVEIS =====
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY
+const JWT_SECRET = process.env.JWT_SECRET
 
-// ===== TABELAS =====
-db.exec(`
-CREATE TABLE IF NOT EXISTS users(
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- username TEXT UNIQUE,
- password TEXT,
- saldo INTEGER DEFAULT 0,
- parent_id INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS pagamentos(
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- user_id INTEGER,
- valor INTEGER,
- status TEXT
-);
-`)
-
-// ===== REGISTRO =====
-app.post("/api/register", async (req,res)=>{
- const {username,password,parent} = req.body
- const hash = await bcrypt.hash(password,10)
- const pai = parent ? db.prepare("SELECT id FROM users WHERE username=?").get(parent) : null
-
- db.prepare("INSERT INTO users(username,password,parent_id) VALUES(?,?,?)")
-   .run(username,hash,pai?.id || null)
-
- res.json({ok:true})
+// ===== TESTE SERVIDOR =====
+app.get("/", (req, res) => {
+  res.json({ status: "Servidor rodando 🚀" })
 })
 
-// ===== LOGIN =====
-app.post("/api/login",(req,res)=>{
- const {username,password} = req.body
- const user = db.prepare("SELECT * FROM users WHERE username=?").get(username)
- if(!user) return res.status(401).json({erro:"Usuário não existe"})
 
- if(!bcrypt.compareSync(password,user.password))
-   return res.status(401).json
+// ===== LOGIN =====
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body
+
+  // Usuário fixo só pra teste
+  if (username !== "admin") {
+    return res.status(401).json({ error: "Usuário inválido" })
+  }
+
+  const senhaCorreta = await bcrypt.hash("123456", 10)
+
+  if (!bcrypt.compareSync(password, senhaCorreta)) {
+    return res.status(401).json({ error: "Senha inválida" })
+  }
+
+  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "1d" })
+
+  res.json({ token })
+})
+
+
+// ===== CRIAR COBRANÇA ASAAS =====
+app.post("/api/cobranca", async (req, res) => {
+  try {
+    const { name, cpf, value } = req.body
+
+    // Criar cliente
+    const cliente = await axios.post(
+      "https://api.asaas.com/v3/customers",
+      {
+        name,
+        cpfCnpj: cpf
+      },
+      {
+        headers: {
+          access_token: ASAAS_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
+    )
+
+    // Criar cobrança
+    const cobranca = await axios.post(
+      "https://api.asaas.com/v3/payments",
+      {
+        customer: cliente.data.id,
+        billingType: "PIX",
+        value: value,
+        dueDate: new Date().toISOString().split("T")[0]
+      },
+      {
+        headers: {
+          access_token: ASAAS_API_KEY,
+          "Content-Type": "application/json"
+        }
+      }
+    )
+
+    res.json(cobranca.data)
+
+  } catch (err) {
+    console.log(err.response?.data || err.message)
+    res.status(500).json({ error: "Erro ao criar cobrança" })
+  }
+})
+
+
+// ===== PORTA RENDER =====
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => {
+  console.log("Servidor rodando na porta", PORT)
+})
