@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
-const app = express(); // ESSA LINHA É OBRIGATÓRIA
+const app = express();
 
 app.use(cors());
 app.use(express.json());
