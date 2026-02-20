@@ -1,104 +1,49 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel de Controle</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
-
-  <!-- LOGIN -->
-  <div id="login-card" class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
-    <h1 class="text-3xl font-bold text-center mb-6 text-blue-400">Cubo de Gelo</h1>
-
-    <div class="space-y-4">
-      <input id="usuario" type="text" placeholder="Usuário"
-        class="w-full p-3 rounded bg-slate-700 border border-slate-600">
-
-      <input id="senha" type="password" placeholder="Senha"
-        class="w-full p-3 rounded bg-slate-700 border border-slate-600">
-
-      <button onclick="fazerLogin()"
-        class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded font-bold transition">
-        Entrar
-      </button>
-    </div>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="painel" class="hidden w-full max-w-4xl">
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-6">
-      <h2 class="text-xl font-bold">
-        Olá, <span id="nome-exibicao" class="text-blue-400"></span>
-      </h2>
-      <p class="text-green-400 text-2xl mt-2">
-        Saldo: R$ <span id="saldo">0</span>
-      </p>
-    </div>
-
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-      <h3 class="font-bold mb-4">Adicionar Créditos</h3>
-
-      <input id="valor" type="number" placeholder="Valor em R$"
-        class="w-full p-3 rounded bg-slate-700 border border-slate-600 mb-4">
-
-      <button onclick="comprar()"
-        class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold">
-        Gerar PIX
-      </button>
-    </div>
-  </div>
-
-<script>
 let token = "";
 
 async function fazerLogin() {
-  const usuario = document.getElementById("usuario").value;
-  const senha = document.getElementById("senha").value;
+    const usuario = document.getElementById("usuario").value;
+    const senha = document.getElementById("senha").value;
 
-  const res = await fetch("/api/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ usuario, senha })
-  });
+    const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: usuario, password: senha })
+    });
 
-  if (res.ok) {
-    const dados = await res.json();
-    token = dados.token;
-
-    document.getElementById("login-card").classList.add("hidden");
-    document.getElementById("painel").classList.remove("hidden");
-    document.getElementById("nome-exibicao").innerText = usuario;
-    document.getElementById("saldo").innerText = dados.saldo;
-  } else {
-    alert("Erro ao entrar. Verifique os dados.");
-  }
+    if (res.ok) {
+        const dados = await res.json();
+        token = dados.token;
+        document.getElementById("login-card").classList.add("hidden");
+        document.getElementById("painel").classList.remove("hidden");
+        document.getElementById("nome-exibicao").innerText = usuario;
+        document.getElementById("saldo").innerText = dados.blue;
+    } else {
+        alert("Erro ao entrar. Verifique os dados.");
+    }
 }
 
 async function comprar() {
-  const valor = document.getElementById("valor").value;
+    const valor = document.getElementById("valor").value;
+    if (!valor) return alert("Digite um valor!");
 
-  const res = await fetch("/api/comprar", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": token
-    },
-    body: JSON.stringify({ valor })
-  });
+    const res = await fetch("/api/buy", {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": token 
+        },
+        body: JSON.stringify({ amount: valor })
+    });
 
-  const dados = await res.json();
-
-  if (dados.url) {
-    window.open(dados.url, "_blank");
-  } else {
-    alert("Erro ao gerar pagamento.");
-  }
+    if (res.ok) {
+        const dados = await res.json();
+        // Abre o link do PIX (invoiceUrl) em uma nova aba
+        if (dados.invoiceUrl) {
+            window.open(dados.invoiceUrl, "_blank");
+        } else {
+            alert("PIX gerado! Verifique seu app do Asaas.");
+        }
+    } else {
+        alert("Erro ao gerar pagamento.");
+    }
 }
-</script>
-
-</body>
-</html>
