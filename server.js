@@ -13,98 +13,141 @@ app.get('/', (req, res) => {
     <style>
         body { margin: 0; padding: 0; font-family: -apple-system, sans-serif; background: #f0f9ff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 1. Câmera Compacta (Preview Superior) */
-        .camera-header { height: 28vh; background: #000; position: relative; border-radius: 0 0 30px 30px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .master-badge { position: absolute; top: 15px; left: 15px; background: rgba(251, 191, 36, 0.9); color: #000; padding: 5px 12px; border-radius: 15px; font-weight: bold; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+        /* 1. Área de Destaque (Live ou Post Ampliado) */
+        .main-stage { height: 45vh; background: #000; position: relative; display: flex; align-items: center; justify-content: center; color: white; border-radius: 0 0 40px 40px; overflow: hidden; }
+        #webcam { width: 100%; height: 100%; object-fit: cover; display: none; }
+        #expanded-content { width: 100%; height: 100%; background-size: cover; background-position: center; display: none; }
+        .stage-placeholder { text-align: center; opacity: 0.6; }
 
-        /* 2. Timeline Inteligente */
-        .timeline-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 20px; scrollbar-width: none; }
-        .timeline-container::-webkit-scrollbar { display: none; }
+        /* Botão de Live */
+        .btn-live { position: absolute; bottom: 20px; right: 20px; background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+
+        /* 2. Timeline de Publicações Aleatórias */
+        .feed-section { flex: 1; overflow-y: auto; padding: 20px; scrollbar-width: none; }
+        .feed-section::-webkit-scrollbar { display: none; }
+        .feed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
-        .post-card { background: white; border-radius: 25px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .post-img { width: 100%; height: 250px; background-size: cover; background-position: center; cursor: pointer; }
-        .post-info { padding: 15px; display: flex; align-items: center; justify-content: space-between; }
-        .user-tag { display: flex; align-items: center; gap: 10px; font-weight: bold; color: #1e3a8a; }
+        .feed-item { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
+        .feed-item:active { transform: scale(0.95); }
+        .thumb { width: 100%; height: 120px; background-size: cover; background-position: center; }
+        .item-info { padding: 8px; font-size: 12px; color: #1e3a8a; font-weight: bold; }
 
-        /* 3. Rodapé Thiago Soste Master */
-        footer { padding: 15px; background: white; border-radius: 30px 30px 0 0; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); text-align: center; }
-        .star-main { font-size: 35px; color: #fbbf24; filter: drop-shadow(0 0 10px gold); margin-bottom: -5px; display: block; }
-        .name-main { font-weight: 900; font-size: 18px; color: #1e3a8a; margin: 0; }
+        /* 3. Rodapé Master Thiago Soste */
+        footer { padding: 15px; background: white; text-align: center; border-top: 1px solid #e0f2fe; }
+        .master-star { font-size: 35px; color: #fbbf24; filter: drop-shadow(0 0 8px gold); }
+        .master-name { font-weight: 900; color: #1e3a8a; margin: 0; font-size: 18px; }
+        .badge-adm { background: #fbbf24; color: black; font-size: 10px; padding: 2px 6px; border-radius: 4px; vertical-align: middle; }
     </style>
 </head>
 <body>
 
-    <!-- Cabeçalho com Câmera -->
-    <div class="camera-header">
-        <div class="master-badge"><i class="fas fa-crown"></i> Thiago Soste [ADM]</div>
-        <video id="webcam" autoplay playsinline muted></video>
+    <!-- PALCO PRINCIPAL (Onde a mágica acontece) -->
+    <div class="main-stage" id="stage">
+        <div class="stage-placeholder" id="placeholder">
+            <i class="fas fa-play-circle fa-3x"></i>
+            <p>Clique em um post abaixo <br>ou inicie sua Live</p>
+        </div>
+        
+        <!-- Conteúdo que aparece ao clicar -->
+        <div id="expanded-content"></div>
+        
+        <!-- Câmera da Live -->
+        <video id="webcam" autoplay playsinline></video>
+        
+        <button class="btn-live" onclick="startLive()" id="live-control">
+            <i class="fas fa-broadcast-tower"></i> INICIAR LIVE
+        </button>
     </div>
 
-    <!-- Timeline Inteligente com IA de Recomendação -->
-    <div class="timeline-container" id="timeline">
-        <!-- Os posts serão gerados aqui pela IA simulada -->
+    <!-- TIMELINE ALEATÓRIA (IA Simulada) -->
+    <div class="feed-section">
+        <h4 style="color: #1e3a8a; margin-bottom: 15px;">✨ Sugestões para você</h4>
+        <div class="feed-grid" id="feed">
+            <!-- Gerado via Script -->
+        </div>
     </div>
 
     <footer>
-        <span class="star-main">🌟</span>
-        <p class="name-main">Thiago Soste</p>
-        <div style="display: flex; gap: 10px; margin-top: 10px; padding: 0 10px;">
-            <input type="text" style="flex:1; padding:12px; border-radius:20px; border:none; background:#f0f9ff;" placeholder="O que você está pensando?">
-            <button style="background:#0ea5e9; border:none; color:white; width:45px; border-radius:50%;"><i class="fas fa-paper-plane"></i></button>
-        </div>
+        <span class="master-star">🌟</span>
+        <p class="master-name">Thiago Soste <span class="badge-adm">ADM</span></p>
     </footer>
 
     <script>
-        // Simulação de Dados de IA (Interesses do Usuário)
-        let userInterests = ['tecnologia', 'carros', 'viagem'];
-        const postsData = [
-            { user: "Carlos_Dev", type: "tecnologia", img: "https://images.unsplash.com" },
-            { user: "Ferrari_Fan", type: "carros", img: "https://images.unsplash.com" },
-            { user: "Mundo_Viagens", type: "viagem", img: "https://images.unsplash.com" },
-            { user: "Astro_Gamer", type: "tecnologia", img: "https://images.unsplash.com" }
+        const posts = [
+            { id: 1, user: "@Carros_Top", category: "carros", img: "https://images.unsplash.com" },
+            { id: 2, user: "@Tech_Master", category: "tech", img: "https://images.unsplash.com" },
+            { id: 3, user: "@Viagem_X", category: "trip", img: "https://images.unsplash.com" },
+            { id: 4, user: "@Gamer_Pro", category: "tech", img: "https://images.unsplash.com" },
+            { id: 5, user: "@Natureza_Viva", category: "trip", img: "https://images.unsplash.com" },
+            { id: 6, user: "@Super_Cars", category: "carros", img: "https://images.unsplash.com" }
         ];
 
-        // 1. Ativa Câmera Preview
-        navigator.mediaDevices.getUserMedia({ video: true }).then(s => {
-            document.getElementById('webcam').srcObject = s;
+        // 1. Gera a Timeline
+        const feed = document.getElementById('feed');
+        posts.forEach(post => {
+            const div = document.createElement('div');
+            div.className = 'feed-item';
+            div.onclick = () => showInStage(post.img, post.category);
+            div.innerHTML = \`
+                <div class="thumb" style="background-image: url('\${post.img}')"></div>
+                <div class="item-info">\${post.user}</div>
+            \`;
+            feed.appendChild(div);
         });
 
-        // 2. IA de Recomendação: Ordena os posts pelo interesse do usuário
-        function generateTimeline() {
-            const timeline = document.getElementById('timeline');
+        // 2. Função para Ampliar Post (Sobe para o Stage)
+        function showInStage(imgUrl, category) {
+            // Desliga a câmera se estiver ligada
+            stopLive();
             
-            // Lógica de IA: Prioriza o que o usuário mais pesquisa
-            const recommended = postsData.sort((a, b) => {
-                return userInterests.indexOf(b.type) - userInterests.indexOf(a.type);
-            });
-
-            recommended.forEach(post => {
-                const card = document.createElement('div');
-                card.className = 'post-card';
-                card.innerHTML = \`
-                    <div class="post-img" style="background-image: url('\${post.img}')" onclick="trackInterest('\${post.type}')"></div>
-                    <div class="post-info">
-                        <div class="user-tag"><i class="fas fa-user-circle"></i> \${post.user}</div>
-                        <div style="color: #64748b;"><i class="far fa-heart"></i> <i class="far fa-comment"></i></div>
-                    </div>
-                \`;
-                timeline.appendChild(card);
-            });
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('webcam').style.display = 'none';
+            
+            const expanded = document.getElementById('expanded-content');
+            expanded.style.display = 'block';
+            expanded.style.backgroundImage = \`url('\${imgUrl}')\`;
+            
+            console.log("IA: Usuário interessado em " + category + ". Reordenando feed...");
         }
 
-        // 3. IA Aprendendo: Sempre que clicar em uma foto, a IA entende que você gosta daquele tema
-        function trackInterest(type) {
-            console.log("IA detectou interesse em:", type);
-            userInterests.unshift(type); // Coloca o interesse no topo
-            alert("IA ajustada: Agora traremos mais conteúdos de " + type + " para você!");
+        // 3. Lógica da Live
+        let liveStream = null;
+
+        async function startLive() {
+            const btn = document.getElementById('live-control');
+            
+            if (!liveStream) {
+                try {
+                    liveStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    document.getElementById('webcam').srcObject = liveStream;
+                    
+                    document.getElementById('placeholder').style.display = 'none';
+                    document.getElementById('expanded-content').style.display = 'none';
+                    document.getElementById('webcam').style.display = 'block';
+                    
+                    btn.innerHTML = '<i class="fas fa-stop"></i> ENCERRAR';
+                    btn.style.background = '#374151';
+                } catch (e) { alert("Câmera bloqueada!"); }
+            } else {
+                stopLive();
+            }
         }
 
-        generateTimeline();
+        function stopLive() {
+            if (liveStream) {
+                liveStream.getTracks().forEach(track => track.stop());
+                liveStream = null;
+                document.getElementById('webcam').style.display = 'none';
+                document.getElementById('placeholder').style.display = 'block';
+                const btn = document.getElementById('live-control');
+                btn.innerHTML = '<i class="fas fa-broadcast-tower"></i> INICIAR LIVE';
+                btn.style.background = '#ef4444';
+            }
+        }
     </script>
 </body>
 </html>
     `);
 });
 
-app.listen(3000, () => console.log('Ice-Cubo AI Timeline Online!'));
+app.listen(3000, () => console.log('App Ice-Cubo Thiago Soste rodando!'));
