@@ -1,7 +1,11 @@
 {
-  "name": "ice-app",
+  "name": "ice-live",
   "version": "1.0.0",
+  "description": "ICE Live Platform",
   "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "express": "^4.18.2"
   }
