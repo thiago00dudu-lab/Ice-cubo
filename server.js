@@ -11,7 +11,7 @@ let dangerUsers={};
 // ================= LAYOUT =================
 function layout(c){
 return `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ice-Cubo Ultra Futurista</title>
+<title>Ice-Cubo Futurista</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 body{margin:0;font-family:sans-serif;background:#0f172a;color:#fff;overflow:hidden}
@@ -54,15 +54,40 @@ const feed=document.getElementById("feed"),placeholder=document.getElementById("
 let stream=null,historico=[];
 
 // ================= FUNÇÕES FEED =================
-function render(){feed.innerHTML="";posts.forEach(p=>{let d=document.createElement("div");d.className="card";if(p.user==="@${usuarioLogado}"&&${ADM})d.classList.add("adm");let estrela=(p.user==="@${usuarioLogado}"&&${ADM})?" <i class='fas fa-star'></i>":"";let filhos=${JSON.stringify(usuarios[usuarioLogado]?.filhos||0)};d.innerHTML=\`<div class="thumb" style="background-image:url('\${p.img}')"></div><div class="info">\${p.user}\${estrela} \${filhos}</div>\`;d.ondblclick=()=>showVideo(p);feed.appendChild(d);});}
+function render(){
+feed.innerHTML="";
+posts.forEach(p=>{
+let d=document.createElement("div");
+d.className="card";
+if(p.user==="@${usuarioLogado}"&&${ADM}) d.classList.add("adm");
+let estrela=(p.user==="@${usuarioLogado}"&&${ADM})?" <i class='fas fa-star'></i>":"";
+let filhos=${JSON.stringify(usuarios[usuarioLogado]?.filhos||0)};
+d.innerHTML=\`<div class="thumb" style="background-image:url('\${p.img}')"></div>
+<div class="info">\${p.user}\${estrela} \${filhos}</div>\`;
+d.ondblclick=()=>showVideo(p);
+feed.appendChild(d);
+});
+}
 render();
 
-function showVideo(p){stop();placeholder.style.display="none";expand.style.display="block";expand.style.backgroundImage=\`url('\${p.img}')\`;expand.ondblclick=()=>nextVideo();}
-function nextVideo(){let naoVistos=posts.filter(p=>!historico.includes(p.img));if(naoVistos.length==0){historico=[];naoVistos=posts;}let prox=naoVistos[Math.floor(Math.random()*naoVistos.length)];historico.push(prox.img);showVideo(prox);}
+function showVideo(p){
+stop();
+placeholder.style.display="none";
+expand.style.display="block";
+expand.style.backgroundImage=\`url('\${p.img}')\`;
+expand.ondblclick=()=>nextVideo();
+}
+function nextVideo(){
+let naoVistos=posts.filter(p=>!historico.includes(p.img));
+if(naoVistos.length==0){historico=[];naoVistos=posts;}
+let prox=naoVistos[Math.floor(Math.random()*naoVistos.length)];
+historico.push(prox.img);
+showVideo(prox);
+}
 function swipeLeft(){nextVideo();}
 function home(){stop();expand.style.display="none";placeholder.style.display="block";}
 function toggleSearch(){searchBox.style.display=searchBox.style.display==="none"?"block":"none";}
-function buscar(valor){let f=posts.filter(p=>p.user.toLowerCase().includes(valor.toLowerCase()));feed.innerHTML="";f.forEach(p=>{let d=document.createElement("div");d.className="card";if(p.user==="@${usuarioLogado}"&&${ADM})d.classList.add("adm");let estrela=(p.user==="@${usuarioLogado}"&&${ADM})?" <i class='fas fa-star'></i>":"";let filhos=${JSON.stringify(usuarios[usuarioLogado]?.filhos||0)};d.innerHTML=\`<div class="thumb" style="background-image:url('\${p.img}')"></div><div class="info">\${p.user}\${estrela} \${filhos}</div>\`;d.ondblclick=()=>showVideo(p);feed.appendChild(d);});}
+function buscar(valor){let f=posts.filter(p=>p.user.toLowerCase().includes(valor.toLowerCase()));feed.innerHTML="";f.forEach(p=>{let d=document.createElement("div");d.className="card";if(p.user==="@${usuarioLogado}"&&${ADM}) d.classList.add("adm");let estrela=(p.user==="@${usuarioLogado}"&&${ADM})?" <i class='fas fa-star'></i>":"";let filhos=${JSON.stringify(usuarios[usuarioLogado]?.filhos||0)};d.innerHTML=\`<div class="thumb" style="background-image:url('\${p.img}')"></div><div class="info">\${p.user}\${estrela} \${filhos}</div>\`;d.ondblclick=()=>showVideo(p);feed.appendChild(d);});}
 function novoPost(){posts.unshift({img:"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61",user:"@${usuarioLogado}"});render();}
 function perfil(){alert("Perfil de ${usuarioLogado} ${ADM?"⭐":""}\\nFilhos indicados: "+(usuarios["${usuarioLogado}"].filhos||0));}
 
@@ -76,6 +101,14 @@ let objs=[];for(let i=0;i<50;i++)objs.push({x:Math.random()*canvas.width,y:Math.
 function anim(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let o of objs){ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,2*Math.PI);ctx.fillStyle="rgba(173,216,230,0.6)";ctx.fill();o.y-=o.s;if(o.y<-10)o.y=canvas.height}requestAnimationFrame(anim);}anim();
 window.addEventListener("resize",()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
 
+// ================= SWIPE TOUCH =================
+let startX=0;
+expand.addEventListener("touchstart", e=>{startX=e.touches[0].clientX;});
+expand.addEventListener("touchend", e=>{
+let endX=e.changedTouches[0].clientX;
+if(startX-endX>50 || endX-startX>50) swipeLeft();
+});
+
 // ================= BOTÃO PERIGO =================
 let danger=false;
 function ativarDanger(){if(!danger){danger=true;document.body.style.border="5px solid red";if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{socket.emit("danger-activated",{user:"${usuarioLogado}",lat:p.coords.latitude,lng:p.coords.longitude});});}}else{danger=false;document.body.style.border="none";socket.emit("danger-deactivated",{user:"${usuarioLogado}"});}}
@@ -86,12 +119,22 @@ document.addEventListener("keydown",e=>{if(e.key==="ArrowLeft")swipeLeft();});
 
 // ================= LOGIN/CADASTRO =================
 app.get('/',(req,res)=>{if(usuarioLogado)return res.redirect('/app');res.send(layout(`<div class="center"><h1>ICE CUBO 🚀</h1><form method="POST" action="/login"><input name="user" placeholder="Usuário" required><input name="pass" type="password" placeholder="Senha" required><input name="ref" placeholder="ID de referência (opcional)"><button type="submit">Entrar</button></form><p>Não tem conta? <a href="/cadastro">Cadastrar</a></p></div>`));});
-app.post('/login',(req,res)=>{usuarioLogado=req.body.user;usuarios[usuarioLogado]={pass:req.body.pass,filhos:usuarios[usuarioLogado]?.filhos||0};if(req.body.ref && usuarios[req.body.ref]) usuarios[req.body.ref].filhos++; res.redirect('/app');});
+app.post('/login',(req,res)=>{
+usuarioLogado=req.body.user;
+usuarios[usuarioLogado]={pass:req.body.pass,filhos:usuarios[usuarioLogado]?.filhos||0};
+if(req.body.ref && usuarios[req.body.ref]) usuarios[req.body.ref].filhos++;
+res.redirect('/app');
+});
 app.get('/cadastro',(req,res)=>{res.send(layout(`<div class="center"><h1>Cadastrar</h1><form method="POST" action="/cadastro"><input name="user" placeholder="Usuário" required><input name="pass" type="password" placeholder="Senha" required><input name="ref" placeholder="ID de referência (opcional)"><button type="submit">Criar Conta</button></form><p><a href="/">Voltar</a></p></div>`));});
-app.post('/cadastro',(req,res)=>{usuarioLogado=req.body.user;usuarios[usuarioLogado]={pass:req.body.pass,filhos:0};if(req.body.ref && usuarios[req.body.ref]) usuarios[req.body.ref].filhos++; res.redirect('/app');});
+app.post('/cadastro',(req,res)=>{
+usuarioLogado=req.body.user;
+usuarios[usuarioLogado]={pass:req.body.pass,filhos:0};
+if(req.body.ref && usuarios[req.body.ref]) usuarios[req.body.ref].filhos++;
+res.redirect('/app');
+});
 
 // ================= APP =================
-app.get('/app',(req,res)=>{if(!usuarioLogado)return res.redirect('/');res.send(layout(`<div class="topbar"><h2>${usuarioLogado} ${ADM?"<i class='fas fa-star'></i>":""} ${usuarios[usuarioLogado].filhos||0}</h2></div><div class="stage"><div id="placeholder">Bem vindo ${usuarioLogado} ${ADM?"<i class='fas fa-star'></i>":""}</div><div class="expand" id="expand"></div><video id="cam" autoplay playsinline></video><button class="livebtn" onclick="live()" id="liveBtn">LIVE</button><div class="searchBox" id="searchBox"><input type="text" placeholder="Buscar..." oninput="buscar(this.value)"></div></div><div class="feed" id="feed"></div><div class="nav"><i class="fas fa-home" onclick="home()"></i><i class="fas fa-search" onclick="toggleSearch()"></i><i class="fas fa-plus-circle" onclick="novoPost()"></i><i class="fas fa-video" onclick="live()"></i><i class="fas fa-user" onclick="perfil()"></i><i class="fas fa-exclamation-triangle" onclick="ativarDanger()" style="color:red"></i></div>`));});
+app.get('/app',(req,res)=>{if(!usuarioLogado)return res.redirect('/');res.send(layout(`<div class="topbar"><h2>${usuarioLogado} ${ADM?"<i class='fas fa-star'></i>":""} <span id="filhosCount">${usuarios[usuarioLogado].filhos||0}</span></h2></div><div class="stage"><div id="placeholder">Bem vindo ${usuarioLogado} ${ADM?"<i class='fas fa-star'></i>":""}</div><div class="expand" id="expand"></div><video id="cam" autoplay playsinline></video><button class="livebtn" onclick="live()" id="liveBtn">LIVE</button><div class="searchBox" id="searchBox"><input type="text" placeholder="Buscar..." oninput="buscar(this.value)"></div></div><div class="feed" id="feed"></div><div class="nav"><i class="fas fa-home" onclick="home()"></i><i class="fas fa-search" onclick="toggleSearch()"></i><i class="fas fa-plus-circle" onclick="novoPost()"></i><i class="fas fa-video" onclick="live()"></i><i class="fas fa-user" onclick="perfil()"></i><i class="fas fa-exclamation-triangle" onclick="ativarDanger()" style="color:red"></i></div>`));});
 
 // ================= SOCKET.IO =================
 io.on("connection",socket=>{
@@ -100,4 +143,4 @@ io.on("connection",socket=>{
 });
 
 // ================= SERVER =================
-http.listen(3000,()=>console.log("Ice Ultra Futurista rodando na 3000"));
+http.listen(3000,()=>console.log("Ice Futurista rodando na 3000"));
