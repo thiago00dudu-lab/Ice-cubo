@@ -1,4 +1,4 @@
-[20/02, 10:23] Jessica Alves: require("dotenv").config();
+
 const express = require("express");
 const Database = require("better-sqlite3");
 const axios = require("axios");
@@ -182,4 +182,4 @@ app.post('/pix', async (req, res) => {
 });
 
 app.listen(process.env.PORT || 3000, () => console.log("ICE PRONTO"));
-[20/02, 10:23] Jessica Alves: Servidor
+
