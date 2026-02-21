@@ -2,48 +2,48 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Interface HTML com Design "Cubo de Gelo"
-const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { background: #e0f7fa; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial; }
-        .ice-card { 
-            background: rgba(255, 255, 255, 0.4); 
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255, 255, 255, 0.6); 
-            padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;
-        }
-        button { 
-            background: #00bcd4; color: white; border: none; padding: 12px 25px; 
-            border-radius: 8px; cursor: pointer; margin: 10px; font-weight: bold; transition: 0.3s;
-        }
-        button:disabled { background: #b2ebf2; cursor: not-allowed; }
-    </style>
-</head>
-<body>
-    <div class="ice-card">
-        <h2 style="color: #00838f;">Cubo de Gelo 🧊</h2>
-        <button onclick="login()">Fazer Login</button>
-        <hr>
-        <button class="menu-btn" onclick="acessar()" disabled>Entrar na Interface</button>
-    </div>
+app.get('/', (req, res) => {
+    res.send(`
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cubo de Gelo 🧊</title>
+        <style>
+            body { background: #e0f7fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+            .ice-card { background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(15px); padding: 40px; border-radius: 20px; border: 1px solid #fff; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.1); width: 300px; }
+            h2 { color: #007c91; margin-bottom: 20px; }
+            button { background: #00acc1; color: #fff; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
+            button:active { transform: scale(0.95); }
+            #status { margin-top: 20px; color: #005662; font-size: 14px; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class="ice-card">
+            <h2>Cubo de Gelo 🧊</h2>
+            <button onclick="ativarMidia()">LOGIN E ATIVAR VENDAS</button>
+            <div id="status">Aguardando ativação...</div>
+        </div>
+        <script>
+            async function ativarMidia() {
+                const statusDiv = document.getElementById('status');
+                statusDiv.innerHTML = "Solicitando permissões...";
+                try {
+                    // Solicita Câmera e Áudio para evitar travamentos
+                    await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    statusDiv.innerHTML = "✅ CONECTADO!<br>Câmera e Áudio Ativos.";
+                    statusDiv.style.color = "#00a152";
+                    alert("Acesso liberado! Bem-vindo à interface de vendas.");
+                } catch (e) {
+                    statusDiv.innerHTML = "❌ ERRO: Permissão negada.";
+                    statusDiv.style.color = "#d32f2f";
+                    alert("Por favor, autorize o uso da câmera e áudio nas configurações do seu navegador.");
+                }
+            }
+        </script>
+    </body>
+    </html>`);
+});
 
-    <script>
-        let logado = false;
-        function login() {
-            logado = true;
-            document.querySelector('.menu-btn').disabled = false;
-            alert("Login OK! Acesso liberado.");
-        }
-        function acessar() {
-            if(logado) alert("Bem-vindo à interface!");
-        }
-    </script>
-</body>
-</html>
-`;
-
-app.get('/', (req, res) => res.send(htmlContent));
-app.listen(port, () => console.log(`Servidor rodando na porta ${port}`));
+app.listen(port, () => console.log('Servidor Online na porta ' + port));
