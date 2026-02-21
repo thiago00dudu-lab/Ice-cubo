@@ -1,10 +1,31 @@
 const express = require('express');
 const app = express();
-const path = require('path');
 
 app.use(express.json());
 
-// ROTA PRINCIPAL COM O DESIGN "ICE CUBO"
+// --- ÁREA DA API (MODO DE ESPERA / NULO) ---
+app.post('/gerar-pix', async (req, res) => {
+    try {
+        console.log("Solicitação de PIX recebida, mas API está em modo de espera.");
+        
+        // Simulação de resposta da API Asaas (NULO)
+        // Quando quiser ativar, você substituirá isso pela chamada real do axios
+        const fakePixResponse = {
+            status: "AGUARDANDO_PAGAMENTO",
+            encodedImage: "iVBORw0KGgoAAAANSUhEUgAA...", // Exemplo de QR Code em branco
+            payload: "://pix.exemplo.com",
+            message: "Sistema em manutenção (Chave de API não configurada)."
+        };
+
+        // Retornamos 200 (Sucesso) para o frontend não dar erro 500
+        res.status(200).json(fakePixResponse);
+        
+    } catch (error) {
+        res.status(500).json({ error: "Erro interno no Ice-Cubo" });
+    }
+});
+
+// --- INTERFACE ICE CUBO (HTML/CSS/JS) ---
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -16,122 +37,82 @@ app.get('/', (req, res) => {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
         <style>
             body {
-                margin: 0;
-                padding: 0;
-                font-family: 'Segoe UI', sans-serif;
-                background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                overflow: hidden;
+                margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif;
+                background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+                display: flex; justify-content: center; align-items: center; min-height: 100vh;
             }
-
             /* Efeito Cubo de Gelo (Glassmorphism) */
-            .ice-container {
-                background: rgba(255, 255, 255, 0.2);
+            .ice-box {
+                background: rgba(255, 255, 255, 0.3);
                 backdrop-filter: blur(15px);
                 -webkit-backdrop-filter: blur(15px);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 20px;
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-                width: 90%;
-                max-width: 400px;
-                padding: 20px;
-                text-align: center;
-                color: #2c3e50;
-            }
-
-            .live-preview {
-                width: 100%;
-                height: 250px;
-                background: rgba(0, 0, 0, 0.1);
-                border-radius: 15px;
-                margin-bottom: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
                 border: 2px solid rgba(255, 255, 255, 0.5);
-                overflow: hidden;
+                border-radius: 30px;
+                padding: 25px; width: 85%; max-width: 380px;
+                box-shadow: 0 10px 40px rgba(0, 119, 182, 0.1);
+                text-align: center; color: #0369a1;
             }
-
+            .video-stream {
+                width: 100%; height: 250px; background: #000;
+                border-radius: 20px; margin: 15px 0; overflow: hidden;
+                border: 4px solid rgba(255, 255, 255, 0.7);
+            }
             video { width: 100%; height: 100%; object-fit: cover; }
-
-            .controls {
-                display: flex;
-                justify-content: space-around;
-                margin-top: 20px;
+            .btn-container { display: flex; gap: 10px; margin-top: 20px; }
+            .action-btn {
+                background: rgba(255, 255, 255, 0.6); border: none;
+                padding: 15px; border-radius: 15px; cursor: pointer;
+                flex: 1; transition: 0.3s; color: #0369a1; font-weight: bold;
+                font-size: 14px;
             }
-
-            .btn {
-                background: rgba(255, 255, 255, 0.4);
-                border: none;
-                padding: 12px 20px;
-                border-radius: 10px;
-                cursor: pointer;
-                transition: 0.3s;
-                color: #0077b6;
-                font-weight: bold;
-            }
-
-            .btn:hover { background: rgba(255, 255, 255, 0.6); transform: scale(1.05); }
-            .btn.liked { color: #e63946; }
-
-            .ice-title { font-size: 24px; margin-bottom: 10px; color: #0077b6; text-shadow: 1px 1px 2px white; }
+            .action-btn:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-2px); }
+            .action-btn i { font-size: 18px; display: block; margin-bottom: 5px; }
+            .liked { color: #ef4444 !important; background: white !important; }
         </style>
     </head>
     <body>
-        <div class="ice-container">
-            <h1 class="ice-title"><i class="fas fa-cube"></i> Ice-Cubo</h1>
+        <div class="ice-box">
+            <h2 style="margin:0; font-weight: 800;"><i class="fas fa-snowflake"></i> ICE-CUBO</h2>
+            <p style="font-size: 12px; opacity: 0.8;">AO VIVO</p>
             
-            <div class="live-preview">
-                <video id="video" autoplay playsinline muted></video>
+            <div class="video-stream">
+                <video id="liveCam" autoplay playsinline></video>
             </div>
 
-            <div class="controls">
-                <button class="btn" id="btnLike" onclick="curtir()">
-                    <i class="fas fa-heart"></i> <span id="likeCount">0</span>
+            <div class="btn-container">
+                <button class="action-btn" id="likeBtn" onclick="toggleLike()">
+                    <i class="fas fa-heart"></i> <span id="likeText">0</span>
                 </button>
-                
-                <button class="btn" onclick="compartilhar()">
-                    <i class="fas fa-share-nodes"></i> Compartilhar
+                <button class="action-btn" onclick="shareLive()">
+                    <i class="fas fa-paper-plane"></i> Compartilhar
+                </button>
+                <button class="action-btn" onclick="alert('PIX em manutenção!')">
+                    <i class="fas fa-qrcode"></i> Apoiar
                 </button>
             </div>
         </div>
 
         <script>
-            // Lógica da Câmera
-            async function startCamera() {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    document.getElementById('video').srcObject = stream;
-                } catch (err) {
-                    console.error("Erro ao acessar câmera: ", err);
-                }
+            // Ativar Câmera
+            navigator.mediaDevices.getUserMedia({video: true})
+                .then(s => document.getElementById('liveCam').srcObject = s);
+
+            // Curtir funcional
+            let count = 0;
+            function toggleLike() {
+                count++;
+                document.getElementById('likeText').innerText = count;
+                document.getElementById('likeBtn').classList.toggle('liked');
             }
 
-            // Botão Curtir
-            let likes = 0;
-            function curtir() {
-                likes++;
-                document.getElementById('likeCount').innerText = likes;
-                document.getElementById('btnLike').classList.toggle('liked');
-            }
-
-            // Botão Compartilhar Funcional
-            function compartilhar() {
-                if (navigator.share) {
-                    navigator.share({
-                        title: 'Ice-Cubo Live',
-                        text: 'Vem ver minha live no cubo de gelo!',
-                        url: window.location.href
-                    }).catch(console.error);
+            // Compartilhar funcional
+            function shareLive() {
+                if(navigator.share) {
+                    navigator.share({ title: 'Minha Live no Ice-Cubo', url: location.href });
                 } else {
-                    alert("Link copiado: " + window.location.href);
+                    alert("Link copiado para a área de transferência!");
                 }
             }
-
-            startCamera();
         </script>
     </body>
     </html>
@@ -139,4 +120,4 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('Servidor rodando na porta ' + PORT));
+app.listen(PORT, () => console.log('Servidor Ice-Cubo rodando!'));
