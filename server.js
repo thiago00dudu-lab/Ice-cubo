@@ -1,4 +1,4 @@
-[20/02, 10:23] Jessica Alves: require("dotenv").config();
+
 const express = require("express");
 const Database = require("better-sqlite3");
 const axios = require("axios");
