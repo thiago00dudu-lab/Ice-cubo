@@ -1,4 +1,4 @@
-
+[20/02, 10:23] Jessica Alves: require("dotenv").config();
 const express = require("express");
 const Database = require("better-sqlite3");
 const axios = require("axios");
@@ -105,6 +105,84 @@ const html = `
         let stream = null;
 
         async function logar() {
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({u: document.getElementById('u').value, p: document.getElementById('p').value})
+            });
+            if(res.ok) {
+                const data = await res.json();
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('perfil').innerHTML = "<b>" + data.user.toUpperCase() + "</b> | <span class='blue-coin'>" + data.blues.toFixed(2) + " BLUES</span>";
+                if(data.role === 'master') {
+                    document.getElementById('perfil').classList.add('gold-star');
+                    document.getElementById('adm').style.display = 'block';
+                }
+            } else { alert("Erro de Login!"); }
+        }
+
+        async function startLive() {
+            const video = document.getElementById('vLocal');
+            try {
+                // Captura vídeo e áudio juntos
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                video.srcObject = stream;
+                document.getElementById('bLive').innerText = "LIVE ATIVA";
+            } catch (err) { alert("Permita Câmera e Microfone!"); }
+        }
+
+        async function buyPix() {
+            const v = document.getElementById('val').value;
+            if(!v) return alert("Digite o valor!");
+            document.getElementById('pix-res').innerHTML = "<i>Gerando PIX no Asaas...</i>";
+            
+            const res = await fetch('/pix', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({valor: v})
+            });
+            const data = await res.json();
+            if(data.encodedImage) {
+                document.getElementById('pix-res').innerHTML = \`
+                    <p>Escaneie o PIX:</p>
+                    <img src="data:image/png;base64,\${data.encodedImage}" width="200">
+                    <br><small>Copia e Cola: \${data.payload}</small>
+                \`;
+            } else { alert("Erro na API. Confira sua chave no Render."); }
+        }
+    </script>
+</body>
+</html>
+`;
+
+app.get('/', (req, res) => res.send(html));
+
+app.post('/login', (req, res) => {
+    const { u, p } = req.body;
+    const user = db.prepare("SELECT * FROM users WHERE username = ?").get(u);
+    if (user && bcrypt.compareSync(p, user.password)) {
+        res.json({ user: user.username, role: user.role, blues: user.blues });
+    } else { res.sendStatus(401); }
+});
+
+app.post('/pix', async (req, res) => {
+    try {
+        const pay = await axios.post(\`\${ASAAS_URL}/payments\`, {
+            billingType: "PIX", value: req.body.valor,
+            dueDate: new Date().toISOString().split('T')[0],
+            customer: "cus_000005933924" // ID de teste, mude para o real
+        }, { headers: { access_token: ASAAS_KEY } });
+        
+        const qr = await axios.get(\`\${ASAAS_URL}/payments/\${pay.data.id}/pixQrCode\`, {
+            headers: { access_token: ASAAS_KEY }
+        });
+        res.json(qr.data);
+    } catch (e) { res.status(500).json({e: e.message}); }
+});
+
+app.listen(process.env.PORT || 3000, () => console.log("ICE PRONTO"));
+[20/02, 10:23] Jessica Alves: Servidor        async function logar() {
             const res = await fetch('/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
