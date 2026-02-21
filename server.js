@@ -9,46 +9,37 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable-no">
     <title>Ice-Cubo Premium - Thiago Soste</title>
+    <!-- Vínculo Tecnológico: Font Awesome para os Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f9ff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: 0.5s; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: #f0f9ff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 1. Palco Principal */
         .main-stage { height: 38vh; background: #000; position: relative; display: flex; align-items: center; justify-content: center; color: white; border-radius: 0 0 40px 40px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        #webcam, #video-preview, #expanded-content { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
+        #webcam, #video-preview, #expanded-content { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; background-size: cover; background-position: center; }
         .stage-placeholder { text-align: center; opacity: 0.7; z-index: 1; font-weight: bold; }
 
-        /* Barra de Alerta SOS */
         #safety-alert { display: none; background: #ef4444; color: white; padding: 12px; text-align: center; font-weight: 900; z-index: 100; font-size: 14px; text-transform: uppercase; }
 
-        /* 2. Feed */
-        .feed-section { flex: 1; overflow-y: auto; padding: 15px; scrollbar-width: none; }
+        .feed-section { flex: 1; overflow-y: auto; padding: 15px; }
         .feed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 30px; }
-        .feed-item { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; transition: 0.3s; border: 1px solid #e0f2fe; }
+        .feed-item { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; border: 1px solid #e0f2fe; }
         .thumb { width: 100%; height: 120px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; }
-        .item-info { padding: 10px; font-size: 12px; color: #1e3a8a; font-weight: 900; text-align: center; background: #fff; }
+        .item-info { padding: 10px; font-size: 12px; color: #1e3a8a; font-weight: 900; text-align: center; }
 
-        /* 3. Rodapé Master (Botões Grandes e Claros) */
-        footer { height: 100px; background: #ffffff; display: flex; justify-content: space-around; align-items: center; border-top: 3px solid #1e3a8a; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -5px 20px rgba(0,0,0,0.05); }
-        
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; background: none; cursor: pointer; color: #1e3a8a; transition: 0.2s; padding: 5px; }
-        .nav-btn i { font-size: 30px; margin-bottom: 6px; }
-        .nav-btn span { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+        footer { height: 100px; background: #ffffff; display: flex; justify-content: space-around; align-items: center; border-top: 3px solid #1e3a8a; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: none; background: none; color: #1e3a8a; }
+        .nav-btn i { font-size: 24px; margin-bottom: 5px; }
+        .nav-btn span { font-size: 9px; font-weight: 900; }
         
         .btn-danger.active { color: #ef4444; animation: pulse 1s infinite; }
-        .btn-trade { color: #059669; } /* Verde para Trocas */
-        
-        @keyframes pulse { 0% {transform: scale(1)} 50% {transform: scale(1.15)} 100% {transform: scale(1)} }
-        #file-input { display: none; }
-
-        /* Estilo da Seção de Trocas */
         .trade-active .feed-item { border: 2px solid #059669; }
-        .trade-active h4 { color: #059669 !important; }
+        @keyframes pulse { 0% {transform: scale(1)} 50% {transform: scale(1.1)} 100% {transform: scale(1)} }
+        #file-input { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="safety-alert">🚨 MODO PERIGO ATIVADO: <span id="location-text">Rua Detectada...</span></div>
+    <div id="safety-alert">🚨 MODO PERIGO ATIVADO: <span id="location-text">Buscando GPS...</span></div>
 
     <div class="main-stage" id="stage">
         <div class="stage-placeholder" id="placeholder">
@@ -66,34 +57,29 @@ app.get('/', (req, res) => {
     </div>
 
     <footer>
-        <!-- Botão Galeria -->
         <label for="file-input" class="nav-btn">
             <i class="fas fa-images"></i>
             <span>ÁLBUM</span>
         </label>
         <input type="file" id="file-input" accept="image/*,video/*" onchange="handleUpload(event)">
 
-        <!-- Botão Live -->
         <button class="nav-btn" onclick="toggleLive()" id="live-btn">
             <i class="fas fa-video"></i>
             <span>LIVE</span>
         </button>
 
-        <!-- Botão Trocas (NOVO!) -->
-        <button class="nav-btn btn-trade" onclick="toggleTrade()" id="trade-btn">
+        <button class="nav-btn" onclick="toggleTrade()" id="trade-btn">
             <i class="fas fa-handshake"></i>
             <span>TROCAS</span>
         </button>
 
-        <!-- Botão SOS -->
         <button class="nav-btn btn-danger" onclick="toggleDanger()" id="sos-btn">
             <i class="fas fa-skull-crossbones"></i>
             <span>PERIGO</span>
         </button>
 
-        <!-- Perfil Master -->
         <div class="nav-btn">
-            <i class="fas fa-star" style="color: #fbbf24; font-size: 32px;"></i>
+            <i class="fas fa-star" style="color: #fbbf24;"></i>
             <span>THIAGO</span>
         </div>
     </footer>
@@ -104,32 +90,21 @@ app.get('/', (req, res) => {
         let isEmergency = false;
         let isTradeMode = false;
 
-        // Dados Iniciais
-        const posts =;
+        // Dados de Exemplo para não iniciar vazio
+        const posts = [
+            { user: "@Comunidade", url: "https://picsum.photos", type: 'image' },
+            { user: "@Novidades", url: "https://picsum.photos", type: 'image' }
+        ];
 
-        // Inicializar Feed
         posts.forEach(p => addPost(p));
 
-        // Módulo de Trocas: "O que tem pra mim"
         function toggleTrade() {
             isTradeMode = !isTradeMode;
             const title = document.getElementById('feed-title');
-            const area = document.getElementById('content-area');
-            const btn = document.getElementById('trade-btn');
-
-            if (isTradeMode) {
-                area.classList.add('trade-active');
-                title.innerText = "🤝 O QUE TEM PRA MIM (SÓ TROCAS)";
-                btn.style.transform = "scale(1.2)";
-                console.log("Entrando no Grupo de Trocas Operacional...");
-            } else {
-                area.classList.remove('trade-active');
-                title.innerText = "✨ Sugestões para você";
-                btn.style.transform = "scale(1)";
-            }
+            document.getElementById('content-area').classList.toggle('trade-active');
+            title.innerText = isTradeMode ? "🤝 O QUE TEM PRA MIM (TROCAS)" : "✨ Sugestões para você";
         }
 
-        // Função de Perigo
         function toggleDanger() {
             isEmergency = !isEmergency;
             const alertBar = document.getElementById('safety-alert');
@@ -141,7 +116,7 @@ app.get('/', (req, res) => {
                 btn.classList.add('active');
                 if(navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(p => {
-                        document.getElementById('location-text').innerText = "Rua Ativa - Localização Liberada!";
+                        document.getElementById('location-text').innerText = "Rua Identificada - Proteção Ativa";
                     });
                 }
             } else {
@@ -151,7 +126,6 @@ app.get('/', (req, res) => {
             }
         }
 
-        // Upload Galeria
         function handleUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -195,7 +169,7 @@ app.get('/', (req, res) => {
                     document.getElementById('webcam').srcObject = liveStream;
                     document.getElementById('webcam').style.display = 'block';
                     document.getElementById('placeholder').style.display = 'none';
-                } catch (e) { alert("Acesso negado"); }
+                } catch (e) { alert("Acesso à câmera negado"); }
             } else { stopLive(); }
         }
 
@@ -213,4 +187,5 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.listen(3000, () => console.log('Ice-Cubo Safe Master Ativado!'));
+const PORT = 3000;
+app.listen(PORT, () => console.log(\`Servidor Mobile Ativo em: http://localhost:\${PORT}\`));
