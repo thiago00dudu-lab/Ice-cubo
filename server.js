@@ -2,130 +2,96 @@ const express = require('express');
 const app = express();
 
 app.get('/', (req, res) => {
-    res.send(`
-<!DOCTYPE html>
+res.send(`<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable-no">
-    <title>Ice-Cubo Safe - Thiago Soste</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
-    <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; background: #f0f9ff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .main-stage { height: 38vh; background: #000; position: relative; display: flex; align-items: center; justify-content: center; color: white; border-radius: 0 0 40px 40px; overflow: hidden; }
-        #webcam { width: 100%; height: 100%; object-fit: cover; display: none; }
-        
-        /* Efeito de Perigo / Pânico */
-        .panic-mode { animation: flash-red 0.5s infinite; border: 5px solid red !important; }
-        @keyframes flash-red { 0% { background: #fff; } 50% { background: #ff0000; } 100% { background: #fff; } }
-        #safety-bar { display: none; background: red; color: white; text-align: center; padding: 10px; font-weight: 900; z-index: 100; }
-
-        .feed-section { flex: 1; overflow-y: auto; padding: 15px; }
-        .feed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .feed-item { background: white; border-radius: 20px; overflow: hidden; height: 150px; position: relative; border: 1px solid #e0f2fe; }
-
-        footer { height: 100px; background: #fff; display: flex; justify-content: space-around; align-items: center; border-top: 3px solid #1e3a8a; }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; border: none; background: none; color: #1e3a8a; cursor: pointer; }
-        .nav-btn i { font-size: 28px; }
-        .nav-btn span { font-size: 9px; font-weight: 900; margin-top: 5px; }
-        
-        .btn-danger { color: #ef4444; }
-        .star-master { color: #fbbf24; font-size: 18px; }
-        #file-input { display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ice-Cubo Premium</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body{margin:0;font-family:sans-serif;background:#f0f9ff;display:flex;flex-direction:column;height:100vh}
+.stage{height:45vh;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;position:relative;border-radius:0 0 30px 30px;overflow:hidden}
+video,.expand{position:absolute;width:100%;height:100%;object-fit:cover;display:none}
+.feed{flex:1;overflow:auto;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 3px 8px rgba(0,0,0,.1);cursor:pointer}
+.thumb{height:100px;background-size:cover;background-position:center}
+.info{padding:5px;font-size:12px;font-weight:bold;color:#1e3a8a}
+.nav{height:60px;background:#fff;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #ddd}
+.nav i{font-size:22px;color:#1e3a8a}
+.livebtn{position:absolute;bottom:15px;right:15px;background:#ef4444;color:#fff;border:none;padding:8px 15px;border-radius:20px;cursor:pointer}
+</style>
 </head>
 <body>
 
-    <div id="safety-bar">🚨 EM PERIGO: <span id="loc">Rastreando...</span></div>
+<div class="stage" id="stage">
+<div id="placeholder">Clique num post ou inicie live</div>
+<div class="expand" id="expand"></div>
+<video id="cam" autoplay playsinline></video>
+<button class="livebtn" onclick="live()" id="liveBtn">LIVE</button>
+</div>
 
-    <div class="main-stage">
-        <div id="placeholder">
-            <i class="fas fa-cube fa-3x" style="color: #3b82f6;"></i>
-            <p>ICE-CUBO SAFE</p>
-        </div>
-        <video id="webcam" autoplay playsinline></video>
-    </div>
+<div class="feed" id="feed"></div>
 
-    <div class="feed-section">
-        <h4 style="color: #1e3a8a;">✨ Sugestões</h4>
-        <div class="feed-grid" id="feed"></div>
-    </div>
+<div class="nav">
+<i class="fas fa-home"></i>
+<i class="fas fa-search"></i>
+<i class="fas fa-plus-circle"></i>
+<i class="fas fa-video"></i>
+<i class="fas fa-user"></i>
+</div>
 
-    <footer>
-        <label for="file-input" class="nav-btn">
-            <i class="fas fa-images"></i><span>ÁLBUM</span>
-        </label>
-        <input type="file" id="file-input" accept="image/*,video/*" onchange="upload(event)">
+<script>
+const posts=[
+{img:"https://images.unsplash.com/photo-1503376780353-7e6692767b70"},
+{img:"https://images.unsplash.com/photo-1518770660439-4636190af475"},
+{img:"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"},
+{img:"https://images.unsplash.com/photo-1492724441997-5dc865305da7"}
+];
 
-        <button class="nav-btn" onclick="openCam()">
-            <i class="fas fa-video"></i><span>LIVE</span>
-        </button>
-
-        <button class="nav-btn btn-danger" onclick="panic()">
-            <i class="fas fa-skull-crossbones"></i><span>PERIGO</span>
-        </button>
-
-        <div class="nav-btn" id="my-profile">
-            <i class="fas fa-star star-master"></i>
-            <span>THIAGO</span>
-        </div>
-    </footer>
-
-    <script>
-        let stream = null;
-        let isPanic = false;
-
-        // 1. Câmera e Áudio (Pede autorização)
-        async function openCam() {
-            try {
-                if(!stream) {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    const vid = document.getElementById('webcam');
-                    vid.srcObject = stream;
-                    vid.style.display = 'block';
-                    document.getElementById('placeholder').style.display = 'none';
-                } else {
-                    stream.getTracks().forEach(t => t.stop());
-                    stream = null;
-                    document.getElementById('webcam').style.display = 'none';
-                    document.getElementById('placeholder').style.display = 'block';
-                }
-            } catch (e) { alert("Permita câmera/áudio!"); }
-        }
-
-        // 2. Upload do Álbum
-        function upload(e) {
-            const file = e.target.files[0];
-            const url = URL.createObjectURL(file);
-            const div = document.createElement('div');
-            div.className = 'feed-item';
-            div.style.backgroundImage = \`url('\${url}')\`;
-            div.style.backgroundSize = 'cover';
-            document.getElementById('feed').prepend(div);
-        }
-
-        // 3. Botão de Pânico (Piscar Vermelho + GPS)
-        function panic() {
-            isPanic = !isPanic;
-            const profile = document.getElementById('my-profile');
-            const bar = document.getElementById('safety-bar');
-            
-            if(isPanic) {
-                profile.classList.add('panic-mode');
-                bar.style.display = 'block';
-                // Ativa GPS em tempo real
-                navigator.geolocation.watchPosition(p => {
-                    document.getElementById('loc').innerText = \`Lat: \${p.coords.latitude.toFixed(4)} | Lon: \${p.coords.longitude.toFixed(4)}\`;
-                });
-            } else {
-                profile.classList.remove('panic-mode');
-                bar.style.display = 'none';
-            }
-        }
-    </script>
-</body>
-</html>
-    `);
+const feed=document.getElementById("feed");
+posts.forEach(p=>{
+let d=document.createElement("div");
+d.className="card";
+d.innerHTML=\`<div class="thumb" style="background-image:url('\${p.img}')"></div><div class="info">@user</div>\`;
+d.onclick=()=>show(p.img);
+feed.appendChild(d);
 });
 
-app.listen(3000, () => console.log('Ice-Cubo Safe Master Ativo!'));
+function show(img){
+stop();
+placeholder.style.display="none";
+cam.style.display="none";
+expand.style.display="block";
+expand.style.backgroundImage=\`url('\${img}')\`;
+}
+
+let stream=null;
+async function live(){
+if(!stream){
+try{
+stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+cam.srcObject=stream;
+placeholder.style.display="none";
+expand.style.display="none";
+cam.style.display="block";
+liveBtn.innerText="STOP";
+}catch{alert("Permita câmera");}
+}else stop();
+}
+
+function stop(){
+if(stream){
+stream.getTracks().forEach(t=>t.stop());
+stream=null;
+cam.style.display="none";
+placeholder.style.display="block";
+liveBtn.innerText="LIVE";
+}
+}
+</script>
+
+</body></html>`);
+});
+
+app.listen(3000,()=>console.log("Ice rodando"));
