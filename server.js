@@ -1,83 +1,49 @@
-const express = require("express");
+const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-let usuarios = [];
-
-// HOME
-app.get("/", (req, res) => {
-  res.send(`
-    <h1>ICE LIVE</h1>
-    <a href="/login">Entrar</a><br><br>
-    <a href="/cadastro">Cadastrar</a>
-  `);
-});
-
-// CADASTRO
-app.get("/cadastro", (req, res) => {
-  res.send(`
-    <h2>Cadastrar</h2>
-    <form method="POST" action="/cadastro">
-      <input name="email" placeholder="Email" required><br><br>
-      <input name="senha" type="password" placeholder="Senha" required><br><br>
-      <button type="submit">Criar Conta</button>
-    </form>
-  `);
-});
-
-app.post("/cadastro", (req, res) => {
-  const { email, senha } = req.body;
-  usuarios.push({ email, senha });
-  res.redirect("/login");
-});
-
-// LOGIN
-app.get("/login", (req, res) => {
-  res.send(`
-    <h2>Login</h2>
-    <form method="POST" action="/login">
-      <input name="email" placeholder="Email" required><br><br>
-      <input name="senha" type="password" placeholder="Senha" required><br><br>
-      <button type="submit">Entrar</button>
-    </form>
-  `);
-});
-
-app.post("/login", (req, res) => {
-  const { email, senha } = req.body;
-  const user = usuarios.find(u => u.email === email && u.senha === senha);
-
-  if (user) {
-    res.redirect("/painel");
-  } else {
-    res.send("Login inválido");
-  }
-});
-
-// PAINEL
-app.get("/painel", (req, res) => {
-  res.send(`
-    <h1>Painel</h1>
-    <input id="valor" placeholder="Valor da Live"><br><br>
-    <button onclick="alert('Valor salvo')">Salvar Valor</button><br><br>
-    <button onclick="abrirCamera()">Abrir Câmera</button><br><br>
-    <video id="video" autoplay width="300"></video>
+// Interface HTML com Design "Cubo de Gelo"
+const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { background: #e0f7fa; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial; }
+        .ice-card { 
+            background: rgba(255, 255, 255, 0.4); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.6); 
+            padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;
+        }
+        button { 
+            background: #00bcd4; color: white; border: none; padding: 12px 25px; 
+            border-radius: 8px; cursor: pointer; margin: 10px; font-weight: bold; transition: 0.3s;
+        }
+        button:disabled { background: #b2ebf2; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="ice-card">
+        <h2 style="color: #00838f;">Cubo de Gelo 🧊</h2>
+        <button onclick="login()">Fazer Login</button>
+        <hr>
+        <button class="menu-btn" onclick="acessar()" disabled>Entrar na Interface</button>
+    </div>
 
     <script>
-      function abrirCamera() {
-        navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          document.getElementById("video").srcObject = stream;
-        })
-        .catch(() => alert("Permita acesso à câmera"));
-      }
+        let logado = false;
+        function login() {
+            logado = true;
+            document.querySelector('.menu-btn').disabled = false;
+            alert("Login OK! Acesso liberado.");
+        }
+        function acessar() {
+            if(logado) alert("Bem-vindo à interface!");
+        }
     </script>
-  `);
-});
+</body>
+</html>
+`;
 
-app.listen(PORT, () => {
-  console.log("Servidor rodando na porta " + PORT);
-});
+app.get('/', (req, res) => res.send(htmlContent));
+app.listen(port, () => console.log(`Servidor rodando na porta ${port}`));
