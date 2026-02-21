@@ -1,93 +1,160 @@
-const express = require('express');
-const axios = require('axios');
+const express = require("express");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const Database = require("better-sqlite3");
+const axios = require("axios");
+
 const app = express();
+const db = new Database("database.db");
 
 app.use(express.json());
+app.use(express.static("public"));
 
-// CONFIGURAÇÃO SEGURA (Lê do Render)
-const ASAAS_KEY = process.env.ASAAS_KEY; 
-const BASE_URL = 'https://www.asaas.com'; // URL REAL
+/* ================= CONFIG ================= */
 
-const htmlPagina = `
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { margin: 0; height: 100vh; background: linear-gradient(135deg, #001f3f, #0074D9); font-family: sans-serif; display: flex; justify-content: center; align-items: center; }
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; padding: 40px; text-align: center; color: white; width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: rgba(255,255,255,0.2); border: none; border-radius: 8px; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; cursor: pointer; background: #00d4ff; border: none; border-radius: 8px; color: #001f3f; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div class="glass">
-        <h1 style="color: #00d4ff;">ICE CLUB</h1>
-        <input type="text" id="nome" placeholder="Nome Completo">
-        <input type="email" id="email" placeholder="E-mail">
-        <button onclick="entrar()">Pagar e Entrar</button>
-    </div>
-    <script>
-        async function entrar() {
-            const nome = document.getElementById('nome').value;
-            const email = document.getElementById('email').value;
-            const res = await fetch('/gerar-pix', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ nome, email })
-            });
-            const data = await res.json();
-            if(data.url) window.location.href = data.url;
-            else alert('Erro ao gerar acesso!');
+const SECRET = "ice_secret";
+const ASAAS_TOKEN = "SUA_CHAVE_AQUI"; // COLOQUE SUA CHAVE ASAAS
+const BASE_URL = "https://api.asaas.com/v3";
+
+/* ================= BANCO ================= */
+
+db.prepare(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  email TEXT UNIQUE,
+  password TEXT
+)
+`).run();
+
+/* ================= CADASTRO ================= */
+
+app.post("/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const hash = await bcrypt.hash(password, 10);
+
+    db.prepare(`
+      INSERT INTO users (name, email, password)
+      VALUES (?, ?, ?)
+    `).run(name, email, hash);
+
+    res.json({ message: "Usuário criado com sucesso" });
+
+  } catch (err) {
+    res.status(400).json({ error: "Email já cadastrado" });
+  }
+});
+
+/* ================= LOGIN ================= */
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = db.prepare(`
+    SELECT * FROM users WHERE email = ?
+  `).get(email);
+
+  if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+  const valid = await bcrypt.compare(password, user.password);
+
+  if (!valid) return res.status(401).json({ error: "Senha inválida" });
+
+  const token = jwt.sign({ id: user.id }, SECRET);
+
+  res.json({ token });
+});
+
+/* ================= MIDDLEWARE ================= */
+
+function auth(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) return res.status(401).json({ error: "Sem token" });
+
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch {
+    res.status(401).json({ error: "Token inválido" });
+  }
+}
+
+/* ================= CRIAR CLIENTE ASAAS ================= */
+
+app.post("/criar-cliente", auth, async (req, res) => {
+  try {
+    const { name, cpfCnpj, email } = req.body;
+
+    const response = await axios.post(
+      `${BASE_URL}/customers`,
+      {
+        name,
+        cpfCnpj,
+        email
+      },
+      {
+        headers: {
+          access_token: ASAAS_TOKEN
         }
-    </script>
-</body>
-</html>
-`;
+      }
+    );
 
-app.get('/', (req, res) => res.send(htmlPagina));
+    res.json(response.data);
 
-app.post('/gerar-pix', async (req, res) => {
-    const { nome, email } = req.body;
-    try {
-        // Cria cliente e gera Pix automático
-        const cli = await axios.post(`${BASE_URL}/customers`, { name: nome, email: email }, { headers: { 'access_token': ASAAS_KEY } });
-        const pag = await axios.post(`${BASE_URL}/payments`, {
-            customer: cli.data.id,
-            billingType: "PIX",
-            value: 10.00, // Valor do acesso
-            dueDate: new Date().toISOString().split('T')[0]
-        }, { headers: { 'access_token': ASAAS_KEY } });
-
-        res.json({ url: pag.data.invoiceUrl });
-    } catch (e) {
-        res.status(500).json({ erro: 'Falha' });
-    }
+  } catch (error) {
+    console.log(error.response?.data || error.message);
+    res.status(500).json({ error: "Erro ao criar cliente" });
+  }
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log('Ice Club Ativo!'));
-try {
-        // 1. CRIA O CLIENTE NO ASAAS
-        const cliente = await axios.post(`${BASE_URL}/customers`, 
-            { name: nome, email: email }, 
-            { headers: { 'access_token': ASAAS_KEY } }
-        );
+/* ================= CRIAR COBRANÇA PIX ================= */
 
-        // 2. GERA O PAGAMENTO PIX
-        const pagamento = await axios.post(`${BASE_URL}/payments`, {
-            customer: cliente.data.id,
-            billingType: "PIX",
-            value: 15.00, // Valor do acesso
-            dueDate: new Date().toISOString().split('T')[0]
-        }, { headers: { 'access_token': ASAAS_KEY } });
+app.post("/criar-pix", auth, async (req, res) => {
+  try {
+    const { customerId, value } = req.body;
 
-        res.json({ url: pagamento.data.invoiceUrl });
-    } catch (e) {
-        console.error(e.response ? e.response.data : e.message);
-        res.status(500).json({ erro: 'Falha na integração' });
-    }
+    const response = await axios.post(
+      `${BASE_URL}/payments`,
+      {
+        customer: customerId,
+        billingType: "PIX",
+        value: value,
+        dueDate: new Date().toISOString().split("T")[0]
+      },
+      {
+        headers: {
+          access_token: ASAAS_TOKEN
+        }
+      }
+    );
+
+    res.json(response.data);
+
+  } catch (error) {
+    console.log(error.response?.data || error.message);
+    res.status(500).json({ error: "Erro ao criar cobrança" });
+  }
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log('Ice Club Rodando!'));
+/* ================= WEBHOOK ================= */
+
+app.post("/webhook", (req, res) => {
+  console.log("Webhook recebido:", req.body);
+
+  // Aqui você pode atualizar saldo do usuário
+  // se req.body.event == "PAYMENT_RECEIVED"
+
+  res.sendStatus(200);
+});
+
+/* ================= SERVIDOR ================= */
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Servidor rodando na porta " + PORT);
+});
