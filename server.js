@@ -7,124 +7,155 @@ app.get('/', (req, res) => {
     <html lang="pt-br">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ice-Cubo Master</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>Ice-Cubo Profile</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
         <style>
             body {
-                margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif;
-                background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-                display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-                overflow-x: hidden; color: #0369a1;
+                margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%);
+                height: 100vh; display: flex; flex-direction: column; overflow: hidden;
             }
-            /* Layout de 3 Telas */
-            .main-container {
-                display: flex; align-items: center; justify-content: center;
-                gap: 20px; width: 100%; max-width: 1200px; padding: 40px 20px;
-                position: relative;
+
+            /* Container de Telas (Scroll Horizontal Tipo iPhone) */
+            .screen-slider {
+                display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+                width: 100%; height: 75vh; scrollbar-width: none;
             }
-            /* Telas Laterais de Fotos */
-            .photo-screen {
-                background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);
-                border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 20px;
-                width: 250px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px;
+            .screen-slider::-webkit-scrollbar { display: none; }
+
+            .screen {
+                min-width: 100%; height: 100%; scroll-snap-align: start;
+                display: flex; align-items: center; justify-content: center; position: relative;
             }
-            .photo-slot {
-                aspect-ratio: 1; background: rgba(255,255,255,0.4); 
-                border-radius: 10px; border: 1px dashed #0369a1;
-                display: flex; align-items: center; justify-content: center; font-size: 20px;
+
+            /* Design Cubo de Gelo */
+            .ice-card {
+                background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(20px);
+                border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 40px;
+                width: 85%; height: 90%; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
             }
-            /* Tela Central Live */
-            .center-live {
-                background: rgba(255, 255, 255, 0.3); backdrop-filter: blur(15px);
-                border: 3px solid rgba(255, 255, 255, 0.6); border-radius: 30px;
-                width: 380px; padding: 20px; text-align: center; position: relative; z-index: 2;
-            }
-            .video-box {
-                width: 100%; height: 250px; background: #000; border-radius: 20px; 
-                overflow: hidden; border: 4px solid white;
+
+            /* Live Principal (Meio) */
+            .live-video {
+                width: 100%; height: 100%; border-radius: 38px; overflow: hidden; background: #000;
             }
             video { width: 100%; height: 100%; object-fit: cover; }
 
-            /* Traçado de Estrela Azul Escuro */
-            .star-path {
-                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                width: 100%; height: 100%; pointer-events: none; z-index: 1;
+            /* Telas Laterais (Fotos/Passado) */
+            .photo-grid {
+                display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; height: 100%;
             }
-            .star-svg { width: 100%; height: 100%; stroke: #1e3a8a; stroke-width: 2; fill: none; stroke-dasharray: 5; }
+            .photo-box {
+                background: rgba(255,255,255,0.3); border-radius: 20px; border: 1px solid white;
+                display: flex; align-items: center; justify-content: center; color: #0369a1; font-size: 24px;
+            }
 
-            /* Sistema de Moderação */
-            .mod-panel {
-                margin-top: 20px; background: #1e3a8a; color: white;
-                padding: 15px; border-radius: 15px; width: 300px; text-align: center;
+            /* Info do Criador e Interação (Fixo embaixo) */
+            .footer-info {
+                padding: 20px; text-align: center; background: rgba(255,255,255,0.4);
+                backdrop-filter: blur(10px); border-radius: 30px 30px 0 0;
             }
-            .btn-mod {
-                background: #60a5fa; border: none; color: white; padding: 8px;
-                border-radius: 5px; cursor: pointer; margin-top: 10px;
+            .creator-name { font-weight: 800; font-size: 20px; color: #1e3a8a; margin: 0; }
+            
+            .interaction-bar {
+                display: flex; justify-content: center; gap: 20px; margin-top: 15px;
             }
+            .btn-action {
+                background: white; border: none; padding: 12px 25px; border-radius: 20px;
+                color: #0369a1; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+            .btn-action.like.active { color: #ef4444; }
+
+            /* Indicador de Telas (Pontinhos) */
+            .pagination {
+                display: flex; justify-content: center; gap: 8px; margin-bottom: 10px;
+            }
+            .dot { width: 8px; height: 8px; background: rgba(255,255,255,0.5); border-radius: 50%; }
+            .dot.active { background: #1e3a8a; width: 20px; border-radius: 4px; }
         </style>
     </head>
     <body>
-        <h1 style="margin-top:20px;"><i class="fas fa-snowflake"></i> ICE-CUBO MASTER</h1>
 
-        <div class="main-container">
-            <!-- Traçado da Estrela -->
-            <div class="star-path">
-                <svg class="star-svg" viewBox="0 0 1000 500">
-                    <path d="M500 50 L600 450 L150 150 L850 150 L400 450 Z" />
-                </svg>
+        <!-- Slidder de Telas -->
+        <div class="screen-slider" id="slider">
+            <!-- Tela 1: Passado (4 Fotos) -->
+            <div class="screen">
+                <div class="ice-card">
+                    <div class="photo-grid">
+                        <div class="photo-box"><i class="fas fa-history"></i></div>
+                        <div class="photo-box"><i class="fas fa-image"></i></div>
+                        <div class="photo-box"><i class="fas fa-play-circle"></i></div>
+                        <div class="photo-box"><i class="fas fa-camera"></i></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Tela Esquerda (4 Fotos) -->
-            <div class="photo-screen">
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
+            <!-- Tela 2: LIVE (Centro) -->
+            <div class="screen">
+                <div class="ice-card">
+                    <div class="live-video">
+                        <video id="webcam" autoplay playsinline muted></video>
+                    </div>
+                </div>
             </div>
 
-            <!-- Tela Central -->
-            <div class="center-live">
-                <div class="video-box"><video id="v" autoplay playsinline></video></div>
-                <p><b>LIVE DO MESTRE</b></p>
-                <button class="btn-mod" onclick="tornarModerador()">Levantar Moderador <i class="fas fa-crown"></i></button>
-            </div>
-
-            <!-- Tela Direita (4 Fotos) -->
-            <div class="photo-screen">
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
-                <div class="photo-slot"><i class="fas fa-plus"></i></div>
+            <!-- Tela 3: Perfil/Mais Fotos -->
+            <div class="screen">
+                <div class="ice-card">
+                    <div class="photo-grid">
+                        <div class="photo-box"><i class="fas fa-plus"></i></div>
+                        <div class="photo-box"><i class="fas fa-plus"></i></div>
+                        <div class="photo-box"><i class="fas fa-plus"></i></div>
+                        <div class="photo-box"><i class="fas fa-plus"></i></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="mod-panel" id="panel">
-            <b>Painel de Controle</b>
-            <div id="status">Aguardando definição de papéis...</div>
+        <!-- Rodapé de Controle -->
+        <div class="footer-info">
+            <div class="pagination">
+                <div class="dot"></div>
+                <div class="dot active"></div>
+                <div class="dot"></div>
+            </div>
+            
+            <h3 class="creator-name">@Thiago_Master <i class="fas fa-check-circle" style="color:#0ea5e9; font-size:14px;"></i></h3>
+            
+            <div class="interaction-bar">
+                <button class="btn-action like" onclick="this.classList.toggle('active')">
+                    <i class="fas fa-heart"></i> Curtir
+                </button>
+                <button class="btn-action" onclick="abrirChat()">
+                    <i class="fas fa-comment"></i> Conversar
+                </button>
+            </div>
         </div>
 
         <script>
-            navigator.mediaDevices.getUserMedia({video:true}).then(s=>document.getElementById('v').srcObject=s);
+            // Ativa Câmera na tela central
+            navigator.mediaDevices.getUserMedia({video: true})
+                .then(s => document.getElementById('webcam').srcObject = s);
 
-            let souMestre = true; // Você é o ADM Master
+            // Inicia o slider no meio (Live)
+            const slider = document.getElementById('slider');
+            window.onload = () => {
+                slider.scrollLeft = window.innerWidth;
+            };
 
-            function tornarModerador() {
-                const user = prompt("Nome do usuário para ser Moderador:");
-                if(user) {
-                    alert(user + " agora é Moderador e pode bloquear outros!");
-                    document.getElementById('status').innerHTML = \`<b>Moderador Ativo:</b> \${user} <br> <button onclick="bloquear()" style="color:red">Bloquear Usuário</button>\`;
-                }
+            function abrirChat() {
+                const msg = prompt("Mande uma mensagem para o criador:");
+                if(msg) alert("Mensagem enviada para a Live!");
             }
 
-            function bloquear() {
-                const alvo = prompt("Nome de quem deseja bloquear:");
-                if(alvo === "Thiago" || alvo === "Mestre") {
-                    alert("ERRO: Você não pode bloquear o ADM Master!");
-                } else {
-                    alert("Usuário " + alvo + " foi banido pelo Moderador.");
-                }
-            }
+            // Atualiza os pontinhos conforme o scroll
+            slider.onscroll = () => {
+                const index = Math.round(slider.scrollLeft / window.innerWidth);
+                document.querySelectorAll('.dot').forEach((d, i) => {
+                    d.classList.toggle('active', i === index);
+                });
+            };
         </script>
     </body>
     </html>
