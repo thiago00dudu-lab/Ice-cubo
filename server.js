@@ -3,7 +3,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 
 let usuarioLogado = null;
-let ADM = true; // Se true, mostra estrela dourada no nome
+let ADM = true;
 
 function layout(conteudo){ return `
 <!DOCTYPE html>
@@ -11,25 +11,33 @@ function layout(conteudo){ return `
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ice-Cubo Premium</title>
+<title>Ice-Cubo Futurista</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 body{margin:0;font-family:sans-serif;background:#0f172a;color:#fff}
 .center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh}
-input{padding:10px;margin:5px;border:none;border-radius:10px;width:200px}
-button{padding:10px 20px;border:none;border-radius:20px;background:#38bdf8;color:#000;font-weight:bold;cursor:pointer}
+input{padding:10px;margin:5px;border:none;border-radius:10px;width:200px;background:#1e293b;color:#fff}
+button{padding:10px 20px;border:none;border-radius:20px;background:#38bdf8;color:#000;font-weight:bold;cursor:pointer;transition:0.3s}
+button:hover{transform:scale(1.05);}
 a{color:#38bdf8;text-decoration:none}
-.stage{height:45vh;background:#000;display:flex;align-items:center;justify-content:center;position:relative;border-radius:0 0 30px 30px;overflow:hidden}
-video,.expand{position:absolute;width:100%;height:100%;object-fit:cover;display:none}
-.feed{flex:1;overflow:auto;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.card{background:#1e293b;border-radius:15px;overflow:hidden;cursor:pointer}
-.thumb{height:100px;background-size:cover;background-position:center}
-.info{padding:5px;font-size:12px;font-weight:bold;color:#38bdf8}
-.nav{height:60px;background:#1e293b;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #334155}
-.nav i{font-size:22px;color:#38bdf8;cursor:pointer}
-.livebtn{position:absolute;bottom:15px;right:15px;background:#ef4444;color:#fff;border:none;padding:8px 15px;border-radius:20px;cursor:pointer}
+.topbar{height:60px;background:#111827;display:flex;align-items:center;padding:0 20px;position:fixed;top:0;width:100%;z-index:10;box-shadow:0 0 20px #38bdf8}
+.topbar h2{margin:0;font-size:18px;color:#38bdf8}
+.topbar i{margin-left:10px;color:gold}
+.stage{margin-top:60px;height:40vh;background:#000;display:flex;align-items:center;justify-content:center;position:relative;border-radius:0 0 30px 30px;overflow:hidden;box-shadow:0 0 20px #38bdf8}
+video,.expand{position:absolute;width:100%;height:100%;object-fit:cover;display:none;border-radius:0 0 30px 30px}
+.feed{flex:1;overflow:auto;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:20px}
+.card{background:#1e293b;border-radius:15px;overflow:hidden;cursor:pointer;transition:0.3s;position:relative}
+.card:hover{transform:scale(1.03);box-shadow:0 0 15px #38bdf8}
+.card.adm{border:2px solid gold;box-shadow:0 0 15px gold;}
+.thumb{height:120px;background-size:cover;background-position:center}
+.info{padding:5px;font-size:14px;font-weight:bold;color:#38bdf8;display:flex;align-items:center}
+.nav{height:60px;background:#111827;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #334155;position:fixed;bottom:0;width:100%;z-index:10}
+.nav i{font-size:26px;color:#38bdf8;cursor:pointer;transition:0.3s}
+.nav i:hover{color:#0ea5e9;transform:scale(1.2)}
+.livebtn{position:absolute;bottom:15px;right:15px;background:#ef4444;color:#fff;border:none;padding:10px 18px;border-radius:25px;cursor:pointer;box-shadow:0 0 10px #ef4444;font-weight:bold;transition:0.3s}
+.livebtn:hover{transform:scale(1.1);box-shadow:0 0 15px #f87171}
 .searchBox{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:none}
-.searchBox input{padding:6px;border-radius:10px;border:none}
+.searchBox input{padding:8px;border-radius:15px;border:none;background:#1e293b;color:#fff;outline:none}
 </style>
 </head>
 <body>
@@ -80,8 +88,12 @@ res.redirect('/app');
 app.get('/app',(req,res)=>{
 if(!usuarioLogado) return res.redirect('/');
 res.send(layout(`
+<div class="topbar">
+<h2>${usuarioLogado}</h2> ${ADM?"<i class='fas fa-star'></i>":""}
+</div>
+
 <div class="stage">
-<div id="placeholder">Bem vindo ${usuarioLogado} ${ADM?"<i class='fas fa-star' style='color:gold'></i>":""}</div>
+<div id="placeholder">Bem vindo ${usuarioLogado} ${ADM?"<i class='fas fa-star'></i>":""}</div>
 <div class="expand" id="expand"></div>
 <video id="cam" autoplay playsinline></video>
 <button class="livebtn" onclick="live()" id="liveBtn">LIVE</button>
@@ -109,12 +121,14 @@ let posts=[
 ];
 
 const feed=document.getElementById("feed");
+
 function render(){
 feed.innerHTML="";
 posts.forEach(p=>{
 let d=document.createElement("div");
 d.className="card";
-let estrela=(p.user==="@${usuarioLogado}" && ${ADM})?" <i class='fas fa-star' style='color:gold'></i>":"";
+if(p.user==="@${usuarioLogado}" && ${ADM}) d.classList.add("adm");
+let estrela=(p.user==="@${usuarioLogado}" && ${ADM})?" <i class='fas fa-star'></i>":"";
 d.innerHTML=\`<div class="thumb" style="background-image:url('\${p.img}')"></div><div class="info">\${p.user}\${estrela}</div>\`;
 d.ondblclick=()=>show(p.img);
 feed.appendChild(d);
@@ -131,14 +145,15 @@ feed.innerHTML="";
 filtrado.forEach(p=>{
 let d=document.createElement("div");
 d.className="card";
-let estrela=(p.user==="@${usuarioLogado}" && ${ADM})?" <i class='fas fa-star' style='color:gold'></i>":"";
+if(p.user==="@${usuarioLogado}" && ${ADM}) d.classList.add("adm");
+let estrela=(p.user==="@${usuarioLogado}" && ${ADM})?" <i class='fas fa-star'></i>":"";
 d.innerHTML=\`<div class="thumb" style="background-image:url('\${p.img}')"></div><div class="info">\${p.user}\${estrela}</div>\`;
 d.ondblclick=()=>show(p.img);
 feed.appendChild(d);
 });
 }
 function novoPost(){posts.unshift({img:"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61",user:"@${usuarioLogado}"});render();}
-function perfil(){alert("Perfil de ${usuarioLogado} ${ADM?"⭐":" "}\nVocê é ADM master, acesso total ao site!");}
+function perfil(){alert("Perfil de ${usuarioLogado} ${ADM?"⭐":""}\nVocê é ADM master, acesso total ao site!");}
 
 let stream=null;
 async function live(){
@@ -153,4 +168,4 @@ function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;c
 });
 
 // ================= SERVER =================
-app.listen(3000,()=>console.log("Ice rodando na 3000"));
+app.listen(3000,()=>console.log("Ice Futurista rodando na 3000"));
