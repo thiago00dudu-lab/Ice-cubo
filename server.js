@@ -1,3 +1,4 @@
+// server.js — ICE-CUB (Vercel-ready) | 1 arquivo só
 const express = require("express");
 const crypto = require("crypto");
 const app = express();
@@ -12,7 +13,9 @@ const SECRET = process.env.AUTH_SECRET || "ICE_SECRET_TROCAR_DEPOIS";
 const BLUE_MAX = 21_000_000;
 let blueSupply = 0;
 
-/* ================= DADOS (MEMÓRIA) ================= */
+/* ================= DADOS (MEMÓRIA) =================
+⚠️ Em Vercel (serverless), dados em memória podem resetar.
+Quando você quiser, eu passo pra Supabase/Firebase pra ficar permanente. */
 const users = new Map();        // user -> {pass, role, saldoBlue, gender, parent, children:Set, banned}
 const posts = [];               // {id,user,text,ts}
 const trades = [];              // {id,user,item,want,ts}
@@ -79,9 +82,10 @@ function requireAuth(req,res,next){
 function chatKey(a,b){ return [a,b].sort().join("|"); }
 function nowId(prefix){ return prefix + Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
-/* ================= LOGIN/CADASTRO ================= */
+/* ================= HOME ================= */
 app.get("/", (req,res)=> res.redirect("/app"));
 
+/* ================= LOGIN ================= */
 app.get("/login",(req,res)=>{
   res.send(`<!doctype html><html lang="pt-br"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -117,6 +121,7 @@ app.post("/login",(req,res)=>{
   res.redirect("/app");
 });
 
+/* ================= CADASTRO + FILHOS (REF) ================= */
 app.get("/register",(req,res)=>{
   const ref=safeUser(req.query.ref||"");
   res.send(`<!doctype html><html lang="pt-br"><head>
@@ -183,7 +188,7 @@ app.post("/logout",(req,res)=>{
   res.redirect("/login");
 });
 
-/* ================= PANIC API (COMPARTILHAR PRA TODOS) ================= */
+/* ================= PANIC (PERIGO) ================= */
 app.post("/api/panic/update", requireAuth, (req,res)=>{
   const me=req.me.username;
   const on = !!req.body.on;
@@ -215,52 +220,67 @@ app.get("/api/panic/list", requireAuth, (req,res)=>{
   const list=[];
   for(const [user, st] of panicState.entries()){
     if(st && st.on){
-      list.push({
-        user,
-        lat: st.lat,
-        lon: st.lon,
-        acc: st.acc,
-        ts: st.ts
-      });
+      list.push({ user, lat: st.lat, lon: st.lon, acc: st.acc, ts: st.ts });
     }
   }
-  // mais recentes primeiro
   list.sort((a,b)=>b.ts-a.ts);
   res.json({ ok:true, list: list.slice(0,100) });
 });
 
-/* ================= POSTS ================= */
+/* ================= POSTS (Timeline + Perfil + Delete) ================= */
 app.post("/api/post", requireAuth, (req,res)=>{
   const text=String(req.body.text||"").trim();
   if(!text) return res.json({ok:false, err:"texto vazio"});
   posts.push({id:nowId("p_"), user:req.me.username, text, ts:Date.now()});
-  if(posts.length>600) posts.splice(0,posts.length-600);
+  if(posts.length>800) posts.splice(0,posts.length-800);
   res.json({ok:true});
 });
+
 app.get("/api/posts", requireAuth, (req,res)=>{
-  res.json({ok:true, list: posts.slice(-120).reverse()});
+  const qUser = safeUser(req.query.user || "");
+  let list = posts;
+  if(qUser) list = posts.filter(p => p.user === qUser);
+  res.json({ ok:true, list: list.slice(-250).reverse() });
 });
 
-/* ================= TRADES ================= */
+app.post("/api/post/delete", requireAuth, (req,res)=>{
+  const id = String(req.body.id || "").trim();
+  if(!id) return res.json({ ok:false, err:"id inválido" });
+
+  const me = req.me.username;
+  const isMaster = req.me.role === "MASTER";
+
+  const idx = posts.findIndex(p => p.id === id);
+  if(idx < 0) return res.json({ ok:false, err:"post não encontrado" });
+
+  const post = posts[idx];
+  if(post.user !== me && !isMaster) return res.json({ ok:false, err:"sem permissão" });
+
+  posts.splice(idx, 1);
+  res.json({ ok:true });
+});
+
+/* ================= TROCAS ================= */
 app.post("/api/trade", requireAuth, (req,res)=>{
   const item=String(req.body.item||"").trim();
   const want=String(req.body.want||"").trim();
   if(!item||!want) return res.json({ok:false, err:"campos vazios"});
   trades.push({id:nowId("t_"), user:req.me.username, item, want, ts:Date.now()});
-  if(trades.length>400) trades.splice(0,trades.length-400);
+  if(trades.length>500) trades.splice(0,trades.length-500);
   res.json({ok:true});
 });
+
 app.get("/api/trades", requireAuth, (req,res)=>{
-  res.json({ok:true, list: trades.slice(-120).reverse()});
+  res.json({ok:true, list: trades.slice(-200).reverse()});
 });
 
-/* ================= USERS SEARCH ================= */
+/* ================= USERS SEARCH (Parceiros) ================= */
 app.get("/api/users/search", requireAuth, (req,res)=>{
   const q=safeUser(req.query.q||"");
   const list=[];
   if(q){
     for(const [name,u] of users.entries()){
-      if(!u.banned && name.includes(q) && name!=="ice_ai"){
+      if(!u.banned && name.includes(q)){
         list.push({user:name});
         if(list.length>=25) break;
       }
@@ -269,7 +289,7 @@ app.get("/api/users/search", requireAuth, (req,res)=>{
   res.json({ok:true,list});
 });
 
-/* ================= CHAT (SIMPLES) ================= */
+/* ================= CHAT (WhatsApp simples) ================= */
 app.post("/chat/send", requireAuth, (req,res)=>{
   const me=req.me.username;
   const to=safeUser(req.body.to);
@@ -281,16 +301,17 @@ app.post("/chat/send", requireAuth, (req,res)=>{
   if(!chats.has(k)) chats.set(k, []);
   const arr=chats.get(k);
   arr.push({from:me,to,msg,ts:Date.now()});
-  if(arr.length>300) arr.splice(0,arr.length-300);
+  if(arr.length>400) arr.splice(0,arr.length-400);
   res.json({ok:true});
 });
+
 app.get("/chat/get", requireAuth, (req,res)=>{
   const me=req.me.username;
   const withUser=safeUser(req.query.with);
   if(!withUser) return res.json({ok:false, err:"inválido"});
   if(!users.has(withUser)) return res.json({ok:false, err:"usuário não existe"});
   const k=chatKey(me,withUser);
-  res.json({ok:true, messages:(chats.get(k)||[]).slice(-120)});
+  res.json({ok:true, messages:(chats.get(k)||[]).slice(-160)});
 });
 
 /* ================= BLUE (ADM) ================= */
@@ -302,6 +323,7 @@ app.post("/admin/mint", requireAuth, (req,res)=>{
   blueSupply+=v;
   res.json({ok:true, supply: blueSupply, max: BLUE_MAX});
 });
+
 app.post("/admin/give", requireAuth, (req,res)=>{
   if(req.me.role!=="MASTER") return res.json({ok:false, err:"negado"});
   const u=safeUser(req.body.user);
@@ -339,9 +361,9 @@ body{margin:0;background:#0b1220;color:#fff;font-family:system-ui;height:100vh;o
 .small{opacity:.85;font-size:12px;font-weight:900}
 .btnTop{border:0;border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.25);color:#fff;font-weight:900;
   border:1px solid rgba(159,231,255,.18)}
-.stage{margin-top:68px;height:38vh;background:#000;border-radius:0 0 22px 22px;overflow:hidden;position:relative}
-.hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;opacity:.85;font-weight:900}
-.section{display:none;height:calc(62vh - 66px);overflow:auto;padding:12px 12px 86px}
+.stage{margin-top:68px;height:32vh;background:#000;border-radius:0 0 22px 22px;overflow:hidden;position:relative}
+.hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;opacity:.85;font-weight:1000}
+.section{display:none;height:calc(68vh - 66px);overflow:auto;padding:12px 12px 96px}
 .section.active{display:block}
 .box{border-radius:18px;padding:12px;margin-bottom:12px;background:rgba(30,41,59,.65);border:1px solid rgba(148,163,184,.25)}
 .inp,textarea{width:100%;padding:12px;border-radius:12px;border:0;background:#081022;color:#fff;outline:none}
@@ -356,27 +378,99 @@ textarea{min-height:90px;resize:none}
 .cardBody{padding:10px;opacity:.95}
 .nav{position:fixed;left:0;right:0;bottom:0;height:66px;z-index:60;background:#1e293b;border-top:1px solid #334155;
   display:flex;justify-content:space-around;align-items:center}
-.nav i{font-size:22px;color:#7dd3fc;padding:12px 14px;border-radius:16px}
+.nav i{font-size:22px;color:#7dd3fc;padding:12px 14px;border-radius:16px;cursor:pointer}
 .nav i.active{background:rgba(0,0,0,.22);border:1px solid rgba(148,163,184,.25)}
 .nav .panic{color:#fff;background:rgba(239,68,68,.90);border:1px solid rgba(255,255,255,.18)}
 .nav .panic.off{background:rgba(239,68,68,.18);color:#fecaca}
 .alertBar{position:fixed;top:0;left:0;right:0;z-index:9999;background:#ef4444;color:#fff;text-align:center;padding:10px;font-weight:1000}
 body.panic-active{animation:panicFlash 1s infinite}
 @keyframes panicFlash{0%{filter:none}50%{filter:brightness(.92) saturate(1.1)}100%{filter:none}}
+
+/* Mascote (urso + cubo + moeda BLUE) */
+.brandRow{display:flex;align-items:center;gap:10px}
+.mascot{
+  width:54px;height:54px;border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(56,189,248,.06));
+  border:1px solid rgba(159,231,255,.22);
+  display:grid;place-items:center;
+  position:relative;overflow:hidden;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+}
+.mascot .bear{font-size:28px;position:absolute;left:8px;bottom:6px;transform-origin:center}
+.mascot .cube{
+  position:absolute;right:7px;bottom:10px;
+  width:22px;height:22px;border-radius:6px;
+  background:linear-gradient(180deg, rgba(125,211,252,.35), rgba(56,189,248,.14));
+  border:1px solid rgba(159,231,255,.35);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.mascot .coin{
+  position:absolute;right:10px;bottom:13px;
+  width:16px;height:16px;border-radius:999px;
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), rgba(0,0,0,0)),
+             linear-gradient(180deg, rgba(30,64,175,.9), rgba(56,189,248,.45));
+  border:1px solid rgba(255,215,0,.55);
+  display:grid;place-items:center;
+  color:#ffd700;font-weight:1000;font-size:10px;
+}
+.mascot .shine{
+  position:absolute;inset:-40px;
+  background:linear-gradient(120deg, transparent 35%, rgba(255,255,255,.18) 50%, transparent 65%);
+  transform:translateX(-60px) rotate(10deg);
+  animation:shine 2.4s linear infinite;
+  pointer-events:none;
+}
+@keyframes shine{
+  0%{transform:translateX(-80px) rotate(10deg)}
+  100%{transform:translateX(120px) rotate(10deg)}
+}
+@keyframes tryPull{
+  0%{transform:translate(0,0) rotate(0deg)}
+  35%{transform:translate(2px,-2px) rotate(-6deg)}
+  70%{transform:translate(-1px,1px) rotate(5deg)}
+  100%{transform:translate(0,0) rotate(0deg)}
+}
+@keyframes coinWiggle{
+  0%{transform:translate(0,0)}
+  40%{transform:translate(-1px,-1px)}
+  80%{transform:translate(1px,1px)}
+  100%{transform:translate(0,0)}
+}
+.mascot .bear{animation:tryPull 1.15s ease-in-out infinite}
+.mascot .coin{animation:coinWiggle .55s ease-in-out infinite}
+
+/* Chat modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:end;justify-content:center;z-index:999}
+.sheet{width:100%;max-width:560px;height:76vh;background:#0b1220;border-radius:18px 18px 0 0;border:1px solid rgba(148,163,184,.25);
+display:flex;flex-direction:column;overflow:hidden}
+.sheetTop{padding:12px;background:#111827;display:flex;justify-content:space-between;align-items:center}
+.msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:82%;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(148,163,184,.20);font-weight:900;font-size:13px}
+.meMsg{align-self:flex-end;background:rgba(56,189,248,.14)}
+.inputRow{display:flex;gap:10px;padding:12px;border-top:1px solid rgba(148,163,184,.20)}
+.inputRow input{flex:1;padding:12px;border-radius:12px;border:0;background:#081022;color:#fff}
 </style></head><body>
 
 <div id="alertBox"></div>
 
 <div class="top">
   <div>
-    <div class="brand">ICE-CUB</div>
+    <div class="brandRow">
+      <div class="mascot" title="BLUE preso no gelo 🧊">
+        <div class="shine"></div>
+        <div class="bear">🐻‍❄️</div>
+        <div class="cube"></div>
+        <div class="coin">B</div>
+      </div>
+      <div class="brand">ICE-CUB</div>
+    </div>
     <div class="small">Você: <b>@${me.username}</b> ${star} • 🟦 <b>${Number(me.saldoBlue||0)}</b> BLUE</div>
   </div>
   <form method="POST" action="/logout" style="margin:0"><button class="btnTop">Sair</button></form>
 </div>
 
 <div class="stage">
-  <div class="hint">Timeline • Perfil • Trocas • Alertas • Perigo (GPS)</div>
+  <div class="hint">Timeline • Perfil • Trocas • Alertas • Perigo (GPS) • Chat</div>
 </div>
 
 <!-- TIMELINE -->
@@ -398,9 +492,18 @@ body.panic-active{animation:panicFlash 1s infinite}
   <div class="box">
     <h3 style="margin:0 0 10px">🏠 Perfil</h3>
     <div class="small">Convite: <b id="inviteBox"></b></div>
+    <div class="small" style="margin-top:6px">Pai: <b>${me.parent ? "@"+me.parent : "nenhum"}</b> • Filhos: <b>${me.children ? me.children.size : 0}</b></div>
     <div class="row" style="margin-top:10px">
       <button class="btn2" onclick="shareInvite()">Compartilhar convite</button>
     </div>
+  </div>
+
+  <div class="box">
+    <h3 style="margin:0 0 10px">🗂️ Minhas publicações</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn2" onclick="loadMyPosts()">Atualizar</button>
+    </div>
+    <div class="feed" id="myFeed"></div>
   </div>
 
   ${isMaster ? `
@@ -408,255 +511,4 @@ body.panic-active{animation:panicFlash 1s infinite}
     <h3 style="margin:0 0 10px">🛡️ ADM (BLUE)</h3>
     <div class="row">
       <input class="inp" id="giveUser" placeholder="Usuário (ex: neo)" style="max-width:220px">
-      <input class="inp" id="giveVal" placeholder="Quantidade (ex: 100)" style="max-width:220px">
-      <button class="btn2" onclick="giveBlue()">Aplicar</button>
-    </div>
-    <div id="admMsg" class="small" style="margin-top:8px"></div>
-  </div>
-  ` : ""}
-</div>
-
-<!-- TROCAS -->
-<div class="section" id="secTrades">
-  <div class="box">
-    <h3 style="margin:0 0 10px">🔄 Trocas</h3>
-    <input class="inp" id="tItem" placeholder="O que você tem?">
-    <input class="inp" id="tWant" placeholder="O que quer em troca?" style="margin-top:10px">
-    <div class="row" style="margin-top:10px">
-      <button class="btn" onclick="createTrade()">Publicar troca</button>
-      <button class="btn2" onclick="loadTrades()">Atualizar</button>
-    </div>
-    <div id="tradeMsg" class="small" style="margin-top:8px"></div>
-  </div>
-  <div class="feed" id="tradeList"></div>
-</div>
-
-<!-- ALERTAS DE RISCO (PRA TODOS VEREM) -->
-<div class="section" id="secAlerts">
-  <div class="box">
-    <h3 style="margin:0 0 10px">🚨 Alertas de risco</h3>
-    <div class="small">Lista pública de quem ativou o Perigo (atualiza sozinho).</div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn2" onclick="loadAlerts()">Atualizar agora</button>
-    </div>
-  </div>
-  <div class="feed" id="alertsList"></div>
-</div>
-
-<!-- NAV -->
-<div class="nav">
-  <i class="fa-solid fa-film active" id="navTimeline" title="Timeline"></i>
-  <i class="fa-solid fa-house" id="navProfile" title="Perfil"></i>
-  <i class="fa-solid fa-right-left" id="navTrades" title="Trocas"></i>
-  <i class="fa-solid fa-bell" id="navAlerts" title="Alertas"></i>
-  <i class="fa-solid fa-triangle-exclamation panic off" id="navPanic" title="Perigo"></i>
-</div>
-
-<script>
-  const ME="${me.username}";
-  const INVITE = location.origin + "${invite}";
-  document.getElementById("inviteBox").textContent = INVITE;
-
-  const secTimeline=document.getElementById("secTimeline");
-  const secProfile=document.getElementById("secProfile");
-  const secTrades=document.getElementById("secTrades");
-  const secAlerts=document.getElementById("secAlerts");
-
-  const navTimeline=document.getElementById("navTimeline");
-  const navProfile=document.getElementById("navProfile");
-  const navTrades=document.getElementById("navTrades");
-  const navAlerts=document.getElementById("navAlerts");
-  const navPanic=document.getElementById("navPanic");
-
-  function setActive(section){
-    [secTimeline,secProfile,secTrades,secAlerts].forEach(s=>s.classList.remove("active"));
-    section.classList.add("active");
-    [navTimeline,navProfile,navTrades,navAlerts].forEach(n=>n.classList.remove("active"));
-    if(section===secTimeline) navTimeline.classList.add("active");
-    if(section===secProfile) navProfile.classList.add("active");
-    if(section===secTrades) navTrades.classList.add("active");
-    if(section===secAlerts) navAlerts.classList.add("active");
-  }
-
-  navTimeline.onclick=()=>{ setActive(secTimeline); loadPosts(); };
-  navProfile.onclick=()=>{ setActive(secProfile); };
-  navTrades.onclick=()=>{ setActive(secTrades); loadTrades(); };
-  navAlerts.onclick=()=>{ setActive(secAlerts); loadAlerts(); };
-
-  async function shareInvite(){
-    try{
-      if(navigator.share){
-        await navigator.share({ title:"ICE-CUB", text:"Entra no ICE pelo meu convite:", url: INVITE });
-      }else{
-        await navigator.clipboard.writeText(INVITE);
-        alert("Link copiado ✅");
-      }
-    }catch{
-      alert("Convite: " + INVITE);
-    }
-  }
-
-  // ===== Timeline =====
-  function escapeHtml(s){
-    return String(s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
-  }
-  async function createPost(){
-    const text=(document.getElementById("postText").value||"").trim();
-    if(!text) return;
-    const r=await fetch("/api/post",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
-    const j=await r.json();
-    document.getElementById("postMsg").textContent = j.ok ? "Publicado ✅" : ("Erro: "+(j.err||""));
-    if(j.ok){ document.getElementById("postText").value=""; loadPosts(); }
-  }
-  async function loadPosts(){
-    const r=await fetch("/api/posts"); const j=await r.json();
-    const feed=document.getElementById("feed");
-    feed.innerHTML="";
-    (j.list||[]).forEach(p=>{
-      const d=document.createElement("div");
-      d.className="card";
-      d.innerHTML=\`
-        <div class="cardHead"><span>@\${p.user}</span><span class="small">\${new Date(p.ts).toLocaleString()}</span></div>
-        <div class="cardBody">\${escapeHtml(p.text)}</div>\`;
-      feed.appendChild(d);
-    });
-  }
-
-  // ===== Trocas =====
-  async function createTrade(){
-    const item=(document.getElementById("tItem").value||"").trim();
-    const want=(document.getElementById("tWant").value||"").trim();
-    if(!item || !want) return;
-    const r=await fetch("/api/trade",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({item,want})});
-    const j=await r.json();
-    document.getElementById("tradeMsg").textContent = j.ok ? "Troca publicada ✅" : ("Erro: "+(j.err||""));
-    if(j.ok){ document.getElementById("tItem").value=""; document.getElementById("tWant").value=""; loadTrades(); }
-  }
-  async function loadTrades(){
-    const r=await fetch("/api/trades"); const j=await r.json();
-    const list=document.getElementById("tradeList");
-    list.innerHTML="";
-    (j.list||[]).forEach(t=>{
-      const d=document.createElement("div");
-      d.className="card";
-      d.innerHTML=\`
-        <div class="cardHead"><span>@\${t.user}</span><span class="small">\${new Date(t.ts).toLocaleString()}</span></div>
-        <div class="cardBody"><b>Tem:</b> \${escapeHtml(t.item)}</div>
-        <div class="cardBody"><b>Quer:</b> \${escapeHtml(t.want)}</div>\`;
-      list.appendChild(d);
-    });
-  }
-
-  // ===== ALERTAS (LISTA PÚBLICA) =====
-  async function loadAlerts(){
-    const r=await fetch("/api/panic/list"); const j=await r.json();
-    const list=document.getElementById("alertsList");
-    list.innerHTML="";
-    const arr = (j.list||[]);
-    if(!arr.length){
-      list.innerHTML = "<div class='box'><div class='small'>Nenhum alerta ativo agora.</div></div>";
-      return;
-    }
-    arr.forEach(a=>{
-      const maps = "https://www.google.com/maps?q="+encodeURIComponent(a.lat+","+a.lon);
-      const d=document.createElement("div");
-      d.className="card";
-      d.innerHTML=\`
-        <div class="cardHead"><span>🚨 @\${a.user}</span><span class="small">\${new Date(a.ts).toLocaleTimeString()}</span></div>
-        <div class="cardBody">Lat: <b>\${a.lat.toFixed(5)}</b> • Lon: <b>\${a.lon.toFixed(5)}</b> • ±\${a.acc?Math.round(a.acc):"?"}m</div>
-        <div class="cardBody"><a href="\${maps}" target="_blank" style="color:#38bdf8;font-weight:1000;text-decoration:none">Abrir no Maps</a></div>\`;
-      list.appendChild(d);
-    });
-  }
-
-  // auto refresh dos alertas quando estiver na aba
-  let alertsTimer=null;
-  function startAlertsAuto(){
-    if(alertsTimer) return;
-    alertsTimer=setInterval(()=>{
-      if(secAlerts.classList.contains("active")) loadAlerts();
-    }, 2500);
-  }
-  startAlertsAuto();
-
-  // ===== PERIGO (GPS) — ARRUMADO: LIGA/DESLIGA DE VERDADE =====
-  let panicOn=false;
-  let watchId=null;
-
-  function showBar(text){
-    let bar=document.getElementById("alertBar");
-    if(!bar){
-      bar=document.createElement("div");
-      bar.className="alertBar";
-      bar.id="alertBar";
-      document.getElementById("alertBox").appendChild(bar);
-    }
-    bar.textContent=text;
-  }
-  function removeBar(){
-    const bar=document.getElementById("alertBar");
-    if(bar) bar.remove();
-  }
-
-  async function sendPanic(on, coords){
-    const payload = on ? { on:true, lat:coords.latitude, lon:coords.longitude, acc:coords.accuracy } : { on:false };
-    await fetch("/api/panic/update",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-  }
-
-  async function turnOffPanic(reason){
-    panicOn=false;
-    navPanic.classList.add("off");
-    document.body.classList.remove("panic-active");
-    if(watchId!==null){
-      navigator.geolocation.clearWatch(watchId);
-      watchId=null;
-    }
-    removeBar();
-    try{ await sendPanic(false); }catch{}
-    if(reason) alert(reason);
-  }
-
-  async function togglePanic(){
-    // se já está ligado -> DESLIGA
-    if(panicOn){
-      return turnOffPanic();
-    }
-
-    // liga
-    panicOn=true;
-    navPanic.classList.remove("off");
-    document.body.classList.add("panic-active");
-
-    if(!navigator.geolocation){
-      return turnOffPanic("Seu navegador não suporta localização.");
-    }
-
-    showBar("🚨 Perigo ATIVO: solicitando localização…");
-
-    // watchPosition: atualiza em tempo real e dá pra desligar
-    watchId = navigator.geolocation.watchPosition(async (pos)=>{
-      const c=pos.coords;
-      showBar(\`🚨 Localização compartilhada • \${c.latitude.toFixed(5)}, \${c.longitude.toFixed(5)} • ±\${Math.round(c.accuracy)}m\`);
-      try{ await sendPanic(true, c); }catch{}
-    }, async (err)=>{
-      // se negar permissão, desliga de verdade e avisa
-      await turnOffPanic("Localização negada/desligada. Ative a permissão do GPS no navegador.");
-    }, { enableHighAccuracy:true, maximumAge:2000, timeout:12000 });
-  }
-
-  navPanic.onclick=togglePanic;
-
-  // init
-  loadPosts();
-  loadTrades();
-</script>
-
-</body></html>`);
-});
-
-/* ================= EXPORT (Vercel) ================= */
-module.exports = app;
+      <input class="inp" id
