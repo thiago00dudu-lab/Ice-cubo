@@ -1,3 +1,5 @@
 module.exports = (req, res) => {
-  res.status(200).send("ICE CUBO Online na Vercel ✅");
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.end("ICE CUBO Online na Vercel ✅");
 };
