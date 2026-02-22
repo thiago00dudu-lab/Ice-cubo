@@ -1,619 +1,483 @@
-const express = require("express");
-const app = express();
-
-app.get("/favicon.ico", (req, res) => res.status(204).end());
-app.get("/favicon.png", (req, res) => res.status(204).end());
-
-app.get("/", (req, res) => {
+export default function handler(req, res) {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(`<!doctype html>
-<html lang="pt-br">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  res.status(200).send(`<!doctype html><html lang="pt-br"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ICE-CUBO</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-:root{
-  --bg1:#06122a;--bg2:#071a33;--card:#0b2447;--card2:#0a1f3d;
-  --cyan:#38bdf8;--txt:#e6f3ff;--muted:#9bb4d0;--danger:#ff3b3b;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
-  color:var(--txt);height:100vh;overflow:hidden;
-  background:radial-gradient(1200px 700px at 30% 10%, #0c2b55 0%, var(--bg1) 40%, #040b18 100%);
-}
-a{color:inherit}
-.hidden{display:none!important}
-.wrap{height:100vh;display:flex;flex-direction:column}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px}
-.brand{display:flex;align-items:center;gap:10px}
-.logo{
-  width:44px;height:44px;border-radius:14px;position:relative;overflow:hidden;
-  background:linear-gradient(135deg,#89d7ff,#1c66ff);
-  box-shadow:0 10px 25px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.12);
-}
-.logo:before{
-  content:"";position:absolute;inset:-20px;background:
-  radial-gradient(circle at 30% 30%, rgba(255,255,255,.6) 0 18%, transparent 19%),
-  radial-gradient(circle at 65% 55%, rgba(255,255,255,.35) 0 14%, transparent 15%),
-  radial-gradient(circle at 45% 75%, rgba(255,255,255,.25) 0 12%, transparent 13%);
-  transform:rotate(18deg);
-}
-.brand h1{margin:0;font-size:18px;letter-spacing:.8px}
-.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-.userchip{display:flex;align-items:center;gap:10px}
-.badge{font-size:12px;color:var(--muted)}
-.star{font-size:14px}
-.star.gold{color:#ffd54a;text-shadow:0 0 12px rgba(255,213,74,.35)}
-.star.blue{color:#68b6ff;text-shadow:0 0 12px rgba(104,182,255,.35)}
-.pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);
-  padding:7px 10px;border-radius:999px;font-size:12px;color:var(--txt)}
-.stage{
-  height:44vh;position:relative;border-radius:22px;margin:0 10px 8px;
-  background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.75));
-  overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.35);
-}
-.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.stage .hint{
-  position:absolute;left:12px;top:12px;font-size:12px;color:rgba(255,255,255,.75);
-  background:rgba(0,0,0,.35);padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.10)
-}
-.stage .dangerbar{
-  position:absolute;left:0;right:0;bottom:0;padding:8px 12px;
-  background:linear-gradient(90deg, rgba(255,59,59,.0), rgba(255,59,59,.35), rgba(255,59,59,.0));
-  color:#fff;font-size:12px;text-align:center;display:none;
-}
-.stage.danger .dangerbar{display:block;animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.25)}}
-.timeline{
-  flex:1;display:flex;flex-direction:column;gap:8px;padding:0 10px 72px;overflow:hidden;
-}
-.railTitle{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px;padding:0 4px}
-.hscroll{
-  display:flex;gap:10px;overflow-x:auto;padding:8px 4px 12px;scroll-snap-type:x mandatory;
-  -webkit-overflow-scrolling:touch
-}
-.hscroll::-webkit-scrollbar{height:0}
-.card{
-  flex:0 0 70vw;max-width:360px;height:150px;border-radius:18px;overflow:hidden;
-  background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-  border:1px solid rgba(255,255,255,.10);
-  scroll-snap-align:center;position:relative;box-shadow:0 12px 24px rgba(0,0,0,.25);
-}
-.card video{width:100%;height:100%;object-fit:cover}
-.card .meta{
-  position:absolute;left:10px;bottom:10px;right:10px;display:flex;justify-content:space-between;gap:10px;
-  font-size:12px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7)
-}
-.card .meta span{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);padding:6px 8px;border-radius:999px}
-.nav{
-  position:fixed;left:0;right:0;bottom:0;padding:10px 10px 14px;
-  background:linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.55));
-}
-.navbar{
-  display:flex;gap:8px;justify-content:space-between;
-  background:rgba(8,18,38,.72);backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:10px;
-}
-.navbtn{
-  width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;
-  padding:8px 6px;border-radius:14px;border:1px solid transparent;
-  color:rgba(230,243,255,.85);font-size:10px
-}
-.navbtn i{font-size:18px}
-.navbtn.active{border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.10);color:#fff}
-.navbtn.dangerOn{background:rgba(255,59,59,.18);border-color:rgba(255,59,59,.35)}
-.panel{
-  position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;
-}
-.modal{
-  width:min(520px, 100%);max-height:85vh;overflow:auto;
-  background:rgba(8,18,38,.88);backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:14px;
-  box-shadow:0 30px 60px rgba(0,0,0,.45);
-}
-.modal h2{margin:6px 0 10px;font-size:16px}
-.row{display:flex;gap:8px}
-input,textarea,select{
-  width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);
-  background:rgba(255,255,255,.06);color:#fff;outline:none
-}
-textarea{min-height:90px;resize:none}
-.btn{
-  border:0;border-radius:14px;padding:10px 12px;font-weight:700;cursor:pointer;
-  background:linear-gradient(135deg,#56d7ff,#2d7bff);color:#001428
-}
-.btn.ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.12)}
-.list{display:flex;flex-direction:column;gap:10px}
-.item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:10px}
-.kv{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:12px}
-.small{color:var(--muted);font-size:12px}
-hr{border:0;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="topbar">
+:root{--bg:#061428;--glass:rgba(255,255,255,.08);--glass2:rgba(255,255,255,.12);--line:rgba(255,255,255,.16);--txt:#eaf2ff;--mut:#b7c7e6;--acc:#38bdf8}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:radial-gradient(1200px 600px at 20% -10%,rgba(56,189,248,.18),transparent 60%),radial-gradient(900px 600px at 110% 30%,rgba(99,102,241,.14),transparent 55%),linear-gradient(180deg,#031024,#071b33 60%,#041226);color:var(--txt);height:100vh;overflow:hidden}
+a{color:inherit} button{cursor:pointer}
+#app{height:100vh;display:flex;flex-direction:column}
+.top{height:52vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;background:#000}
+.bgSea{position:absolute;inset:0;opacity:.35;filter:saturate(1.2);background:
+radial-gradient(circle at 10% 20%,rgba(56,189,248,.18),transparent 35%),
+radial-gradient(circle at 80% 10%,rgba(59,130,246,.16),transparent 35%),
+radial-gradient(circle at 30% 80%,rgba(34,211,238,.14),transparent 35%),
+linear-gradient(180deg,#021024,#041a35)}
+.bubbles:before,.bubbles:after{content:"";position:absolute;inset:-20%;background:
+radial-gradient(circle,rgba(255,255,255,.22) 0 2px,transparent 3px) 0 0/120px 120px,
+radial-gradient(circle,rgba(255,255,255,.16) 0 1px,transparent 2px) 40px 20px/160px 160px;
+animation:float 14s linear infinite;opacity:.55}
+.bubbles:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
+@keyframes float{to{transform:translateY(-120px)}}
+
+.brand{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:3}
+.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.logo b{letter-spacing:1px}
+.pill{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);border-radius:18px}
+.pill .coin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#0ea5e9,#0b2a6a);border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) inset}
+.pill .coin span{color:#ffd700;font-weight:900}
+
+.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#mainMedia{width:100%;height:100%;object-fit:cover;display:none}
+#hint{position:absolute;inset:auto 12px 72px 12px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:18px;color:var(--mut);text-align:center}
+.stageBar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:4}
+.ownerCard{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:18px;min-width:0}
+.avatar{width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#38bdf8,#1d4ed8);display:grid;place-items:center;font-weight:900}
+.ownerCard .meta{min-width:0}
+.ownerCard .meta .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ownerCard .meta .sub{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smallBtn{padding:10px 12px;border-radius:18px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);color:var(--txt)}
+.smallBtn:active{transform:scale(.98)}
+
+.bottom{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 10px 74px;overflow:hidden}
+.carousel{display:flex;gap:10px;overflow:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.item{min-width:190px;max-width:190px;height:120px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:rgba(255,255,255,.06);scroll-snap-align:center;position:relative}
+.item video,.item img{width:100%;height:100%;object-fit:cover;display:block}
+.item .tag{position:absolute;left:8px;bottom:8px;padding:6px 10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.35);backdrop-filter:blur(8px);border-radius:14px;font-size:12px}
+.item.active{outline:2px solid rgba(56,189,248,.8)}
+.panel{flex:1;overflow:auto;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:22px;padding:12px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hrow h3{margin:0;font-size:16px}
+.muted{color:var(--mut);font-size:12px}
+.gridPosts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.post{border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:18px;overflow:hidden}
+.post video,.post img{width:100%;height:140px;object-fit:cover;display:block}
+.post .pbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px}
+.badge{font-size:12px;color:var(--mut)}
+.iconBtn{border:0;background:transparent;color:#ff6b6b;padding:6px 8px;border-radius:12px}
+.iconBtn:active{transform:scale(.96)}
+
+.nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:10px;z-index:10}
+.nav button{flex:1;padding:12px 10px;border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.08);backdrop-filter:blur(14px);color:var(--txt);display:flex;align-items:center;justify-content:center;gap:8px}
+.nav button.active{outline:2px solid rgba(56,189,248,.8)}
+.nav i{opacity:.95}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{width:min(720px,100%);max-height:86vh;border-radius:26px 26px 0 0;overflow:hidden;border:1px solid var(--line);background:rgba(7,20,38,.9);backdrop-filter:blur(18px)}
+.sheetTop{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+.sheetTop b{font-size:14px}
+.sheetBody{padding:12px 12px 14px;overflow:auto;max-height:calc(86vh - 52px)}
+.chat{display:flex;flex-direction:column;gap:10px}
+.bubble{max-width:86%;padding:10px 12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
+.me{align-self:flex-end;background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.25)}
+.them{align-self:flex-start}
+.chatBar{display:flex;gap:8px;margin-top:10px}
+.chatBar input{flex:1;padding:12px 12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--txt);outline:none}
+.chatBar button{padding:12px 14px;border-radius:18px;border:1px solid rgba(56,189,248,.35);background:rgba(56,189,248,.2);color:var(--txt)}
+</style></head><body>
+<div id="app">
+  <div class="top">
+    <div class="bgSea bubbles"></div>
+
     <div class="brand">
-      <div class="logo" aria-hidden="true"></div>
-      <div>
-        <h1>ICE-CUBO</h1>
-        <small id="subtitle">Timeline de vídeos • estilo iPhone</small>
+      <div class="logo">
+        <i class="fa-solid fa-snowflake"></i>
+        <b>ICE-CUBO</b>
+        <span class="muted">online</span>
+      </div>
+      <div class="pill" title="Moeda BLUE (simulação)">
+        <div class="coin"><span>B</span></div>
+        <div style="display:flex;flex-direction:column;line-height:1.05">
+          <span style="font-weight:800">BLUE</span>
+          <span class="muted" id="blueBal">0</span>
+        </div>
       </div>
     </div>
-    <div class="userchip">
-      <div class="badge" id="who">Visitante</div>
-      <div class="pill" id="bluePill">BLUE: <b id="blueVal">0</b></div>
-      <div class="star hidden" id="star">★</div>
+
+    <div class="viewer">
+      <div id="hint">Toque em um card abaixo para destacar. (Swipe na timeline)</div>
+      <video id="mainMedia" playsinline controls></video>
+      <img id="mainImg" style="width:100%;height:100%;object-fit:cover;display:none" />
+    </div>
+
+    <div class="stageBar">
+      <div class="ownerCard" id="ownerCard">
+        <div class="avatar" id="ownerAv">I</div>
+        <div class="meta">
+          <div class="name" id="ownerName">ICE IA</div>
+          <div class="sub" id="ownerSub">Toque no chat para conversar</div>
+        </div>
+      </div>
+      <button class="smallBtn" id="chatBtn"><i class="fa-solid fa-comments"></i></button>
     </div>
   </div>
 
-  <div class="stage" id="stage">
-    <div class="hint" id="hint">Toque 1 vez num vídeo embaixo para abrir • arraste na tela grande para trocar</div>
-    <video id="player" playsinline muted autoplay loop></video>
-    <div class="dangerbar" id="dangerbar">⚠️ PERIGO ATIVO • sua localização será compartilhada (simulação)</div>
-  </div>
+  <div class="bottom">
+    <div class="carousel" id="carousel"></div>
 
-  <div class="timeline" id="screenTimeline">
-    <div class="railTitle">
-      <span><i class="fa-solid fa-wave-square"></i> Timeline</span>
-      <span class="small">deslize →</span>
+    <div class="panel" id="panelHome" style="display:none">
+      <div class="hrow">
+        <h3><i class="fa-solid fa-house"></i> Seu perfil</h3>
+        <span class="muted">poste foto/vídeo da galeria</span>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <label class="smallBtn" style="display:inline-flex;align-items:center;gap:8px">
+          <i class="fa-solid fa-image"></i> Abrir galeria
+          <input id="filePick" type="file" accept="image/*,video/*" style="display:none">
+        </label>
+        <button class="smallBtn" id="postBtn"><i class="fa-solid fa-upload"></i> Postar</button>
+        <span class="muted" id="pickInfo" style="align-self:center">Nenhum arquivo selecionado</span>
+      </div>
+
+      <div class="muted" style="margin-bottom:8px">Seus posts (aparecem aqui e também na timeline):</div>
+      <div class="gridPosts" id="myPosts"></div>
     </div>
-    <div class="hscroll" id="rail"></div>
-  </div>
 
-  <div class="nav">
-    <div class="navbar">
-      <div class="navbtn active" data-tab="timeline"><i class="fa-solid fa-film"></i><div>Vídeos</div></div>
-      <div class="navbtn" data-tab="home"><i class="fa-solid fa-house"></i><div>Casa</div></div>
-      <div class="navbtn" data-tab="trade"><i class="fa-solid fa-right-left"></i><div>O que tem</div></div>
-      <div class="navbtn" data-tab="chat"><i class="fa-solid fa-comments"></i><div>Chat</div></div>
-      <div class="navbtn" data-tab="cam"><i class="fa-solid fa-camera"></i><div>Câmera</div></div>
-      <div class="navbtn" id="panicBtn" data-tab="panic"><i class="fa-solid fa-triangle-exclamation"></i><div>Perigo</div></div>
-      <div class="navbtn hidden" id="admBtn" data-tab="adm"><i class="fa-solid fa-shield-halved"></i><div>ADM</div></div>
-      <div class="navbtn" id="loginBtn"><i class="fa-solid fa-user"></i><div>Entrar</div></div>
+    <div class="panel" id="panelFeed">
+      <div class="hrow">
+        <h3><i class="fa-solid fa-film"></i> Timeline</h3>
+        <span class="muted">swipe → para trocar</span>
+      </div>
+      <div class="muted">Escolha um post na timeline horizontal acima para destacar na tela grande.</div>
+      <div style="height:10px"></div>
+      <div class="gridPosts" id="feedGrid"></div>
     </div>
   </div>
 </div>
 
-<!-- MODALS -->
-<div class="panel" id="panel">
-  <div class="modal" id="modal"></div>
+<div class="nav">
+  <button id="navFeed" class="active"><i class="fa-solid fa-film"></i><span>Feed</span></button>
+  <button id="navHome"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
+  <button id="navSwap"><i class="fa-solid fa-repeat"></i><span>Trocas</span></button>
+  <button id="navHelp"><i class="fa-solid fa-triangle-exclamation"></i><span>Perigo</span></button>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <div class="sheetTop">
+      <b id="chatTitle">Chat</b>
+      <button class="smallBtn" id="closeModal"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sheetBody">
+      <div class="chat" id="chatBox"></div>
+      <div class="chatBar">
+        <input id="chatInput" placeholder="Digite sua mensagem..." />
+        <button id="sendChat"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-/* =======================
-   DADOS (sem banco, localStorage)
-======================= */
-const LS = {
-  users: "ice_users_v1",
-  session: "ice_session_v1",
-  posts: "ice_posts_v1",
-  trades: "ice_trades_v1",
-  chats: "ice_chats_v1",
-  danger: "ice_danger_v1"
+/* ====== Storage (IndexedDB) ====== */
+const DBN="icecubo_db", STORE="files";
+function idb(){ return new Promise((ok,err)=>{
+  const r=indexedDB.open(DBN,1);
+  r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:"id"});
+  r.onsuccess=()=>ok(r.result); r.onerror=()=>err(r.error);
+});}
+async function putFile(id,blob,type){
+  const db=await idb();
+  return new Promise((ok,err)=>{
+    const tx=db.transaction(STORE,"readwrite");
+    tx.objectStore(STORE).put({id,blob,type,ts:Date.now()});
+    tx.oncomplete=()=>ok(true); tx.onerror=()=>err(tx.error);
+  });
+}
+async function getFile(id){
+  const db=await idb();
+  return new Promise((ok,err)=>{
+    const tx=db.transaction(STORE,"readonly");
+    const rq=tx.objectStore(STORE).get(id);
+    rq.onsuccess=()=>ok(rq.result||null); rq.onerror=()=>err(rq.error);
+  });
+}
+async function delFile(id){
+  const db=await idb();
+  return new Promise((ok,err)=>{
+    const tx=db.transaction(STORE,"readwrite");
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete=()=>ok(true); tx.onerror=()=>err(tx.error);
+  });
+}
+
+/* ====== Dados ====== */
+const LS="icecubo_state_v1";
+const me={id:"me",name:"Você",avatar:"V",blue:0};
+const ai={id:"iceai",name:"ICE IA",avatar:"I"};
+const state=JSON.parse(localStorage.getItem(LS)||"null")||{
+  blue:0,
+  my:[], // {id,fileId,type,owner,ts}
+  feed:[]
 };
 
-function load(key, def){ try{ return JSON.parse(localStorage.getItem(key)) ?? def }catch{ return def } }
-function save(key, val){ localStorage.setItem(key, JSON.stringify(val)) }
+function save(){ localStorage.setItem(LS,JSON.stringify(state)); }
 
-let users = load(LS.users, {});
-let session = load(LS.session, null);
-let posts = load(LS.posts, [
-  {id:"p1", user:"@luna", url:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", title:"Luna • flowers"},
-  {id:"p2", user:"@rio", url:"https://www.w3schools.com/html/mov_bbb.mp4", title:"Rio • bbb"},
-  {id:"p3", user:"@maya", url:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", title:"Maya • loop"},
-  {id:"p4", user:"@kadu", url:"https://www.w3schools.com/html/movie.mp4", title:"Kadu • movie"}
-]);
-
-// cria admin se não existir
-if(!users["admin"]) users["admin"] = {pass:"1533", role:"master", blue:0, kids:0};
-save(LS.users, users);
-
-let dangerOn = load(LS.danger, false);
-
-/* =======================
-   UI helpers
-======================= */
-const rail = document.getElementById("rail");
-const player = document.getElementById("player");
-const who = document.getElementById("who");
-const star = document.getElementById("star");
-const blueVal = document.getElementById("blueVal");
-const panel = document.getElementById("panel");
-const modal = document.getElementById("modal");
-const admBtn = document.getElementById("admBtn");
-const loginBtn = document.getElementById("loginBtn");
-const stage = document.getElementById("stage");
-const panicBtn = document.getElementById("panicBtn");
-const dangerbar = document.getElementById("dangerbar");
-
-function openModal(html){ modal.innerHTML = html; panel.style.display="flex"; }
-panel.addEventListener("click", (e)=>{ if(e.target===panel) panel.style.display="none"; });
-
-function setActiveTab(tab){
-  document.querySelectorAll(".navbtn").forEach(b=>b.classList.remove("active"));
-  const btn = [...document.querySelectorAll(".navbtn")].find(b=>b.dataset.tab===tab);
-  if(btn) btn.classList.add("active");
+function seedAI(){
+  if(state.feed.length) return;
+  const samples=[
+    {src:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",type:"video"},
+    {src:"https://www.w3schools.com/html/mov_bbb.mp4",type:"video"},
+    {src:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60",type:"image"}
+  ];
+  state.feed = samples.map((s,i)=>({
+    id:"ai_"+i,
+    type:s.type,
+    url:s.src,
+    owner:ai,
+    ts:Date.now()-((i+1)*60000)
+  }));
+  save();
 }
+seedAI();
 
-function currentUser(){
-  if(!session) return null;
-  return users[session.user] ? {id: session.user, ...users[session.user]} : null;
+/* ====== UI refs ====== */
+const carousel=document.getElementById("carousel");
+const mainMedia=document.getElementById("mainMedia");
+const mainImg=document.getElementById("mainImg");
+const hint=document.getElementById("hint");
+const ownerAv=document.getElementById("ownerAv");
+const ownerName=document.getElementById("ownerName");
+const ownerSub=document.getElementById("ownerSub");
+const blueBal=document.getElementById("blueBal");
+
+const panelFeed=document.getElementById("panelFeed");
+const panelHome=document.getElementById("panelHome");
+const feedGrid=document.getElementById("feedGrid");
+const myPosts=document.getElementById("myPosts");
+
+const navFeed=document.getElementById("navFeed");
+const navHome=document.getElementById("navHome");
+const navSwap=document.getElementById("navSwap");
+const navHelp=document.getElementById("navHelp");
+
+const modal=document.getElementById("modal");
+const chatBtn=document.getElementById("chatBtn");
+const closeModal=document.getElementById("closeModal");
+const chatBox=document.getElementById("chatBox");
+const chatTitle=document.getElementById("chatTitle");
+const chatInput=document.getElementById("chatInput");
+const sendChat=document.getElementById("sendChat");
+
+const filePick=document.getElementById("filePick");
+const pickInfo=document.getElementById("pickInfo");
+const postBtn=document.getElementById("postBtn");
+
+let selected=null; // post object
+let pickedFile=null;
+
+/* ====== Helpers ====== */
+function fmtTime(ts){ const d=new Date(ts); return d.toLocaleString().slice(0,16); }
+function setOwner(o){
+  ownerAv.textContent=o.avatar||"U";
+  ownerName.textContent=o.name||"Usuário";
+  ownerSub.textContent=o.id===ai.id ? "Agente IA disponível no chat" : "Toque no chat para conversar";
 }
+function showMedia(post){
+  selected=post;
+  hint.style.display="none";
+  setOwner(post.owner||ai);
 
-function refreshHeader(){
-  const u = currentUser();
-  if(!u){
-    who.textContent = "Visitante";
-    star.classList.add("hidden");
-    blueVal.textContent = "0";
-    admBtn.classList.add("hidden");
-    loginBtn.querySelector("div").textContent = "Entrar";
+  // parar ambos
+  mainMedia.pause(); mainMedia.removeAttribute("src"); mainMedia.load();
+  mainMedia.style.display="none";
+  mainImg.style.display="none";
+
+  if(post.type==="video"){
+    mainMedia.src=post.url;
+    mainMedia.style.display="block";
+    mainMedia.play().catch(()=>{});
   }else{
-    who.textContent = u.id + (u.kids?(" • filhos: "+u.kids):"");
-    blueVal.textContent = String(u.blue||0);
-    loginBtn.querySelector("div").textContent = "Conta";
-    if(u.role==="master"){
-      star.classList.remove("hidden"); star.classList.add("gold"); star.classList.remove("blue"); star.textContent="★";
-      admBtn.classList.remove("hidden");
-    }else if(u.role==="mod"){
-      star.classList.remove("hidden"); star.classList.add("blue"); star.classList.remove("gold"); star.textContent="★";
-      admBtn.classList.add("hidden");
-    }else{
-      star.classList.add("hidden");
-      admBtn.classList.add("hidden");
-    }
+    mainImg.src=post.url;
+    mainImg.style.display="block";
+  }
+
+  // marcar ativo no carousel
+  [...carousel.children].forEach(el=>el.classList.toggle("active", el.dataset.id===post.id));
+}
+function toast(msg){
+  hint.textContent=msg; hint.style.display="block";
+  setTimeout(()=>{ if(!selected) hint.style.display="block"; },900);
+}
+
+/* ====== Render ====== */
+async function renderAll(){
+  blueBal.textContent = (state.blue||0) + " BLUE";
+
+  // juntar feed + meus posts
+  const all = [...state.feed, ...await mapMyPostsToView()].sort((a,b)=>b.ts-a.ts);
+
+  // carousel
+  carousel.innerHTML="";
+  all.slice(0,30).forEach(p=>{
+    const div=document.createElement("div");
+    div.className="item"+(selected&&selected.id===p.id?" active":"");
+    div.dataset.id=p.id;
+    div.innerHTML = p.type==="video"
+      ? \`<video muted playsinline src="\${p.url}"></video><div class="tag">@\${p.owner.name}</div>\`
+      : \`<img src="\${p.url}"/><div class="tag">@\${p.owner.name}</div>\`;
+    div.onclick=()=>showMedia(p);
+    carousel.appendChild(div);
+  });
+
+  // feed grid
+  feedGrid.innerHTML="";
+  all.forEach(p=>{
+    const c=document.createElement("div");
+    c.className="post";
+    c.innerHTML = p.type==="video"
+      ? \`<video muted playsinline src="\${p.url}"></video>\`
+      : \`<img src="\${p.url}"/>\`;
+    const bar=document.createElement("div");
+    bar.className="pbar";
+    bar.innerHTML=\`<span class="badge">@\${p.owner.name} • \${fmtTime(p.ts)}</span><button class="iconBtn" title="destacar"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>\`;
+    bar.querySelector("button").onclick=()=>showMedia(p);
+    c.appendChild(bar);
+    feedGrid.appendChild(c);
+  });
+
+  // meus posts
+  const mine = await mapMyPostsToView();
+  myPosts.innerHTML = mine.length? "" : "<div class='muted'>Sem posts ainda.</div>";
+  mine.forEach(p=>{
+    const c=document.createElement("div");
+    c.className="post";
+    c.innerHTML = p.type==="video"
+      ? \`<video muted playsinline src="\${p.url}"></video>\`
+      : \`<img src="\${p.url}"/>\`;
+    const bar=document.createElement("div");
+    bar.className="pbar";
+    bar.innerHTML=\`<span class="badge">Seu post • \${fmtTime(p.ts)}</span><button class="iconBtn" title="apagar"><i class="fa-solid fa-trash"></i></button>\`;
+    bar.querySelector("button").onclick=()=>removeMyPost(p.id);
+    c.appendChild(bar);
+    myPosts.appendChild(c);
+  });
+
+  // se não tem selecionado, seleciona primeiro
+  if(!selected && all[0]) showMedia(all[0]);
+}
+
+async function mapMyPostsToView(){
+  const out=[];
+  for(const p of state.my){
+    const rec=await getFile(p.fileId);
+    if(!rec) continue;
+    const url=URL.createObjectURL(rec.blob);
+    out.push({id:p.id,type:p.type,url,owner:me,ts:p.ts,fileId:p.fileId});
+  }
+  return out.sort((a,b)=>b.ts-a.ts);
+}
+
+async function removeMyPost(id){
+  const idx=state.my.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const fileId=state.my[idx].fileId;
+  state.my.splice(idx,1);
+  save();
+  await delFile(fileId).catch(()=>{});
+  selected=null;
+  toast("Post apagado ✅");
+  renderAll();
+}
+
+/* ====== Navegação ====== */
+function setTab(tab){
+  navFeed.classList.toggle("active",tab==="feed");
+  navHome.classList.toggle("active",tab==="home");
+  navSwap.classList.toggle("active",tab==="swap");
+  navHelp.classList.toggle("active",tab==="help");
+
+  panelFeed.style.display = (tab==="feed")?"block":"none";
+  panelHome.style.display = (tab==="home")?"block":"none";
+
+  if(tab==="swap") toast("Trocas: (próximo passo) — posso montar a tela depois sem quebrar.");
+  if(tab==="help") toast("Perigo: (próximo passo) — posso ligar geolocalização e alertas com botão ON/OFF.");
+}
+navFeed.onclick=()=>setTab("feed");
+navHome.onclick=()=>setTab("home");
+navSwap.onclick=()=>setTab("swap");
+navHelp.onclick=()=>setTab("help");
+
+/* ====== Upload da galeria ====== */
+filePick.onchange=(e)=>{
+  pickedFile = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+  pickInfo.textContent = pickedFile ? (pickedFile.name + " • " + Math.round(pickedFile.size/1024) + " KB") : "Nenhum arquivo selecionado";
+};
+postBtn.onclick=async()=>{
+  if(!pickedFile){ toast("Selecione um arquivo na galeria primeiro."); return; }
+  const type = pickedFile.type.startsWith("video") ? "video" : "image";
+  const fileId = "f_"+Date.now()+"_"+Math.random().toString(16).slice(2);
+  const postId = "p_"+Date.now()+"_"+Math.random().toString(16).slice(2);
+
+  await putFile(fileId, pickedFile, pickedFile.type).catch(()=>null);
+  state.my.unshift({id:postId,fileId,type,ts:Date.now()});
+  save();
+
+  pickedFile=null; filePick.value=""; pickInfo.textContent="Postado ✅";
+  toast("Post publicado ✅ (aparece no seu perfil e na timeline)");
+  renderAll();
+};
+
+/* ====== Chat (IA + privado simulado) ====== */
+const chats = JSON.parse(localStorage.getItem("icecubo_chats_v1")||"{}");
+function saveChats(){ localStorage.setItem("icecubo_chats_v1", JSON.stringify(chats)); }
+function openChat(withUser){
+  const uid=withUser.id;
+  if(!chats[uid]) chats[uid]=[{by:"them",txt: uid===ai.id ? "Oi 🙂 Eu sou a ICE IA. Quer conversar?" : "Oi! tudo bem?", ts:Date.now()}];
+  saveChats();
+  chatTitle.textContent = "Chat • " + withUser.name;
+  modal.style.display="flex";
+  renderChat(uid);
+  chatInput.focus();
+  modal.dataset.uid=uid;
+}
+function renderChat(uid){
+  chatBox.innerHTML="";
+  (chats[uid]||[]).forEach(m=>{
+    const b=document.createElement("div");
+    b.className="bubble "+(m.by==="me"?"me":"them");
+    b.textContent=m.txt;
+    chatBox.appendChild(b);
+  });
+  chatBox.scrollTop=chatBox.scrollHeight;
+}
+function aiReply(text){
+  const t=text.toLowerCase();
+  if(t.includes("sozinh")) return "Tô aqui com você 🙂 Quer me contar como foi seu dia?";
+  if(t.includes("oi")||t.includes("olá")) return "Oii! 😄 Quer ver vídeos, postar algo, ou só conversar?";
+  if(t.includes("triste")||t.includes("ansios")) return "Sinto muito… respira comigo 10s. Quer falar do que te deixou assim?";
+  if(t.includes("ice")||t.includes("blue")) return "ICE-CUBO tá ficando top. BLUE vai ser sua moeda do app. Quer que eu te ajude a organizar isso?";
+  return "Entendi. Me fala mais um pouco 🙂";
+}
+async function send(){
+  const uid=modal.dataset.uid;
+  const txt=chatInput.value.trim();
+  if(!txt) return;
+  chats[uid].push({by:"me",txt,ts:Date.now()});
+  chatInput.value="";
+  saveChats(); renderChat(uid);
+
+  // resposta automática se for IA
+  if(uid===ai.id){
+    setTimeout(()=>{
+      chats[uid].push({by:"them",txt:aiReply(txt),ts:Date.now()});
+      saveChats(); renderChat(uid);
+    }, 650);
   }
 }
+sendChat.onclick=send;
+chatInput.addEventListener("keydown",(e)=>{ if(e.key==="Enter") send(); });
 
-function applyDangerUI(){
-  save(LS.danger, dangerOn);
-  stage.classList.toggle("danger", dangerOn);
-  panicBtn.classList.toggle("dangerOn", dangerOn);
-  dangerbar.textContent = dangerOn
-    ? "⚠️ PERIGO ATIVO • sua localização será compartilhada (simulação)"
-    : "";
-}
+chatBtn.onclick=()=>openChat((selected&&selected.owner)?selected.owner:ai);
+closeModal.onclick=()=>{ modal.style.display="none"; };
+modal.addEventListener("click",(e)=>{ if(e.target===modal) modal.style.display="none"; });
 
-/* =======================
-   Timeline / Player
-======================= */
-let index = 0;
-
-function renderRail(){
-  rail.innerHTML = "";
-  posts.forEach((p, i)=>{
-    const c = document.createElement("div");
-    c.className = "card";
-    c.innerHTML = \`
-      <video src="\${p.url}" muted playsinline preload="metadata"></video>
-      <div class="meta"><span>\${p.user}</span><span>\${p.title}</span></div>
-    \`;
-    c.addEventListener("click", ()=>openPost(i));
-    rail.appendChild(c);
-  });
-}
-
-function openPost(i){
-  index = (i+posts.length)%posts.length;
-  player.src = posts[index].url;
-  player.play().catch(()=>{});
-}
-
-renderRail();
-openPost(0);
-
-/* swipe na tela grande para trocar */
-let sx=0, sy=0;
-stage.addEventListener("touchstart", (e)=>{
-  const t=e.touches[0]; sx=t.clientX; sy=t.clientY;
-},{passive:true});
-stage.addEventListener("touchend", (e)=>{
-  const t=e.changedTouches[0];
-  const dx=t.clientX - sx, dy=t.clientY - sy;
-  if(Math.abs(dx)>50 && Math.abs(dx)>Math.abs(dy)){
-    openPost(index + (dx<0 ? 1 : -1));
-  }
-},{passive:true});
-
-/* =======================
-   Abas
-======================= */
-function showHome(){
-  setActiveTab("home");
-  const u = currentUser();
-  if(!u) return showLogin();
-  const myPosts = load(LS.posts, posts).filter(p=>p.owner===u.id);
-  openModal(\`
-    <h2><i class="fa-solid fa-house"></i> Seu perfil</h2>
-    <div class="small">Aqui vai sua timeline (postagens). Sem banco ainda, mas já dá pra postar e apagar.</div>
-    <hr/>
-    <div class="row">
-      <input id="postUrl" placeholder="Cole um link de vídeo (mp4) ou imagem (não implementado)"/>
-      <button class="btn" onclick="window.__addPost()">Postar</button>
-    </div>
-    <div class="small" style="margin-top:6px">Dica: use link mp4.</div>
-    <hr/>
-    <div class="list">
-      \${myPosts.length? myPosts.map(p=>\`
-        <div class="item">
-          <div class="kv"><span>\${p.title||"Post"}</span><span>\${p.user}</span></div>
-          <div style="margin-top:8px;display:flex;gap:8px">
-            <button class="btn ghost" onclick="window.__openAny('\${p.url}')">Abrir</button>
-            <button class="btn ghost" onclick="window.__delPost('\${p.id}')">Apagar</button>
-          </div>
-        </div>\`).join("") : \`<div class="small">Sem posts ainda.</div>\`}
-    </div>
-  \`);
-  window.__openAny = (url)=>{ panel.style.display="none"; player.src=url; player.play().catch(()=>{}); setActiveTab("timeline"); };
-  window.__addPost = ()=>{
-    const url = document.getElementById("postUrl").value.trim();
-    if(!url) return alert("Cole um link mp4");
-    const all = load(LS.posts, posts);
-    const id = "u"+Math.random().toString(16).slice(2);
-    all.unshift({id, owner:u.id, user:"@"+u.id, url, title:"Post de "+u.id});
-    save(LS.posts, all);
-    posts = all; renderRail(); panel.style.display="none";
-  };
-  window.__delPost = (id)=>{
-    let all = load(LS.posts, posts);
-    all = all.filter(p=>p.id!==id);
-    save(LS.posts, all);
-    posts = all; renderRail(); panel.style.display="none";
-  };
-}
-
-function showTrade(){
-  setActiveTab("trade");
-  const u = currentUser();
-  if(!u) return showLogin();
-  const trades = load(LS.trades, []);
-  openModal(\`
-    <h2><i class="fa-solid fa-right-left"></i> O que tem pra mim</h2>
-    <div class="small">Trocas (simples). Você posta um item, outra pessoa pode propor troca com mensagem.</div>
-    <hr/>
-    <div class="row">
-      <input id="tTitle" placeholder="O que você está oferecendo? (ex: iPhone 8)"/>
-      <button class="btn" onclick="window.__addTrade()">Publicar</button>
-    </div>
-    <hr/>
-    <div class="list">
-      \${trades.length? trades.map(t=>\`
-        <div class="item">
-          <div class="kv"><span><b>\${t.title}</b></span><span>@\${t.owner}</span></div>
-          <div class="small" style="margin-top:6px">\${t.msg||""}</div>
-          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn ghost" onclick="window.__offer('\${t.id}')">Propor troca</button>
-            \${t.owner===u.id ? \`<button class="btn ghost" onclick="window.__delTrade('\${t.id}')">Apagar</button>\`:""}
-          </div>
-        </div>\`).join("") : \`<div class="small">Nada publicado ainda.</div>\`}
-    </div>
-  \`);
-  window.__addTrade = ()=>{
-    const title = document.getElementById("tTitle").value.trim();
-    if(!title) return alert("Digite o que você quer trocar");
-    const all = load(LS.trades, []);
-    all.unshift({id:"t"+Math.random().toString(16).slice(2), owner:u.id, title});
-    save(LS.trades, all);
-    panel.style.display="none";
-  };
-  window.__delTrade = (id)=>{
-    let all = load(LS.trades, []);
-    all = all.filter(t=>t.id!==id);
-    save(LS.trades, all);
-    panel.style.display="none";
-  };
-  window.__offer = (id)=>{
-    const all = load(LS.trades, []);
-    const t = all.find(x=>x.id===id);
-    if(!t) return;
-    const msg = prompt("Escreva sua proposta (ex: troco por X):");
-    if(msg===null) return;
-    t.msg = msg;
-    save(LS.trades, all);
-    alert("Proposta enviada (simulação). Depois a gente liga isso no chat.");
-    panel.style.display="none";
-  };
-}
-
-function showChat(){
-  setActiveTab("chat");
-  const u = currentUser();
-  if(!u) return showLogin();
-  const chats = load(LS.chats, {});
-  openModal(\`
-    <h2><i class="fa-solid fa-comments"></i> Chat</h2>
-    <div class="small">Digite o @id de alguém (ex: @admin) para abrir conversa.</div>
-    <hr/>
-    <div class="row">
-      <input id="toUser" placeholder="@id do usuário"/>
-      <button class="btn" onclick="window.__openChat()">Abrir</button>
-    </div>
-    <hr/>
-    <div class="small">Conversas salvas no seu navegador por enquanto.</div>
-  \`);
-  window.__openChat = ()=>{
-    const to = document.getElementById("toUser").value.trim().replace("@","");
-    if(!to) return;
-    if(!users[to]) return alert("Usuário não existe ainda.");
-    const key = [u.id,to].sort().join("|");
-    const thread = chats[key] || [];
-    openModal(\`
-      <h2><i class="fa-solid fa-message"></i> @\${u.id} ↔ @\${to}</h2>
-      <div class="list" style="max-height:45vh;overflow:auto" id="thread">
-        \${thread.map(m=>\`<div class="item"><div class="kv"><span>@\${m.from}</span><span>\${new Date(m.ts).toLocaleString()}</span></div><div style="margin-top:6px">\${escapeHtml(m.text)}</div></div>\`).join("") || '<div class="small">Sem mensagens.</div>'}
-      </div>
-      <hr/>
-      <div class="row">
-        <input id="msg" placeholder="Mensagem..."/>
-        <button class="btn" onclick="window.__sendMsg('\${to}')">Enviar</button>
-      </div>
-    \`);
-    window.__sendMsg = (to2)=>{
-      const text = document.getElementById("msg").value.trim();
-      if(!text) return;
-      const k = [u.id,to2].sort().join("|");
-      const all = load(LS.chats, {});
-      all[k] = all[k] || [];
-      all[k].push({from:u.id, text, ts:Date.now()});
-      save(LS.chats, all);
-      document.getElementById("msg").value="";
-      // reabrir pra atualizar
-      panel.style.display="none";
-      showChat();
-    };
-  };
-}
-
-function showCam(){
-  setActiveTab("cam");
-  openModal(\`
-    <h2><i class="fa-solid fa-camera"></i> Câmera</h2>
-    <div class="small">Na Vercel funciona no navegador, mas depende de permissão. (Só preview)</div>
-    <hr/>
-    <button class="btn" onclick="window.__openCam()">Abrir câmera na tela grande</button>
-    <button class="btn ghost" onclick="window.__closeCam()" style="margin-left:8px">Fechar</button>
-  \`);
-  window.__openCam = async ()=>{
-    try{
-      const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
-      player.srcObject = stream;
-      player.muted = true;
-      player.play().catch(()=>{});
-      panel.style.display="none";
-    }catch(e){
-      alert("Permita a câmera no navegador.");
-    }
-  };
-  window.__closeCam = ()=>{
-    if(player.srcObject){
-      player.srcObject.getTracks().forEach(t=>t.stop());
-      player.srcObject = null;
-      openPost(index);
-    }
-    panel.style.display="none";
-  };
-}
-
-function togglePanic(){
-  dangerOn = !dangerOn;
-  applyDangerUI();
-}
-
-function showAdm(){
-  setActiveTab("adm");
-  const u = currentUser();
-  if(!u || u.role!=="master") return alert("Somente ADM master.");
-  const allUsers = Object.entries(users).map(([id, v])=>({id,...v}));
-  openModal(\`
-    <h2><i class="fa-solid fa-shield-halved"></i> Painel ADM Master</h2>
-    <div class="small">Controle básico (sem banco). BLUE e cargos ficam salvos no navegador.</div>
-    <hr/>
-    <div class="list">
-      \${allUsers.map(x=>\`
-        <div class="item">
-          <div class="kv"><span><b>@\${x.id}</b></span><span>role: \${x.role||"user"} • BLUE: \${x.blue||0}</span></div>
-          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn ghost" onclick="window.__giveBlue('\${x.id}')">Dar BLUE</button>
-            <button class="btn ghost" onclick="window.__setMod('\${x.id}', true)">Tornar MOD</button>
-            <button class="btn ghost" onclick="window.__setMod('\${x.id}', false)">Remover MOD</button>
-          </div>
-        </div>\`).join("")}
-    </div>
-  \`);
-  window.__giveBlue = (id)=>{
-    const n = prompt("Quantos BLUE?");
-    const val = Number(n);
-    if(!Number.isFinite(val) || val<=0) return;
-    users[id].blue = (users[id].blue||0) + val;
-    save(LS.users, users);
-    refreshHeader();
-    alert("OK. BLUE atualizado.");
-    panel.style.display="none";
-  };
-  window.__setMod = (id, on)=>{
-    if(id==="admin") return alert("Admin master não muda.");
-    users[id].role = on ? "mod" : "user";
-    save(LS.users, users);
-    alert("OK.");
-    panel.style.display="none";
-  };
-}
-
-/* =======================
-   Login / Cadastro
-======================= */
-function showLogin(){
-  openModal(\`
-    <h2><i class="fa-solid fa-user"></i> Entrar / Cadastrar</h2>
-    <div class="small">Admin master: <b>admin</b> / <b>1533</b></div>
-    <hr/>
-    <div class="row">
-      <input id="lgUser" placeholder="Usuário (ex: joao)"/>
-      <input id="lgPass" placeholder="Senha" type="password"/>
-    </div>
-    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" onclick="window.__doLogin()">Entrar</button>
-      <button class="btn ghost" onclick="window.__doSignup()">Cadastrar</button>
-      <button class="btn ghost" onclick="window.__logout()">Sair</button>
-    </div>
-    <hr/>
-    <div class="small">Dica: cadastro salva no celular (localStorage). Depois a gente coloca banco de verdade.</div>
-  \`);
-  window.__doLogin = ()=>{
-    const u = document.getElementById("lgUser").value.trim();
-    const p = document.getElementById("lgPass").value;
-    if(!u||!p) return alert("Preencha usuário e senha.");
-    if(!users[u] || users[u].pass!==p) return alert("Login inválido.");
-    session = {user:u, ts:Date.now()};
-    save(LS.session, session);
-    refreshHeader();
-    panel.style.display="none";
-  };
-  window.__doSignup = ()=>{
-    const u = document.getElementById("lgUser").value.trim();
-    const p = document.getElementById("lgPass").value;
-    if(!u||!p) return alert("Preencha usuário e senha.");
-    if(users[u]) return alert("Esse usuário já existe.");
-    users[u] = {pass:p, role:"user", blue:0, kids:0};
-    save(LS.users, users);
-    alert("Cadastrado! Agora entre.");
-  };
-  window.__logout = ()=>{
-    session = null; save(LS.session, null);
-    refreshHeader();
-    panel.style.display="none";
-  };
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
-}
-
-/* =======================
-   Eventos da barra
-======================= */
-document.querySelectorAll(".navbtn").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    const t = btn.dataset.tab;
-    if(btn.id==="loginBtn") return showLogin();
-    if(t==="timeline"){ setActiveTab("timeline"); panel.style.display="none"; return; }
-    if(t==="home") return showHome();
-    if(t==="trade") return showTrade();
-    if(t==="chat") return showChat();
-    if(t==="cam") return showCam();
-    if(t==="panic") return togglePanic();
-    if(t==="adm") return showAdm();
-  });
-});
-
-refreshHeader();
-applyDangerUI();
+/* ====== Start ====== */
+renderAll();
+setOwner(ai);
 </script>
-</body>
-</html>`);
-});
-
-module.exports = app;
+</body></html>`);
+}
