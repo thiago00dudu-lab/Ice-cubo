@@ -1,225 +1,250 @@
-const express=require("express"),app=express();
-app.get("/favicon.ico",(q,s)=>s.status(204).end());
-app.get("/favicon.png",(q,s)=>s.status(204).end());
-
-app.get("/",(req,res)=>res.status(200).set("Content-Type","text/html; charset=utf-8").send(`<!doctype html><html lang=pt-br><head>
+export default function handler(req,res){
+res.setHeader("Content-Type","text/html; charset=utf-8");
+res.status(200).send(`<!doctype html><html lang=pt-br><head>
 <meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ICE-CUBO</title>
 <link rel=stylesheet href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-:root{--bg1:#031024;--bg2:#071b33;--glass:rgba(255,255,255,.08);--glass2:rgba(255,255,255,.12);--line:rgba(255,255,255,.16);--txt:#eaf2ff;--mut:#b7c7e6;--acc:#38bdf8;--ok:#22c55e;--bad:#ff6b6b}
-*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--txt);overflow:hidden;
-background:radial-gradient(1200px 600px at 20% -10%,rgba(56,189,248,.18),transparent 60%),radial-gradient(900px 600px at 110% 30%,rgba(99,102,241,.14),transparent 55%),linear-gradient(180deg,var(--bg1),var(--bg2) 60%,#041226)}
-a{color:inherit}button{cursor:pointer}
+:root{--bg:#061428;--g:rgba(255,255,255,.08);--g2:rgba(255,255,255,.12);--l:rgba(255,255,255,.16);--t:#eaf2ff;--m:#b7c7e6;--a:#38bdf8;--ok:#22c55e;--bad:#fb7185}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:
+radial-gradient(1200px 600px at 20% -10%,rgba(56,189,248,.18),transparent 60%),
+radial-gradient(900px 600px at 110% 30%,rgba(99,102,241,.14),transparent 55%),
+linear-gradient(180deg,#031024,#071b33 60%,#041226);color:var(--t);height:100vh;overflow:hidden}
+a{color:inherit}button{cursor:pointer}input,textarea{font:inherit}
 #app{height:100vh;display:flex;flex-direction:column}
 .top{height:52vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;background:#000}
-.bgSea{position:absolute;inset:0;opacity:.55;filter:saturate(1.25);
-background:radial-gradient(circle at 12% 18%,rgba(56,189,248,.20),transparent 40%),
-radial-gradient(circle at 86% 16%,rgba(59,130,246,.18),transparent 42%),
-radial-gradient(circle at 30% 85%,rgba(34,211,238,.16),transparent 42%),
+.bgSea{position:absolute;inset:0;opacity:.45;filter:saturate(1.2);background:
+radial-gradient(circle at 8% 20%,rgba(56,189,248,.22),transparent 35%),
+radial-gradient(circle at 80% 10%,rgba(59,130,246,.18),transparent 35%),
+radial-gradient(circle at 30% 80%,rgba(34,211,238,.16),transparent 38%),
 linear-gradient(180deg,#021024,#041a35)}
-/* ===== Fundo do mar (SVG patterns) ===== */
-.seaIcons{position:absolute;inset:-6%;opacity:.45;mix-blend-mode:screen;filter:drop-shadow(0 10px 30px rgba(0,0,0,.25))}
-.seaIcons:before,.seaIcons:after{content:"";position:absolute;inset:0;background-repeat:repeat;background-size:320px 320px;animation:drift 32s linear infinite}
-.seaIcons:before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cdefs%3E%3CradialGradient id='g' cx='30%25' cy='30%25'%3E%3Cstop offset='0' stop-color='%2338bdf8' stop-opacity='.55'/%3E%3Cstop offset='1' stop-color='%23000000' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='none'/%3E%3Cg fill='none' stroke='%23bfe9ff' stroke-opacity='.38' stroke-width='2'%3E%3Cpath d='M70 250c25-30 25-70 0-100-25 30-25 70 0 100z'/%3E%3Cpath d='M240 95c22 16 44 16 66 0-22-16-44-16-66 0z'/%3E%3Cpath d='M220 240c-10-25-30-40-55-45 10 25 30 40 55 45z'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='92' cy='92' r='18' fill='url(%23g)'/%3E%3Ccircle cx='260' cy='220' r='22' fill='url(%23g)'/%3E%3C/g%3E%3Cg fill='%23ffffff' fill-opacity='.12'%3E%3Ccircle cx='40' cy='180' r='3'/%3E%3Ccircle cx='280' cy='40' r='2'/%3E%3Ccircle cx='140' cy='30' r='2'/%3E%3Ccircle cx='300' cy='160' r='3'/%3E%3C/g%3E%3Cg fill='%2380d9ff' fill-opacity='.25'%3E%3Cpath d='M155 210c0-18 14-32 32-32 18 0 32 14 32 32 0 18-14 32-32 32-18 0-32-14-32-32z'/%3E%3C/g%3E%3Cg fill='%23a7f3ff' fill-opacity='.22'%3E%3Cpath d='M60 60c18 6 26 18 24 36-18-6-26-18-24-36z'/%3E%3Cpath d='M260 120c-18 6-26 18-24 36 18-6 26-18 24-36z'/%3E%3C/g%3E%3C/svg%3E");filter:blur(.15px)}
-.seaIcons:after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.18' stroke-width='2'%3E%3Cpath d='M85 120c-12-18-10-40 8-52 18-12 40-6 54 14 12 18 10 40-8 52-18 12-40 6-54-14z'/%3E%3Cpath d='M230 250c10-22 34-32 56-22-10 22-34 32-56 22z'/%3E%3C/g%3E%3Cg fill='%2338bdf8' fill-opacity='.18'%3E%3Cpath d='M220 70c10-18 30-26 50-18-10 18-30 26-50 18z'/%3E%3C/g%3E%3Cg fill='%23ffffff' fill-opacity='.10'%3E%3Ccircle cx='70' cy='260' r='3'/%3E%3Ccircle cx='140' cy='180' r='2'/%3E%3Ccircle cx='260' cy='120' r='3'/%3E%3Ccircle cx='300' cy='260' r='2'/%3E%3C/g%3E%3C/svg%3E");
-animation-duration:46s;opacity:.6;transform:scale(1.1)}
-@keyframes drift{to{transform:translate3d(-180px,-120px,0)}}
-/* bolhas */
-.bubbles:before,.bubbles:after{content:"";position:absolute;inset:-20%;background:
+.bub:before,.bub:after{content:"";position:absolute;inset:-20%;background:
 radial-gradient(circle,rgba(255,255,255,.22) 0 2px,transparent 3px) 0 0/120px 120px,
-radial-gradient(circle,rgba(255,255,255,.16) 0 1px,transparent 2px) 40px 20px/160px 160px;
+radial-gradient(circle,rgba(255,255,255,.14) 0 1px,transparent 2px) 40px 20px/160px 160px;
 animation:float 14s linear infinite;opacity:.55}
-.bubbles:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
+.bub:after{animation-duration:20s;opacity:.32;transform:scale(1.15)}
 @keyframes float{to{transform:translateY(-120px)}}
-
-.brand{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:6}
-.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-.logo b{letter-spacing:1px}
-.mascot{width:34px;height:34px;border-radius:14px;display:grid;place-items:center;position:relative;overflow:hidden;
-background:linear-gradient(135deg,#38bdf8,#1d4ed8);border:1px solid rgba(255,255,255,.22)}
-.mascot img{width:100%;height:100%;object-fit:cover;display:none}
-.mascot .ice{font-weight:1000;letter-spacing:.5px}
-.mascot:after{content:"";position:absolute;inset:-30%;background:
-radial-gradient(circle at 30% 30%,rgba(255,255,255,.55),transparent 35%),
-radial-gradient(circle at 70% 70%,rgba(56,189,248,.35),transparent 45%);
-animation:shine 2.8s ease-in-out infinite}
-@keyframes shine{0%,100%{transform:rotate(0) scale(1)}50%{transform:rotate(20deg) scale(1.15)}}
-/* animação tipo “urso tentando pegar a moeda” (sem depender da imagem) */
-.mascotWiggle{animation:wig 1.15s ease-in-out infinite;transform-origin:60% 70%}
-@keyframes wig{0%,100%{transform:rotate(-2deg) translateY(0)}45%{transform:rotate(3deg) translateY(-1px)}75%{transform:rotate(-1deg) translateY(1px)}}
-
-.pill{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);border-radius:18px}
-.pill .coin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#0ea5e9,#0b2a6a);
-border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) inset;position:relative;overflow:hidden}
-.pill .coin span{color:#ffd700;font-weight:900}
-.pill .coin:after{content:"";position:absolute;inset:-60%;background:radial-gradient(circle,rgba(255,215,0,.55),transparent 45%);animation:coin 1.8s linear infinite}
-@keyframes coin{to{transform:rotate(360deg)}}
-
-.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:4}
-#mainMedia{width:100%;height:100%;object-fit:cover;display:none}
-#hint{position:absolute;inset:auto 12px 72px 12px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:18px;color:var(--mut);text-align:center;z-index:6}
-.stageBar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:7}
-.ownerCard{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:18px;min-width:0}
-.avatar{width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#38bdf8,#1d4ed8);display:grid;place-items:center;font-weight:900;position:relative;overflow:hidden}
-.avatar img{width:100%;height:100%;object-fit:cover;display:none}
-.star{position:absolute;right:-6px;top:-6px;width:20px;height:20px;border-radius:10px;display:grid;place-items:center;font-size:11px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.2)}
-.star.blue{color:#76c7ff;box-shadow:0 0 10px rgba(56,189,248,.35)}
-.star.gold{color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.35)}
-.ownerCard .meta{min-width:0}
-.ownerCard .meta .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
-.ownerCard .meta .sub{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.smallBtn{padding:10px 12px;border-radius:18px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);color:var(--txt)}
-.smallBtn:active{transform:scale(.98)}
-
+.brand{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:3}
+.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(10px);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.brandname{display:flex;flex-direction:column;line-height:1.05}
+.brandname b{letter-spacing:1.2px;font-size:15px}
+.brandname small{color:var(--m);font-size:11px}
+.pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(10px);border-radius:18px}
+.coin{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+background:radial-gradient(circle at 30% 30%,#0ea5e9,#0b2a6a);
+border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) inset}
+.coin span{color:#ffd700;font-weight:1000}
+.pill .meta{display:flex;flex-direction:column;line-height:1.05}
+.pill .meta b{font-size:12px}
+.pill .meta small{font-size:11px;color:var(--m)}
+.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#mainV{width:100%;height:100%;object-fit:cover;display:none}
+#mainI{width:100%;height:100%;object-fit:cover;display:none}
+#hint{position:absolute;inset:auto 12px 72px 12px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);border-radius:18px;color:var(--m);text-align:center}
+.stageBar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:4}
+.card{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);border-radius:18px;min-width:0}
+.av{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;font-weight:1000;background:linear-gradient(135deg,#38bdf8,#1d4ed8);position:relative}
+.meta{min-width:0}
+.meta .name{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}
+.meta .sub{font-size:12px;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.star{font-size:13px}
+.star.gold{color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.35)}
+.star.blue{color:#6ee7ff;text-shadow:0 0 10px rgba(110,231,255,.25)}
+.sbtn{padding:10px 12px;border-radius:18px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);color:var(--t)}
+.sbtn:active{transform:scale(.98)}
 .bottom{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 10px 74px;overflow:hidden}
 .carousel{display:flex;gap:10px;overflow:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
-.item{min-width:190px;max-width:190px;height:120px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:rgba(255,255,255,.06);scroll-snap-align:center;position:relative}
+.item{min-width:190px;max-width:190px;height:120px;border-radius:18px;overflow:hidden;border:1px solid var(--l);background:rgba(255,255,255,.06);scroll-snap-align:center;position:relative}
 .item video,.item img{width:100%;height:100%;object-fit:cover;display:block}
-.item .tag{position:absolute;left:8px;bottom:8px;padding:6px 10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.35);backdrop-filter:blur(8px);border-radius:14px;font-size:12px}
-.item.active{outline:2px solid rgba(56,189,248,.8)}
-.panel{flex:1;overflow:auto;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:22px;padding:12px}
+.tag{position:absolute;left:8px;bottom:8px;padding:6px 10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.35);backdrop-filter:blur(8px);border-radius:14px;font-size:12px;display:flex;gap:8px;align-items:center}
+.tag .mini{width:18px;height:18px;border-radius:7px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#38bdf8,#1d4ed8)}
+.item.active{outline:2px solid rgba(56,189,248,.85)}
+.panel{flex:1;overflow:auto;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);border-radius:22px;padding:12px}
 .hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .hrow h3{margin:0;font-size:16px}
-.muted{color:var(--mut);font-size:12px}
-.gridPosts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.post{border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:18px;overflow:hidden}
+.muted{color:var(--m);font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.post{border:1px solid var(--l);background:rgba(255,255,255,.06);border-radius:18px;overflow:hidden}
 .post video,.post img{width:100%;height:140px;object-fit:cover;display:block}
-.post .pbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px}
-.badge{font-size:12px;color:var(--mut)}
-.iconBtn{border:0;background:transparent;color:var(--bad);padding:6px 8px;border-radius:12px}
-.iconBtn:active{transform:scale(.96)}
-.okBtn{border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.16);color:#eafff0;padding:8px 10px;border-radius:14px}
-.okBtn:active{transform:scale(.98)}
-.secBtn{border:1px solid rgba(56,189,248,.35);background:rgba(56,189,248,.16);color:var(--txt);padding:8px 10px;border-radius:14px}
-.secBtn:active{transform:scale(.98)}
-
-.nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:10px;z-index:20}
-.nav button{flex:1;padding:12px 10px;border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.08);backdrop-filter:blur(14px);color:var(--txt);display:flex;align-items:center;justify-content:center;gap:8px}
-.nav button.active{outline:2px solid rgba(56,189,248,.8)}
-.nav i{opacity:.95}
-
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:40}
-.sheet{width:min(720px,100%);max-height:86vh;border-radius:26px 26px 0 0;overflow:hidden;border:1px solid var(--line);background:rgba(7,20,38,.92);backdrop-filter:blur(18px)}
+.pbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px}
+.badge{font-size:12px;color:var(--m);display:flex;align-items:center;gap:8px;min-width:0}
+.badge .mini{width:18px;height:18px;border-radius:7px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#38bdf8,#1d4ed8);flex:0 0 auto}
+.badge b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:105px}
+.icon{border:0;background:transparent;color:#ff6b6b;padding:6px 8px;border-radius:12px}
+.icon:active{transform:scale(.96)}
+.nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:10px;z-index:10}
+.nav button{flex:1;padding:12px 10px;border-radius:20px;border:1px solid var(--l);background:rgba(255,255,255,.08);backdrop-filter:blur(14px);color:var(--t);display:flex;align-items:center;justify-content:center;gap:8px}
+.nav button.active{outline:2px solid rgba(56,189,248,.85)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{width:min(720px,100%);max-height:86vh;border-radius:26px 26px 0 0;overflow:hidden;border:1px solid var(--l);background:rgba(7,20,38,.92);backdrop-filter:blur(18px)}
 .sheetTop{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
 .sheetTop b{font-size:14px}
 .sheetBody{padding:12px 12px 14px;overflow:auto;max-height:calc(86vh - 52px)}
 .chat{display:flex;flex-direction:column;gap:10px}
-.bubble{max-width:86%;padding:10px 12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
+.bubbl{max-width:86%;padding:10px 12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
 .me{align-self:flex-end;background:rgba(56,189,248,.18);border-color:rgba(56,189,248,.25)}
 .them{align-self:flex-start}
 .chatBar{display:flex;gap:8px;margin-top:10px}
-.chatBar input{flex:1;padding:12px 12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--txt);outline:none}
-.chatBar button{padding:12px 14px;border-radius:18px;border:1px solid rgba(56,189,248,.35);background:rgba(56,189,248,.2);color:var(--txt)}
-/* Trocas layout */
-.tradeWrap{display:grid;grid-template-columns:1fr;gap:10px}
-@media(min-width:740px){.tradeWrap{grid-template-columns:1fr 1fr}}
-.card{border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:18px;padding:10px}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.inp{flex:1;min-width:140px;padding:11px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--txt);outline:none}
-.list{display:flex;flex-direction:column;gap:10px}
-.offer{border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);border-radius:16px;padding:10px}
-.offerTop{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.offerTop b{font-size:14px}
-.offer small{color:var(--mut)}
-.offerBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chatBar input{flex:1;padding:12px 12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--t);outline:none}
+.chatBar button{padding:12px 14px;border-radius:18px;border:1px solid rgba(56,189,248,.35);background:rgba(56,189,248,.2);color:var(--t)}
+hr{border:0;border-top:1px solid rgba(255,255,255,.12);margin:10px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{flex:1;min-width:180px}
+.field input,.field textarea{width:100%;padding:12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--t);outline:none}
+.field textarea{min-height:74px;resize:vertical}
+.good{color:var(--ok)}.warn{color:#fbbf24}.bad{color:var(--bad)}
+/* ====== Bear+Blue anim (inline SVG holder) ====== */
+.bearWrap{width:44px;height:44px;border-radius:16px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden}
+.bearWrap svg{width:44px;height:44px}
+@keyframes paw{0%,100%{transform:translate(0,0) rotate(-3deg)}50%{transform:translate(2px,-1px) rotate(6deg)}}
+@keyframes coin{0%,100%{transform:translate(0,0)}50%{transform:translate(0,-1px)}}
+.paw{transform-origin:24px 24px;animation:paw 1.2s ease-in-out infinite}
+.coinAnim{transform-origin:22px 26px;animation:coin 1.2s ease-in-out infinite}
 </style></head><body>
 <div id=app>
   <div class=top>
-    <div class="bgSea bubbles"></div>
-    <div class="seaIcons"></div>
+    <div class="bgSea bub"></div>
 
     <div class=brand>
       <div class=logo>
-        <div class="mascot mascotWiggle" id=mascot>
-          <span class=ice>ICE</span>
-          <img id=mascotImg alt="mascote">
+        <div class=bearWrap title="BLUE">
+          <!-- Bear trying to grab BLUE (simple cute SVG animation) -->
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="ice" x1="10" y1="20" x2="50" y2="54">
+                <stop stop-color="#9ae6ff" stop-opacity=".9"/>
+                <stop offset="1" stop-color="#1f4ed8" stop-opacity=".55"/>
+              </linearGradient>
+              <radialGradient id="gold" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(34 36) rotate(45) scale(18)">
+                <stop stop-color="#ffeaa7"/>
+                <stop offset="1" stop-color="#ffb703"/>
+              </radialGradient>
+            </defs>
+            <rect x="10" y="26" width="40" height="28" rx="6" fill="url(#ice)" stroke="rgba(255,255,255,.25)"/>
+            <g class="coinAnim">
+              <circle cx="30" cy="40" r="10" fill="url(#gold)" stroke="rgba(255,215,0,.6)"/>
+              <path d="M30 33v14M24 36h10a4 4 0 0 1 0 8H24" stroke="#0b2a6a" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <g class="paw">
+              <circle cx="50" cy="24" r="10" fill="rgba(255,255,255,.92)"/>
+              <circle cx="44" cy="18" r="3" fill="rgba(255,255,255,.92)"/>
+              <circle cx="56" cy="18" r="3" fill="rgba(255,255,255,.92)"/>
+              <circle cx="50" cy="25" r="2" fill="#0b2a6a"/>
+            </g>
+          </svg>
         </div>
-        <i class="fa-solid fa-snowflake"></i><b>ICE-CUBO</b><span class=muted>online</span>
+        <div class=brandname>
+          <b>ICE-CUBO</b>
+          <small id=netNote>social • trocas • BLUE</small>
+        </div>
       </div>
-      <div class=pill title="Moeda BLUE (simulação)">
+
+      <div class=pill title="BLUE (simulação estilo BTC)">
         <div class=coin><span>B</span></div>
-        <div style="display:flex;flex-direction:column;line-height:1.05">
-          <span style="font-weight:800">BLUE</span><span class=muted id=blueBal>0</span>
+        <div class=meta>
+          <b id=blueBal>0 BLUE</b>
+          <small id=blueInfo>cap 21.000.000</small>
         </div>
       </div>
     </div>
 
     <div class=viewer>
-      <div id=hint>Toque em um card abaixo para destacar. (Swipe na timeline)</div>
-      <video id=mainMedia playsinline controls></video>
-      <img id=mainImg style="width:100%;height:100%;object-fit:cover;display:none">
+      <div id=hint>Toque num card pra destacar na tela grande. (Swipe na timeline)</div>
+      <video id=mainV playsinline controls></video>
+      <img id=mainI />
     </div>
 
     <div class=stageBar>
-      <div class=ownerCard id=ownerCard>
-        <div class=avatar id=ownerAv>V<div class="star blue" id=ownerStar style="display:none"><i class="fa-solid fa-star"></i></div></div>
+      <div class=card id=ownerCard>
+        <div class=av id=ownerAv>I</div>
         <div class=meta>
-          <div class=name id=ownerName>ICE IA</div>
+          <div class=name id=ownerName>ICE IA <span class="star blue" id=ownerStar style="display:none"><i class="fa-solid fa-star"></i></span></div>
           <div class=sub id=ownerSub>Toque no chat para conversar</div>
         </div>
       </div>
-      <button class=smallBtn id=chatBtn><i class="fa-solid fa-comments"></i></button>
+      <button class=sbtn id=chatBtn title=Chat><i class="fa-solid fa-comments"></i></button>
+      <button class=sbtn id=mineBtn title="Minerar BLUE (simulação)"><i class="fa-solid fa-hammer"></i></button>
     </div>
   </div>
 
   <div class=bottom>
     <div class=carousel id=carousel></div>
 
+    <div class=panel id=panelFeed>
+      <div class=hrow>
+        <h3><i class="fa-solid fa-film"></i> Timeline</h3>
+        <span class=muted>swipe → para trocar</span>
+      </div>
+      <div class=muted>Posts mostram usuário + avatar + estrela (ADM/mod). Escolha um para destacar na tela grande.</div>
+      <div style=height:10px></div>
+      <div class=grid id=feedGrid></div>
+    </div>
+
     <div class=panel id=panelHome style="display:none">
-      <div class=hrow><h3><i class="fa-solid fa-user"></i> Seu perfil</h3><span class=muted>poste foto/vídeo da galeria</span></div>
+      <div class=hrow>
+        <h3><i class="fa-solid fa-user"></i> Seu perfil</h3>
+        <span class=muted>poste da galeria (funcional)</span>
+      </div>
       <div class=row style="margin-bottom:10px">
-        <label class=smallBtn style="display:inline-flex;align-items:center;gap:8px">
+        <label class=sbtn style="display:inline-flex;align-items:center;gap:8px">
           <i class="fa-solid fa-image"></i> Abrir galeria
           <input id=filePick type=file accept="image/*,video/*" style="display:none">
         </label>
-        <button class=smallBtn id=postBtn><i class="fa-solid fa-upload"></i> Postar</button>
-        <span class=muted id=pickInfo style="align-self:center">Nenhum arquivo selecionado</span>
+        <button class=sbtn id=postBtn><i class="fa-solid fa-upload"></i> Postar</button>
+        <span class=muted id=pickInfo>Nenhum arquivo selecionado</span>
       </div>
-      <div class=muted style="margin-bottom:8px">Seus posts (aparecem aqui e também na timeline):</div>
-      <div class=gridPosts id=myPosts></div>
-    </div>
-
-    <div class=panel id=panelFeed>
-      <div class=hrow><h3><i class="fa-solid fa-film"></i> Timeline</h3><span class=muted>swipe → para trocar</span></div>
-      <div class=muted>Escolha um post na timeline horizontal acima para destacar na tela grande.</div>
-      <div style="height:10px"></div>
-      <div class=gridPosts id=feedGrid></div>
+      <div class=muted style="margin-bottom:8px">Seus posts (aparecem aqui e na timeline):</div>
+      <div class=grid id=myPosts></div>
     </div>
 
     <div class=panel id=panelSwap style="display:none">
-      <div class=hrow><h3><i class="fa-solid fa-repeat"></i> Trocas</h3><span class=muted>crie oferta e combine</span></div>
-      <div class=tradeWrap>
-        <div class=card>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-            <b>Minha oferta</b><small class=muted>fica salva</small>
-          </div>
-          <div class=row style="margin-top:10px">
-            <input class=inp id=trItem placeholder="O que você tem? ex: BLUE, skin, serviço">
-            <input class=inp id=trWant placeholder="O que você quer? ex: vídeo, troca, item">
-          </div>
-          <div class=row style="margin-top:10px">
-            <input class=inp id=trDesc placeholder="Detalhes (opcional)..." style="flex:1">
-            <button class=secBtn id=trAdd><i class="fa-solid fa-plus"></i> Publicar</button>
-          </div>
-          <div style="height:10px"></div>
-          <div class=muted>Minhas ofertas:</div>
-          <div class=list id=myOffers style="margin-top:8px"></div>
-        </div>
+      <div class=hrow>
+        <h3><i class="fa-solid fa-repeat"></i> Trocas</h3>
+        <span class=muted>produto + descrição + o que quer em troca</span>
+      </div>
 
-        <div class=card>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-            <b>Ofertas da galera</b><small class=muted>simulação (sem backend)</small>
-          </div>
-          <div style="height:10px"></div>
-          <div class=list id=allOffers></div>
+      <div class=muted style="margin-bottom:8px">
+        Aqui é <b>Função A</b>: funciona no seu aparelho via localStorage (sem backend). Eu deixei <b>usuários fake + IA</b> pra simular “todos usuários”.
+      </div>
+
+      <div class=row>
+        <div class=field>
+          <input id=swapTitle placeholder="Nome do produto (ex: Tênis X)"/>
+        </div>
+        <div class=field>
+          <input id=swapWant placeholder="Quero em troca (ex: Moletom / BLUE)"/>
         </div>
       </div>
+      <div class=row style="margin-top:8px">
+        <div class=field>
+          <textarea id=swapDesc placeholder="Descrição rápida (tamanho, estado, detalhes...)"></textarea>
+        </div>
+      </div>
+      <div class=row style="margin-top:8px;margin-bottom:10px">
+        <label class=sbtn style="display:inline-flex;align-items:center;gap:8px">
+          <i class="fa-solid fa-camera"></i> Foto/Vídeo
+          <input id=swapFile type=file accept="image/*,video/*" style="display:none">
+        </label>
+        <button class=sbtn id=swapPost><i class="fa-solid fa-bolt"></i> Publicar troca</button>
+        <span class=muted id=swapPickInfo>Nenhum arquivo</span>
+      </div>
+
+      <hr>
+      <div class=hrow>
+        <h3 style="font-size:14px;margin:0"><i class="fa-solid fa-shop"></i> Ofertas</h3>
+        <span class=muted id=swapCount>0</span>
+      </div>
+      <div class=grid id=swapGrid></div>
     </div>
 
     <div class=panel id=panelHelp style="display:none">
-      <div class=hrow><h3><i class="fa-solid fa-triangle-exclamation"></i> Perigo</h3><span class=muted>(próximo passo)</span></div>
-      <div class=muted>Posso ligar botão ON/OFF de geolocalização e alertas aqui sem quebrar o projeto.</div>
+      <div class=hrow>
+        <h3><i class="fa-solid fa-triangle-exclamation"></i> Perigo</h3>
+        <span class=muted>modo futuro</span>
+      </div>
+      <div class=muted>
+        Aqui dá pra ligar depois geolocalização/alerta (botão ON/OFF). Por enquanto deixei “seguro” pra não quebrar Vercel.
+      </div>
     </div>
   </div>
 </div>
@@ -233,11 +258,14 @@ border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) in
 
 <div class=modal id=modal>
   <div class=sheet>
-    <div class=sheetTop><b id=chatTitle>Chat</b><button class=smallBtn id=closeModal><i class="fa-solid fa-xmark"></i></button></div>
+    <div class=sheetTop>
+      <b id=chatTitle>Chat</b>
+      <button class=sbtn id=closeModal><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <div class=sheetBody>
       <div class=chat id=chatBox></div>
       <div class=chatBar>
-        <input id=chatInput placeholder="Digite sua mensagem...">
+        <input id=chatInput placeholder="Digite sua mensagem..." />
         <button id=sendChat><i class="fa-solid fa-paper-plane"></i></button>
       </div>
     </div>
@@ -245,274 +273,362 @@ border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) in
 </div>
 
 <script>
-/* ===== Mascote (troque aqui se quiser usar seu urso/moeda) =====
-   Dica: suba a imagem no GitHub e use o link RAW.
-   Ex: https://raw.githubusercontent.com/USER/REPO/main/urso.png
-*/
-const MASCOT_URL=""; // <- coloque aqui a URL do urso/moeda se quiser
-(function(){
-  const m=document.getElementById("mascot"),img=document.getElementById("mascotImg");
-  if(MASCOT_URL){ img.src=MASCOT_URL; img.style.display="block"; m.querySelector(".ice").style.display="none"; }
-})();
-
-/* ===== IndexedDB p/ arquivos do perfil ===== */
+/* ========= Mini-DB (IndexedDB) ========= */
 const DBN="icecubo_db",STORE="files";
-function idb(){return new Promise((ok,err)=>{const r=indexedDB.open(DBN,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:"id"});r.onsuccess=()=>ok(r.result);r.onerror=()=>err(r.error);});}
-async function putFile(id,blob,type){const db=await idb();return new Promise((ok,err)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({id,blob,type,ts:Date.now()});tx.oncomplete=()=>ok(1);tx.onerror=()=>err(tx.error);});}
-async function getFile(id){const db=await idb();return new Promise((ok,err)=>{const tx=db.transaction(STORE,"readonly"),rq=tx.objectStore(STORE).get(id);rq.onsuccess=()=>ok(rq.result||null);rq.onerror=()=>err(rq.error);});}
-async function delFile(id){const db=await idb();return new Promise((ok,err)=>{const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).delete(id);tx.oncomplete=()=>ok(1);tx.onerror=()=>err(tx.error);});}
+const idb=()=>new Promise((ok,er)=>{const r=indexedDB.open(DBN,1);
+r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:"id"});
+r.onsuccess=()=>ok(r.result);r.onerror=()=>er(r.error);});
+const putFile=async(id,blob,type)=>new Promise(async(ok,er)=>{const db=await idb();const tx=db.transaction(STORE,"readwrite");
+tx.objectStore(STORE).put({id,blob,type,ts:Date.now()});tx.oncomplete=()=>ok(1);tx.onerror=()=>er(tx.error);});
+const getFile=async(id)=>new Promise(async(ok,er)=>{const db=await idb();const tx=db.transaction(STORE,"readonly");
+const rq=tx.objectStore(STORE).get(id);rq.onsuccess=()=>ok(rq.result||null);rq.onerror=()=>er(rq.error);});
+const delFile=async(id)=>new Promise(async(ok,er)=>{const db=await idb();const tx=db.transaction(STORE,"readwrite");
+tx.objectStore(STORE).delete(id);tx.oncomplete=()=>ok(1);tx.onerror=()=>er(tx.error);});
 
-/* ===== State ===== */
-const LS="icecubo_state_v2";
-const me={id:"me",name:"Você",avatar:"V",role:"owner",photo:""};
-const ai={id:"iceai",name:"ICE IA",avatar:"I",role:"mod",photo:""};
-const fakeUsers=[
-  {id:"maya",name:"Maya",avatar:"M",role:"user"},
-  {id:"kadu",name:"Kadu",avatar:"K",role:"user"},
-  {id:"bbb",name:"Beto",avatar:"B",role:"mod"}
+/* ========= Usuários (simulação) ========= */
+const ROLE={USER:"user",MOD:"mod",ADM:"adm"};
+const starHtml=(r)=>r===ROLE.ADM?'<span class="star gold"><i class="fa-solid fa-star"></i></span>':(r===ROLE.MOD?'<span class="star blue"><i class="fa-solid fa-star"></i></span>':"");
+const mkAv=(ch)=>ch||"U";
+const me={id:"me",name:"Você",avatar:"V",role:ROLE.USER};
+const ai={id:"iceai",name:"ICE IA",avatar:"I",role:ROLE.MOD};
+const fakes=[
+  {id:"maya",name:"maya",avatar:"M",role:ROLE.USER},
+  {id:"kadu",name:"kadu",avatar:"K",role:ROLE.MOD},
+  {id:"adm",name:"ICE ADM",avatar:"A",role:ROLE.ADM},
 ];
-const state=JSON.parse(localStorage.getItem(LS)||"null")||{blue:0,my:[],feed:[],offersMy:[],offersAll:[]};
-const save=()=>localStorage.setItem(LS,JSON.stringify(state));
-function seedAI(){
-  if(state.feed.length) return;
-  const samples=[
-    {src:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",type:"video"},
-    {src:"https://www.w3schools.com/html/mov_bbb.mp4",type:"video"},
-    {src:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60",type:"image"}
-  ];
-  state.feed=samples.map((s,i)=>({id:"ai_"+i,type:s.type,url:s.src,owner:ai,ts:Date.now()-((i+1)*60000)}));
-  if(!state.offersAll.length){
-    const mk=(u,item,want,desc)=>({id:"o_"+Date.now()+"_"+Math.random().toString(16).slice(2),owner:u,item,want,desc,ts:Date.now()-Math.floor(Math.random()*3600000),status:"open"});
-    state.offersAll=[
-      mk(fakeUsers[0],"Edição de vídeo","BLUE","Faço edição rápida (1min)"),
-      mk(fakeUsers[1],"BLUE (50)","Vídeo/Foto","Troco por conteúdo"),
-      mk(fakeUsers[2],"Moderação","BLUE","Ajudo no chat/controle"),
-      mk(ai,"Conteúdo IA","Troca/ideia","Posso gerar ideias pra posts")
+
+/* ========= Estado (localStorage) ========= */
+const LS="icecubo_state_v2";
+const st=JSON.parse(localStorage.getItem(LS)||"null")||{
+  my:[],      // {id,fileId,type,ts}
+  feed:[],    // {id,type,url,owner,ts}
+  swaps:[],   // {id,title,desc,want,media:{type,url}|{fileId,type},owner,ts}
+  blue:{cap:21000000,blocks:0,sub:0,bal:0,reward:50,halvEvery:210000,nextHalv:210000, minted:0, price:0.000001, brl:0}
+};
+const save=()=>localStorage.setItem(LS,JSON.stringify(st));
+const uid=()=>Date.now().toString(36)+Math.random().toString(16).slice(2);
+
+/* ========= Seed Feed + Swaps ========= */
+(function seed(){
+  if(!st.feed.length){
+    const samples=[
+      {src:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",type:"video",owner:ai},
+      {src:"https://www.w3schools.com/html/mov_bbb.mp4",type:"video",owner:fakes[1]},
+      {src:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60",type:"image",owner:fakes[0]},
+      {src:"https://images.unsplash.com/photo-1520975958225-8cc7f9f0b3fd?auto=format&fit=crop&w=1200&q=60",type:"image",owner:fakes[2]}
     ];
+    st.feed=samples.map((s,i)=>({id:"seed_"+i,type:s.type,url:s.src,owner:s.owner,ts:Date.now()-((i+1)*60000)}));
+  }
+  if(!st.swaps.length){
+    const s0={id:"swap_seed1",title:"Tênis (fictício)",desc:"Pouco usado. Tamanho 41. Foto exemplo.",want:"Moletom ou BLUE",owner:fakes[0],ts:Date.now()-360000,
+      media:{type:"image",url:"https://images.unsplash.com/photo-1528701800489-20be3c8dd6a3?auto=format&fit=crop&w=1200&q=60"}};
+    const s1={id:"swap_seed2",title:"Skate (fictício)",desc:"Deck ok, roda boa. Vídeo exemplo.",want:"Boné / camisa",owner:ai,ts:Date.now()-240000,
+      media:{type:"video",url:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"}};
+    st.swaps=[s0,s1];
   }
   save();
-}
-seedAI();
+})();
 
-/* ===== Refs ===== */
-const carousel=document.getElementById("carousel"),mainMedia=document.getElementById("mainMedia"),mainImg=document.getElementById("mainImg"),hint=document.getElementById("hint");
-const ownerAv=document.getElementById("ownerAv"),ownerName=document.getElementById("ownerName"),ownerSub=document.getElementById("ownerSub"),ownerStar=document.getElementById("ownerStar");
-const blueBal=document.getElementById("blueBal");
-const panelFeed=document.getElementById("panelFeed"),panelHome=document.getElementById("panelHome"),panelSwap=document.getElementById("panelSwap"),panelHelp=document.getElementById("panelHelp");
-const feedGrid=document.getElementById("feedGrid"),myPosts=document.getElementById("myPosts");
-const navFeed=document.getElementById("navFeed"),navHome=document.getElementById("navHome"),navSwap=document.getElementById("navSwap"),navHelp=document.getElementById("navHelp");
-const modal=document.getElementById("modal"),chatBtn=document.getElementById("chatBtn"),closeModal=document.getElementById("closeModal");
-const chatBox=document.getElementById("chatBox"),chatTitle=document.getElementById("chatTitle"),chatInput=document.getElementById("chatInput"),sendChat=document.getElementById("sendChat");
-const filePick=document.getElementById("filePick"),pickInfo=document.getElementById("pickInfo"),postBtn=document.getElementById("postBtn");
-const trItem=document.getElementById("trItem"),trWant=document.getElementById("trWant"),trDesc=document.getElementById("trDesc"),trAdd=document.getElementById("trAdd");
-const myOffers=document.getElementById("myOffers"),allOffers=document.getElementById("allOffers");
+/* ========= Refs ========= */
+const carousel=byId("carousel"), mainV=byId("mainV"), mainI=byId("mainI"), hint=byId("hint");
+const ownerAv=byId("ownerAv"), ownerName=byId("ownerName"), ownerSub=byId("ownerSub"), ownerStar=byId("ownerStar");
+const blueBal=byId("blueBal"), blueInfo=byId("blueInfo"), mineBtn=byId("mineBtn");
+const panelFeed=byId("panelFeed"), panelHome=byId("panelHome"), panelSwap=byId("panelSwap"), panelHelp=byId("panelHelp");
+const feedGrid=byId("feedGrid"), myPosts=byId("myPosts"), swapGrid=byId("swapGrid"), swapCount=byId("swapCount");
+const navFeed=byId("navFeed"), navHome=byId("navHome"), navSwap=byId("navSwap"), navHelp=byId("navHelp");
+const filePick=byId("filePick"), pickInfo=byId("pickInfo"), postBtn=byId("postBtn");
+const swapTitle=byId("swapTitle"), swapWant=byId("swapWant"), swapDesc=byId("swapDesc"), swapFile=byId("swapFile"), swapPickInfo=byId("swapPickInfo"), swapPost=byId("swapPost");
+const modal=byId("modal"), chatBtn=byId("chatBtn"), closeModal=byId("closeModal"), chatBox=byId("chatBox"), chatTitle=byId("chatTitle"), chatInput=byId("chatInput"), sendChat=byId("sendChat");
+function byId(id){return document.getElementById(id);}
+let selected=null, pickedFile=null, pickedSwap=null, chatWith=ai;
 
-let selected=null,pickedFile=null;
-
-/* ===== Helpers ===== */
-const fmt=ts=>new Date(ts).toLocaleString().slice(0,16);
-function toast(msg){hint.textContent=msg;hint.style.display="block";setTimeout(()=>{if(!selected)hint.style.display="block";},900);}
-function roleStar(role){
-  if(role==="owner") return {show:true,cls:"gold",title:"Dono"};
-  if(role==="mod") return {show:true,cls:"blue",title:"Moderador"};
-  return {show:false};
-}
-function setOwner(o){
-  ownerAv.textContent=(o.avatar||"U");
-  ownerName.textContent=(o.name||"Usuário");
-  const rs=roleStar(o.role);
-  ownerStar.style.display=rs.show?"grid":"none";
-  ownerStar.className="star "+(rs.cls||"");
-  ownerStar.title=rs.title||"";
-  ownerSub.textContent=(o.id===ai.id)?"Agente IA disponível no chat":"Toque no chat para conversar";
+/* ========= Helpers ========= */
+const fmt=(ts)=>new Date(ts).toLocaleString().slice(0,16);
+function toast(msg){hint.textContent=msg;hint.style.display="block";setTimeout(()=>{ if(!selected) hint.style.display="block"; },900);}
+function setOwner(u){
+  ownerAv.textContent=mkAv(u.avatar);
+  ownerName.innerHTML = (u.name||"Usuário")+" "+starHtml(u.role);
+  ownerSub.textContent = u.id===ai.id ? "Agente IA disponível no chat" : "Toque no chat para conversar";
+  ownerStar.style.display="none";
 }
 function showMedia(p){
-  selected=p;hint.style.display="none";setOwner(p.owner||ai);
-  mainMedia.pause();mainMedia.removeAttribute("src");mainMedia.load();mainMedia.style.display="none";mainImg.style.display="none";
-  if(p.type==="video"){mainMedia.src=p.url;mainMedia.style.display="block";mainMedia.play().catch(()=>{});}
-  else{mainImg.src=p.url;mainImg.style.display="block";}
+  selected=p; hint.style.display="none"; setOwner(p.owner||ai);
+  mainV.pause(); mainV.removeAttribute("src"); mainV.load(); mainV.style.display="none"; mainI.style.display="none";
+  if(p.type==="video"){ mainV.src=p.url; mainV.style.display="block"; mainV.play().catch(()=>{}); }
+  else{ mainI.src=p.url; mainI.style.display="block"; }
   [...carousel.children].forEach(el=>el.classList.toggle("active",el.dataset.id===p.id));
 }
-async function mapMyPosts(){
+async function mapMy(){
   const out=[];
-  for(const p of state.my){
+  for(const p of st.my){
     const rec=await getFile(p.fileId); if(!rec) continue;
     out.push({id:p.id,type:p.type,url:URL.createObjectURL(rec.blob),owner:me,ts:p.ts,fileId:p.fileId});
   }
   return out.sort((a,b)=>b.ts-a.ts);
 }
+function allFeed(){ return [...st.feed].sort((a,b)=>b.ts-a.ts); }
 
-/* ===== Render ===== */
+/* ========= BLUE (simulação BTC-like) ========= */
+function blueRender(){
+  const b=st.blue;
+  const rem=Math.max(0,b.cap-b.minted);
+  blueBal.textContent = (b.bal||0).toFixed(6)+" BLUE";
+  blueInfo.innerHTML = "minted <b>"+Math.floor(b.minted).toLocaleString("pt-BR")+"</b> • faltam <b>"+Math.floor(rem).toLocaleString("pt-BR")+"</b> • reward <b>"+b.reward+"</b>";
+}
+function blueMineOneBlock(){
+  const b=st.blue;
+  if(b.minted>=b.cap){ toast("Cap atingido (21.000.000). Não minera mais."); return; }
+  // “bloco” de simulação
+  b.blocks++;
+  let reward=b.reward;
+  const canMint=Math.min(reward, b.cap-b.minted);
+  b.minted+=canMint;
+  b.bal+=canMint;
+  // halving
+  if(b.blocks>=b.nextHalv){
+    b.reward=Math.max(0.00000001, b.reward/2);
+    b.sub++;
+    b.nextHalv += b.halvEvery;
+    toast("HALVING! Recompensa caiu pra "+b.reward);
+  }else{
+    toast("Minerou +"+canMint+" BLUE ✅");
+  }
+  // preço simulado: sobe com atividade + escassez (só pra UI)
+  const scarcity=(b.minted/b.cap);
+  b.price = Math.max(0.000001, (0.000001 + scarcity*0.01) * (1 + (st.feed.length+st.my.length+st.swaps.length)/200));
+  save(); blueRender();
+}
+mineBtn.onclick=()=>{ blueMineOneBlock(); renderAll(); };
+
+/* ========= Render ========= */
 async function renderAll(){
-  blueBal.textContent=(state.blue||0)+" BLUE";
-  const mine=await mapMyPosts();
-  const all=[...state.feed,...mine].sort((a,b)=>b.ts-a.ts);
+  blueRender();
+  const mine = await mapMy();
+  const all = [...allFeed(), ...mine].sort((a,b)=>b.ts-a.ts);
 
+  // carousel
   carousel.innerHTML="";
   all.slice(0,30).forEach(p=>{
-    const d=document.createElement("div");
-    d.className="item"+(selected&&selected.id===p.id?" active":""); d.dataset.id=p.id;
-    d.innerHTML=(p.type==="video")
-      ? \`<video muted playsinline src="\${p.url}"></video><div class=tag>@\${p.owner.name}</div>\`
-      : \`<img src="\${p.url}"><div class=tag>@\${p.owner.name}</div>\`;
-    d.onclick=()=>showMedia(p); carousel.appendChild(d);
+    const div=document.createElement("div");
+    div.className="item"+(selected&&selected.id===p.id?" active":"");
+    div.dataset.id=p.id;
+    div.innerHTML = p.type==="video"
+      ? \`<video muted playsinline src="\${p.url}"></video>\`
+      : \`<img src="\${p.url}">\`;
+    const tag=document.createElement("div");
+    tag.className="tag";
+    tag.innerHTML=\`<span class=mini>\${mkAv(p.owner?.avatar)}</span>@\${p.owner?.name||"user"} \${p.owner?.role?starHtml(p.owner.role):""}\`;
+    div.appendChild(tag);
+    div.onclick=()=>showMedia(p);
+    carousel.appendChild(div);
   });
 
+  // feed grid
   feedGrid.innerHTML="";
   all.forEach(p=>{
-    const c=document.createElement("div"); c.className="post";
-    c.innerHTML=(p.type==="video")?\`<video muted playsinline src="\${p.url}"></video>\`:\`<img src="\${p.url}">\`;
-    const bar=document.createElement("div"); bar.className="pbar";
-    bar.innerHTML=\`<span class=badge>@\${p.owner.name} • \${fmt(p.ts)}</span><button class=secBtn title=destacar><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>\`;
+    const c=document.createElement("div");
+    c.className="post";
+    c.innerHTML = p.type==="video" ? \`<video muted playsinline src="\${p.url}"></video>\` : \`<img src="\${p.url}">\`;
+    const bar=document.createElement("div");
+    bar.className="pbar";
+    bar.innerHTML=\`<span class=badge><span class=mini>\${mkAv(p.owner.avatar)}</span><b>@\${p.owner.name}</b> \${starHtml(p.owner.role)} • \${fmt(p.ts)}</span>
+                   <button class=icon title="destacar"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>\`;
     bar.querySelector("button").onclick=()=>showMedia(p);
-    c.appendChild(bar); feedGrid.appendChild(c);
+    c.appendChild(bar);
+    feedGrid.appendChild(c);
   });
 
-  myPosts.innerHTML=mine.length?"":"<div class=muted>Sem posts ainda.</div>";
+  // meus posts
+  myPosts.innerHTML = mine.length? "" : "<div class=muted>Sem posts ainda.</div>";
   mine.forEach(p=>{
-    const c=document.createElement("div"); c.className="post";
-    c.innerHTML=(p.type==="video")?\`<video muted playsinline src="\${p.url}"></video>\`:\`<img src="\${p.url}">\`;
-    const bar=document.createElement("div"); bar.className="pbar";
-    bar.innerHTML=\`<span class=badge>Seu post • \${fmt(p.ts)}</span><button class=iconBtn title=apagar><i class="fa-solid fa-trash"></i></button>\`;
-    bar.querySelector("button").onclick=()=>removeMyPost(p.id);
+    const c=document.createElement("div");
+    c.className="post";
+    c.innerHTML = p.type==="video" ? \`<video muted playsinline src="\${p.url}"></video>\` : \`<img src="\${p.url}">\`;
+    const bar=document.createElement("div");
+    bar.className="pbar";
+    bar.innerHTML=\`<span class=badge><span class=mini>\${mkAv(me.avatar)}</span><b>Seu post</b> • \${fmt(p.ts)}</span>
+                   <button class=icon title="apagar"><i class="fa-solid fa-trash"></i></button>\`;
+    bar.querySelector("button").onclick=()=>removeMy(p.id);
     c.appendChild(bar); myPosts.appendChild(c);
   });
 
-  renderTrades();
+  // swaps
+  renderSwaps();
 
-  if(!selected&&all[0]) showMedia(all[0]);
+  if(!selected && all[0]) showMedia(all[0]);
 }
-async function removeMyPost(id){
-  const i=state.my.findIndex(x=>x.id===id); if(i<0) return;
-  const fid=state.my[i].fileId; state.my.splice(i,1); save();
-  await delFile(fid).catch(()=>{});
+async function removeMy(id){
+  const idx=st.my.findIndex(x=>x.id===id); if(idx<0) return;
+  const fileId=st.my[idx].fileId; st.my.splice(idx,1); save();
+  await delFile(fileId).catch(()=>{});
   selected=null; toast("Post apagado ✅"); renderAll();
 }
 
-/* ===== Tabs ===== */
+/* ========= Tabs ========= */
 function setTab(t){
   navFeed.classList.toggle("active",t==="feed");
   navHome.classList.toggle("active",t==="home");
   navSwap.classList.toggle("active",t==="swap");
   navHelp.classList.toggle("active",t==="help");
-  panelFeed.style.display=(t==="feed")?"block":"none";
-  panelHome.style.display=(t==="home")?"block":"none";
-  panelSwap.style.display=(t==="swap")?"block":"none";
-  panelHelp.style.display=(t==="help")?"block":"none";
+  panelFeed.style.display=t==="feed"?"block":"none";
+  panelHome.style.display=t==="home"?"block":"none";
+  panelSwap.style.display=t==="swap"?"block":"none";
+  panelHelp.style.display=t==="help"?"block":"none";
 }
 navFeed.onclick=()=>setTab("feed");
 navHome.onclick=()=>setTab("home");
 navSwap.onclick=()=>setTab("swap");
 navHelp.onclick=()=>setTab("help");
 
-/* ===== Upload perfil ===== */
-filePick.onchange=e=>{pickedFile=e.target.files&&e.target.files[0]?e.target.files[0]:null;
-pickInfo.textContent=pickedFile?(pickedFile.name+" • "+Math.round(pickedFile.size/1024)+" KB"):"Nenhum arquivo selecionado";};
+/* ========= Post galeria ========= */
+filePick.onchange=e=>{
+  pickedFile=e.target.files&&e.target.files[0]?e.target.files[0]:null;
+  pickInfo.textContent=pickedFile?(pickedFile.name+" • "+Math.round(pickedFile.size/1024)+"KB"):"Nenhum arquivo selecionado";
+};
 postBtn.onclick=async()=>{
-  if(!pickedFile){toast("Selecione um arquivo na galeria primeiro.");return;}
+  if(!pickedFile) return toast("Selecione um arquivo na galeria primeiro.");
   const type=pickedFile.type.startsWith("video")?"video":"image";
-  const fileId="f_"+Date.now()+"_"+Math.random().toString(16).slice(2);
-  const postId="p_"+Date.now()+"_"+Math.random().toString(16).slice(2);
+  const fileId="f_"+uid(), postId="p_"+uid();
   await putFile(fileId,pickedFile,pickedFile.type).catch(()=>null);
-  state.my.unshift({id:postId,fileId,type,ts:Date.now()}); save();
+  st.my.unshift({id:postId,fileId,type,ts:Date.now()}); save();
   pickedFile=null; filePick.value=""; pickInfo.textContent="Postado ✅";
-  toast("Post publicado ✅ (perfil + timeline)"); renderAll();
+  toast("Post publicado ✅"); renderAll();
 };
 
-/* ===== Trocas (funcional local) ===== */
-function renderTrades(){
-  // minhas
-  myOffers.innerHTML = state.offersMy.length ? "" : "<div class=muted style='margin-top:8px'>Você ainda não publicou oferta.</div>";
-  state.offersMy.sort((a,b)=>b.ts-a.ts).forEach(o=>{
-    const el=document.createElement("div"); el.className="offer";
-    el.innerHTML=\`<div class=offerTop><b>\${o.item}</b><small>quer: \${o.want}</small></div><small>\${o.desc||""}</small>
-      <div class=offerBtns>
-        <button class=iconBtn title=remover><i class="fa-solid fa-trash"></i></button>
-      </div>\`;
-    el.querySelector("button").onclick=()=>{state.offersMy=state.offersMy.filter(x=>x.id!==o.id);save();toast("Oferta removida ✅");renderTrades();};
-    myOffers.appendChild(el);
-  });
-
-  // galera (simulada)
-  const open=state.offersAll.filter(o=>o.status==="open").sort((a,b)=>b.ts-a.ts);
-  allOffers.innerHTML = open.length ? "" : "<div class=muted>Nenhuma oferta agora.</div>";
-  open.forEach(o=>{
-    const el=document.createElement("div"); el.className="offer";
-    el.innerHTML=\`<div class=offerTop><b>\${o.item}</b><small>@\${o.owner.name} • quer: \${o.want}</small></div>
-      <small>\${o.desc||""}</small>
-      <div class=offerBtns>
-        <button class=secBtn><i class="fa-solid fa-comments"></i> Propor</button>
-        <button class=okBtn><i class="fa-solid fa-check"></i> Aceitar</button>
-      </div>\`;
-    const btns=el.querySelectorAll("button");
-    btns[0].onclick=()=>openChat(o.owner, \`Quero propor troca: você tem "\${o.item}" e quer "\${o.want}".\`);
-    btns[1].onclick=()=>{o.status="matched";save();toast("Troca marcada ✅ (simulado)");renderTrades();};
-    allOffers.appendChild(el);
-  });
+/* ========= Trocas ========= */
+swapFile.onchange=e=>{
+  pickedSwap=e.target.files&&e.target.files[0]?e.target.files[0]:null;
+  swapPickInfo.textContent=pickedSwap?(pickedSwap.name+" • "+Math.round(pickedSwap.size/1024)+"KB"):"Nenhum arquivo";
+};
+swapPost.onclick=async()=>{
+  const title=(swapTitle.value||"").trim(), want=(swapWant.value||"").trim(), desc=(swapDesc.value||"").trim();
+  if(!title||!want||!desc) return toast("Preencha nome, descrição e o que quer em troca.");
+  if(!pickedSwap) return toast("Adicione uma foto/vídeo do produto.");
+  const type=pickedSwap.type.startsWith("video")?"video":"image";
+  const fileId="sf_"+uid();
+  await putFile(fileId,pickedSwap,pickedSwap.type).catch(()=>null);
+  st.swaps.unshift({id:"s_"+uid(),title,desc,want,owner:me,ts:Date.now(),media:{fileId,type}});
+  save();
+  swapTitle.value="";swapWant.value="";swapDesc.value="";pickedSwap=null;swapFile.value="";swapPickInfo.textContent="Publicado ✅";
+  toast("Troca publicada ✅"); renderAll();
+};
+async function swapMediaUrl(s){
+  if(s.media?.url) return s.media.url;
+  if(s.media?.fileId){
+    const rec=await getFile(s.media.fileId); if(!rec) return "";
+    return URL.createObjectURL(rec.blob);
+  }
+  return "";
 }
-trAdd.onclick=()=>{
-  const item=(trItem.value||"").trim(), want=(trWant.value||"").trim(), desc=(trDesc.value||"").trim();
-  if(!item||!want){toast("Preencha: O que tem + O que quer.");return;}
-  state.offersMy.unshift({id:"m_"+Date.now()+"_"+Math.random().toString(16).slice(2),owner:me,item,want,desc,ts:Date.now(),status:"open"});
-  // também aparece na galera (pra simular “outros vendo”)
-  state.offersAll.unshift({id:"g_"+Date.now()+"_"+Math.random().toString(16).slice(2),owner:me,item,want,desc,ts:Date.now(),status:"open"});
-  save(); trItem.value=""; trWant.value=""; trDesc.value="";
-  toast("Oferta publicada ✅"); renderTrades();
-};
+async function renderSwaps(){
+  swapGrid.innerHTML="";
+  swapCount.textContent = st.swaps.length+" ofertas";
+  for(const s of st.swaps.slice(0,60)){
+    const url=await swapMediaUrl(s);
+    const c=document.createElement("div");
+    c.className="post";
+    c.innerHTML = (s.media?.type==="video")
+      ? \`<video muted playsinline src="\${url}"></video>\`
+      : \`<img src="\${url}">\`;
+    const bar=document.createElement("div");
+    bar.className="pbar";
+    bar.innerHTML=\`<span class=badge><span class=mini>\${mkAv(s.owner.avatar)}</span><b>@\${s.owner.name}</b> \${starHtml(s.owner.role)} • \${fmt(s.ts)}</span>
+                   <button class=sbtn style="padding:8px 10px" title="propor troca"><i class="fa-solid fa-handshake"></i></button>\`;
+    bar.querySelector("button").onclick=()=>openSwapChat(s);
+    c.appendChild(bar);
 
-/* ===== Chat (IA + simulado) ===== */
-const CHATLS="icecubo_chats_v1";
+    const info=document.createElement("div");
+    info.style.padding="10px";
+    info.innerHTML=\`<div style="font-weight:900;margin-bottom:4px">\${escapeHtml(s.title)}</div>
+      <div class=muted style="margin-bottom:6px">\${escapeHtml(s.desc)}</div>
+      <div class=muted><b>Quer em troca:</b> \${escapeHtml(s.want)}</div>\`;
+    c.appendChild(info);
+
+    // remover somente se for meu
+    if(s.owner.id===me.id){
+      const del=document.createElement("button");
+      del.className="icon"; del.style.margin="0 10px 10px auto"; del.title="remover";
+      del.innerHTML='<i class="fa-solid fa-trash"></i>';
+      del.onclick=async()=>{
+        const idx=st.swaps.findIndex(x=>x.id===s.id); if(idx<0) return;
+        if(st.swaps[idx].media?.fileId) await delFile(st.swaps[idx].media.fileId).catch(()=>{});
+        st.swaps.splice(idx,1); save(); toast("Oferta removida ✅"); renderAll();
+      };
+      c.appendChild(del);
+    }
+    swapGrid.appendChild(c);
+  }
+}
+function openSwapChat(s){
+  chatWith=s.owner.id===me.id?ai:s.owner; // se for seu, abre IA, senão abre o dono
+  openChat(chatWith, "Troca: "+s.title+" • Quer: "+s.want);
+}
+
+/* ========= Chat (IA + usuário fake) ========= */
+const CHATLS="icecubo_chats_v2";
 const chats=JSON.parse(localStorage.getItem(CHATLS)||"{}");
 const saveChats=()=>localStorage.setItem(CHATLS,JSON.stringify(chats));
-function bubble(by,txt){const d=document.createElement("div");d.className="bubble "+(by==="me"?"me":"them");d.textContent=txt;return d;}
-function aiReply(userMsg){
-  const m=(userMsg||"").toLowerCase();
-  if(m.includes("troca")) return "Beleza 🙂 descreve o que você tem e o que você quer. Posso sugerir uma oferta forte.";
-  if(m.includes("blue")) return "BLUE é top. Quer usar como moeda de troca, recompensa ou acesso a lives?";
-  if(m.includes("post")||m.includes("vídeo")||m.includes("video")) return "Quer que eu te ajude a escolher títulos/hashtags e ideias de posts?";
-  if(m.includes("oi")||m.includes("olá")||m.includes("ola")) return "Oi! 😄 Quer mexer em Feed, Perfil ou Trocas agora?";
-  return "Entendi. Me dá um detalhe a mais e eu te respondo certinho 🙂";
-}
-let chatWith=ai;
-function openChat(withUser,prefill){
+function openChat(withUser,context){
   chatWith=withUser;
   const uid=withUser.id;
-  if(!chats[uid]) chats[uid]=[{by:"them",txt:(uid===ai.id?"Oi 🙂 Eu sou a ICE IA. Quer conversar?":"Oi! tudo bem?"),ts:Date.now()}];
-  if(prefill) chats[uid].push({by:"me",txt:prefill,ts:Date.now()});
+  if(!chats[uid]) chats[uid]=[{by:"them",txt: uid===ai.id ? "Oi 🙂 Sou a ICE IA. Me diga o que você quer fazer agora." : "Oi! tudo bem?",ts:Date.now()}];
+  if(context) chats[uid].push({by:"them",txt:"Contexto: "+context,ts:Date.now()});
   saveChats();
   chatTitle.textContent="Chat • "+withUser.name;
   modal.style.display="flex";
-  renderChat();
-  if(prefill && uid===ai.id){
-    setTimeout(()=>{chats[uid].push({by:"them",txt:aiReply(prefill),ts:Date.now()});saveChats();renderChat();},500);
-  }
+  renderChat(uid);
+  setOwner(withUser);
 }
-function renderChat(){
-  const uid=chatWith.id; chatBox.innerHTML="";
-  (chats[uid]||[]).slice(-50).forEach(m=>chatBox.appendChild(bubble(m.by,m.txt)));
+function renderChat(uid){
+  chatBox.innerHTML="";
+  (chats[uid]||[]).slice(-80).forEach(m=>{
+    const d=document.createElement("div");
+    d.className="bubbl "+(m.by==="me"?"me":"them");
+    d.textContent=m.txt;
+    chatBox.appendChild(d);
+  });
   chatBox.scrollTop=chatBox.scrollHeight;
-  chatInput.focus();
 }
-chatBtn.onclick=()=>openChat(selected&&selected.owner?selected.owner:ai);
+function aiReply(userText){
+  // IA simples (offline) pra ficar “conversando” de verdade, não só frases prontas
+  const t=userText.toLowerCase();
+  const tips=[
+    "Quer postar vídeo/foto no seu perfil ou ver a timeline?",
+    "Se for trocas: diga o produto e o que você quer receber em troca.",
+    "Se quiser BLUE: aperta o martelo pra minerar (simulação)."
+  ];
+  if(t.includes("blue")||t.includes("minerar")||t.includes("bitcoin")) return "BLUE aqui é simulação estilo BTC: cap 21M, halving e blocos. Quer que eu te explique o halving ou quer minerar agora?";
+  if(t.includes("troca")||t.includes("tênis")||t.includes("produto")) return "Fechou. Vai em Trocas → preenche nome, descrição, o que quer em troca e coloca foto/vídeo. Depois eu simulo propostas no chat.";
+  if(t.includes("erro")||t.includes("vercel")||t.includes("bug")) return "Se der erro, não mexe em /api/index.js. O app roda no server.js via vercel.json. Me diz qual tela que travou e eu ajusto sem quebrar.";
+  if(t.includes("oi")||t.includes("olá")) return "Oi! 😄 O que você quer fazer agora: postar, trocar, ou testar a BLUE?";
+  return "Entendi. " + (tips[Math.floor(Math.random()*tips.length)]);
+}
+chatBtn.onclick=()=>openChat(selected?.owner||ai);
 closeModal.onclick=()=>modal.style.display="none";
 sendChat.onclick=sendMsg;
 chatInput.addEventListener("keydown",e=>{if(e.key==="Enter")sendMsg();});
 function sendMsg(){
-  const t=(chatInput.value||"").trim(); if(!t) return;
+  const txt=(chatInput.value||"").trim(); if(!txt) return;
   const uid=chatWith.id;
-  chats[uid]=chats[uid]||[];
-  chats[uid].push({by:"me",txt:t,ts:Date.now()});
-  chatInput.value=""; saveChats(); renderChat();
+  if(!chats[uid]) chats[uid]=[];
+  chats[uid].push({by:"me",txt,ts:Date.now()});
+  chatInput.value="";
+  // resposta
   if(uid===ai.id){
-    setTimeout(()=>{chats[uid].push({by:"them",txt:aiReply(t),ts:Date.now()});saveChats();renderChat();},520);
+    const rep=aiReply(txt);
+    chats[uid].push({by:"them",txt:rep,ts:Date.now()+1});
   }else{
-    // resposta simulada (pra “parecer usuário”)
-    setTimeout(()=>{chats[uid].push({by:"them",txt:"Show! Vou ver aqui 👀",ts:Date.now()});saveChats();renderChat();},650);
+    // usuário fake responde simples
+    const reps=["Show!","Entendi.","Bora negociar.","Manda mais detalhes.","Fechado se você me der algo equivalente."];
+    chats[uid].push({by:"them",txt:reps[Math.floor(Math.random()*reps.length)],ts:Date.now()+1});
   }
+  saveChats(); renderChat(uid);
 }
 
-/* init */
-renderAll();
-</script></body></html>`));
+/* ========= Utils ========= */
+function escapeHtml(s){return (s||"").replace(/[&<>"]/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m]));}
 
-module.exports=app;
+/* ========= Start ========= */
+renderAll();
+</script></body></html>`);
+}
