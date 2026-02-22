@@ -3,55 +3,57 @@ const MP = "https://api.mercadopago.com";
 module.exports = async (req, res) => {
   try {
     const token = process.env.MP_ACCESS_TOKEN;
+    if (!token) return res.status(500).json({ ok: false, error: "MP_ACCESS_TOKEN não configurado" });
+    if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Use POST" });
 
-    if (!token) {
-      return res.status(500).json({ ok: false, error: "Token não encontrado" });
+    let body = req.body;
+    if (!body) {
+      let raw = "";
+      await new Promise((resolve) => {
+        req.on("data", (c) => (raw += c));
+        req.on("end", resolve);
+      });
+      body = raw ? JSON.parse(raw) : {};
     }
 
-    if (req.method !== "POST") {
-      return res.status(405).json({ ok: false, error: "Use POST" });
+    const email = String(body.email || "").trim();
+    const amount = Number(body.amount);
+
+    if (!email || !amount || Number.isNaN(amount)) {
+      return res.status(400).json({ ok: false, error: "Envie { email, amount }" });
     }
 
-    let body = "";
-    await new Promise(ok => {
-      req.on("data", chunk => body += chunk);
-      req.on("end", ok);
-    });
+    // OBS: MP pode recusar R$0,05. Se falhar, teste R$1,00
+    const transaction_amount = Math.round(amount * 100) / 100;
 
-    const { email, amount } = JSON.parse(body || "{}");
-
-    if (!email || !amount) {
-      return res.status(400).json({ ok: false, error: "Email e valor obrigatórios" });
-    }
-
-    const response = await fetch(`${MP}/v1/payments`, {
+    const r = await fetch(`${MP}/v1/payments`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": (Date.now().toString(36) + Math.random().toString(16).slice(2)),
       },
       body: JSON.stringify({
-        transaction_amount: Number(amount),
+        transaction_amount,
+        description: "Compra BLUE - ICE-CUBO",
         payment_method_id: "pix",
-        description: "Compra BLUE - ICE CUBO",
-        payer: { email }
-      })
+        payer: { email },
+      }),
     });
 
-    const data = await response.json();
+    const data = await r.json();
+    if (!r.ok) return res.status(400).json({ ok: false, error: data });
 
-    if (!response.ok) {
-      return res.status(400).json({ ok: false, error: data });
-    }
-
+    const tx = data.point_of_interaction?.transaction_data || {};
     return res.status(200).json({
       ok: true,
       paymentId: data.id,
       status: data.status,
-      pix: data.point_of_interaction?.transaction_data?.qr_code || null
+      amount: data.transaction_amount,
+      qr_code: tx.qr_code || null,
+      qr_code_base64: tx.qr_code_base64 || null,
     });
-
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
   }
 };
