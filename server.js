@@ -4,24 +4,25 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// =================== BLUE ===================
-const BLUE_MAX_SUPPLY = 21000000;
-let blueTotalSupply = 0;
+/* ================= BLUE ================= */
+const BLUE_MAX = 21000000;
+let blueSupply = 0;
 
-// =================== DADOS ===================
+/* ================= BANCO EM MEMÓRIA ================= */
 const users = new Map();
 const sessions = new Map();
 
+/* ADMIN MASTER */
 users.set("admin", {
   pass: "1533",
   role: "MASTER",
-  saldoBlue: 0,
+  saldo: 0,
   children: new Set(),
   parent: null,
   banned: false
 });
 
-// =================== FUNÇÕES ===================
+/* ================= FUNÇÕES ================= */
 function sid(){ return Math.random().toString(36).slice(2); }
 
 function cookie(req){
@@ -50,61 +51,78 @@ function requireAuth(req,res,next){
   next();
 }
 
-function requireMaster(req,res,next){
-  const me=auth(req);
-  if(!me||me.role!=="MASTER") return res.send("Acesso negado");
-  req.me=me;
-  next();
-}
-
-// =================== LOGIN ===================
+/* ================= LOGIN ================= */
 app.get("/login",(req,res)=>{
-  res.send(`
-  <html><body style="background:#0f172a;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh">
-  <form method="POST">
-  <h2>ICE CUBO</h2>
-  <input name="user" placeholder="Usuário" required><br><br>
-  <input name="pass" type="password" placeholder="Senha" required><br><br>
-  <button>Entrar</button>
-  </form>
-  </body></html>
-  `);
+res.send(`
+<html><body style="background:#0f172a;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh">
+<form method="POST">
+<h2>ICE CUBO</h2>
+<input name="user" placeholder="Usuário" required><br><br>
+<input name="pass" type="password" placeholder="Senha" required><br><br>
+<button>Entrar</button>
+<p>Não tem conta? <a href="/register" style="color:#38bdf8">Cadastrar</a></p>
+</form>
+</body></html>
+`);
 });
 
 app.post("/login",(req,res)=>{
-  const u=users.get(req.body.user);
-  if(!u||u.pass!==req.body.pass) return res.redirect("/login");
-  const id=sid();
-  sessions.set(id,req.body.user);
-  res.setHeader("Set-Cookie",`sid=${id}; Path=/`);
-  res.redirect("/");
+const u=users.get(req.body.user);
+if(!u||u.pass!==req.body.pass) return res.redirect("/login");
+const id=sid();
+sessions.set(id,req.body.user);
+res.setHeader("Set-Cookie",`sid=${id}; Path=/`);
+res.redirect("/");
 });
 
-// =================== APP ===================
+/* ================= CADASTRO ================= */
+app.get("/register",(req,res)=>{
+res.send(`
+<html><body style="background:#0f172a;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh">
+<form method="POST">
+<h2>Criar Conta</h2>
+<input name="user" placeholder="Usuário" required><br><br>
+<input name="pass" type="password" placeholder="Senha" required><br><br>
+<button>Cadastrar</button>
+<p><a href="/login" style="color:#38bdf8">Voltar</a></p>
+</form>
+</body></html>
+`);
+});
+
+app.post("/register",(req,res)=>{
+if(users.has(req.body.user)) return res.redirect("/register");
+users.set(req.body.user,{
+pass:req.body.pass,
+role:"USER",
+saldo:0,
+children:new Set(),
+parent:null,
+banned:false
+});
+res.redirect("/login");
+});
+
+/* ================= APP ================= */
 app.get("/",requireAuth,(req,res)=>{
-  const me=req.me;
-  const star=me.role==="MASTER"?"⭐":"";
-  res.send(`
+const me=req.me;
+const star=me.role==="MASTER"?"⭐":"";
+res.send(`
 <!DOCTYPE html>
 <html>
 <head>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <style>
-body{margin:0;background:#08122c;color:white;font-family:sans-serif;overflow:hidden}
-.stage{height:55vh;background:black;position:relative}
+body{margin:0;background:#08122c;color:white;font-family:sans-serif}
+.stage{height:50vh;background:black}
 video{width:100%;height:100%;object-fit:cover}
+.section{display:none;padding:10px}
+.active{display:block}
 .nav{position:fixed;bottom:0;width:100%;height:60px;background:#1e293b;display:flex;justify-content:space-around;align-items:center}
 .nav button{background:none;border:none;color:#38bdf8;font-size:20px}
 .panic{animation:panic 1s infinite}
-@keyframes panic{
-0%{background:#08122c}
-50%{background:#3b0000}
-100%{background:#08122c}
-}
-.alert{position:fixed;top:0;width:100%;background:red;text-align:center;padding:5px;font-weight:bold}
-.profile{padding:10px}
-.trade{padding:10px;display:none}
-.admin{padding:10px;display:none}
+@keyframes panic{0%{background:#08122c}50%{background:#3b0000}100%{background:#08122c}}
+.alert{position:fixed;top:0;width:100%;background:red;text-align:center;padding:5px}
 </style>
 </head>
 <body>
@@ -112,77 +130,49 @@ video{width:100%;height:100%;object-fit:cover}
 <div id="alertBox"></div>
 
 <div class="stage">
-<video id="main" controls></video>
+<video controls src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
 </div>
 
-<div class="profile" id="profile">
-<h3>@${req.me.username} ${star}</h3>
-<p>BLUE: ${req.me.saldoBlue}</p>
-<p>Filhos: ${req.me.children.size}</p>
-<button onclick="share()">Compartilhar</button>
+<div id="timeline" class="section active">
+<h3>Timeline Pública</h3>
+<p>Aqui ficam vídeos e fotos de todos.</p>
 </div>
 
-<div class="trade" id="trade">
-<h3>O que tem pra mim 🔄</h3>
-<input id="t1" placeholder="O que você tem"><br><br>
-<input id="t2" placeholder="O que quer em troca"><br><br>
-<button onclick="alert('Troca publicada')">Publicar</button>
+<div id="profile" class="section">
+<h3>@${me.username} ${star}</h3>
+<p>BLUE: ${me.saldo}</p>
+<p>Filhos: ${me.children.size}</p>
 </div>
 
 ${me.role==="MASTER"?`
-<div class="admin" id="admin">
-<h3>Painel ADM ⭐</h3>
-<p>Total BLUE emitido: ${blueTotalSupply}/${BLUE_MAX_SUPPLY}</p>
-<input id="mint" placeholder="Emitir BLUE"><br><br>
+<div id="admin" class="section">
+<h3>Painel MASTER</h3>
+<p>Supply: ${blueSupply}/${BLUE_MAX}</p>
+<input id="mint" placeholder="Emitir BLUE">
 <button onclick="mintBlue()">Emitir</button>
-<br><br>
-<input id="giveUser" placeholder="Usuário"><br>
-<input id="giveVal" placeholder="Quantidade"><br><br>
-<button onclick="giveBlue()">Dar BLUE</button>
 </div>
 `:``}
 
 <div class="nav">
-<button onclick="showProfile()">🏠</button>
-<button onclick="showTrade()">🔄</button>
+<button onclick="show('timeline')">🎬</button>
+<button onclick="show('profile')">🏠</button>
 <button onclick="panic()">⚠️</button>
-${me.role==="MASTER"?`<button onclick="showAdmin()">🛡️</button>`:``}
+${me.role==="MASTER"?`<button onclick="show('admin')">🛡️</button>`:``}
 </div>
 
 <script>
-let panicOn=false;
+function show(id){
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+}
 
+let panicOn=false;
 function panic(){
 panicOn=!panicOn;
 document.body.classList.toggle("panic",panicOn);
 if(panicOn){
-document.getElementById("alertBox").innerHTML='<div class="alert">🚨 LOCALIZAÇÃO SENDO COMPARTILHADA 🚨</div>';
-}else{
-document.getElementById("alertBox").innerHTML="";
-}
-}
-
-function showProfile(){
-profile.style.display="block";
-trade.style.display="none";
-${me.role==="MASTER"?"admin.style.display='none';":""}
-}
-
-function showTrade(){
-profile.style.display="none";
-trade.style.display="block";
-${me.role==="MASTER"?"admin.style.display='none';":""}
-}
-
-function showAdmin(){
-profile.style.display="none";
-trade.style.display="none";
-admin.style.display="block";
-}
-
-function share(){
-navigator.clipboard.writeText(location.origin+"/register?ref=${req.me.username}");
-alert("Link copiado!");
+alertBox.innerHTML='<div class="alert">🚨 LOCALIZAÇÃO COMPARTILHADA 🚨</div>';
+}else alertBox.innerHTML="";
 }
 
 ${me.role==="MASTER"?`
@@ -190,33 +180,22 @@ function mintBlue(){
 fetch("/admin/mint",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({val:mint.value})})
 .then(()=>location.reload());
 }
-
-function giveBlue(){
-fetch("/admin/give",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user:giveUser.value,val:giveVal.value})})
-.then(()=>location.reload());
-}
 `:``}
-
 </script>
+
 </body>
 </html>
 `);
 });
 
-// =================== BLUE ROTAS ===================
-app.post("/admin/mint",requireMaster,(req,res)=>{
-const val=Number(req.body.val||0);
-if(blueTotalSupply+val>BLUE_MAX_SUPPLY) return res.send("Limite máximo atingido");
-blueTotalSupply+=val;
+/* ================= BLUE ================= */
+app.post("/admin/mint",(req,res)=>{
+const me=auth(req);
+if(!me||me.role!=="MASTER") return res.send("Negado");
+const v=Number(req.body.val||0);
+if(blueSupply+v>BLUE_MAX) return res.send("Limite atingido");
+blueSupply+=v;
 res.send("OK");
 });
 
-app.post("/admin/give",requireMaster,(req,res)=>{
-const user=users.get(req.body.user);
-if(!user) return res.send("Usuário não existe");
-user.saldoBlue+=Number(req.body.val||0);
-res.send("OK");
-});
-
-// ===================
 module.exports = app;
