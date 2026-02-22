@@ -1,315 +1,497 @@
-export default function handler(req, res) {
+module.exports = async (req, res) => {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.status(200).send(`<!doctype html><html lang="pt-br"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  res.status(200).send(`<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <title>ICE-CUBO</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-:root{--bg:#061428;--glass:rgba(255,255,255,.10);--line:rgba(255,255,255,.16);--txt:#eaf2ff;--mut:#b7c7e6;--acc:#38bdf8}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:
-radial-gradient(1200px 600px at 20% -10%,rgba(56,189,248,.18),transparent 60%),
-radial-gradient(900px 600px at 110% 30%,rgba(99,102,241,.14),transparent 55%),
-linear-gradient(180deg,#031024,#071b33 60%,#041226);color:var(--txt);height:100vh;overflow:hidden}
-#app{height:100vh;display:flex;flex-direction:column}
-.top{height:52vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;background:#000}
-.bgSea{position:absolute;inset:0;opacity:.35;background:
-radial-gradient(circle at 10% 20%,rgba(56,189,248,.18),transparent 35%),
-radial-gradient(circle at 80% 10%,rgba(59,130,246,.16),transparent 35%),
-radial-gradient(circle at 30% 80%,rgba(34,211,238,.14),transparent 35%),
-linear-gradient(180deg,#021024,#041a35)}
-.bubbles:before,.bubbles:after{content:"";position:absolute;inset:-20%;background:
-radial-gradient(circle,rgba(255,255,255,.22) 0 2px,transparent 3px) 0 0/120px 120px,
-radial-gradient(circle,rgba(255,255,255,.16) 0 1px,transparent 2px) 40px 20px/160px 160px;
-animation:float 14s linear infinite;opacity:.55}
-.bubbles:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
-@keyframes float{to{transform:translateY(-120px)}}
-.brand{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:3}
-.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);border-radius:18px}
-.logo b{letter-spacing:1px}
-.pill{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);border-radius:18px}
-.pill .coin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#0ea5e9,#0b2a6a);border:1px solid rgba(255,215,0,.55)}
-.pill .coin span{color:#ffd700;font-weight:900}
-.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
-#mainV{width:100%;height:100%;object-fit:cover;display:none}
-#mainI{width:100%;height:100%;object-fit:cover;display:none}
-#hint{position:absolute;inset:auto 12px 72px 12px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:18px;color:var(--mut);text-align:center}
-.stageBar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:4}
-.ownerCard{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:18px;min-width:0}
-.avatar{width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#38bdf8,#1d4ed8);display:grid;place-items:center;font-weight:900}
-.ownerCard .meta{min-width:0}
-.ownerCard .meta .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ownerCard .meta .sub{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.smallBtn{padding:10px 12px;border-radius:18px;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);color:var(--txt)}
-.bottom{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 10px 74px;overflow:hidden}
-.carousel{display:flex;gap:10px;overflow:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
-.item{min-width:190px;max-width:190px;height:120px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:rgba(255,255,255,.06);scroll-snap-align:center;position:relative}
-.item video,.item img{width:100%;height:100%;object-fit:cover;display:block}
-.item .tag{position:absolute;left:8px;bottom:8px;padding:6px 10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.35);backdrop-filter:blur(8px);border-radius:14px;font-size:12px}
-.item.active{outline:2px solid rgba(56,189,248,.8)}
-.panel{flex:1;overflow:auto;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(12px);border-radius:22px;padding:12px}
-.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.hrow h3{margin:0;font-size:16px}
-.muted{color:var(--mut);font-size:12px}
-.gridPosts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.post{border:1px solid var(--line);background:rgba(255,255,255,.06);border-radius:18px;overflow:hidden}
-.post video,.post img{width:100%;height:140px;object-fit:cover;display:block}
-.post .pbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px}
-.badge{font-size:12px;color:var(--mut);display:flex;gap:8px;align-items:center}
-.badge .mini{width:18px;height:18px;border-radius:7px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#38bdf8,#1d4ed8);color:#fff}
-.iconBtn{border:0;background:transparent;color:#ff6b6b;padding:6px 8px;border-radius:12px}
-.nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:10px;z-index:10}
-.nav button{flex:1;padding:12px 10px;border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.08);backdrop-filter:blur(14px);color:var(--txt);display:flex;align-items:center;justify-content:center;gap:8px}
-.nav button.active{outline:2px solid rgba(56,189,248,.8)}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:20}
-.sheet{width:min(760px,100%);max-height:86vh;border-radius:26px 26px 0 0;overflow:hidden;border:1px solid var(--line);background:rgba(7,20,38,.9);backdrop-filter:blur(18px)}
-.sheetTop{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
-.sheetTop b{font-size:14px}
-.sheetBody{padding:12px 12px 14px;overflow:auto;max-height:calc(86vh - 52px)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.field{flex:1;min-width:180px}
-.field input,.field textarea{width:100%;padding:12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--txt);outline:none}
-hr{border:0;border-top:1px solid rgba(255,255,255,.12);margin:10px 0}
-</style></head><body>
+:root{
+  --bg1:#f7fbff; --bg2:#dff2ff; --t:#072445; --m:rgba(7,36,69,.7);
+  --card:rgba(255,255,255,.55); --b:rgba(7,36,69,.14);
+  --shadow:0 16px 60px rgba(2,26,60,.18);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  color:var(--t); height:100vh; overflow:hidden;
+  background: radial-gradient(1100px 700px at 15% 10%, var(--bg1), transparent),
+              radial-gradient(900px 600px at 80% 20%, var(--bg2), transparent),
+              linear-gradient(180deg,#ffffff,#eaf7ff);
+}
+a{color:inherit}
+#app{height:100vh; display:flex; flex-direction:column}
+.top{
+  padding:10px 12px 8px; display:flex; align-items:center; justify-content:space-between;
+}
+.brand{display:flex; align-items:center; gap:10px}
+.logo{
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  border-radius:18px; border:1px solid var(--b); background:var(--card);
+  backdrop-filter:blur(14px); box-shadow:0 10px 30px rgba(2,26,60,.08);
+}
+.brandName{font-weight:900; letter-spacing:.6px}
+.badgeBlue{
+  font-weight:900; padding:6px 10px; border-radius:999px;
+  border:1px solid var(--b); background:rgba(255,255,255,.65);
+}
+.main{
+  flex:1; display:flex; flex-direction:column; gap:10px; padding:0 12px 10px;
+}
+.stage{
+  position:relative; flex:0 0 46vh; border-radius:26px;
+  border:1px solid var(--b); background:rgba(0,0,0,.88);
+  overflow:hidden; box-shadow:var(--shadow);
+}
+#viewer{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  color:#fff; font-weight:900; letter-spacing:.5px;
+}
+#viewer .hint{
+  position:absolute; bottom:10px; left:10px; right:10px;
+  font-size:12px; font-weight:700; opacity:.85;
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+#ownerCard{
+  position:absolute; top:10px; left:10px;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(10px); color:#fff;
+  cursor:pointer;
+}
+.avatar{
+  width:34px; height:34px; border-radius:50%;
+  display:grid; place-items:center; font-weight:900;
+  background:linear-gradient(135deg,#7dd3fc,#60a5fa,#1d4ed8);
+  border:1px solid rgba(255,255,255,.25);
+}
+.ownerMeta{line-height:1.05}
+.ownerMeta b{display:block; font-size:13px}
+.ownerMeta small{display:block; font-size:11px; opacity:.85}
+.pill{
+  position:absolute; top:10px; right:10px;
+  display:flex; gap:8px; align-items:center;
+  padding:10px 12px; border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(10px); color:#fff;
+}
+.pill .coin{font-weight:900}
+#thumbs{
+  display:flex; gap:10px; overflow-x:auto; padding-bottom:2px;
+  scroll-snap-type:x mandatory;
+}
+.thumb{
+  flex:0 0 120px; height:84px; border-radius:20px;
+  border:1px solid var(--b); background:var(--card);
+  backdrop-filter:blur(14px);
+  display:flex; flex-direction:column; justify-content:flex-end;
+  padding:10px; box-shadow:0 10px 30px rgba(2,26,60,.08);
+  position:relative; overflow:hidden; scroll-snap-align:start;
+  cursor:pointer;
+}
+.thumb .t{font-weight:900; font-size:12px}
+.thumb .s{font-size:11px; color:var(--m)}
+.thumb::before{
+  content:""; position:absolute; inset:-40px -50px auto auto;
+  width:140px; height:140px; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, rgba(56,189,248,.55), transparent 55%);
+}
+.nav{
+  flex:0 0 70px; padding:10px 14px 12px;
+}
+.navbar{
+  height:56px; border-radius:22px; border:1px solid var(--b);
+  background:rgba(255,255,255,.60); backdrop-filter:blur(16px);
+  display:flex; align-items:center; justify-content:space-around;
+  box-shadow:0 16px 50px rgba(2,26,60,.14);
+}
+.nbtn{
+  width:48px; height:48px; border-radius:18px;
+  display:grid; place-items:center; border:1px solid transparent;
+  color:var(--t); background:transparent; cursor:pointer;
+  font-size:18px;
+}
+.nbtn.active{border-color:var(--b); background:rgba(255,255,255,.55)}
+.muted{color:var(--m); font-size:12px}
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.field input, .field textarea{
+  width:100%; padding:12px; border-radius:18px;
+  border:1px solid var(--b);
+  background:rgba(255,255,255,.65);
+  outline:none; font-size:14px;
+}
+.smallBtn, .sbtn{
+  padding:10px 12px; border-radius:18px; border:1px solid var(--b);
+  background:rgba(255,255,255,.65); color:var(--t); font-weight:900;
+  cursor:pointer;
+}
+.sbtn:disabled{opacity:.5; cursor:not-allowed}
+hr{border:none; border-top:1px solid rgba(7,36,69,.10); margin:12px 0}
+
+/* MODAIS */
+.modal{
+  position:fixed; inset:0; display:none; align-items:flex-end; justify-content:center;
+  background:rgba(0,0,0,.35); padding:12px; z-index:20;
+}
+.sheet{
+  width:min(520px, 100%); border-radius:24px; border:1px solid var(--b);
+  background:rgba(255,255,255,.75); backdrop-filter:blur(18px);
+  box-shadow:0 24px 80px rgba(2,26,60,.25);
+  overflow:hidden;
+}
+.sheetTop{
+  padding:12px 12px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid rgba(7,36,69,.10);
+}
+.sheetBody{padding:12px}
+.buyQR{
+  width:220px; max-width:80vw; border-radius:18px;
+  border:1px solid rgba(7,36,69,.14); background:#fff; padding:10px;
+}
+
+/* URSO + MOEDA (animação) */
+#bearWrap{position:relative; width:42px; height:42px}
+#bear{
+  position:absolute; inset:0;
+  background:radial-gradient(circle at 35% 30%, #fff, #dbeafe 55%, #93c5fd 100%);
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.7);
+  display:grid; place-items:center;
+  box-shadow:0 10px 25px rgba(2,26,60,.18);
+  transform-origin:center;
+}
+#bear i{color:#0b3b7a}
+#coin{
+  position:absolute; right:-6px; bottom:-6px;
+  width:22px; height:22px; border-radius:50%;
+  border:1px solid rgba(255,215,0,.6);
+  background:radial-gradient(circle at 30% 30%, #ffe9a8, #ffcc33 50%, #c78b00 100%);
+  display:grid; place-items:center;
+  font-weight:900; font-size:12px; color:#0a2a4f;
+}
+@keyframes tug{
+  0%,100%{transform:translate(0,0) rotate(-2deg)}
+  50%{transform:translate(2px,-1px) rotate(4deg)}
+}
+@keyframes coinwiggle{
+  0%,100%{transform:translate(0,0)}
+  50%{transform:translate(-2px,2px)}
+}
+#bearWrap{animation:tug 1.6s ease-in-out infinite}
+#coin{animation:coinwiggle 1.2s ease-in-out infinite}
+.toast{
+  position:fixed; left:50%; bottom:92px; transform:translateX(-50%);
+  padding:10px 12px; border-radius:18px;
+  background:rgba(7,36,69,.92); color:#fff; font-weight:900; font-size:13px;
+  opacity:0; pointer-events:none; transition:.25s; z-index:30;
+}
+.toast.on{opacity:1; transform:translateX(-50%) translateY(-6px)}
+</style>
+</head>
+<body>
 <div id="app">
   <div class="top">
-    <div class="bgSea bubbles"></div>
-
     <div class="brand">
       <div class="logo">
-        <i class="fa-solid fa-snowflake"></i>
-        <b>ICE-CUBO</b>
-        <span class="muted">online</span>
+        <div id="bearWrap">
+          <div id="bear"><i class="fa-solid fa-snowflake"></i></div>
+          <div id="coin">B</div>
+        </div>
+        <div>
+          <div class="brandName">ICE-CUBO</div>
+          <div class="muted">BLUE • Feed • Perfil</div>
+        </div>
       </div>
+    </div>
+    <div class="badgeBlue"><i class="fa-solid fa-droplet"></i> BLUE: <span id="blueBal">0.000000</span></div>
+  </div>
 
-      <div class="pill" title="BLUE (simulação)">
-        <div class="coin"><span>B</span></div>
-        <div style="display:flex;flex-direction:column;line-height:1.05">
-          <span style="font-weight:800">BLUE</span>
-          <span class="muted" id="blueBal">0</span>
+  <div class="main">
+    <div class="stage" id="stage">
+      <div id="viewer">
+        <div id="ownerCard" title="Abrir perfil">
+          <div class="avatar" id="ownerAv">T</div>
+          <div class="ownerMeta">
+            <b id="ownerName">Thiago</b>
+            <small id="ownerRole">USER</small>
+          </div>
+        </div>
+
+        <div class="pill">
+          <i class="fa-solid fa-circle-play"></i>
+          <span class="coin" id="videoTitle">Video 1</span>
+        </div>
+
+        <div class="hint">
+          <span>Duplo toque em um card abaixo → sobe pro player</span>
+          <span>Arraste p/ lado → próximo</span>
         </div>
       </div>
     </div>
 
-    <div class="viewer">
-      <div id="hint">Toque em um card abaixo para destacar.</div>
-      <video id="mainV playsinline controls"></video>
-      <img id="mainI" />
-    </div>
+    <div id="thumbs"></div>
+  </div>
 
-    <div class="stageBar">
-      <div class="ownerCard" id="ownerCard">
-        <div class="avatar" id="ownerAv">I</div>
-        <div class="meta">
-          <div class="name" id="ownerName">ICE IA</div>
-          <div class="sub" id="ownerSub">Toque no card para abrir perfil</div>
+  <div class="nav">
+    <div class="navbar">
+      <button class="nbtn active" id="navHome" title="Home"><i class="fa-solid fa-house"></i></button>
+      <button class="nbtn" id="navCam" title="Câmera"><i class="fa-solid fa-camera"></i></button>
+      <button class="nbtn" id="navDanger" title="Perfil"><i class="fa-solid fa-user"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PERFIL -->
+<div class="modal" id="modalProfile">
+  <div class="sheet">
+    <div class="sheetTop">
+      <b><i class="fa-solid fa-user"></i> Perfil</b>
+      <button class="sbtn" id="closeProfile"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sheetBody">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div style="font-weight:900;font-size:16px" id="profName">—</div>
+          <div class="muted" id="profMeta">—</div>
         </div>
+        <div class="badgeBlue" style="margin:0"><i class="fa-solid fa-droplet"></i> <span id="profBlue">0.000000</span></div>
       </div>
 
-      <button class="smallBtn" id="chatBtn" title="Chat"><i class="fa-solid fa-comments"></i></button>
-      <button class="smallBtn" id="buyBtn" title="Comprar BLUE"><i class="fa-solid fa-cart-shopping"></i></button>
-    </div>
-  </div>
+      <hr>
 
-  <div class="bottom">
-    <div class="carousel" id="carousel"></div>
-
-    <div class="panel" id="panelFeed">
-      <div class="hrow">
-        <h3><i class="fa-solid fa-film"></i> Timeline</h3>
-        <span class="muted">cards abaixo</span>
+      <div class="row" style="margin:6px 0 12px">
+        <button class="smallBtn" id="btnDeposit"><i class="fa-solid fa-arrow-down"></i> Depositar</button>
+        <button class="smallBtn" id="btnWithdraw"><i class="fa-solid fa-arrow-up"></i> Sacar</button>
       </div>
-      <div class="gridPosts" id="feedGrid"></div>
-    </div>
 
-    <div class="panel" id="panelHome" style="display:none">
-      <div class="hrow">
-        <h3><i class="fa-solid fa-user"></i> Seu perfil</h3>
-        <span class="muted">demo</span>
+      <div class="muted">
+        * Depósito gera PIX (Mercado Pago). Depois de pagar, você verifica e o BLUE entra (DEMO).
       </div>
-      <div class="muted">Aqui depois você coloca posts da galeria (continuamos depois sem quebrar).</div>
     </div>
   </div>
 </div>
 
-<div class="nav">
-  <button id="navFeed" class="active"><i class="fa-solid fa-film"></i><span>Feed</span></button>
-  <button id="navHome"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
-</div>
-
-<!-- Modal Comprar BLUE -->
+<!-- MODAL COMPRAR BLUE -->
 <div class="modal" id="modalBuy">
   <div class="sheet">
     <div class="sheetTop">
-      <b>Comprar BLUE (Pix)</b>
-      <button class="smallBtn" id="closeBuy"><i class="fa-solid fa-xmark"></i></button>
+      <b><i class="fa-solid fa-bag-shopping"></i> Comprar BLUE (PIX)</b>
+      <button class="sbtn" id="closeBuy"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="sheetBody">
+      <div class="muted" style="margin-bottom:10px">
+        Se R$0,05 falhar, use R$1,00 (o MP costuma ter mínimo).
+      </div>
+
       <div class="row">
-        <div class="field"><input id="buyEmail" placeholder="Seu email (pagador)"></div>
-        <div class="field"><input id="buyAmount" inputmode="decimal" placeholder="Valor em R$ (ex: 1.00)"></div>
+        <div class="field" style="flex:1"><input id="buyEmail" placeholder="Seu email (pagador)"></div>
+        <div class="field" style="width:160px"><input id="buyAmount" placeholder="R$ (ex: 1.00)" inputmode="decimal"></div>
       </div>
+
       <div class="row" style="margin-top:10px">
-        <button class="smallBtn" id="createPix"><i class="fa-brands fa-pix"></i> Gerar Pix</button>
+        <button class="sbtn" id="buyBtn"><i class="fa-solid fa-qrcode"></i> Gerar PIX</button>
+        <button class="sbtn" id="buyCheck" disabled><i class="fa-solid fa-rotate"></i> Verificar pagamento</button>
       </div>
+
       <hr>
-      <div id="buyOut" class="muted">Digite email e valor e gere o Pix.</div>
+      <div id="buyOut" class="muted">—</div>
     </div>
   </div>
 </div>
 
-<!-- Modal Perfil do usuário (simples) -->
-<div class="modal" id="modalUser">
-  <div class="sheet">
-    <div class="sheetTop">
-      <b id="userTitle">Perfil</b>
-      <button class="smallBtn" id="closeUser"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="sheetBody">
-      <div id="userBody"></div>
-    </div>
-  </div>
-</div>
+<div class="toast" id="toast">—</div>
 
 <script>
-const me={id:"me",name:"Você",avatar:"V"};
-const ai={id:"iceai",name:"ICE IA",avatar:"I"};
-const fakes=[{id:"neo",name:"neo",avatar:"N"},{id:"tech",name:"tech",avatar:"T"}];
+/* ======= Estado DEMO (localStorage) ======= */
+const KEY="icecubo_state_v1";
+const st = JSON.parse(localStorage.getItem(KEY)||"null") || {
+  me:{ id:"me", name:"Thiago", role:"OWNER", ref:null },
+  blue:{ bal:0, siteFee:0, refFee:0 }
+};
+function save(){ localStorage.setItem(KEY, JSON.stringify(st)); }
 
-const st=JSON.parse(localStorage.getItem("ice_state_v1")||"null")||{blue:0};
-const save=()=>localStorage.setItem("ice_state_v1",JSON.stringify(st));
-const blueBal=document.getElementById("blueBal");
-function blueRender(){blueBal.textContent=(st.blue||0).toFixed(6)+" BLUE";}
+const $ = (id)=>document.getElementById(id);
+const toastEl=$("toast");
+function toast(msg){
+  toastEl.textContent=msg;
+  toastEl.classList.add("on");
+  setTimeout(()=>toastEl.classList.remove("on"), 2200);
+}
+function fmt6(n){ return (Number(n||0)).toFixed(6); }
+function blueRender(){ $("blueBal").textContent = fmt6(st.blue.bal); }
+blueRender();
 
-const posts=[
- {id:"p1",type:"video",url:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",owner:ai,ts:Date.now()-60000},
- {id:"p2",type:"video",url:"https://www.w3schools.com/html/mov_bbb.mp4",owner:fakes[0],ts:Date.now()-120000},
- {id:"p3",type:"image",url:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60",owner:fakes[1],ts:Date.now()-180000}
+/* ======= Feed fake ======= */
+const feed=[
+  { id:"v1", title:"Video 1", owner:{id:"u1", name:"Thiago", role:"OWNER"} },
+  { id:"v2", title:"Video 2", owner:{id:"u2", name:"Jessica", role:"USER"} },
+  { id:"v3", title:"Video 3", owner:{id:"u3", name:"Edu", role:"USER"} },
+  { id:"v4", title:"Video 4", owner:{id:"u4", name:"Dudu", role:"USER"} }
 ];
+let selected = feed[0];
 
-const carousel=document.getElementById("carousel");
-const feedGrid=document.getElementById("feedGrid");
-const mainV=document.getElementById("mainV");
-const mainI=document.getElementById("mainI");
-const hint=document.getElementById("hint");
-const ownerCard=document.getElementById("ownerCard");
-const ownerAv=document.getElementById("ownerAv");
-const ownerName=document.getElementById("ownerName");
-const ownerSub=document.getElementById("ownerSub");
-
-let selected=null;
-
-function setOwner(u){
-  ownerAv.textContent=u.avatar||"U";
-  ownerName.textContent=u.name||"Usuário";
-  ownerSub.textContent="Toque no card para abrir perfil";
-}
-
-function showMedia(p){
-  selected=p;
-  hint.style.display="none";
-  setOwner(p.owner||ai);
-
-  mainV.pause(); mainV.removeAttribute("src"); mainV.load();
-  mainV.style.display="none"; mainI.style.display="none";
-
-  if(p.type==="video"){ mainV.src=p.url; mainV.style.display="block"; mainV.play().catch(()=>{}); }
-  else { mainI.src=p.url; mainI.style.display="block"; }
-
-  [...carousel.children].forEach(el=>el.classList.toggle("active", el.dataset.id===p.id));
-}
-
-function render(){
-  carousel.innerHTML="";
-  posts.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="item"+(selected&&selected.id===p.id?" active":"");
-    div.dataset.id=p.id;
-    div.innerHTML=(p.type==="video")?`<video muted playsinline src="${p.url}"></video><div class="tag">@${p.owner.name}</div>`
-      :`<img src="${p.url}"><div class="tag">@${p.owner.name}</div>`;
-    div.onclick=()=>showMedia(p);
-    carousel.appendChild(div);
+function renderThumbs(){
+  const wrap=$("thumbs");
+  wrap.innerHTML="";
+  feed.forEach((v,idx)=>{
+    const d=document.createElement("div");
+    d.className="thumb";
+    d.innerHTML = '<div class="t">'+v.title+'</div><div class="s">@'+v.owner.name+'</div>';
+    let lastTap=0;
+    d.addEventListener("click", ()=>{
+      const now=Date.now();
+      if(now-lastTap<350){
+        selectVideo(idx);
+      }
+      lastTap=now;
+    });
+    wrap.appendChild(d);
   });
-
-  feedGrid.innerHTML="";
-  posts.forEach(p=>{
-    const c=document.createElement("div");
-    c.className="post";
-    c.innerHTML=(p.type==="video")?`<video muted playsinline src="${p.url}"></video>`:`<img src="${p.url}">`;
-    const bar=document.createElement("div");
-    bar.className="pbar";
-    bar.innerHTML=`<span class="badge"><span class="mini">${p.owner.avatar}</span>@${p.owner.name}</span>
-      <button class="iconBtn" title="destacar"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>`;
-    bar.querySelector("button").onclick=()=>showMedia(p);
-    c.appendChild(bar);
-    feedGrid.appendChild(c);
-  });
-
-  if(!selected) showMedia(posts[0]);
 }
 
-function openUser(u){
-  document.getElementById("userTitle").textContent="Perfil • @"+u.name;
-  document.getElementById("userBody").innerHTML=`
-    <div style="display:flex;gap:12px;align-items:center">
-      <div class="avatar" style="width:56px;height:56px;border-radius:18px">${u.avatar}</div>
-      <div>
-        <div style="font-weight:900;font-size:16px">@${u.name}</div>
-        <div class="muted">ID: ${u.id}</div>
-      </div>
-    </div>
-    <div class="muted" style="margin-top:12px">Aqui depois entra feed do usuário, fotos, vídeos, trocas...</div>
-  `;
-  document.getElementById("modalUser").style.display="flex";
+function selectVideo(idx){
+  selected = feed[idx];
+  $("videoTitle").textContent = selected.title;
+  $("ownerName").textContent = selected.owner.name;
+  $("ownerRole").textContent = selected.owner.role;
+  $("ownerAv").textContent = (selected.owner.name||"U").slice(0,1).toUpperCase();
+  toast("Subiu: "+selected.title);
 }
-document.getElementById("closeUser").onclick=()=>document.getElementById("modalUser").style.display="none";
+renderThumbs();
+selectVideo(0);
 
-// ✅ tocar no card do topo abre perfil
-ownerCard.onclick=()=>{ if(selected?.owner) openUser(selected.owner); };
+/* Swipe no stage (próximo/anterior) */
+let sx=0, dx=0, touching=false;
+$("stage").addEventListener("touchstart",(e)=>{ touching=true; sx=e.touches[0].clientX; dx=0; },{passive:true});
+$("stage").addEventListener("touchmove",(e)=>{ if(!touching) return; dx=e.touches[0].clientX - sx; },{passive:true});
+$("stage").addEventListener("touchend",()=>{
+  touching=false;
+  if(Math.abs(dx)>60){
+    const cur = feed.findIndex(v=>v.id===selected.id);
+    const next = dx<0 ? Math.min(feed.length-1, cur+1) : Math.max(0, cur-1);
+    selectVideo(next);
+  }
+});
 
-// Navegação básica
-const panelFeed=document.getElementById("panelFeed");
-const panelHome=document.getElementById("panelHome");
-document.getElementById("navFeed").onclick=()=>{panelFeed.style.display="block";panelHome.style.display="none";}
-document.getElementById("navHome").onclick=()=>{panelHome.style.display="block";panelFeed.style.display="none";}
+/* ======= Perfil (clicar no card do dono) ======= */
+const modalProfile=$("modalProfile");
+$("ownerCard").onclick = ()=> openProfile(selected.owner);
+$("closeProfile").onclick = ()=> modalProfile.style.display="none";
 
-// Comprar BLUE (chama /api/mp_create)
-const modalBuy=document.getElementById("modalBuy");
-document.getElementById("buyBtn").onclick=()=>{modalBuy.style.display="flex";document.getElementById("buyOut").textContent="Digite email e valor e gere o Pix.";};
-document.getElementById("closeBuy").onclick=()=>modalBuy.style.display="none";
+function openProfile(user){
+  $("profName").textContent = user.name;
+  $("profMeta").textContent = "@" + user.id + " • " + user.role;
+  $("profBlue").textContent = fmt6(st.blue.bal);
+  modalProfile.style.display="flex";
+}
 
-document.getElementById("createPix").onclick=async()=>{
-  const email=(document.getElementById("buyEmail").value||"").trim();
-  const amount=Number(String(document.getElementById("buyAmount").value||"").replace(",","."));
-  const out=document.getElementById("buyOut");
-  if(!email) return out.textContent="Digite seu email.";
-  if(!amount || Number.isNaN(amount)) return out.textContent="Digite um valor válido (ex: 1.00).";
+/* ======= Comprar BLUE (PIX) ======= */
+const modalBuy=$("modalBuy");
+$("closeBuy").onclick = ()=> modalBuy.style.display="none";
 
-  out.textContent="Gerando Pix...";
+$("btnDeposit").onclick = ()=>{
+  modalBuy.style.display="flex";
+  $("buyOut").textContent="—";
+  $("buyCheck").disabled=true;
+  lastPaymentId=null;
+};
+
+$("btnWithdraw").onclick = ()=> toast("Saque: vamos ativar depois com regras ✅");
+
+let lastPaymentId=null;
+let lastAmount=0;
+
+function reaisParaBlue(reais){
+  // Exemplo (você muda depois): 1 real = 0.79 BLUE
+  return reais * 0.79;
+}
+function creditarCompra(reais){
+  const total = reaisParaBlue(reais);
+  const comprador = total * 0.85;
+  const site = total * 0.10;
+  const indicado = total * 0.05;
+
+  st.blue.bal = (st.blue.bal||0) + comprador;
+  st.blue.siteFee = (st.blue.siteFee||0) + site;
+  st.blue.refFee = (st.blue.refFee||0) + indicado;
+
+  save();
+  blueRender();
+  $("profBlue").textContent = fmt6(st.blue.bal);
+  toast("Aprovado ✅ +"+comprador.toFixed(6)+" BLUE");
+}
+
+$("buyBtn").onclick = async ()=>{
+  const email = ($("buyEmail").value||"").trim();
+  const amount = Number(($("buyAmount").value||"").replace(",", "."));
+  if(!email) return toast("Digite seu email.");
+  if(!amount || Number.isNaN(amount)) return toast("Digite um valor válido.");
+
+  $("buyOut").textContent="Gerando PIX...";
   try{
-    const r=await fetch("/api/mp_create",{
+    const r = await fetch("/api/mp_create",{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ email, amount })
     });
-    const data=await r.json();
-    if(!data.ok){ out.textContent="Erro: "+JSON.stringify(data.error).slice(0,220); return; }
+    const data = await r.json();
+    if(!data.ok){
+      $("buyOut").textContent="Erro: "+JSON.stringify(data.error);
+      $("buyCheck").disabled=true;
+      return;
+    }
+    lastPaymentId=data.paymentId;
+    lastAmount=data.amount||amount;
+    $("buyCheck").disabled=false;
 
-    // Credita BLUE em modo teste (só pra você ver funcionar)
-    // Aqui você troca depois pela regra 85/10/5 + confirmação status.
-    st.blue=(st.blue||0)+Number(amount);
-    save(); blueRender();
-
-    let txt="Pix gerado ✅\\nID: "+data.paymentId+"\\nStatus: "+data.status+"\\n\\n";
-    if(data.qr_code) txt+="COPIA E COLA:\\n"+data.qr_code;
-    else txt+="Sem QR code retornado.";
-    out.textContent=txt;
+    const img = data.qr_code_base64 ? '<img class="buyQR" alt="QR PIX" src="data:image/png;base64,'+data.qr_code_base64+'">' : "";
+    const code = data.qr_code ? '<textarea style="width:100%;padding:12px;border-radius:18px;border:1px solid rgba(7,36,69,.14)" readonly>'+data.qr_code+'</textarea>' : "";
+    $("buyOut").innerHTML =
+      '<div style="font-weight:900;margin-bottom:8px">PIX gerado ✅</div>'+
+      img+
+      '<div style="margin-top:10px">'+code+'</div>'+
+      '<div class="muted" style="margin-top:8px">Depois de pagar, clique em “Verificar pagamento”.</div>';
   }catch(e){
-    out.textContent="Erro: "+e.message;
+    $("buyOut").textContent="Erro: "+e.message;
+    $("buyCheck").disabled=true;
   }
 };
 
-blueRender();
-render();
-</script>
-</body></html>`);
+$("buyCheck").onclick = async ()=>{
+  if(!lastPaymentId) return;
+  $("buyOut").innerHTML += '<div class="muted" style="margin-top:8px">Verificando...</div>';
+  try{
+    const r = await fetch("/api/mp_status?paymentId="+encodeURIComponent(lastPaymentId));
+    const data = await r.json();
+    if(!data.ok){
+      $("buyOut").innerHTML += '<div class="muted">Erro: '+JSON.stringify(data.error)+'</div>';
+      return;
+    }
+    if(data.status==="approved"){
+      creditarCompra(Number(data.amount||lastAmount));
+      $("buyOut").innerHTML += '<div style="margin-top:8px;font-weight:900">Aprovado ✅ BLUE creditado!</div>';
+    }else{
+      $("buyOut").innerHTML += '<div class="muted" style="margin-top:8px">Status: '+data.status+' (ainda não aprovado)</div>';
+    }
+  }catch(e){
+    $("buyOut").innerHTML += '<div class="muted">Erro: '+e.message+'</div>';
+  }
+};
+
+/* ======= Nav (Home/Cam/Perfil) ======= */
+function setNav(active){
+  ["navHome","navCam","navDanger"].forEach(id=>$(id).classList.remove("active"));
+  $(active).classList.add("active");
 }
+$("navHome").onclick = ()=>{ setNav("navHome"); toast("Home"); };
+$("navCam").onclick = ()=>{ setNav("navCam"); toast("Câmera (demo)"); };
+$("navDanger").onclick = ()=>{ setNav("navDanger"); openProfile(st.me); };
+</script>
+</body>
+</html>`);
+};
