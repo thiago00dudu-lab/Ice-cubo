@@ -1,26 +1,33 @@
-// /api/index.js — ICE-CUBO (UM arquivo) — Vercel Serverless
-// PIX/QR REAL via Mercado Pago Payments API (payment_method_id="pix")
-// Requer ENV no Vercel (Production): MP_ACCESS_TOKEN = APP_USR-...
-// Opcional: BASE_URL=https://seuprojeto.vercel.app (pra webhook/links, aqui não é obrigatório)
+// /api/index.js (Vercel) — ICE-CUBO (1 arquivo grande: UI + API)
+// Env vars necessárias (Vercel > Settings > Environment Variables):
+// MP_ACCESS_TOKEN = "APP_USR-...." (produção) ou TEST-.... (teste)
+// BASE_URL = "https://SEU-PROJETO.vercel.app"  (opcional, mas recomendado)
+// MP_WEBHOOK_SECRET = "qualquer_coisa" (opcional - se você configurar no MP)
 
 const https = require("https");
 const { URL } = require("url");
 
-const ADM_LOGIN = "ADM";
-const ADM_SENHA = "1533";
-
 const MP_ACCESS_TOKEN = (process.env.MP_ACCESS_TOKEN || "").trim();
-const BASE_URL = (process.env.BASE_URL || "").trim();
+const BASE_URL = (process.env.BASE_URL || "").trim(); // ex: https://ice-cubo.vercel.app
+const MP_WEBHOOK_SECRET = (process.env.MP_WEBHOOK_SECRET || "").trim();
 
-function sendHTML(res, html) {
-  res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.end(html);
-}
-function sendJSON(res, code, obj) {
+// --- “DB” em memória (protótipo). Em serverless pode resetar.
+const DB = globalThis.__ICE_DB__ || (globalThis.__ICE_DB__ = {
+  users: {},          // username -> { pass, blue, follows:Set, children:Set, affiliateOf, bonusToMine, minedTotal }
+  posts: [],          // { id, owner, type, dataUrl, createdAt }
+  mpPayments: {},     // paymentId -> { status, amount, username, createdAt }
+});
+
+function now() { return Date.now(); }
+function j(res, code, obj) {
   res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.end(JSON.stringify(obj));
+}
+function h(res, code, html) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.end(html);
 }
 function readBody(req) {
   return new Promise((resolve) => {
@@ -29,7 +36,7 @@ function readBody(req) {
     req.on("end", () => resolve(d));
   });
 }
-function httpJSON(method, url, headers, bodyObj) {
+function httpJSON(method, url, headers = {}, bodyObj = null) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
     const data = bodyObj ? JSON.stringify(bodyObj) : null;
@@ -40,7 +47,7 @@ function httpJSON(method, url, headers, bodyObj) {
       headers: {
         "Content-Type": "application/json",
         ...(data ? { "Content-Length": Buffer.byteLength(data) } : {}),
-        ...(headers || {}),
+        ...headers,
       },
     };
     const r = https.request(opts, (resp) => {
@@ -57,108 +64,56 @@ function httpJSON(method, url, headers, bodyObj) {
     r.end();
   });
 }
-function safeBaseUrl() {
-  if (!BASE_URL) return "";
-  return BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
+
+function safeUser(u) {
+  return String(u || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "")
+    .slice(0, 20);
 }
 
-// =============== API ===============
-async function mpCreatePixPayment({ amountBRL, user, email }) {
-  if (!MP_ACCESS_TOKEN) {
-    return { ok: false, err: "Falta MP_ACCESS_TOKEN no Vercel (Production)." };
+function ensureUser(username) {
+  const u = safeUser(username);
+  if (!u) return null;
+  if (!DB.users[u]) {
+    DB.users[u] = {
+      pass: "",
+      blue: 0,
+      follows: new Set(),
+      children: new Set(),
+      affiliateOf: null,
+      bonusToMine: 0,
+      minedTotal: 0,
+    };
   }
-  // Mercado Pago exige payer.email válido
-  if (!email || !String(email).includes("@")) {
-    return { ok: false, err: "Informe um e-mail válido no Perfil (ex: seuemail@gmail.com)." };
-  }
-  const amount = Number(amountBRL);
-  if (!amount || amount < 1) return { ok: false, err: "Valor mínimo 1." };
+  return u;
+}
 
-  // External reference ajuda a identificar
-  const external_reference = `icecubo:${user}:${Date.now()}`;
+function authFromReq(req) {
+  // autenticação simples via headers
+  const u = safeUser(req.headers["x-ice-user"]);
+  const p = String(req.headers["x-ice-pass"] || "");
+  if (!u || !DB.users[u]) return null;
+  if (DB.users[u].pass !== p) return null;
+  return u;
+}
 
-  const body = {
-    transaction_amount: Number(amount.toFixed(2)),
-    description: `Depósito ICE-CUBO (${user})`,
-    payment_method_id: "pix",
-    payer: { email: String(email).trim() },
-    external_reference,
-  };
-
-  const r = await httpJSON(
-    "POST",
-    "https://api.mercadopago.com/v1/payments",
-    { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
-    body
-  );
-
-  if (r.status < 200 || r.status >= 300) {
-    return { ok: false, err: "Mercado Pago erro ao criar PIX", detail: r.json || r.text };
-  }
-
-  const p = r.json || {};
-  const t = p.point_of_interaction?.transaction_data || {};
+function asJSONUser(u) {
+  const x = DB.users[u];
   return {
-    ok: true,
-    payment_id: p.id,
-    status: p.status,
-    status_detail: p.status_detail,
-    qr_code: t.qr_code || "",
-    qr_code_base64: t.qr_code_base64 || "",
+    username: u,
+    blue: x.blue,
+    follows: Array.from(x.follows),
+    children: Array.from(x.children),
+    affiliateOf: x.affiliateOf,
+    bonusToMine: x.bonusToMine,
+    minedTotal: x.minedTotal,
   };
 }
 
-async function mpGetPayment(paymentId) {
-  if (!MP_ACCESS_TOKEN) return { ok: false, err: "Falta MP_ACCESS_TOKEN." };
-  const id = String(paymentId || "").trim();
-  if (!id) return { ok: false, err: "payment_id inválido." };
-
-  const r = await httpJSON(
-    "GET",
-    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(id)}`,
-    { Authorization: `Bearer ${MP_ACCESS_TOKEN}` }
-  );
-
-  if (r.status < 200 || r.status >= 300) {
-    return { ok: false, err: "Erro ao consultar pagamento", detail: r.json || r.text };
-  }
-  const p = r.json || {};
-  return {
-    ok: true,
-    status: p.status,
-    status_detail: p.status_detail,
-    transaction_amount: p.transaction_amount,
-    external_reference: p.external_reference,
-  };
-}
-
-module.exports = async (req, res) => {
-  try {
-    const url = new URL(req.url, "https://local/");
-    const op = url.searchParams.get("op") || "";
-
-    if (op === "health") return sendJSON(res, 200, { ok: true, msg: "ICE-CUBO online" });
-
-    if (op === "pix_create") {
-      const raw = await readBody(req);
-      let body = {};
-      try { body = raw ? JSON.parse(raw) : {}; } catch { body = {}; }
-      const out = await mpCreatePixPayment({
-        amountBRL: body.amount,
-        user: body.user,
-        email: body.email,
-      });
-      return sendJSON(res, out.ok ? 200 : 400, out);
-    }
-
-    if (op === "pix_status") {
-      const pid = url.searchParams.get("id") || "";
-      const out = await mpGetPayment(pid);
-      return sendJSON(res, out.ok ? 200 : 400, out);
-    }
-
-    // =============== UI ===============
-    return sendHTML(res, `<!doctype html>
+// --- UI HTML (tudo inline)
+function uiHTML() {
+  return `<!doctype html>
 <html lang="pt-br">
 <head>
 <meta charset="utf-8"/>
@@ -167,873 +122,914 @@ module.exports = async (req, res) => {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 :root{
-  --bgA:#001a33;--bgB:#004b7a;--card:rgba(255,255,255,.08);--bd:rgba(255,255,255,.12);
-  --txt:#eaf6ff;--mut:rgba(234,246,255,.7);--a:#38bdf8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;
-  --shadow:0 18px 45px rgba(0,0,0,.35);
+  --bg1:#071a2a; --bg2:#0a2b45; --card:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.10); --txt:#eaf6ff; --mut:rgba(255,255,255,.65);
+  --ok:#31d67b; --warn:#ffd166; --pri:#3bb7ff;
+  --r:22px;
 }
-*{box-sizing:border-box}html,body{height:100%}
+*{box-sizing:border-box}
 body{
-  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--txt);overflow:hidden;
+  margin:0; color:var(--txt); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  background: radial-gradient(1100px 700px at 15% 10%, rgba(59,183,255,.28), transparent 60%),
+              radial-gradient(900px 650px at 80% 30%, rgba(49,214,123,.14), transparent 60%),
+              linear-gradient(180deg, var(--bg1), var(--bg2));
+  min-height:100vh; overflow-x:hidden;
+}
+.ocean{
+  position:fixed; inset:0; pointer-events:none; opacity:.55; mix-blend-mode:screen;
   background:
-    radial-gradient(1000px 600px at 20% -10%, rgba(56,189,248,.25), transparent 55%),
-    radial-gradient(900px 700px at 120% 20%, rgba(34,197,94,.12), transparent 55%),
-    linear-gradient(180deg, var(--bgA), var(--bgB));
+    radial-gradient(circle at 10% 30%, rgba(255,255,255,.18) 0 2px, transparent 3px) 0 0/120px 120px,
+    radial-gradient(circle at 35% 70%, rgba(255,255,255,.10) 0 2px, transparent 3px) 0 0/180px 180px,
+    radial-gradient(circle at 80% 40%, rgba(255,255,255,.14) 0 2px, transparent 3px) 0 0/150px 150px;
+  filter: blur(.2px);
 }
-#ocean:before,#ocean:after{
-  content:"";position:fixed;inset:-20%;pointer-events:none;opacity:.55;
-  background:
-    radial-gradient(circle, rgba(255,255,255,.30) 0 2px, transparent 3px) 0 0/120px 120px,
-    radial-gradient(circle, rgba(255,255,255,.16) 0 1px, transparent 2px) 40px 20px/160px 160px;
-  animation:float 16s linear infinite;
+.bub{position:fixed; border:1px solid rgba(255,255,255,.12); border-radius:999px; width:16px; height:16px; opacity:.25; animation: float 14s linear infinite}
+@keyframes float{from{transform:translateY(120vh) translateX(0) scale(.9)} to{transform:translateY(-20vh) translateX(60px) scale(1.15)}}
+.wrap{max-width:980px; margin:0 auto; padding:14px 12px 96px}
+.topbar{
+  display:flex; gap:10px; align-items:stretch; justify-content:space-between; margin-top:4px
 }
-#ocean:after{opacity:.30;animation-duration:24s;transform:scale(1.15)}
-@keyframes float{to{transform:translateY(-140px)}}
-
-#app{height:100%;display:flex;flex-direction:column}
-.top{
-  height:52vh;position:relative;overflow:hidden;border-radius:0 0 26px 26px;
-  background:rgba(0,0,0,.22);
-  box-shadow:var(--shadow);
+.brand, .wallet{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+  padding:12px 12px; backdrop-filter: blur(10px);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
 }
-.brand{
-  position:absolute;top:10px;left:12px;right:12px;z-index:5;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-}
-.pill{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--bd);
-  background:rgba(0,0,0,.25);backdrop-filter:blur(10px);border-radius:18px;
-}
-.namebox{display:flex;align-items:center;gap:10px}
+.brand{flex:1; display:flex; align-items:center; gap:12px}
+.wallet{width:180px; display:flex; align-items:center; justify-content:space-between}
 .logo{
-  width:42px;height:42px;border-radius:14px;display:grid;place-items:center;
-  background:linear-gradient(180deg, rgba(56,189,248,.9), rgba(14,165,233,.35));
-  border:1px solid var(--bd);
+  width:44px; height:44px; border-radius:16px; display:grid; place-items:center;
+  background:linear-gradient(135deg, rgba(59,183,255,.9), rgba(49,214,123,.55));
+  border:1px solid rgba(255,255,255,.22);
+  font-weight:900;
 }
-.brandname{display:flex;flex-direction:column;line-height:1.05}
-.brandname b{letter-spacing:1.3px;font-size:15px}
-.brandname small{color:var(--mut);font-size:11px}
-
-.bearWrap{display:flex;align-items:center;gap:8px}
-.bear{
-  width:46px;height:46px;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35));
-  animation:bear 1.9s ease-in-out infinite;
+.mascot{
+  width:38px; height:38px; border-radius:14px;
+  display:grid; place-items:center;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  position:relative; overflow:hidden;
 }
-@keyframes bear{
-  0%{transform:translateY(0) rotate(0deg)}
-  30%{transform:translateY(-2px) rotate(-3deg)}
-  60%{transform:translateY(1px) rotate(3deg)}
-  100%{transform:translateY(0) rotate(0deg)}
+.mascot i{opacity:.9}
+.mascot:after{
+  content:""; position:absolute; inset:-30%;
+  background:radial-gradient(circle, rgba(255,255,255,.25), transparent 60%);
+  animation: shine 2.2s ease-in-out infinite;
+}
+@keyframes shine{0%,100%{transform:translateX(-30%) rotate(10deg)}50%{transform:translateX(30%) rotate(-10deg)}}
+.tt{font-weight:900; letter-spacing:.5px}
+.sub{color:var(--mut); font-size:12px}
+.badgeStar{color:#ffd166; margin-left:6px}
+.pill{
+  display:flex; align-items:center; gap:10px; background:rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.10); padding:10px 12px; border-radius:18px;
 }
 .coin{
-  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
-  background:radial-gradient(circle at 30% 30%, #38bdf8, #0b2a6a);
-  border:1px solid rgba(255,215,0,.55);
-  box-shadow:0 0 0 2px rgba(255,215,0,.18) inset;
+  width:34px; height:34px; border-radius:999px; display:grid; place-items:center;
+  background:radial-gradient(circle at 30% 30%, #ffe8a3, #d2a84c 55%, #7a560f);
+  border:1px solid rgba(255,255,255,.18);
+  position:relative;
 }
-.coin span{color:#ffd700;font-weight:1000}
-
-.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-#stageCam{width:100%;height:100%;object-fit:cover;display:none}
-#stageMedia{width:100%;height:100%;display:none}
-#stageHint{
-  text-align:center;padding:22px;border-radius:18px;border:1px solid var(--bd);
-  background:rgba(0,0,0,.25);backdrop-filter:blur(10px);
+.coin b{
+  font-weight:900; color:#0b3a68; text-shadow:0 1px 0 rgba(255,255,255,.35);
 }
-#stageHint b{font-size:20px;color:var(--a)}
-#stageHint small{display:block;color:var(--mut);margin-top:8px}
-
-.stageBar{
-  position:absolute;left:12px;right:12px;bottom:12px;z-index:5;
-  display:flex;gap:10px;align-items:center;justify-content:space-between;
+.coin:after{
+  content:""; position:absolute; inset:-20%;
+  background:conic-gradient(from 90deg, rgba(255,255,255,.0), rgba(255,255,255,.25), rgba(255,255,255,.0));
+  animation: spin 2.6s linear infinite;
 }
-.card{flex:1;padding:10px 12px;border:1px solid var(--bd);border-radius:18px;background:rgba(0,0,0,.25);backdrop-filter:blur(10px)}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@keyframes spin{to{transform:rotate(360deg)}}
+.section{
+  margin-top:12px; background:var(--card); border:1px solid var(--line);
+  border-radius:var(--r); padding:12px; backdrop-filter: blur(10px);
+}
+.bigTitle{font-weight:900; color:var(--pri); font-size:28px; text-align:center; margin:6px 0 0}
+.bigHint{color:var(--mut); text-align:center; margin:4px 0 6px}
+.grid2{display:grid; gap:12px; grid-template-columns:1fr}
+@media(min-width:820px){.grid2{grid-template-columns:1.15fr .85fr}}
+.viewerBox{
+  background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.10);
+  border-radius:18px; padding:10px;
+}
+.viewerTop{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+.viewer{
+  width:100%; height:220px; border-radius:16px; overflow:hidden;
+  background:#000; border:1px solid rgba(255,255,255,.10);
+  display:grid; place-items:center; position:relative;
+}
+.viewer img,.viewer video{width:100%; height:100%; object-fit:cover}
+.viewer .ph{color:rgba(255,255,255,.65); font-size:13px}
+.btnRow{display:flex; gap:10px; margin-top:10px}
 .btn{
-  border:0;border-radius:16px;padding:10px 12px;background:rgba(56,189,248,.22);
-  color:var(--txt);border:1px solid rgba(56,189,248,.28)
+  border:none; cursor:pointer; border-radius:16px; padding:12px 14px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  background:rgba(255,255,255,.08); color:var(--txt);
+  border:1px solid rgba(255,255,255,.10);
 }
-.btn:active{transform:scale(.98)}
-.btn.ok{background:rgba(34,197,94,.20);border-color:rgba(34,197,94,.32)}
-.btn.warn{background:rgba(245,158,11,.20);border-color:rgba(245,158,11,.32)}
-.btn.bad{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.30)}
-.muted{color:var(--mut);font-size:12px}
-.big{font-weight:900}
-.starG{color:#ffd700}
-.starB{color:#60a5fa}
-
-.main{flex:1;overflow:auto;padding:12px 12px 92px}
+.btn.ok{background:rgba(49,214,123,.18); border-color:rgba(49,214,123,.25)}
+.btn.warn{background:rgba(255,209,102,.16); border-color:rgba(255,209,102,.22)}
+.btn:active{transform:scale(.99)}
+.muted{color:var(--mut); font-size:12px}
+.tabs{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:10px; width:min(780px, calc(100% - 20px));
+  background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12);
+  border-radius:22px; backdrop-filter: blur(12px);
+  display:flex; justify-content:space-between; padding:10px 10px;
+}
+.tab{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;
+  color:rgba(255,255,255,.65); font-size:12px; cursor:pointer;
+}
+.tab i{font-size:18px}
+.tab.on{color:#fff}
 .panel{display:none}
 .panel.on{display:block}
-.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0}
-.input,textarea{
-  width:100%;padding:12px 12px;border-radius:16px;border:1px solid var(--bd);
-  background:rgba(0,0,0,.18);color:var(--txt);outline:none;
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+input, textarea{
+  width:100%; padding:12px 12px; border-radius:16px;
+  border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.22);
+  color:var(--txt); outline:none;
 }
-textarea{min-height:88px;resize:none}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.field{flex:1; min-width:160px}
+.sbtn{
+  display:inline-flex; align-items:center; gap:8px; padding:11px 12px; border-radius:16px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); cursor:pointer;
+}
+hr{border:none; border-top:1px solid rgba(255,255,255,.10); margin:12px 0}
+.cards{display:grid; grid-template-columns:1fr; gap:10px}
+@media(min-width:700px){.cards{grid-template-columns:1fr 1fr}}
+.card{
+  background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.10);
+  border-radius:18px; padding:10px; overflow:hidden;
+}
 .thumb{
-  border-radius:18px;overflow:hidden;border:1px solid var(--bd);background:rgba(0,0,0,.22);
-  box-shadow:0 10px 22px rgba(0,0,0,.22);
-  cursor:pointer;
+  width:100%; height:150px; border-radius:14px; overflow:hidden; background:#000;
+  border:1px solid rgba(255,255,255,.10);
 }
-.thumb img,.thumb video{width:100%;height:150px;object-fit:cover;display:block}
-.tag{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--mut);padding:8px 10px}
-hr{border:0;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
-
-.nav{
-  position:fixed;left:12px;right:12px;bottom:12px;z-index:10;
-  display:flex;gap:10px;justify-content:space-around;
-  padding:10px;border-radius:22px;border:1px solid var(--bd);
-  background:rgba(0,0,0,.30);backdrop-filter:blur(12px);
+.thumb img,.thumb video{width:100%; height:100%; object-fit:cover}
+.card .meta{display:flex; justify-content:space-between; align-items:center; margin-top:8px}
+.small{font-size:12px; color:var(--mut)}
+.followBtn{
+  padding:8px 10px; border-radius:14px; border:1px solid rgba(255,255,255,.12);
+  background:rgba(59,183,255,.14); color:#fff; cursor:pointer; font-size:12px;
 }
-.nav button{
-  flex:1;border:0;background:transparent;color:var(--mut);
-  padding:8px;border-radius:16px;display:flex;flex-direction:column;gap:6px;align-items:center
-}
-.nav button.on{color:var(--txt);background:rgba(56,189,248,.16);border:1px solid rgba(56,189,248,.22)}
-.nav i{font-size:18px}
-.badge{font-size:11px;color:var(--mut)}
-
-.promoMine{
-  position:fixed;right:16px;bottom:96px;z-index:20;
-  width:56px;height:56px;border-radius:18px;
-  display:none;place-items:center;
-  border:1px solid rgba(255,255,255,.18);
-  background:rgba(245,158,11,.22);
-  backdrop-filter:blur(10px);
-  box-shadow:0 16px 30px rgba(0,0,0,.35);
-}
-.promoMine.on{display:grid;animation:pulse 1.2s ease-in-out infinite}
-.promoMine i{font-size:22px}
-.promoMine small{font-size:10px;color:rgba(255,255,255,.85);margin-top:-6px}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-
 .qrBox{
-  border:1px solid rgba(255,255,255,.14);
-  background:rgba(0,0,0,.22);
-  border-radius:16px;
-  padding:12px;
+  margin-top:10px; background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.10);
+  border-radius:18px; padding:10px; display:none;
 }
-.qrImg{width:100%;max-width:320px;border-radius:14px;border:1px solid rgba(255,255,255,.12);display:block}
-.code{
-  word-break:break-all;
-  font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size:12px;color:rgba(255,255,255,.85);
-  padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.12);
-  background:rgba(0,0,0,.20);
+.qrBox.on{display:block}
+.qrImg{width:180px; height:180px; border-radius:16px; overflow:hidden; background:#fff; display:grid; place-items:center}
+.qrImg img{width:100%; height:100%; object-fit:contain}
+.toast{
+  position:fixed; top:12px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.18);
+  color:#fff; padding:10px 12px; border-radius:16px; display:none; z-index:50;
+  max-width:min(720px, calc(100% - 20px));
 }
+.toast.on{display:block}
 </style>
 </head>
 <body>
-<div id="ocean"></div>
+<div class="ocean"></div>
+<div id="toast" class="toast"></div>
 
-<button class="promoMine" id="promoMine">
-  <i class="fa-solid fa-gift"></i>
-  <small>BÔNUS</small>
-</button>
-
-<div id="app">
-  <div class="top">
+<div class="wrap">
+  <div class="topbar">
     <div class="brand">
-      <div class="pill namebox">
-        <div class="logo"><b>IC</b></div>
-        <div class="bearWrap">
-          <svg class="bear" viewBox="0 0 64 64" aria-hidden="true">
-            <defs>
-              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bfe8ff"/>
-              </linearGradient>
-            </defs>
-            <path d="M14 28c0-10 8-18 18-18s18 8 18 18v10c0 10-8 18-18 18S14 48 14 38V28Z" fill="url(#g1)" opacity=".95"/>
-            <circle cx="24" cy="18" r="6" fill="#fff"/><circle cx="40" cy="18" r="6" fill="#fff"/>
-            <circle cx="24" cy="18" r="3" fill="#cfefff"/><circle cx="40" cy="18" r="3" fill="#cfefff"/>
-            <circle cx="26" cy="30" r="2" fill="#0b2a6a"/><circle cx="38" cy="30" r="2" fill="#0b2a6a"/>
-            <path d="M30 34c2 2 2 4 0 6c-2-2-2-4 0-6Z" fill="#0b2a6a"/>
-            <path d="M20 40c4 6 20 6 24 0" stroke="#0b2a6a" stroke-width="3" stroke-linecap="round" opacity=".55"/>
-          </svg>
-          <div class="brandname">
-            <b>ICE-CUBO <span id="roleMark"></span></b>
-            <small id="subTitle">Timeline • Perfil • Carteira</small>
-          </div>
-        </div>
+      <div class="logo">IC</div>
+      <div class="mascot" title="Blue Coin">
+        <i class="fa-solid fa-robot"></i>
       </div>
+      <div style="min-width:0">
+        <div class="tt">ICE-CUBO <span class="badgeStar" id="star" style="display:none">⭐</span></div>
+        <div class="sub">Timeline • Perfil • Carteira • ADM</div>
+        <div class="sub" id="who" style="margin-top:2px">deslogado</div>
+      </div>
+    </div>
 
+    <div class="wallet">
       <div class="pill">
-        <div class="coin"><span>B</span></div>
-        <div class="brandname">
-          <b><span id="blueBal">0</span> BLUE</b>
-          <small id="whoLine">deslogado</small>
+        <div class="coin"><b>B</b></div>
+        <div>
+          <div style="font-weight:900" id="blueBal">0 BLUE</div>
+          <div class="sub" id="role">—</div>
         </div>
-      </div>
-    </div>
-
-    <div class="viewer">
-      <video id="stageCam" autoplay playsinline muted></video>
-      <div id="stageMedia"></div>
-      <div id="stageHint">
-        <b>ICE-CUBO</b><br/>
-        <small>poste, clique no post pra subir no visor, ou abra a câmera (LIVE).</small>
-      </div>
-    </div>
-
-    <div class="stageBar">
-      <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <div>
-            <div class="big" id="stageTitle">Visor</div>
-            <div class="muted" id="stageSub">Clique em um post na Timeline</div>
-          </div>
-          <div class="row">
-            <button class="btn ok" id="camBtn"><i class="fa-solid fa-video"></i> LIVE</button>
-            <button class="btn warn" id="mineBtn"><i class="fa-solid fa-hammer"></i> Minerar bônus</button>
-          </div>
-        </div>
-        <div class="muted" id="stageMsg" style="margin-top:8px">—</div>
       </div>
     </div>
   </div>
 
-  <div class="main">
-    <!-- PERFIL -->
-    <div class="panel on" id="pPerfil">
-      <div class="hrow">
-        <h3 style="margin:0"><i class="fa-solid fa-user"></i> Seu perfil</h3>
-        <span class="muted">poste foto/vídeo</span>
+  <div class="section">
+    <div class="bigTitle">ICE-CUBO</div>
+    <div class="bigHint">poste, clique no post pra subir no visor, ou abra a câmera (LIVE).</div>
+  </div>
+
+  <div class="grid2">
+    <div class="section viewerBox">
+      <div class="viewerTop">
+        <div>
+          <div style="font-weight:900">Visor</div>
+          <div class="muted">Clique em um post na Timeline</div>
+        </div>
+        <div class="muted" id="viewerLabel">—</div>
+      </div>
+      <div class="viewer" id="viewer">
+        <div class="ph">—</div>
       </div>
 
-      <div class="card" style="margin-bottom:10px">
-        <div class="muted">Entrar / Criar conta <span style="float:right">ADM é intocável</span></div>
-        <div class="row" style="margin-top:10px">
-          <input class="input" id="loginUser" placeholder="usuário" autocomplete="off"/>
-          <input class="input" id="loginPass" placeholder="senha" type="password"/>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn ok" id="btnLogin"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
-          <button class="btn" id="btnCreate"><i class="fa-solid fa-user-plus"></i> Criar</button>
-          <button class="btn bad" id="btnLogout"><i class="fa-solid fa-power-off"></i></button>
-        </div>
-        <div class="muted" id="refNote" style="margin-top:10px"></div>
+      <div class="btnRow">
+        <button class="btn ok" id="liveBtn"><i class="fa-solid fa-video"></i> LIVE</button>
+        <button class="btn warn" id="mineBtn"><i class="fa-solid fa-hammer"></i> Minerar bônus</button>
       </div>
-
-      <div class="card" style="margin-bottom:10px">
-        <div class="hrow"><b><i class="fa-solid fa-at"></i> E-mail (obrigatório pro PIX)</b><span class="muted" id="mailInfo">—</span></div>
-        <div class="row">
-          <input class="input" id="emailInp" placeholder="seuemail@gmail.com"/>
-          <button class="btn ok" id="saveEmail"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
-        </div>
-        <div class="muted" style="margin-top:8px">Sem e-mail, o Mercado Pago pode negar a criação do PIX.</div>
-      </div>
-
-      <div class="card">
-        <div class="hrow"><b><i class="fa-solid fa-upload"></i> Postar</b><span class="muted" id="pickInfo">nenhum arquivo</span></div>
-        <div class="row">
-          <label class="btn">
-            <i class="fa-solid fa-image"></i> Galeria
-            <input id="filePick" type="file" accept="image/*,video/*" style="display:none">
-          </label>
-          <button class="btn ok" id="postBtn"><i class="fa-solid fa-bolt"></i> Postar</button>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:10px">
-        <div class="hrow"><b><i class="fa-solid fa-users"></i> Seguindo</b><span class="muted" id="followCount">0</span></div>
-        <div class="muted" id="followList">—</div>
-        <hr>
-        <div class="hrow"><b><i class="fa-solid fa-sitemap"></i> Filhos</b><span class="muted" id="childCount">0</span></div>
-        <div class="muted" id="childList">—</div>
-        <hr>
-        <div class="muted">Seu link (pra ganhar filhos):</div>
-        <div class="row">
-          <input class="input" id="myRef" readonly />
-          <button class="btn" id="copyRef"><i class="fa-solid fa-copy"></i></button>
-        </div>
-        <div class="muted" style="margin-top:8px"><b>Bônus mineração:</b> <span id="mineBonusLine">0</span> BLUE</div>
-      </div>
+      <div class="muted" id="mineHint" style="margin-top:8px">Bônus aparece quando um afiliado depositar (protótipo).</div>
     </div>
 
-    <!-- TIMELINE -->
-    <div class="panel" id="pTimeline">
-      <div class="hrow">
-        <h3 style="margin:0"><i class="fa-solid fa-layer-group"></i> Timeline</h3>
-        <span class="muted">clique no post → sobe no visor</span>
-      </div>
-      <div class="card">
-        <div class="row">
-          <input class="input" id="searchUser" placeholder="seguir usuário (ex: maria)" />
-          <button class="btn ok" id="followBtn"><i class="fa-solid fa-user-plus"></i> Seguir</button>
-        </div>
-        <div class="muted" style="margin-top:8px" id="feedNote">Camada 1: seguindo/filhos • Camada 2: todos</div>
+    <div class="section">
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:900"><i class="fa-solid fa-wallet"></i> Carteira</div>
+        <div class="muted">PIX / QR</div>
       </div>
 
-      <div style="font-weight:900;margin:10px 0 6px">Seguindo/Filhos</div>
-      <div class="grid" id="feedFollow"></div>
-
-      <div style="font-weight:900;margin:14px 0 6px">Todos</div>
-      <div class="grid" id="feedAll"></div>
-    </div>
-
-    <!-- CARTEIRA -->
-    <div class="panel" id="pWallet">
-      <div class="hrow">
-        <h3 style="margin:0"><i class="fa-solid fa-wallet"></i> Carteira</h3>
-        <span class="muted">PIX / QR</span>
+      <div class="muted" style="margin-top:6px">Depósito (PIX / QR Code — sem cartão)</div>
+      <div class="row" style="margin-top:8px">
+        <div class="field"><input id="depAmount" placeholder="Valor (ex: 10)" inputmode="decimal"/></div>
+        <button class="btn ok" id="pixBtn"><i class="fa-brands fa-pix"></i> Gerar PIX</button>
       </div>
+      <div class="muted" id="pixMsg" style="margin-top:6px"></div>
 
-      <div class="card">
-        <div class="muted"><b>Depósito</b> (PIX / QR Code — sem cartão)</div>
-        <div class="row" style="margin-top:10px">
-          <input class="input" id="depVal" placeholder="valor (mín 1)" inputmode="decimal"/>
-          <button class="btn ok" id="depBtn"><i class="fa-brands fa-pix"></i> Gerar PIX</button>
-        </div>
-
-        <div id="qrArea" class="qrBox" style="margin-top:12px;display:none">
-          <div class="muted" style="margin-bottom:8px">QR Code:</div>
-          <img id="qrImg" class="qrImg" alt="QR PIX"/>
-          <div class="muted" style="margin:12px 0 8px">Copia e cola:</div>
-          <div id="qrCode" class="code"></div>
-          <div class="row" style="margin-top:12px">
-            <button class="btn" id="copyPix"><i class="fa-solid fa-copy"></i> Copiar</button>
-            <button class="btn warn" id="paidBtn"><i class="fa-solid fa-circle-check"></i> Já paguei</button>
+      <div class="qrBox" id="qrBox">
+        <div class="row" style="gap:12px; align-items:flex-start">
+          <div class="qrImg"><img id="qrImg" alt="QR Code"/></div>
+          <div class="field" style="min-width:200px">
+            <div class="muted" style="margin-bottom:6px">Copia e cola (código PIX)</div>
+            <textarea id="qrText" rows="6" readonly></textarea>
+            <div class="row" style="margin-top:8px">
+              <button class="btn" id="copyPix"><i class="fa-solid fa-copy"></i> Copiar</button>
+              <a class="btn" id="openMP" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir</a>
+            </div>
           </div>
-          <div class="muted" id="pixMsg" style="margin-top:8px">—</div>
         </div>
-
-        <div class="muted" id="depMsg" style="margin-top:10px">—</div>
       </div>
 
-      <div class="card" style="margin-top:10px">
-        <div class="muted"><b>Saque</b> (protótipo: vira pedido pro ADM)</div>
-        <div class="row" style="margin-top:10px">
-          <input class="input" id="wdVal" placeholder="valor para sacar" inputmode="decimal"/>
-          <button class="btn warn" id="wdBtn"><i class="fa-solid fa-paper-plane"></i> Solicitar</button>
-        </div>
-        <div class="muted" id="wdMsg" style="margin-top:8px"></div>
+      <hr>
+      <div class="muted">Saque (protótipo: vira pedido pro ADM)</div>
+      <div class="row" style="margin-top:8px">
+        <div class="field"><input id="wdAmount" placeholder="valor para sacar" inputmode="decimal"/></div>
+        <button class="btn warn" id="wdBtn"><i class="fa-solid fa-paper-plane"></i> Solicitar</button>
       </div>
-
-      <div class="card" style="margin-top:10px">
-        <div class="hrow"><b><i class="fa-solid fa-clock-rotate-left"></i> Histórico</b><span class="muted" id="histCount">0</span></div>
-        <div class="muted" id="histList">—</div>
-      </div>
-    </div>
-
-    <!-- ADM -->
-    <div class="panel" id="pADM">
-      <div class="hrow">
-        <h3 style="margin:0"><i class="fa-solid fa-shield-halved"></i> ADM</h3>
-        <span class="muted">somente ADM</span>
-      </div>
-      <div class="card">
-        <div class="muted"><b>Regras</b>: ADM intocável. MOD estrela azul.</div>
-        <hr>
-        <div class="row">
-          <input class="input" id="modUser" placeholder="usuário para virar moderador" />
-          <button class="btn ok" id="makeMod"><i class="fa-solid fa-star"></i> Promover</button>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <input class="input" id="banUser" placeholder="usuário para banir" />
-          <button class="btn bad" id="banBtn"><i class="fa-solid fa-ban"></i> Banir</button>
-        </div>
-        <hr>
-        <div class="hrow"><b><i class="fa-solid fa-money-check-dollar"></i> Saques pendentes</b><span class="muted" id="wdPend">0</span></div>
-        <div id="wdList" class="muted">—</div>
-      </div>
+      <div class="muted" id="wdMsg" style="margin-top:6px"></div>
     </div>
   </div>
 
-  <div class="nav">
-    <button id="nTimeline"><i class="fa-solid fa-house"></i><div class="badge">HOME</div></button>
-    <button id="nPerfil" class="on"><i class="fa-solid fa-user"></i><div class="badge">PERFIL</div></button>
-    <button id="nWallet"><i class="fa-solid fa-wallet"></i><div class="badge">CARTEIRA</div></button>
-    <button id="nADM"><i class="fa-solid fa-shield"></i><div class="badge">ADM</div></button>
+  <div class="section panel on" id="panelHome">
+    <div class="row" style="justify-content:space-between">
+      <div style="font-weight:900"><i class="fa-solid fa-photo-film"></i> Timeline</div>
+      <div class="muted" id="feedNote">posts globais</div>
+    </div>
+    <div class="cards" id="timeline"></div>
+  </div>
+
+  <div class="section panel" id="panelProfile">
+    <div class="row" style="justify-content:space-between">
+      <div style="font-weight:900"><i class="fa-solid fa-user"></i> Seu perfil</div>
+      <div class="muted">poste foto/vídeo</div>
+    </div>
+
+    <div class="section" style="margin-top:10px">
+      <div class="row">
+        <div class="field"><input id="uName" placeholder="usuario"/></div>
+        <div class="field"><input id="uPass" placeholder="senha" type="password"/></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn ok" id="loginBtn"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+        <button class="btn" id="createBtn"><i class="fa-solid fa-user-plus"></i> Criar</button>
+        <button class="btn" id="logoutBtn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</button>
+      </div>
+      <div class="muted" id="authMsg" style="margin-top:8px"></div>
+    </div>
+
+    <div class="section" style="margin-top:10px">
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:900"><i class="fa-solid fa-link"></i> Afiliado</div>
+        <div class="muted">ganha 5% quando afiliado deposita</div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div class="field"><input id="affOf" placeholder="sou afiliado de (usuario)"/></div>
+        <button class="btn" id="setAffBtn"><i class="fa-solid fa-sitemap"></i> Salvar</button>
+      </div>
+      <div class="muted" id="affMsg" style="margin-top:6px"></div>
+    </div>
+
+    <div class="section" style="margin-top:10px">
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:900"><i class="fa-solid fa-upload"></i> Postar</div>
+        <div class="muted" id="pickInfo">Nenhum arquivo</div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="sbtn">
+          <i class="fa-solid fa-image"></i> Abrir galeria
+          <input id="filePick" type="file" accept="image/*,video/*" style="display:none">
+        </label>
+        <button class="btn ok" id="postBtn"><i class="fa-solid fa-bolt"></i> Postar</button>
+      </div>
+      <div class="muted" id="postMsg" style="margin-top:8px"></div>
+    </div>
+
+    <div class="section" style="margin-top:10px">
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:900"><i class="fa-solid fa-user-check"></i> Seguindo</div>
+        <div class="muted" id="followCount">0</div>
+      </div>
+      <div class="muted" id="followList">—</div>
+
+      <hr>
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:900"><i class="fa-solid fa-diagram-project"></i> Filhos</div>
+        <div class="muted" id="childCount">0</div>
+      </div>
+      <div class="muted" id="childList">—</div>
+    </div>
+
+    <div class="section" style="margin-top:10px">
+      <div class="row" style="justify-content:space-between">
+        <div style="font-weight:900"><i class="fa-solid fa-grid-2"></i> Seus posts</div>
+        <div class="muted" id="myCount">0</div>
+      </div>
+      <div class="cards" id="myPosts"></div>
+    </div>
+  </div>
+
+  <div class="section panel" id="panelAdmin">
+    <div class="row" style="justify-content:space-between">
+      <div style="font-weight:900"><i class="fa-solid fa-shield-halved"></i> ADM</div>
+      <div class="muted">prototipo</div>
+    </div>
+    <div class="muted" style="margin-top:6px">
+      Aqui você vê pagamentos capturados via webhook (se configurar).
+    </div>
+    <div class="section" style="margin-top:10px">
+      <div style="font-weight:900;margin-bottom:8px">Pagamentos (memória)</div>
+      <div class="muted" id="payList">—</div>
+    </div>
   </div>
 </div>
 
+<div class="tabs">
+  <div class="tab on" data-tab="home"><i class="fa-solid fa-house"></i><div>HOME</div></div>
+  <div class="tab" data-tab="profile"><i class="fa-solid fa-user"></i><div>PERFIL</div></div>
+  <div class="tab" data-tab="wallet"><i class="fa-solid fa-wallet"></i><div>CARTEIRA</div></div>
+  <div class="tab" data-tab="admin"><i class="fa-solid fa-star"></i><div>ADM</div></div>
+</div>
+
 <script>
-/* ====== STORAGE (protótipo em localStorage) ====== */
-const KEY="icecubo_pix_v1";
-const now=()=>new Date().toISOString();
-const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+/* ======= Helpers UI ======= */
+const $ = (id)=>document.getElementById(id);
+const toast = (m)=>{ const t=$("toast"); t.textContent=m; t.classList.add("on"); setTimeout(()=>t.classList.remove("on"), 2200); };
+function setTab(name){
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on", x.dataset.tab===name));
+  $("panelHome").classList.toggle("on", name==="home");
+  $("panelProfile").classList.toggle("on", name==="profile");
+  // Carteira fica no painel principal da direita (sempre visível), então só muda foco com toast
+  $("panelAdmin").classList.toggle("on", name==="admin");
+  if(name==="wallet") toast("Carteira");
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>setTab(t.dataset.tab));
 
-function load(){ try{return JSON.parse(localStorage.getItem(KEY))||null}catch{return null} }
-function save(db){ localStorage.setItem(KEY, JSON.stringify(db)) }
+/* ======= Sessão simples (localStorage) ======= */
+let sess = JSON.parse(localStorage.getItem("ice_sess")||"null");
+function saveSess(){ localStorage.setItem("ice_sess", JSON.stringify(sess)); }
+function headers(){
+  return sess ? {"x-ice-user": sess.user, "x-ice-pass": sess.pass} : {};
+}
+async function api(op, body){
+  const r = await fetch("/api?op="+encodeURIComponent(op), {
+    method:"POST",
+    headers: {"Content-Type":"application/json", ...headers()},
+    body: JSON.stringify(body||{})
+  });
+  return r.json();
+}
 
-function init(){
-  let db=load();
-  if(!db){
-    db={users:{},posts:[],withdraws:[],hist:[],pix:[]};
-    db.users["${ADM_LOGIN}"]={
-      u:"${ADM_LOGIN}",p:"${ADM_SENHA}",role:"ADM",banned:false,
-      follow:[],childs:[],blue:0,refBy:"",mineBonus:0,email:"",
-      created:now()
-    };
-    save(db);
+function renderWho(me){
+  $("who").textContent = me ? ("logado: "+me.username) : "deslogado";
+  $("blueBal").textContent = (me ? me.blue : 0) + " BLUE";
+  $("role").textContent = me ? me.username.toUpperCase() : "—";
+  $("star").style.display = (me && me.username==="adm") ? "inline" : "none";
+}
+
+/* ======= Fundo bolhas ======= */
+for(let i=0;i<14;i++){
+  const b=document.createElement("div");
+  b.className="bub";
+  b.style.left=(Math.random()*100)+"vw";
+  b.style.animationDelay=(Math.random()*-14)+"s";
+  b.style.width=b.style.height=(10+Math.random()*22)+"px";
+  b.style.opacity=(.12+Math.random()*.22);
+  document.body.appendChild(b);
+}
+
+/* ======= Viewer ======= */
+let liveStream=null;
+function setViewerMedia({type, src, label}){
+  const v=$("viewer");
+  v.innerHTML="";
+  $("viewerLabel").textContent = label || "—";
+  if(type==="img"){
+    const im=document.createElement("img");
+    im.src=src;
+    v.appendChild(im);
+  } else if(type==="video"){
+    const vd=document.createElement("video");
+    vd.src=src;
+    vd.controls=true;
+    vd.playsInline=true;
+    vd.autoplay=true;
+    v.appendChild(vd);
+  } else if(type==="live"){
+    const vd=document.createElement("video");
+    vd.autoplay=true;
+    vd.muted=true;
+    vd.playsInline=true;
+    vd.srcObject=src;
+    v.appendChild(vd);
+  } else {
+    const ph=document.createElement("div");
+    ph.className="ph";
+    ph.textContent="—";
+    v.appendChild(ph);
   }
-  return db;
 }
-let DB=init();
+setViewerMedia({type:"none"});
 
-function getMeUser(){ return (localStorage.getItem("ice_me")||"").trim() }
-function me(){ const u=getMeUser(); return u && DB.users[u] ? DB.users[u] : null }
-function setMe(u){ localStorage.setItem("ice_me", u||""); }
-function isADM(){ const m=me(); return m && m.role==="ADM"; }
-function isMOD(){ const m=me(); return m && m.role==="MOD"; }
-function alertx(t){ alert(t); }
-function fmt(n){ return String(Math.floor(Number(n)||0)); }
-function pushHist(user, txt, val){
-  DB.hist.unshift({at:Date.now(),u:user,txt, val:Number(val||0)});
-  if(DB.hist.length>120) DB.hist.pop();
-  save(DB);
-}
-
-/* ====== TOP ====== */
-function refreshTop(){
-  const m=me();
-  document.getElementById("blueBal").textContent = m ? fmt(m.blue) : "0";
-  document.getElementById("whoLine").textContent = m ? (m.u+" "+(m.role==="ADM"?"(ADM)":m.role==="MOD"?"(MOD)":"")) : "deslogado";
-  const rm=document.getElementById("roleMark");
-  rm.innerHTML="";
-  if(m){
-    if(m.role==="ADM") rm.innerHTML=' <i class="fa-solid fa-star starG"></i>';
-    if(m.role==="MOD") rm.innerHTML=' <i class="fa-solid fa-star starB"></i>';
-  }
-  document.getElementById("subTitle").textContent = m ? ("Timeline • Perfil • Carteira • "+m.role) : "Timeline • Perfil • Carteira";
-  document.getElementById("mineBonusLine").textContent = m ? fmt(m.mineBonus||0) : "0";
-  document.getElementById("mailInfo").textContent = m ? (m.email ? m.email : "não definido") : "—";
-}
-
-/* ====== STAGE (visor + live) ====== */
-const stageHint = document.getElementById("stageHint");
-const stageCam  = document.getElementById("stageCam");
-const stageMedia = document.getElementById("stageMedia");
-const stageTitle = document.getElementById("stageTitle");
-const stageSub   = document.getElementById("stageSub");
-const stageMsg   = document.getElementById("stageMsg");
-
-function clearStage(){
-  try{ stageCam.pause(); }catch{}
-  stageCam.srcObject=null; stageCam.style.display="none";
-  stageMedia.innerHTML=""; stageMedia.style.display="none";
-  stageHint.style.display="block";
-  stageTitle.textContent="Visor"; stageSub.textContent="Clique em um post na Timeline";
-  stageMsg.textContent="—";
-}
-function showMediaPost(p){
-  clearStage();
-  stageHint.style.display="none";
-  stageTitle.textContent = p.user;
-  stageSub.textContent = (p.type==="img"?"FOTO":"VÍDEO")+" • "+new Date(p.at).toLocaleString();
-  stageMedia.style.display="block";
-  stageMedia.innerHTML = (p.type==="img")
-    ? '<img src="'+p.data+'" style="width:100%;height:100%;object-fit:cover;display:block">'
-    : '<video src="'+p.data+'" controls autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>';
-}
-
-document.getElementById("camBtn").onclick = async ()=>{
+/* ======= Live camera ======= */
+$("liveBtn").onclick = async ()=>{
+  if(!sess){ return alert("Entre primeiro."); }
   try{
-    const m=me(); if(!m) return alertx("Entre primeiro.");
-    clearStage();
-    stageHint.style.display="none";
-    stageTitle.textContent="LIVE"; stageSub.textContent="Câmera ativa";
-    const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-    stageCam.style.display="block";
-    stageCam.srcObject = stream;
-    stageCam.muted = true;
-    await stageCam.play();
-  }catch(e){
-    alertx("Não deu pra abrir a câmera. Permita acesso.");
-  }
-};
-
-/* ====== NAV ====== */
-const panels={Timeline:document.getElementById("pTimeline"),Perfil:document.getElementById("pPerfil"),Wallet:document.getElementById("pWallet"),ADM:document.getElementById("pADM")};
-function go(name){
-  Object.keys(panels).forEach(k=>panels[k].classList.remove("on"));
-  panels[name].classList.add("on");
-  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("on"));
-  document.getElementById("n"+name).classList.add("on");
-  if(name==="ADM" && !isADM()){
-    alertx("Apenas ADM.");
-    panels["ADM"].classList.remove("on");
-    panels["Perfil"].classList.add("on");
-    document.getElementById("nADM").classList.remove("on");
-    document.getElementById("nPerfil").classList.add("on");
-  }
-  renderAll();
-}
-document.getElementById("nTimeline").onclick=()=>go("Timeline");
-document.getElementById("nPerfil").onclick=()=>go("Perfil");
-document.getElementById("nWallet").onclick=()=>go("Wallet");
-document.getElementById("nADM").onclick=()=>go("ADM");
-
-/* ====== REF (filhos) ====== */
-const pageUrl = new URL(location.href);
-const ref = (pageUrl.searchParams.get("ref")||"").trim();
-document.getElementById("refNote").textContent = ref ? ("Você entrou pelo link de: "+ref) : "Compartilhe seu link pra ganhar filhos.";
-
-/* ====== AUTH ====== */
-document.getElementById("btnCreate").onclick=()=>{
-  const u=(document.getElementById("loginUser").value||"").trim();
-  const p=(document.getElementById("loginPass").value||"").trim();
-  if(!u||!p) return alertx("Preencha usuário e senha.");
-  if(DB.users[u]) return alertx("Usuário já existe.");
-  DB.users[u]={
-    u,p,role:"USER",banned:false,
-    follow:[],childs:[],
-    blue:0,
-    refBy:(ref && DB.users[ref] && ref!==u)? ref : "",
-    mineBonus:0,
-    email:"",
-    created:now()
-  };
-  if(ref && DB.users[ref] && ref!==u){
-    const RU=DB.users[ref];
-    if(!RU.childs.includes(u)) RU.childs.push(u);
-    if(!DB.users[u].follow.includes(ref)) DB.users[u].follow.push(ref);
-  }
-  save(DB);
-  setMe(u);
-  alertx("Conta criada e logada!");
-  renderAll();
-};
-document.getElementById("btnLogin").onclick=()=>{
-  const u=(document.getElementById("loginUser").value||"").trim();
-  const p=(document.getElementById("loginPass").value||"").trim();
-  if(!DB.users[u] || DB.users[u].p!==p) return alertx("Login ou senha errados.");
-  if(DB.users[u].banned) return alertx("Você foi banido.");
-  setMe(u);
-  alertx("Logado!");
-  renderAll();
-};
-document.getElementById("btnLogout").onclick=()=>{
-  setMe("");
-  alertx("Saiu.");
-  clearStage();
-  renderAll();
-};
-
-/* ====== EMAIL ====== */
-document.getElementById("saveEmail").onclick=()=>{
-  const m=me(); if(!m) return alertx("Entre primeiro.");
-  const em=(document.getElementById("emailInp").value||"").trim();
-  if(!em.includes("@")) return alertx("E-mail inválido.");
-  m.email=em;
-  save(DB);
-  alertx("E-mail salvo!");
-  renderAll();
-};
-
-/* ====== POSTS ====== */
-let picked=null, pickedType=null;
-document.getElementById("filePick").onchange=(e)=>{
-  const f=e.target.files && e.target.files[0];
-  picked=f||null;
-  pickedType = f ? (f.type.startsWith("video")?"vid":"img") : null;
-  document.getElementById("pickInfo").textContent = f ? (f.name+" ("+pickedType+")") : "nenhum arquivo";
-};
-document.getElementById("postBtn").onclick=()=>{
-  const m=me(); if(!m) return alertx("Entre primeiro.");
-  if(!picked) return alertx("Escolha uma foto/vídeo.");
-  const r=new FileReader();
-  r.onload=()=>{
-    DB.posts.unshift({id:uid(),user:m.u,type:pickedType,data:r.result,at:Date.now()});
-    save(DB);
-    picked=null; document.getElementById("filePick").value=""; document.getElementById("pickInfo").textContent="nenhum arquivo";
-    renderAll();
-    go("Timeline");
-  };
-  r.readAsDataURL(picked);
-};
-function thumb(p){
-  const wrap=document.createElement("div");
-  wrap.className="thumb";
-  const media = p.type==="img"
-    ? '<img src="'+p.data+'">'
-    : '<video src="'+p.data+'" muted playsinline></video>';
-  wrap.innerHTML = media + '<div class="tag"><i class="fa-solid fa-user"></i> '+p.user+' <span style="margin-left:auto">'+new Date(p.at).toLocaleTimeString().slice(0,5)+'</span></div>';
-  wrap.onclick=()=>showMediaPost(p);
-  return wrap;
-}
-function renderFeed(){
-  const m=me();
-  const followBox=document.getElementById("feedFollow");
-  const allBox=document.getElementById("feedAll");
-  followBox.innerHTML=""; allBox.innerHTML="";
-
-  const layer1Users = new Set();
-  if(m){
-    (m.follow||[]).forEach(x=>layer1Users.add(x));
-    (m.childs||[]).forEach(x=>layer1Users.add(x));
-    layer1Users.add(m.u);
-  }
-  const layer1 = DB.posts.filter(p=>layer1Users.has(p.user)).slice(0,20);
-  const all = DB.posts.slice(0,30);
-
-  layer1.forEach(p=>followBox.appendChild(thumb(p)));
-  all.forEach(p=>allBox.appendChild(thumb(p)));
-}
-document.getElementById("followBtn").onclick=()=>{
-  const m=me(); if(!m) return alertx("Entre primeiro.");
-  const target=(document.getElementById("searchUser").value||"").trim();
-  if(!target) return alertx("Digite um usuário.");
-  if(!DB.users[target]) return alertx("Usuário não existe.");
-  if(target===m.u) return alertx("Você já é você.");
-  if(!m.follow.includes(target)) m.follow.push(target);
-  save(DB);
-  document.getElementById("searchUser").value="";
-  renderAll();
-};
-
-/* ====== PROFILE UI ====== */
-document.getElementById("copyRef").onclick=()=>{
-  const v=document.getElementById("myRef").value;
-  navigator.clipboard?.writeText(v);
-  alertx("Link copiado!");
-};
-function renderProfile(){
-  const m=me();
-  document.getElementById("followCount").textContent = m? (m.follow.length):"0";
-  document.getElementById("childCount").textContent  = m? (m.childs.length):"0";
-  document.getElementById("followList").textContent = m && m.follow.length ? m.follow.join(", ") : "—";
-  document.getElementById("childList").textContent  = m && m.childs.length ? m.childs.join(", ") : "—";
-  const base = location.origin + location.pathname;
-  document.getElementById("myRef").value = m ? (base + "?ref=" + encodeURIComponent(m.u)) : "entre para gerar seu link";
-  document.getElementById("emailInp").value = m && m.email ? m.email : "";
-}
-
-/* ====== PIX / QR (REAL) ====== */
-let currentPaymentId = "";
-
-async function createPIX(){
-  const m=me(); if(!m) return alertx("Entre primeiro.");
-  const v = Number((document.getElementById("depVal").value||"").replace(",","."));
-  if(!v || v < 1) return alertx("Valor mínimo 1.");
-  if(!m.email || !m.email.includes("@")) return alertx("Salve um e-mail válido no Perfil primeiro.");
-
-  document.getElementById("depMsg").textContent = "Gerando PIX/QR...";
-  document.getElementById("qrArea").style.display="none";
-  currentPaymentId = "";
-
-  try{
-    const r = await fetch("/api?op=pix_create", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ amount:v, user:m.u, email:m.email })
-    });
-    const j = await r.json();
-    if(!j.ok){
-      document.getElementById("depMsg").textContent = "Erro: "+(j.err||"");
+    if(liveStream){
+      liveStream.getTracks().forEach(t=>t.stop());
+      liveStream=null;
+      setViewerMedia({type:"none"});
+      toast("LIVE encerrada");
       return;
     }
-
-    currentPaymentId = String(j.payment_id||"");
-    if(!j.qr_code_base64 || !j.qr_code){
-      document.getElementById("depMsg").textContent = "PIX criado, mas não veio QR. Tente novamente.";
-      return;
-    }
-
-    document.getElementById("qrImg").src = "data:image/png;base64,"+j.qr_code_base64;
-    document.getElementById("qrCode").textContent = j.qr_code;
-    document.getElementById("pixMsg").textContent = "Abra seu app do banco e pague. Depois clique em “Já paguei”.";
-    document.getElementById("qrArea").style.display="block";
-    document.getElementById("depMsg").textContent = "PIX/QR gerado ✅";
-
-    // registra no histórico local (pendente)
-    DB.pix.unshift({id:currentPaymentId, user:m.u, brl:v, status:"pending", at:Date.now()});
-    save(DB);
-    renderAll();
+    liveStream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    setViewerMedia({type:"live", src: liveStream, label:"LIVE (câmera)"});
+    toast("LIVE ligada");
   }catch(e){
-    document.getElementById("depMsg").textContent = "Falha de rede ao gerar PIX.";
+    alert("Não consegui abrir a câmera: "+(e?.message||e));
   }
-}
-document.getElementById("depBtn").onclick = createPIX;
-
-document.getElementById("copyPix").onclick=()=>{
-  const t=document.getElementById("qrCode").textContent||"";
-  if(!t) return;
-  navigator.clipboard?.writeText(t);
-  alertx("Copia e cola copiado!");
 };
 
-async function checkPaid(){
-  const m=me(); if(!m) return alertx("Entre primeiro.");
-  if(!currentPaymentId) return alertx("Nenhum PIX atual.");
+/* ======= Mineração ======= */
+$("mineBtn").onclick = async ()=>{
+  if(!sess) return alert("Entre primeiro.");
+  const me = await api("me");
+  if(!me.ok) return alert(me.err||"erro");
+  if(!me.me.bonusToMine || me.me.bonusToMine<=0){
+    return alert("Sem bônus pra minerar. (Aparece quando um afiliado seu depositar)");
+  }
+  const got = await api("mine_bonus", {});
+  if(!got.ok) return alert(got.err||"erro");
+  toast("Minerou +" + got.mined + " BLUE");
+  await refreshAll();
+};
 
-  document.getElementById("pixMsg").textContent="Consultando pagamento...";
+/* ======= Auth ======= */
+$("loginBtn").onclick = async ()=>{
+  const u=$("uName").value.trim();
+  const p=$("uPass").value.trim();
+  const r = await api("login", {u,p});
+  $("authMsg").textContent = r.ok ? "Logado!" : ("Erro: "+(r.err||""));
+  if(r.ok){
+    sess={user:r.user, pass:p};
+    saveSess();
+    await refreshAll();
+    setTab("home");
+  }
+};
+$("createBtn").onclick = async ()=>{
+  const u=$("uName").value.trim();
+  const p=$("uPass").value.trim();
+  const r = await api("create", {u,p});
+  $("authMsg").textContent = r.ok ? "Conta criada!" : ("Erro: "+(r.err||""));
+  if(r.ok){
+    sess={user:r.user, pass:p};
+    saveSess();
+    await refreshAll();
+  }
+};
+$("logoutBtn").onclick = async ()=>{
+  sess=null; saveSess();
+  liveStream && liveStream.getTracks().forEach(t=>t.stop());
+  liveStream=null;
+  setViewerMedia({type:"none"});
+  await refreshAll();
+  toast("Saiu");
+};
+
+/* ======= Afiliado ======= */
+$("setAffBtn").onclick = async ()=>{
+  if(!sess) return alert("Entre primeiro.");
+  const of=$("affOf").value.trim();
+  const r = await api("set_affiliate_of", {of});
+  $("affMsg").textContent = r.ok ? "Salvo!" : ("Erro: "+(r.err||""));
+  await refreshAll();
+};
+
+/* ======= Postar ======= */
+let picked=null;
+$("filePick").onchange = (e)=>{
+  picked = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+  $("pickInfo").textContent = picked ? (picked.name+" ("+Math.round(picked.size/1024)+"kb)") : "Nenhum arquivo";
+};
+async function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>resolve(fr.result);
+    fr.onerror=reject;
+    fr.readAsDataURL(file);
+  });
+}
+$("postBtn").onclick = async ()=>{
+  if(!sess) return alert("Entre primeiro.");
+  if(!picked) return alert("Escolha um arquivo.");
+  $("postMsg").textContent="Enviando...";
   try{
-    const r = await fetch("/api?op=pix_status&id="+encodeURIComponent(currentPaymentId));
-    const j = await r.json();
-    if(!j.ok){
-      document.getElementById("pixMsg").textContent="Erro: "+(j.err||"");
-      return;
-    }
-    document.getElementById("pixMsg").textContent = "Status: "+j.status+" ("+j.status_detail+")";
-
-    // Se aprovado -> credita BLUE e bônus do pai (5%)
-    if(String(j.status) === "approved"){
-      // evita creditar 2x
-      const already = DB.hist.some(h=>h.txt==="Depósito PIX aprovado" && h.u===m.u && String(h.pid||"")===String(currentPaymentId));
-      if(already) return alertx("Já creditado.");
-
-      const brl = Number(j.transaction_amount||0) || (DB.pix.find(p=>p.id===currentPaymentId)?.brl || 0);
-      const blueAdd = Math.floor(brl * 100); // 1 BRL = 100 BLUE (ajuste)
-      m.blue += blueAdd;
-
-      // bônus 5% pro pai/indicador (mineBonus)
-      if(m.refBy && DB.users[m.refBy]){
-        const parent = DB.users[m.refBy];
-        const bonus = Math.floor(blueAdd * 0.05);
-        parent.mineBonus = (parent.mineBonus||0) + bonus;
-        pushHist(parent.u, "Bônus mineração 5% (filho depositou)", bonus);
-      }
-
-      // marca histórico
-      DB.hist.unshift({at:Date.now(),u:m.u,txt:"Depósito PIX aprovado",val:blueAdd,pid:String(currentPaymentId)});
-      // marca pix local
-      const rec = DB.pix.find(p=>p.id===currentPaymentId);
-      if(rec) rec.status="approved";
-      save(DB);
-
-      alertx("Pagamento aprovado! +" + blueAdd + " BLUE");
-      renderAll();
-    }
+    const dataUrl = await fileToDataUrl(picked);
+    const type = picked.type.startsWith("video") ? "video" : "img";
+    const r = await api("post", {type, dataUrl});
+    $("postMsg").textContent = r.ok ? "Postado!" : ("Erro: "+(r.err||""));
+    picked=null; $("filePick").value=""; $("pickInfo").textContent="Nenhum arquivo";
+    await refreshAll();
+    setTab("home");
   }catch(e){
-    document.getElementById("pixMsg").textContent="Falha ao consultar.";
+    $("postMsg").textContent="Erro: "+(e?.message||e);
   }
-}
-document.getElementById("paidBtn").onclick = checkPaid;
-
-/* ====== SAQUE (protótipo) ====== */
-document.getElementById("wdBtn").onclick=()=>{
-  const m=me(); if(!m) return alertx("Entre primeiro.");
-  const v = Number((document.getElementById("wdVal").value||"").replace(",","."));
-  if(!v || v <= 0) return alertx("Valor inválido.");
-  if(m.blue < v) return alertx("Saldo BLUE insuficiente.");
-  const id=uid();
-  DB.withdraws.unshift({id,u:m.u,val:v,at:Date.now(),status:"PENDENTE"});
-  DB.hist.unshift({at:Date.now(),u:m.u,txt:"Solicitou saque",val:-v});
-  save(DB);
-  document.getElementById("wdVal").value="";
-  document.getElementById("wdMsg").textContent="Pedido enviado (protótipo).";
-  renderAll();
 };
 
-/* ====== MINERAÇÃO = RESGATAR BÔNUS ====== */
-document.getElementById("mineBtn").onclick=()=>{
-  const m=me(); if(!m) return alertx("Entre primeiro.");
-  const bonus = Number(m.mineBonus||0);
-  if(bonus<=0) return alertx("Sem bônus. Você ganha bônus quando um filho indicado deposita.");
-
-  const chunk = Math.min(50, bonus); // resgata 50 por clique
-  m.mineBonus -= chunk;
-  m.blue += chunk;
-  pushHist(m.u, "Minerou bônus (resgate)", chunk);
-  save(DB);
-
-  stageMsg.textContent = "Bônus minerado: +"+chunk+" BLUE";
-  alertx("Bônus minerado! +" + chunk + " BLUE");
-  renderAll();
-};
-
-/* ====== PROMO FLUTUANTE ====== */
-function renderPromo(){
-  const m=me();
-  const btn=document.getElementById("promoMine");
-  const has = m && Number(m.mineBonus||0)>0;
-  btn.classList.toggle("on", !!has);
-}
-document.getElementById("promoMine").onclick=()=>{
-  go("Wallet");
-  alertx("Você tem bônus! Clique em “Minerar bônus”.");
-};
-
-/* ====== ADM ====== */
-document.getElementById("makeMod").onclick=()=>{
-  if(!isADM()) return alertx("Apenas ADM.");
-  const u=(document.getElementById("modUser").value||"").trim();
-  if(!u||!DB.users[u]) return alertx("Usuário não existe.");
-  if(u==="${ADM_LOGIN}") return alertx("ADM já é ADM.");
-  DB.users[u].role="MOD";
-  save(DB);
-  alertx("Moderador criado: "+u);
-  document.getElementById("modUser").value="";
-  renderAll();
-};
-document.getElementById("banBtn").onclick=()=>{
-  if(!(isADM()||isMOD())) return alertx("Sem permissão.");
-  const u=(document.getElementById("banUser").value||"").trim();
-  if(!u||!DB.users[u]) return alertx("Usuário não existe.");
-  if(u==="${ADM_LOGIN}") return alertx("ADM é intocável.");
-  DB.users[u].banned=true;
-  save(DB);
-  alertx("Banido: "+u);
-  document.getElementById("banUser").value="";
-  renderAll();
-};
-function renderADM(){
-  if(!isADM()){
-    document.getElementById("wdList").textContent="—";
-    document.getElementById("wdPend").textContent="0";
+/* ======= Timeline render ======= */
+function renderCards(list, el, mode){
+  el.innerHTML="";
+  if(!list || !list.length){
+    el.innerHTML = '<div class="muted">— sem posts —</div>';
     return;
   }
-  const pend = DB.withdraws.filter(w=>w.status==="PENDENTE");
-  document.getElementById("wdPend").textContent = pend.length;
-  document.getElementById("wdList").innerHTML = pend.length ? pend.map(w=>{
-    return '<div style="margin:8px 0;padding:10px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(0,0,0,.18)">'+
-      '<b>'+w.u+'</b> pediu <b>'+w.val+'</b> BLUE • '+new Date(w.at).toLocaleString()+
-      '<div class="row" style="margin-top:8px">'+
-      '<button class="btn ok" onclick="approveWD(\\''+w.id+'\\')">Aprovar</button>'+
-      '<button class="btn bad" onclick="denyWD(\\''+w.id+'\\')">Negar</button>'+
-      '</div></div>';
-  }).join("") : "—";
+  list.forEach(p=>{
+    const c=document.createElement("div");
+    c.className="card";
+    const t=document.createElement("div");
+    t.className="thumb";
+    if(p.type==="img"){
+      const im=document.createElement("img"); im.src=p.dataUrl; t.appendChild(im);
+    }else{
+      const vd=document.createElement("video"); vd.src=p.dataUrl; vd.muted=true; vd.playsInline=true; vd.loop=true; vd.autoplay=true; t.appendChild(vd);
+    }
+    t.onclick=()=>{
+      // sobe pro visor
+      setViewerMedia({type:p.type, src:p.dataUrl, label:"@"+p.owner+" • "+new Date(p.createdAt).toLocaleString()});
+      toast("No visor");
+    };
+    const meta=document.createElement("div");
+    meta.className="meta";
+    meta.innerHTML = '<div class="small">@'+p.owner+' • '+new Date(p.createdAt).toLocaleString()+'</div>';
+    const right=document.createElement("div");
+    // seguir
+    if(sess && p.owner !== sess.user){
+      const b=document.createElement("button");
+      b.className="followBtn";
+      b.textContent="Seguir";
+      b.onclick=async (ev)=>{
+        ev.stopPropagation();
+        const r=await api("follow", {target:p.owner});
+        if(!r.ok) return alert(r.err||"erro");
+        toast("Seguindo "+p.owner);
+        await refreshAll();
+      };
+      right.appendChild(b);
+    }
+    meta.appendChild(right);
+    c.appendChild(t);
+    c.appendChild(meta);
+    el.appendChild(c);
+  });
 }
-window.approveWD=(id)=>{
-  if(!isADM()) return alertx("Apenas ADM.");
-  const w=DB.withdraws.find(x=>x.id===id); if(!w) return;
-  w.status="APROVADO";
-  save(DB);
-  alertx("Aprovado (protótipo).");
-  renderAll();
-};
-window.denyWD=(id)=>{
-  if(!isADM()) return alertx("Apenas ADM.");
-  const w=DB.withdraws.find(x=>x.id===id); if(!w) return;
-  w.status="NEGADO";
-  // devolve saldo (protótipo)
-  const u=DB.users[w.u]; if(u) u.blue += w.val;
-  save(DB);
-  alertx("Negado e devolvido (protótipo).");
-  renderAll();
-};
 
-/* ====== HISTÓRICO ====== */
-function renderWallet(){
-  const m=me();
-  const hist = DB.hist.filter(h=>m? (h.u===m.u):false).slice(0,25);
-  document.getElementById("histCount").textContent = hist.length;
-  document.getElementById("histList").innerHTML = hist.length ? hist.map(h=>{
-    const sign = h.val>=0? "+":"";
-    return "• "+new Date(h.at).toLocaleString()+" — "+h.txt+" ("+sign+h.val+" BLUE)";
-  }).join("<br>") : "—";
-}
-
-/* ====== START ====== */
-function renderAll(){
-  DB=init();
-  const m=me();
-  if(m && m.banned){ setMe(""); alertx("Você foi banido."); }
-  refreshTop();
-  renderProfile();
-  renderFeed();
-  renderWallet();
-  renderADM();
-  renderPromo();
-}
-clearStage();
-renderAll();
-</script>
-</body>
-</html>`);
-  } catch (e) {
-    return sendJSON(res, 500, { ok: false, err: String(e && e.message ? e.message : e) });
+/* ======= Pix / QR ======= */
+$("pixBtn").onclick = async ()=>{
+  if(!sess) return alert("Entre primeiro.");
+  $("pixMsg").textContent="Gerando PIX...";
+  $("qrBox").classList.remove("on");
+  const amount = $("depAmount").value.trim().replace(",", ".");
+  const r = await api("mp_pix", {amount});
+  if(!r.ok){
+    // mostra o erro detalhado (agora você vai ver o motivo real)
+    $("pixMsg").textContent = "Erro: " + (r.err || "") + (r.mp ? (" | MP: "+JSON.stringify(r.mp)) : "");
+    return;
   }
+  $("pixMsg").textContent = "PIX criado! (aguarde pagar)";
+  $("qrText").value = r.qr || "";
+  $("qrImg").src = r.qrBase64 ? ("data:image/png;base64,"+r.qrBase64) : "";
+  $("openMP").href = r.initPoint || "#";
+  $("qrBox").classList.add("on");
+};
+$("copyPix").onclick = async ()=>{
+  try{ await navigator.clipboard.writeText($("qrText").value||""); toast("Copiado!"); }catch{ alert("Não consegui copiar."); }
+};
+
+/* ======= Saque protótipo ======= */
+$("wdBtn").onclick = async ()=>{
+  if(!sess) return alert("Entre primeiro.");
+  const amount = $("wdAmount").value.trim().replace(",", ".");
+  const r = await api("withdraw", {amount});
+  $("wdMsg").textContent = r.ok ? "Pedido enviado (protótipo)" : ("Erro: "+(r.err||""));
+  await refreshAll();
+};
+
+/* ======= Refresh ======= */
+async function refreshAll(){
+  // me
+  let me=null;
+  if(sess){
+    const r=await api("me");
+    if(r.ok) me=r.me;
+    else me=null;
+  }
+  renderWho(me);
+
+  // timeline
+  const feed = await fetch("/api?op=feed").then(r=>r.json());
+  if(feed.ok){
+    renderCards(feed.posts, $("timeline"), "all");
+  }
+
+  // profile lists
+  if(me){
+    $("followCount").textContent = (me.follows||[]).length;
+    $("childCount").textContent  = (me.children||[]).length;
+    $("followList").textContent  = (me.follows||[]).length ? me.follows.join(", ") : "—";
+    $("childList").textContent   = (me.children||[]).length ? me.children.join(", ") : "—";
+    $("myCount").textContent     = (feed.myPosts||[]).length;
+  } else {
+    $("followCount").textContent="0"; $("childCount").textContent="0";
+    $("followList").textContent="—"; $("childList").textContent="—"; $("myCount").textContent="0";
+  }
+
+  // meus posts (se logado)
+  if(sess){
+    const my = await api("my_posts");
+    if(my.ok) renderCards(my.posts, $("myPosts"), "mine");
+  } else {
+    $("myPosts").innerHTML = '<div class="muted">—</div>';
+  }
+
+  // ADM pagamentos
+  const pay = await fetch("/api?op=pay_list").then(r=>r.json());
+  if(pay.ok){
+    $("payList").textContent = pay.items.length ? pay.items.join("\\n") : "—";
+  }
+}
+refreshAll();
+</script>
+</body></html>`;
+}
+
+// ======= API router =======
+module.exports = async (req, res) => {
+  const u = new URL(req.url, "http://localhost");
+  const op = u.searchParams.get("op") || "";
+
+  // GET /api -> UI
+  if (req.method === "GET" && (!op || op === "ui")) {
+    return h(res, 200, uiHTML());
+  }
+
+  // GET ops
+  if (req.method === "GET") {
+    if (op === "feed") {
+      const posts = DB.posts
+        .slice()
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 60)
+        .map((p) => ({ ...p }));
+      return j(res, 200, { ok: true, posts });
+    }
+    if (op === "pay_list") {
+      const items = Object.entries(DB.mpPayments)
+        .sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0))
+        .slice(0, 30)
+        .map(([id, x]) => `#${id} • ${x.status} • R$${x.amount} • user=${x.username || "?"}`);
+      return j(res, 200, { ok: true, items });
+    }
+    return j(res, 200, { ok: true, msg: 'API ICE-CUBO online', hint: 'Abra /api no navegador' });
+  }
+
+  // POST body
+  let body = {};
+  try {
+    const raw = await readBody(req);
+    body = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return j(res, 400, { ok: false, err: "JSON inválido" });
+  }
+
+  // helpers
+  const me = authFromReq(req);
+
+  // ===== Auth =====
+  if (op === "create") {
+    const user = safeUser(body.u);
+    const pass = String(body.p || "");
+    if (!user || pass.length < 2) return j(res, 200, { ok: false, err: "Usuário/senha inválidos" });
+    ensureUser(user);
+    if (DB.users[user].pass) return j(res, 200, { ok: false, err: "Usuário já existe" });
+    DB.users[user].pass = pass;
+    if (!DB.users["adm"]) { ensureUser("adm"); DB.users["adm"].pass = "1533"; }
+    return j(res, 200, { ok: true, user });
+  }
+
+  if (op === "login") {
+    const user = safeUser(body.u);
+    const pass = String(body.p || "");
+    if (!user || !DB.users[user]) return j(res, 200, { ok: false, err: "Login ou senha errados." });
+    if (DB.users[user].pass !== pass) return j(res, 200, { ok: false, err: "Login ou senha errados." });
+    return j(res, 200, { ok: true, user });
+  }
+
+  if (op === "me") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    return j(res, 200, { ok: true, me: asJSONUser(me) });
+  }
+
+  // ===== Affiliate =====
+  if (op === "set_affiliate_of") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    const of = safeUser(body.of);
+    if (!of) { DB.users[me].affiliateOf = null; return j(res, 200, { ok: true }); }
+    if (!DB.users[of]) return j(res, 200, { ok: false, err: "Usuário afiliador não existe." });
+    if (of === me) return j(res, 200, { ok: false, err: "Não pode ser você mesmo." });
+    DB.users[me].affiliateOf = of;
+    // filho
+    DB.users[of].children.add(me);
+    return j(res, 200, { ok: true });
+  }
+
+  // ===== Follow =====
+  if (op === "follow") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    const target = safeUser(body.target);
+    if (!target || !DB.users[target]) return j(res, 200, { ok: false, err: "Usuário não existe." });
+    if (target === me) return j(res, 200, { ok: false, err: "Não dá pra seguir você." });
+    DB.users[me].follows.add(target);
+    return j(res, 200, { ok: true });
+  }
+
+  // ===== Posts =====
+  if (op === "post") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    const type = body.type === "video" ? "video" : "img";
+    const dataUrl = String(body.dataUrl || "");
+    if (!dataUrl.startsWith("data:")) return j(res, 200, { ok: false, err: "Arquivo inválido." });
+    // limita tamanho pra não estourar serverless
+    if (dataUrl.length > 1_800_000) return j(res, 200, { ok: false, err: "Arquivo muito grande (reduza)." });
+
+    const id = "p" + now() + Math.random().toString(16).slice(2);
+    DB.posts.push({ id, owner: me, type, dataUrl, createdAt: now() });
+    return j(res, 200, { ok: true, id });
+  }
+
+  if (op === "my_posts") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    const posts = DB.posts.filter(p => p.owner === me).sort((a,b)=>b.createdAt-a.createdAt).slice(0, 60);
+    return j(res, 200, { ok: true, posts });
+  }
+
+  // ===== Withdraw protótipo =====
+  if (op === "withdraw") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    const amount = Number(String(body.amount || "").replace(",", "."));
+    if (!isFinite(amount) || amount <= 0) return j(res, 200, { ok: false, err: "Valor inválido" });
+    if (DB.users[me].blue < amount) return j(res, 200, { ok: false, err: "Saldo insuficiente" });
+    // protótipo: não debita automaticamente
+    return j(res, 200, { ok: true });
+  }
+
+  // ===== Mine bonus =====
+  if (op === "mine_bonus") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    const bonus = Number(DB.users[me].bonusToMine || 0);
+    if (!bonus || bonus <= 0) return j(res, 200, { ok: false, err: "Sem bônus." });
+    DB.users[me].blue += bonus;
+    DB.users[me].minedTotal += bonus;
+    DB.users[me].bonusToMine = 0;
+    return j(res, 200, { ok: true, mined: bonus });
+  }
+
+  // ===== Mercado Pago PIX / QR =====
+  if (op === "mp_pix") {
+    if (!me) return j(res, 200, { ok: false, err: "Entre primeiro." });
+    if (!MP_ACCESS_TOKEN) return j(res, 200, { ok: false, err: "MP_ACCESS_TOKEN não configurado na Vercel." });
+
+    const amount = Number(String(body.amount || "").replace(",", "."));
+    if (!isFinite(amount) || amount <= 0) return j(res, 200, { ok: false, err: "Valor inválido" });
+
+    // payer email “falso válido” pro MP não rejeitar (você pode trocar por email real do usuário depois)
+    const payerEmail = (me + "@icecubo.app").toLowerCase();
+
+    // Cria um payment PIX
+    const payload = {
+      transaction_amount: amount,
+      description: "Depósito ICE-CUBO (" + me.toUpperCase() + ")",
+      payment_method_id: "pix",
+      payer: { email: payerEmail },
+      metadata: { ice_user: me },
+      notification_url: (BASE_URL ? (BASE_URL.replace(/\\/$/, "") + "/api?op=mp_webhook") : undefined),
+    };
+
+    // remove campos undefined
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+    try {
+      const r = await httpJSON(
+        "POST",
+        "https://api.mercadopago.com/v1/payments",
+        { Authorization: "Bearer " + MP_ACCESS_TOKEN },
+        payload
+      );
+
+      if (r.status < 200 || r.status >= 300) {
+        return j(res, 200, { ok: false, err: "MP recusou", status: r.status, mp: r.json || r.text });
+      }
+
+      const data = r.json || {};
+      const td = data.point_of_interaction && data.point_of_interaction.transaction_data ? data.point_of_interaction.transaction_data : null;
+      const qr = td && td.qr_code ? td.qr_code : "";
+      const qrBase64 = td && td.qr_code_base64 ? td.qr_code_base64 : "";
+      const initPoint = data.init_point || data.transaction_details?.external_resource_url || "";
+
+      // salva “pendente” (memória)
+      DB.mpPayments[String(data.id)] = { status: data.status, amount, username: me, createdAt: now() };
+
+      return j(res, 200, { ok: true, id: data.id, status: data.status, qr, qrBase64, initPoint });
+    } catch (e) {
+      return j(res, 200, { ok: false, err: String(e?.message || e), stack: String(e?.stack || "") });
+    }
+  }
+
+  // ===== Webhook MP (opcional) =====
+  if (op === "mp_webhook") {
+    // MP envia POST com query topic/type + id / data.id etc.
+    // Aqui a gente tenta buscar o pagamento e creditar 5% pro afiliador + marcar bônus pra minerar.
+    try {
+      // proteção simples (se você setar secret no MP, você também coloca no Vercel)
+      if (MP_WEBHOOK_SECRET) {
+        const got = String(req.headers["x-ice-secret"] || "");
+        // (MP não manda esse header por padrão; é um “trava” opcional se você usar um proxy seu)
+        // então não bloqueio por padrão. Mantém só como opção.
+      }
+
+      // tenta extrair id
+      const q = u.searchParams;
+      let pid = q.get("id") || q.get("data.id") || "";
+      if (!pid && body && body.data && body.data.id) pid = String(body.data.id);
+      if (!pid && body && body.id) pid = String(body.id);
+
+      if (!pid) return j(res, 200, { ok: true });
+
+      // consulta MP pra ter certeza do status
+      const rr = await httpJSON(
+        "GET",
+        "https://api.mercadopago.com/v1/payments/" + encodeURIComponent(pid),
+        { Authorization: "Bearer " + MP_ACCESS_TOKEN }
+      );
+
+      if (rr.status < 200 || rr.status >= 300) {
+        return j(res, 200, { ok: true, warn: "não consultei", status: rr.status });
+      }
+
+      const pay = rr.json || {};
+      const status = pay.status || "unknown";
+      const amount = Number(pay.transaction_amount || 0);
+      const user = pay.metadata && pay.metadata.ice_user ? safeUser(pay.metadata.ice_user) : null;
+
+      DB.mpPayments[String(pid)] = { status, amount, username: user || "?", createdAt: now() };
+
+      // se aprovado, credita
+      if (status === "approved" && user && DB.users[user]) {
+        // credita saldo
+        DB.users[user].blue += amount;
+
+        // afiliador ganha 5% em “bônus pra minerar”
+        const aff = DB.users[user].affiliateOf;
+        if (aff && DB.users[aff]) {
+          const bonus = Math.max(0, Math.floor(amount * 0.05 * 100) / 100); // 2 casas
+          DB.users[aff].bonusToMine += bonus;
+        }
+      }
+
+      return j(res, 200, { ok: true });
+    } catch (e) {
+      return j(res, 200, { ok: true, err: String(e?.message || e) });
+    }
+  }
+
+  return j(res, 404, { ok: false, err: "op inválida" });
 };
