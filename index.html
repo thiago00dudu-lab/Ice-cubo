@@ -1,14 +1,16 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ICE-CUBO</title>
-</head>
-<body>
-  <script>
-    // manda a home para a função /api
-    location.replace("/api");
-  </script>
-</body>
-</html>
+module.exports = (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.status(200).send(`
+    <!doctype html>
+    <html lang="pt-br">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>ICE-CUBO</title>
+    </head>
+    <body>
+      <h1>ICE-CUBO funcionando 🚀</h1>
+    </body>
+    </html>
+  `);
+};
