@@ -1,22 +1,25 @@
-// api/index.js (Vercel) — ICE-CUBO "1 arquivo" (UI + API)
-// MVP: Login/Registro + Timeline (post foto/vídeo) + Perfil + Carteira (Depósito/Saque) + ADM/MOD + Ban
-// OBS: Dados do APP ficam no localStorage do navegador (protótipo). Em produção real use DB (KV/Postgres).
-// Mercado Pago: depósito REAL via Checkout (abre link). Saque REAL automático exige backend + compliance.
-// ENV opcional: MP_ACCESS_TOKEN (se tiver, habilita "Depósito Real (MP)").
-// ENV opcional: MP_WEBHOOK_SECRET (se quiser validar webhook depois).
+// api/index.js (Vercel) — ICE-CUBO "tudo em um"
+// Depósito real (Mercado Pago) com PIX/QR forçado. Saque: pedido (protótipo) para ADM aprovar.
+// OBS: dados do app (users/posts/etc) ficam no localStorage (protótipo). Em produção: banco (Postgres/Redis/KV).
 
 const https = require("https");
 const { URL } = require("url");
 
-function sendHTML(res, html) {
-  res.statusCode = 200;
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.end(html);
-}
+const ADM_LOGIN = "ADM";
+const ADM_SENHA = "1533";
+
+const MP_ACCESS_TOKEN = (process.env.MP_ACCESS_TOKEN || "").trim(); // obrigatório p depósito real
+const MP_WEBHOOK_SECRET = (process.env.MP_WEBHOOK_SECRET || "").trim(); // opcional (se for validar webhook)
+
 function sendJSON(res, code, obj) {
   res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.end(JSON.stringify(obj));
+}
+function sendHTML(res, code, html) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.end(html);
 }
 function readBody(req) {
   return new Promise((resolve) => {
@@ -29,22 +32,30 @@ function httpJSON(method, url, headers, bodyObj) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
     const data = bodyObj ? JSON.stringify(bodyObj) : null;
+
     const opts = {
       method,
       hostname: u.hostname,
       path: u.pathname + (u.search || ""),
       headers: {
-        "Content-Type": "application/json",
-        ...(data ? { "Content-Length": Buffer.byteLength(data) } : {}),
         ...(headers || {}),
+        ...(data
+          ? {
+              "Content-Type": "application/json",
+              "Content-Length": Buffer.byteLength(data),
+            }
+          : {}),
       },
     };
+
     const r = https.request(opts, (resp) => {
       let s = "";
       resp.on("data", (c) => (s += c));
       resp.on("end", () => {
         let json = null;
-        try { json = s ? JSON.parse(s) : null; } catch {}
+        try {
+          json = s ? JSON.parse(s) : null;
+        } catch {}
         resolve({ status: resp.statusCode, json, text: s });
       });
     });
@@ -54,1027 +65,447 @@ function httpJSON(method, url, headers, bodyObj) {
   });
 }
 
-const ADM_LOGIN = "ADM";
-const ADM_SENHA = "1533";
-
-const MP_ACCESS_TOKEN = (process.env.MP_ACCESS_TOKEN || "").trim();
-const MP_WEBHOOK_SECRET = (process.env.MP_WEBHOOK_SECRET || "").trim();
-
-function baseURLFromReq(req) {
-  // Não quebra se BASE_URL não existir. Usa o host real da request.
+function baseUrlFromReq(req) {
   const proto = (req.headers["x-forwarded-proto"] || "https").toString();
   const host = (req.headers["x-forwarded-host"] || req.headers.host || "").toString();
   return `${proto}://${host}`;
 }
 
-module.exports = async (req, res) => {
-  try {
-    const u = new URL(req.url, baseURLFromReq(req));
-    const op = u.searchParams.get("op") || "";
+async function mpCreatePreference({ amount, username, baseUrl }) {
+  if (!MP_ACCESS_TOKEN) return { ok: false, error: "MP_ACCESS_TOKEN não configurado no Vercel." };
 
-    // ---------- API ----------
-    if (op === "health") return sendJSON(res, 200, { ok: true, msg: "API ICE-CUBO online" });
+  const a = Number(amount);
+  if (!isFinite(a) || a <= 0) return { ok: false, error: "Valor inválido." };
 
-    if (op === "mp_create") {
-      if (!MP_ACCESS_TOKEN) return sendJSON(res, 400, { ok:false, error:"MP_ACCESS_TOKEN não configurado no Vercel." });
+  // Forçar PIX/QR: exclui cartões, boleto e outros tipos.
+  // Obs: a disponibilidade final também depende do Mercado Pago/conta.
+  const body = {
+    items: [
+      {
+        title: `Depósito ICE-CUBO (${username || "user"})`,
+        quantity: 1,
+        currency_id: "BRL",
+        unit_price: Math.round(a * 100) / 100,
+      },
+    ],
+    back_urls: {
+      success: `${baseUrl}/api?paid=1`,
+      pending: `${baseUrl}/api?paid=1`,
+      failure: `${baseUrl}/api?paid=0`,
+    },
+    auto_return: "approved",
+    payment_methods: {
+      excluded_payment_types: [
+        { id: "credit_card" },
+        { id: "debit_card" },
+        { id: "ticket" },
+        { id: "atm" },
+        { id: "prepaid_card" },
+      ],
+      // Não exclui "bank_transfer" para manter PIX disponível.
+    },
+    statement_descriptor: "ICE-CUBO",
+  };
 
-      const raw = await readBody(req);
-      let body = {};
-      try { body = raw ? JSON.parse(raw) : {}; } catch { body = {}; }
+  const r = await httpJSON(
+    "POST",
+    "https://api.mercadopago.com/checkout/preferences",
+    { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
+    body
+  );
 
-      const amount = Number(body.amount || 0);
-      const user = String(body.user || "usuario");
+  if (r.status >= 200 && r.status < 300 && r.json) {
+    return {
+      ok: true,
+      init_point: r.json.init_point,
+      sandbox_init_point: r.json.sandbox_init_point,
+      id: r.json.id,
+    };
+  }
+  return { ok: false, error: r.json || r.text || `Erro MP (${r.status})` };
+}
 
-      if (!amount || amount < 1) return sendJSON(res, 400, { ok:false, error:"Valor inválido." });
-
-      const base = baseURLFromReq(req);
-      const notification_url = `${base}/api?op=mp_webhook${MP_WEBHOOK_SECRET ? `&secret=${encodeURIComponent(MP_WEBHOOK_SECRET)}` : ""}`;
-
-      // Checkout Pro (link) — mais simples/estável pra começar.
-      const pref = {
-        items: [
-          {
-            title: `Depósito ICE-CUBO (${user})`,
-            quantity: 1,
-            unit_price: Number(amount.toFixed(2)),
-            currency_id: "BRL",
-          },
-        ],
-        external_reference: `icecubo:${user}:${Date.now()}`,
-        notification_url,
-        back_urls: { success: `${base}/api?paid=1`, failure: `${base}/api?paid=0`, pending: `${base}/api?paid=pending` },
-        auto_return: "approved",
-      };
-
-      const r = await httpJSON(
-        "POST",
-        "https://api.mercadopago.com/checkout/preferences",
-        { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
-        pref
-      );
-
-      if (r.status < 200 || r.status >= 300) {
-        return sendJSON(res, 500, { ok:false, error:"Falha ao criar checkout MP", details: r.json || r.text });
-      }
-
-      return sendJSON(res, 200, {
-        ok: true,
-        init_point: r.json.init_point || r.json.sandbox_init_point,
-        id: r.json.id,
-      });
-    }
-
-    if (op === "mp_webhook") {
-      // Webhook básico: não quebra seu deploy.
-      // (Validação real depende do fluxo oficial do Mercado Pago e do tipo de notificação.)
-      const secret = u.searchParams.get("secret") || "";
-      if (MP_WEBHOOK_SECRET && secret !== MP_WEBHOOK_SECRET) return sendJSON(res, 401, { ok:false });
-
-      // Consome body só pra não dar erro
-      await readBody(req);
-      return sendJSON(res, 200, { ok:true });
-    }
-
-    // ---------- UI ----------
-    return sendHTML(res, `<!doctype html>
-<html lang="pt-br">
-<head>
+function pageHTML() {
+  return `<!doctype html><html lang="pt-br"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>ICE-CUBO</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-:root{
-  --bg:#071a2f; --card:#0b2645; --card2:#0d315a; --line:rgba(255,255,255,.10);
-  --txt:#e9f5ff; --mut:#9cc9ea; --a:#38bdf8; --good:#16a34a; --warn:#f59e0b; --bad:#ef4444;
-  --gold:#ffd700; --blue:#60a5fa;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:radial-gradient(900px 700px at 20% -10%,rgba(56,189,248,.18),transparent 60%),
-linear-gradient(180deg,#061427,var(--bg));color:var(--txt);height:100vh;overflow:hidden}
-a{color:inherit}
+:root{--bg1:#dff3ff;--bg2:#bfe8ff;--bg3:#06223f;--glass:rgba(255,255,255,.14);--line:rgba(255,255,255,.18);--t:#eaf6ff;--mut:rgba(234,246,255,.72);--a:#38bdf8;--b:#0ea5e9;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:
+radial-gradient(1100px 700px at 20% -10%,rgba(255,255,255,.35),transparent 55%),
+radial-gradient(1000px 800px at 110% 35%,rgba(56,189,248,.24),transparent 60%),
+linear-gradient(180deg,#0b1b33 0%, #061a2e 35%, #03213a 75%, #021526 100%);
+color:var(--t);overflow:hidden}
+
+/* Fundo do mar (desenho em SVG repetindo) */
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:screen;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cg fill='none'%3E%3Ccircle cx='60' cy='180' r='4' fill='%23ffffff' opacity='.25'/%3E%3Ccircle cx='90' cy='200' r='3' fill='%23ffffff' opacity='.22'/%3E%3Ccircle cx='120' cy='170' r='2.5' fill='%23ffffff' opacity='.18'/%3E%3Cpath d='M30 55c20 10 35 25 35 45c0 20-15 35-35 45c-20-10-35-25-35-45c0-20 15-35 35-45Z' fill='%2338bdf8' opacity='.10'/%3E%3Cpath d='M170 70c18 8 32 20 32 38c0 18-14 30-32 38c-18-8-32-20-32-38c0-18 14-30 32-38Z' fill='%230ea5e9' opacity='.11'/%3E%3Cpath d='M185 150c-6 20-18 30-22 44c-3 10 2 20 10 26c10-6 20-16 20-30c0-15-6-23-8-40Z' fill='%23ffffff' opacity='.10'/%3E%3Cpath d='M64 94c14-18 24-26 40-14c-10 16-18 26-40 14Z' fill='%23ffffff' opacity='.08'/%3E%3Cpath d='M70 120c10 0 18 8 18 18s-8 18-18 18s-18-8-18-18s8-18 18-18Z' fill='%23f59e0b' opacity='.12'/%3E%3Cpath d='M70 126l4 10l10 0l-8 6l3 10l-9-6l-9 6l3-10l-8-6l10 0Z' fill='%23f59e0b' opacity='.18'/%3E%3Cpath d='M140 120c0-14 10-26 24-30c-8 10-8 20 0 30c8 10 8 20 0 30c-14-4-24-16-24-30Z' fill='%2388e0ff' opacity='.10'/%3E%3Cpath d='M170 90c-8 10-8 20 0 30c8 10 8 20 0 30' stroke='%2388e0ff' opacity='.18' stroke-width='3' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+background-size:260px 260px}
+
 #app{height:100vh;display:flex;flex-direction:column}
-.topbar{
-  height:64px; display:flex; align-items:center; justify-content:space-between;
-  padding:10px 12px; gap:10px; border-bottom:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
-}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}
-.badge{
-  width:42px;height:42px;border-radius:14px;display:grid;place-items:center;
-  background:linear-gradient(145deg,rgba(56,189,248,.30),rgba(56,189,248,.10));
-  border:1px solid rgba(56,189,248,.25);
-}
-.brand b{display:block;letter-spacing:1px}
-.brand small{display:block;color:var(--mut);font-size:12px}
-.rightpill{
-  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:16px;
-  background:rgba(255,255,255,.06);border:1px solid var(--line);
-}
-.coin{
-  width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
-  background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);
-  border:1px solid rgba(255,215,0,.55);
-  box-shadow:0 0 0 2px rgba(255,215,0,.16) inset;
-}
-.coin span{color:var(--gold);font-weight:1000}
-.main{flex:1;overflow:auto;padding:12px 12px 92px}
-.card{
-  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
-  border:1px solid var(--line);
-  border-radius:18px; padding:14px; box-shadow:0 18px 45px rgba(0,0,0,.25);
-}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.btn{
-  border:0;border-radius:14px;padding:12px 12px;font-weight:900;
-  background:rgba(56,189,248,.18);color:var(--txt);border:1px solid rgba(56,189,248,.25);
-}
-.btn:active{transform:translateY(1px)}
-.btn.good{background:rgba(22,163,74,.20);border-color:rgba(22,163,74,.35)}
-.btn.warn{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.35)}
-.btn.bad{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.35)}
-.inp,textarea{
-  width:100%;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--txt);
-  border-radius:14px;padding:12px 12px;outline:none
-}
-textarea{min-height:84px;resize:none}
-.row{display:flex;gap:10px;align-items:center}
+.top{height:50vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.10)}
+.bub:before,.bub:after{content:"";position:absolute;inset:-25%;background:
+radial-gradient(circle,rgba(255,255,255,.35) 0 2px,transparent 3px) 0 0/140px 140px,
+radial-gradient(circle,rgba(255,255,255,.20) 0 1px,transparent 2px) 50px 30px/190px 190px;
+animation:float 18s linear infinite;opacity:.45}
+.bub:after{animation-duration:26s;opacity:.28;transform:scale(1.14)}
+@keyframes float{to{transform:translateY(-150px)}}
+
+.brand{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:5}
+.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+background:rgba(0,0,0,.20);backdrop-filter:blur(10px);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.badge{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.22)}
+.brandname{display:flex;flex-direction:column;line-height:1.05}
+.brandname b{letter-spacing:1.2px;font-size:15px}
+.brandname small{color:var(--mut);font-size:11px}
+.walletPill{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+background:rgba(0,0,0,.20);backdrop-filter:blur(10px);border-radius:18px}
+.coin{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);border:1px solid rgba(255,215,0,.55);
+box-shadow:0 0 0 2px rgba(255,215,0,.16) inset}
+.coin span{color:#ffd700;font-weight:1000}
+.walletMeta{display:flex;flex-direction:column;line-height:1.05}
+.walletMeta b{font-size:12px}
+.walletMeta small{font-size:11px;color:var(--mut)}
+.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#mainV,#camV,#mainImg{width:100%;height:100%;object-fit:cover;display:none}
+#hint{position:absolute;bottom:12px;left:12px;right:12px;z-index:4;
+padding:10px 12px;border:1px solid var(--line);border-radius:16px;background:rgba(0,0,0,.24);
+backdrop-filter:blur(10px);font-size:12px;color:var(--mut);display:flex;gap:10px;align-items:center;justify-content:space-between}
+#hint b{color:var(--t)}
+.smallRow{position:absolute;bottom:64px;left:12px;right:12px;z-index:4;display:flex;gap:10px;overflow:auto;padding-bottom:6px}
+.thumb{min-width:120px;height:72px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+background:rgba(0,0,0,.25);position:relative;cursor:pointer;flex:0 0 auto}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover}
+.thumb .tcap{position:absolute;left:8px;right:8px;bottom:6px;font-size:11px;color:rgba(255,255,255,.85);
+text-shadow:0 2px 10px rgba(0,0,0,.6);display:flex;justify-content:space-between;align-items:center}
+.starGold{color:#ffd700;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.starBlue{color:#60a5fa;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:12px;gap:12px}
+.panel{flex:1;overflow:auto;border:1px solid rgba(255,255,255,.12);border-radius:22px;
+background:rgba(0,0,0,.18);backdrop-filter:blur(10px);box-shadow:0 18px 60px rgba(0,0,0,.30);padding:12px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hrow h3{margin:0;font-size:14px;display:flex;gap:8px;align-items:center}
 .muted{color:var(--mut);font-size:12px}
-.hr{height:1px;background:var(--line);margin:12px 0}
-.hrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.tag{font-size:12px;color:var(--mut)}
-.pill{
-  display:inline-flex;gap:8px;align-items:center;
-  padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);
-}
-.star-gold{color:var(--gold);filter:drop-shadow(0 0 6px rgba(255,215,0,.35))}
-.star-blue{color:var(--blue);filter:drop-shadow(0 0 6px rgba(96,165,250,.35))}
-.hide{display:none}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.field{flex:1;min-width:140px}
+input,textarea{width:100%;border-radius:16px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.22);
+color:var(--t);padding:12px 12px;outline:none}
+textarea{min-height:84px;resize:none}
+.btn{border:0;border-radius:16px;padding:12px 14px;background:rgba(56,189,248,.18);color:var(--t);
+border:1px solid rgba(56,189,248,.22);cursor:pointer}
+.btn:active{transform:scale(.99)}
+.btnOk{background:rgba(34,197,94,.22);border-color:rgba(34,197,94,.28)}
+.btnWarn{background:rgba(245,158,11,.22);border-color:rgba(245,158,11,.28)}
+.btnBad{background:rgba(239,68,68,.20);border-color:rgba(239,68,68,.26)}
+.card{border:1px solid rgba(255,255,255,.12);border-radius:22px;background:rgba(0,0,0,.18);
+padding:12px;box-shadow:0 18px 60px rgba(0,0,0,.18)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pitem{border:1px solid rgba(255,255,255,.12);border-radius:18px;overflow:hidden;background:rgba(0,0,0,.20);cursor:pointer}
+.pitem img,.pitem video{width:100%;height:130px;object-fit:cover;display:block}
+.pmeta{padding:8px 10px;font-size:12px;color:var(--mut);display:flex;justify-content:space-between;gap:10px}
 
-.nav{
-  position:fixed;left:10px;right:10px;bottom:10px;
-  height:72px;border-radius:22px;border:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
-  display:flex;align-items:center;justify-content:space-around;
-  box-shadow:0 18px 45px rgba(0,0,0,.35);
-}
-.nav button{
-  width:20%;height:60px;background:transparent;border:0;color:var(--mut);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  font-weight:900
-}
-.nav button i{font-size:18px}
-.nav button.active{color:var(--a)}
-.media{width:100%;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:rgba(0,0,0,.25)}
-.media video,.media img{display:block;width:100%;height:180px;object-fit:cover}
-.smallcards{display:flex;gap:10px;overflow:auto;padding-bottom:4px}
-.small{min-width:190px}
-.small .media video,.small .media img{height:120px}
-
-.stage{
-  height:220px;border-radius:18px;border:1px solid var(--line);
-  background:radial-gradient(700px 280px at 30% -20%,rgba(56,189,248,.22),transparent 60%),
-  linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.05));
-  position:relative;overflow:hidden
-}
-.bubbles:before,.bubbles:after{
-  content:"";position:absolute;inset:-40%;
-  background:
-    radial-gradient(circle,rgba(255,255,255,.20) 0 2px,transparent 3px) 0 0/120px 120px,
-    radial-gradient(circle,rgba(255,255,255,.12) 0 1px,transparent 2px) 40px 20px/160px 160px;
-  animation:float 16s linear infinite;opacity:.6
-}
-.bubbles:after{animation-duration:22s;opacity:.35;transform:scale(1.2)}
-@keyframes float{to{transform:translateY(-140px)}}
-.stageInner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px}
-#stageMain{width:100%;height:100%;object-fit:cover;border-radius:16px;display:none}
-#stageHint{color:rgba(255,255,255,.85);text-align:center}
-#stageHint b{display:block;font-size:18px;letter-spacing:1px}
-#stageHint small{color:rgba(255,255,255,.65)}
-.stageBar{
-  position:absolute;left:12px;right:12px;bottom:12px;
-  display:flex;gap:8px;justify-content:space-between;align-items:center
-}
-.stageBar .pill{background:rgba(0,0,0,.25)}
-.bigBtn{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--txt);font-weight:1000}
-.bigBtn i{color:var(--a)}
-
-.notice{padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05)}
+.nav{height:64px;padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;
+border-top:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.22);backdrop-filter:blur(10px)}
+.tab{flex:1;border-radius:18px;padding:10px 8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.06);
+color:rgba(255,255,255,.90);display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;cursor:pointer}
+.tab i{font-size:16px}
+.tab.on{border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.16)}
+.pillMini{padding:8px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.20);font-size:12px;color:var(--mut)}
+.hr{height:1px;background:rgba(255,255,255,.10);margin:10px 0}
+.notice{font-size:12px;color:var(--mut);line-height:1.35}
 .kpi{display:flex;gap:10px;flex-wrap:wrap}
-.kpi .pill{background:rgba(56,189,248,.10);border-color:rgba(56,189,248,.22)}
-
-.bearWrap{display:flex;gap:10px;align-items:center}
-.bear{
-  width:44px;height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.14);
-  background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.03));
-  display:grid;place-items:center;font-size:22px;
-}
-.ice{
-  flex:1;height:44px;border-radius:14px;border:1px solid rgba(56,189,248,.30);
-  background:linear-gradient(180deg,rgba(56,189,248,.18),rgba(56,189,248,.06));
-  position:relative;overflow:hidden
-}
-.iceFill{
-  position:absolute;left:0;top:0;bottom:0;width:100%;
-  background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,0));
-}
-.iceText{position:absolute;inset:0;display:grid;place-items:center;font-weight:1000;color:rgba(255,255,255,.85)}
-</style>
-</head>
+.k{flex:1;min-width:120px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);padding:10px}
+.k b{display:block}
+.small{font-size:11px;color:var(--mut)}
+</style></head>
 <body>
 <div id="app">
-  <div class="topbar">
+  <div class="top bub">
     <div class="brand">
-      <div class="badge"><b>IC</b></div>
-      <div style="min-width:0">
-        <b>ICE-CUBO</b>
-        <small id="subtitle">Timeline • Perfil • Carteira</small>
+      <div class="logo">
+        <div class="badge">IC</div>
+        <div class="brandname">
+          <b>ICE-CUBO</b>
+          <small id="subTitle">Timeline • Perfil • Carteira</small>
+        </div>
+      </div>
+      <div class="walletPill">
+        <div class="coin"><span>B</span></div>
+        <div class="walletMeta">
+          <b><span id="blueBal">0</span> BLUE</b>
+          <small id="who">deslogado</small>
+        </div>
       </div>
     </div>
-    <div class="rightpill">
-      <div class="coin"><span>B</span></div>
-      <div style="display:flex;flex-direction:column;line-height:1.05">
-        <b><span id="blueBal">0</span> BLUE</b>
-        <small class="tag" id="who">deslogado</small>
-      </div>
+
+    <div class="viewer">
+      <img id="mainImg" alt="">
+      <video id="mainV" playsinline controls></video>
+      <video id="camV" playsinline autoplay muted></video>
+    </div>
+
+    <div class="smallRow" id="thumbRow"></div>
+
+    <div id="hint">
+      <div><b>Dica:</b> clique num post (embaixo) pra abrir aqui em cima • <b>2 toques</b> num vídeo pra jogar pro grande</div>
+      <div class="pillMini" id="minePill">⛏️ Minerar: precisa 10 filhos</div>
     </div>
   </div>
 
   <div class="main">
-    <!-- HOME / TIMELINE -->
-    <div class="card" id="panelTimeline">
-      <div class="stage bubbles">
-        <div class="stageInner">
-          <video id="stageMain" playsinline controls></video>
-          <div id="stageHint">
-            <b>Toque 2x em um vídeo</b>
-            <small>ele sobe aqui pra tela grande</small>
-          </div>
-        </div>
-        <div class="stageBar">
-          <div class="pill"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--a)"></i><span class="tag">Reels/Tinder: arrasta pro lado</span></div>
-          <button class="bigBtn" id="camBtn"><i class="fa-solid fa-camera"></i> Câmera</button>
-        </div>
-      </div>
-
-      <div class="hr"></div>
-
+    <div class="panel" id="panelTimeline">
       <div class="hrow">
-        <b><i class="fa-solid fa-timeline" style="color:var(--a)"></i> Timeline</b>
-        <span class="muted" id="feedNote">Camada 1: seguindo/filhos • Camada 2: todos</span>
+        <h3><i class="fa-solid fa-stream"></i> Timeline</h3>
+        <span class="muted">posts aparecem aqui embaixo</span>
       </div>
-
-      <div class="smallcards" id="reelRow"></div>
-
+      <div class="notice">Clique no card para abrir no grande. “Filhos/Seguindo” vem do seu perfil (protótipo local).</div>
       <div class="hr"></div>
-      <div class="hrow"><b>Todos</b><span class="muted" id="postCount">0</span></div>
-      <div class="grid" id="feed"></div>
+      <div class="hrow"><h3 style="font-size:13px"><i class="fa-solid fa-user-group"></i> Seguindo/Filhos</h3><span class="muted" id="followCount">0</span></div>
+      <div class="grid" id="feedFollow"></div>
+      <div class="hr"></div>
+      <div class="hrow"><h3 style="font-size:13px"><i class="fa-solid fa-globe"></i> Todos</h3><span class="muted" id="allCount">0</span></div>
+      <div class="grid" id="feedAll"></div>
     </div>
 
-    <!-- PERFIL -->
-    <div class="card hide" id="panelPerfil">
+    <div class="panel" id="panelProfile" style="display:none">
       <div class="hrow">
-        <b><i class="fa-solid fa-user" style="color:var(--a)"></i> Seu perfil</b>
-        <span class="muted">poste foto/vídeo</span>
+        <h3><i class="fa-solid fa-user"></i> Perfil</h3>
+        <span class="muted">entrar / criar conta</span>
       </div>
 
-      <div class="notice" id="loginBox">
-        <div class="hrow"><b>Entrar / Criar conta</b><span class="muted">ADM é intocável</span></div>
-        <div class="row" style="margin-top:10px">
-          <input class="inp" id="lgUser" placeholder="Usuário" />
-          <input class="inp" id="lgPass" placeholder="Senha" type="password"/>
+      <div class="card">
+        <div class="row">
+          <div class="field"><input id="uLogin" placeholder="Login (ex: jessica)"></div>
+          <div class="field"><input id="uPass" type="password" placeholder="Senha"></div>
+          <button class="btn btnOk" id="btnEnter"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+          <button class="btn" id="btnCreate"><i class="fa-solid fa-user-plus"></i> Criar</button>
+        </div>
+        <div class="muted" style="margin-top:8px">ADM é intocável. Login ADM / Senha 1533.</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="card">
+        <div class="hrow"><h3 style="margin:0"><i class="fa-solid fa-upload"></i> Postar foto/vídeo</h3><span class="muted">aparece na timeline</span></div>
+        <div class="row">
+          <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
+            <i class="fa-solid fa-image"></i> Escolher mídia
+            <input id="filePick" type="file" accept="image/*,video/*" style="display:none">
+          </label>
+          <button class="btn btnOk" id="btnPost"><i class="fa-solid fa-paper-plane"></i> Postar</button>
+          <span class="muted" id="pickInfo">Nenhum arquivo</span>
+        </div>
+        <div class="hr"></div>
+        <div class="kpi">
+          <div class="k"><b>Filhos</b><div class="small"><span id="childCount">0</span> (mínimo 10 p minerar)</div></div>
+          <div class="k"><b>Seguindo</b><div class="small"><span id="followingCount">0</span></div></div>
+          <div class="k"><b>Recompensa</b><div class="small">50 BLUE por bloco (demo)</div></div>
         </div>
         <div class="row" style="margin-top:10px">
-          <button class="btn" id="btnLogin"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
-          <button class="btn good" id="btnReg"><i class="fa-solid fa-user-plus"></i> Criar</button>
-          <button class="btn bad hide" id="btnLogout"><i class="fa-solid fa-power-off"></i> Sair</button>
+          <button class="btn btnWarn" id="btnAddChild"><i class="fa-solid fa-child"></i> +1 Filho (demo)</button>
+          <button class="btn" id="btnFollow"><i class="fa-solid fa-user-check"></i> Seguir alguém (demo)</button>
+          <button class="btn btnOk" id="btnMine"><i class="fa-solid fa-hammer"></i> Minerar bloco</button>
         </div>
-        <div class="muted" style="margin-top:8px">
-          Login ADM: <b>${ADM_LOGIN}</b> • Senha: <b>${ADM_SENHA}</b>
-        </div>
+        <div class="muted" id="mineStatus" style="margin-top:8px">—</div>
       </div>
-
-      <div class="hr"></div>
-
-      <div class="row" style="margin-bottom:10px">
-        <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
-          <i class="fa-solid fa-image"></i> Abrir galeria
-          <input id="filePick" type="file" accept="image/*,video/*" style="display:none">
-        </label>
-        <button class="btn good" id="postBtn"><i class="fa-solid fa-upload"></i> Postar</button>
-      </div>
-      <div class="muted" id="pickInfo">Nenhum arquivo</div>
-
-      <div class="hr"></div>
-      <div class="hrow"><b><i class="fa-solid fa-users" style="color:var(--a)"></i> Seguindo</b><span class="muted" id="followCount">0</span></div>
-      <div class="muted" id="followList">—</div>
-
-      <div class="hr"></div>
-      <div class="hrow"><b><i class="fa-solid fa-sitemap" style="color:var(--a)"></i> Filhos</b><span class="muted" id="childCount">0</span></div>
-      <div class="muted" id="childList">—</div>
-
-      <div class="hr"></div>
-      <div class="hrow"><b>Seus posts</b><span class="muted" id="myCount">0</span></div>
-      <div class="grid" id="myPosts"></div>
     </div>
 
-    <!-- CARTEIRA -->
-    <div class="card hide" id="panelCarteira">
+    <div class="panel" id="panelWallet" style="display:none">
       <div class="hrow">
-        <b><i class="fa-solid fa-wallet" style="color:var(--a)"></i> Carteira</b>
-        <span class="muted">Depósito / Saque</span>
+        <h3><i class="fa-solid fa-wallet"></i> Carteira</h3>
+        <span class="muted">depósito PIX / saque</span>
       </div>
 
-      <div class="hr"></div>
-
-      <div class="notice">
-        <div class="hrow"><b>⚠️ Importante</b><span class="muted">protótipo</span></div>
-        <div class="muted">
-          • Depósito: se você configurar <b>MP_ACCESS_TOKEN</b>, abre pagamento real no Mercado Pago (link).<br>
-          • Saque automático real exige sistema/validação (compliance). Aqui vira <b>pedido de saque</b> pro ADM aprovar.
+      <div class="card">
+        <div class="notice">
+          <b>Depósito (real):</b> abre Mercado Pago (PIX/QR).<br>
+          <b>Saque (protótipo):</b> vira pedido pro ADM aprovar (saque automático real exige compliance/back-end).
         </div>
       </div>
 
       <div class="hr"></div>
 
-      <div class="card" style="background:rgba(0,0,0,.18)">
-        <div class="hrow"><b style="font-size:18px">💰 Depósito</b><span class="pill"><span class="tag">BRL → BLUE</span></span></div>
-        <div class="muted" style="margin-top:6px">1 BRL = 1 BLUE (ajuste depois)</div>
-        <div class="row" style="margin-top:10px">
-          <input class="inp" id="depVal" placeholder="Valor (ex: 10)" inputmode="decimal"/>
-          <button class="btn good" id="depMock"><i class="fa-solid fa-bolt"></i> Depósito rápido (teste)</button>
+      <div class="card">
+        <div class="hrow"><h3 style="margin:0"><i class="fa-solid fa-sack-dollar"></i> Depósito</h3><span class="muted">PIX/QR</span></div>
+        <div class="row">
+          <div class="field"><input id="depVal" inputmode="decimal" placeholder="Valor (ex: 10)"></div>
+          <button class="btn btnOk" id="btnDeposit"><i class="fa-brands fa-pix"></i> Depositar via PIX</button>
         </div>
-        <div class="row" style="margin-top:10px">
-          <button class="btn" id="depMP"><i class="fa-brands fa-pix"></i> Depósito real (Mercado Pago)</button>
-        </div>
-        <div class="muted" id="depMsg" style="margin-top:10px">—</div>
+        <div class="muted" id="depNote" style="margin-top:8px">—</div>
       </div>
 
       <div class="hr"></div>
 
-      <div class="card" style="background:rgba(0,0,0,.18)">
-        <div class="hrow"><b style="font-size:18px">🏦 Saque</b><span class="pill"><span class="tag">BLUE → Pedido</span></span></div>
-        <div class="row" style="margin-top:10px">
-          <input class="inp" id="saqVal" placeholder="Valor para sacar" inputmode="decimal"/>
-          <button class="btn warn" id="saqReq"><i class="fa-solid fa-paper-plane"></i> Solicitar saque</button>
+      <div class="card">
+        <div class="hrow"><h3 style="margin:0"><i class="fa-solid fa-building-columns"></i> Saque</h3><span class="muted">pedido</span></div>
+        <div class="row">
+          <div class="field"><input id="wdVal" inputmode="decimal" placeholder="Valor para sacar"></div>
+          <button class="btn btnWarn" id="btnWithdraw"><i class="fa-solid fa-arrow-up-right-dots"></i> Solicitar saque</button>
         </div>
-        <div class="muted" id="saqMsg" style="margin-top:10px">—</div>
+        <div class="muted" id="wdNote" style="margin-top:8px">—</div>
       </div>
-
-      <div class="hr"></div>
-      <div class="hrow"><b>Histórico</b><span class="muted" id="histCount">0</span></div>
-      <div id="hist" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
     </div>
 
-    <!-- TROCAS (TIMELINE EXTRA) -->
-    <div class="card hide" id="panelTrocas">
-      <div class="hrow"><b><i class="fa-solid fa-repeat" style="color:var(--a)"></i> Trocas</b><span class="muted">produto + oferta</span></div>
-      <div class="row" style="margin-top:10px">
-        <input class="inp" id="swapTitle" placeholder="Nome do produto (ex: Tênis X)"/>
-        <input class="inp" id="swapWant" placeholder="Quero em troca (ex: Moletom / BLUE)"/>
-      </div>
-      <div style="margin-top:10px">
-        <textarea id="swapDesc" placeholder="Descrição rápida..."></textarea>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
-          <i class="fa-solid fa-camera"></i> Foto/Vídeo
-          <input id="swapFile" type="file" accept="image/*,video/*" style="display:none">
-        </label>
-        <button class="btn good" id="swapPost"><i class="fa-solid fa-bolt"></i> Publicar troca</button>
-      </div>
-      <div class="muted" id="swapPickInfo" style="margin-top:8px">Nenhum arquivo</div>
-
-      <div class="hr"></div>
-      <div class="hrow"><b>Trocas publicadas</b><span class="muted" id="swapCount">0</span></div>
-      <div class="grid" id="swapGrid" style="margin-top:10px"></div>
-    </div>
-
-    <!-- ADM -->
-    <div class="card hide" id="panelADM">
-      <div class="hrow"><b><i class="fa-solid fa-shield-halved" style="color:var(--a)"></i> Painel ADM</b><span class="muted">somente ADM</span></div>
-
-      <div class="hr"></div>
-      <div class="notice">
-        <div class="hrow"><b>🎮 “Minerar” BLUE (jogo)</b><span class="muted">local</span></div>
-        <div class="muted">Clique para o urso quebrar o gelo e ganhar BLUE (só protótipo, não é BTC real).</div>
-        <div class="bearWrap" style="margin-top:10px">
-          <div class="bear">🐻‍❄️</div>
-          <div class="ice" id="iceBar">
-            <div class="iceFill" id="iceFill"></div>
-            <div class="iceText" id="iceText">Gelo 100%</div>
-          </div>
-          <button class="btn good" id="mineBtn"><i class="fa-solid fa-hammer"></i></button>
+    <div class="panel" id="panelSwaps" style="display:none">
+      <div class="hrow"><h3><i class="fa-solid fa-repeat"></i> Trocas</h3><span class="muted">produto + oferta</span></div>
+      <div class="card">
+        <div class="row">
+          <div class="field"><input id="swapTitle" placeholder="Produto (ex: Tênis)"></div>
+          <div class="field"><input id="swapWant" placeholder="Quero em troca (ex: BLUE)"></div>
         </div>
-        <div class="muted" id="mineMsg" style="margin-top:8px">—</div>
+        <div class="row" style="margin-top:8px">
+          <div class="field"><textarea id="swapDesc" placeholder="Descrição rápida..."></textarea></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="btn" style="display:inline-flex;align-items:center;gap:8px">
+            <i class="fa-solid fa-camera"></i> Foto/Vídeo
+            <input id="swapFile" type="file" accept="image/*,video/*" style="display:none">
+          </label>
+          <button class="btn btnOk" id="btnSwapPost"><i class="fa-solid fa-bolt"></i> Publicar troca</button>
+          <span class="muted" id="swapPickInfo">Nenhum arquivo</span>
+        </div>
       </div>
-
       <div class="hr"></div>
-      <div class="hrow"><b>Usuários</b><span class="muted" id="uCount">0</span></div>
-      <div id="uList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
-
-      <div class="hr"></div>
-      <div class="hrow"><b>Pedidos de Saque</b><span class="muted" id="wCount">0</span></div>
-      <div id="wList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
+      <div class="grid" id="swapGrid"></div>
     </div>
 
+    <div class="panel" id="panelAdm" style="display:none">
+      <div class="hrow"><h3><i class="fa-solid fa-shield-halved"></i> ADM</h3><span class="muted">somente ADM</span></div>
+      <div class="card">
+        <div class="notice"><b>ADM intocável.</b> Pode promover moderadores e aprovar saques. Moderador não consegue agir contra ADM.</div>
+      </div>
+      <div class="hr"></div>
+      <div class="card">
+        <div class="hrow"><h3 style="margin:0"><i class="fa-solid fa-user-gear"></i> Moderadores</h3><span class="muted">estrela azul</span></div>
+        <div class="row">
+          <div class="field"><input id="modUser" placeholder="Usuário para virar moderador"></div>
+          <button class="btn btnOk" id="btnMakeMod"><i class="fa-solid fa-star"></i> Promover</button>
+          <button class="btn btnBad" id="btnUnmod"><i class="fa-solid fa-star-half-stroke"></i> Remover</button>
+        </div>
+        <div class="muted" id="modNote" style="margin-top:8px">—</div>
+      </div>
+      <div class="hr"></div>
+      <div class="card">
+        <div class="hrow"><h3 style="margin:0"><i class="fa-solid fa-hand-holding-dollar"></i> Saques pendentes</h3><span class="muted">aprovar/recusar</span></div>
+        <div id="withdrawList" class="muted">—</div>
+      </div>
+      <div class="hr"></div>
+      <div class="card">
+        <div class="hrow"><h3 style="margin:0"><i class="fa-solid fa-user-slash"></i> Bloquear usuário</h3><span class="muted">moderador/ADM</span></div>
+        <div class="row">
+          <div class="field"><input id="banUser" placeholder="Usuário para bloquear"></div>
+          <button class="btn btnBad" id="btnBan"><i class="fa-solid fa-ban"></i> Bloquear</button>
+          <button class="btn" id="btnUnban"><i class="fa-solid fa-check"></i> Desbloquear</button>
+        </div>
+        <div class="muted" id="banNote" style="margin-top:8px">—</div>
+      </div>
+    </div>
   </div>
 
   <div class="nav">
-    <button data-tab="timeline" class="active"><i class="fa-solid fa-house"></i><div>HOME</div></button>
-    <button data-tab="perfil"><i class="fa-solid fa-user"></i><div>PERFIL</div></button>
-    <button data-tab="carteira"><i class="fa-solid fa-wallet"></i><div>CARTEIRA</div></button>
-    <button data-tab="trocas"><i class="fa-solid fa-layer-group"></i><div>TROCAS</div></button>
-    <button data-tab="adm"><i class="fa-solid fa-star"></i><div>ADM</div></button>
+    <div class="tab on" data-tab="timeline"><i class="fa-solid fa-house"></i><span>HOME</span></div>
+    <div class="tab" data-tab="profile"><i class="fa-solid fa-user"></i><span>PERFIL</span></div>
+    <div class="tab" data-tab="wallet"><i class="fa-solid fa-credit-card"></i><span>CARTEIRA</span></div>
+    <div class="tab" data-tab="swaps"><i class="fa-solid fa-layer-group"></i><span>TROCAS</span></div>
+    <div class="tab" data-tab="live"><i class="fa-solid fa-video"></i><span>LIVE</span></div>
+    <div class="tab" data-tab="adm"><i class="fa-solid fa-star"></i><span>ADM</span></div>
   </div>
 </div>
 
 <script>
-/* ----------------- STORAGE ----------------- */
-const LS = {
-  get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch{ return d } },
-  set(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+/* ====== Storage (protótipo) ====== */
+const S = {
+  get(k, d){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); }catch{ return d } },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 };
-const state = {
-  users: LS.get("ice_users", null),
-  session: LS.get("ice_session", null),
-  posts: LS.get("ice_posts", []),
-  swaps: LS.get("ice_swaps", []),
-  hist: LS.get("ice_hist", []),
-  withdrawals: LS.get("ice_withdrawals", []),
+const DB = {
+  users: () => S.get("ic_users", {}),
+  saveUsers: (u)=>S.set("ic_users",u),
+  posts: () => S.get("ic_posts", []),
+  savePosts: (p)=>S.set("ic_posts",p),
+  swaps: () => S.get("ic_swaps", []),
+  saveSwaps: (p)=>S.set("ic_swaps",p),
+  withdraws: () => S.get("ic_withdraws", []),
+  saveWithdraws: (w)=>S.set("ic_withdraws",w),
 };
 
-function bootDefaults(){
-  if(!state.users){
-    state.users = [
-      {user:"${ADM_LOGIN}", pass:"${ADM_SENHA}", role:"adm", banned:false, follows:[], childs:[]},
-    ];
-  }
-  if(!state.posts.length){
-    // 3 posts de exemplo
-    state.posts = [
-      {id:uid(), by:"${ADM_LOGIN}", type:"img", data:sampleImg(), text:"Bem-vinda ao ICE-CUBO!", ts:Date.now()-600000},
-      {id:uid(), by:"${ADM_LOGIN}", type:"img", data:sampleImg2(), text:"Toque 2x nos vídeos pra subir.", ts:Date.now()-300000},
-    ];
-  }
-  persist();
-}
-function persist(){
-  LS.set("ice_users", state.users);
-  LS.set("ice_session", state.session);
-  LS.set("ice_posts", state.posts);
-  LS.set("ice_swaps", state.swaps);
-  LS.set("ice_hist", state.hist);
-  LS.set("ice_withdrawals", state.withdrawals);
-}
-function uid(){ return Math.random().toString(16).slice(2)+Date.now().toString(16) }
-function now(){ return new Date().toLocaleString() }
+let me = S.get("ic_me", null); // {u, role}
+function isADM(){ return me && me.u === "${ADM_LOGIN}" }
+function isMod(){ return me && (me.role === "mod" || isADM()) }
 
-/* ----------------- AUTH / ROLES ----------------- */
-function me(){
-  if(!state.session) return null;
-  return state.users.find(u=>u.user===state.session.user) || null;
-}
-function isADM(){ const u=me(); return u && u.role==="adm" }
-function isMOD(){ const u=me(); return u && u.role==="mod" }
-function canModerate(targetUser){
-  const u=me();
-  if(!u) return false;
-  if(targetUser=== "${ADM_LOGIN}") return false; // ADM intocável
-  return u.role==="adm" || u.role==="mod";
-}
-
-/* ----------------- UI NAV ----------------- */
+/* ====== UI helpers ====== */
+const $ = (id)=>document.getElementById(id);
+const blueBal = $("blueBal"), who = $("who"), subTitle=$("subTitle");
+const mainImg=$("mainImg"), mainV=$("mainV"), camV=$("camV"), thumbRow=$("thumbRow");
 const panels = {
-  timeline: document.getElementById("panelTimeline"),
-  perfil: document.getElementById("panelPerfil"),
-  carteira: document.getElementById("panelCarteira"),
-  trocas: document.getElementById("panelTrocas"),
-  adm: document.getElementById("panelADM"),
+  timeline:$("panelTimeline"),
+  profile:$("panelProfile"),
+  wallet:$("panelWallet"),
+  swaps:$("panelSwaps"),
+  adm:$("panelAdm")
 };
-document.querySelectorAll(".nav button").forEach(b=>{
-  b.onclick = ()=> setTab(b.dataset.tab);
-});
-function setTab(tab){
-  Object.keys(panels).forEach(k=> panels[k].classList.toggle("hide", k!==tab));
-  document.querySelectorAll(".nav button").forEach(b=> b.classList.toggle("active", b.dataset.tab===tab));
-  // ADM panel bloqueado
-  if(tab==="adm" && !isADM()){
-    alert("Somente ADM.");
-    return setTab("perfil");
-  }
-  renderAll();
+function toast(msg){ alert(msg); }
+function setTopMedia({type, src, caption}){
+  mainImg.style.display="none"; mainV.style.display="none";
+  stopCam();
+  if(type==="img"){ mainImg.src=src; mainImg.style.display="block"; }
+  if(type==="video"){ mainV.src=src; mainV.style.display="block"; mainV.play().catch(()=>{}); }
+  $("hint").querySelector("div").innerHTML = "<b>Dica:</b> "+(caption||"");
+}
+function renderHeader(){
+  const users = DB.users();
+  const u = me ? users[me.u] : null;
+  const blue = u ? (u.blue||0) : 0;
+  blueBal.textContent = blue;
+  who.textContent = me ? (me.u + (isADM()?" ★":"") + (me.role==="mod" && !isADM()?" ✦":"")) : "deslogado";
+  $("minePill").textContent = "⛏️ Minerar: precisa 10 filhos";
 }
 
-/* ----------------- RENDER ----------------- */
-const blueBal = document.getElementById("blueBal");
-const who = document.getElementById("who");
-const subtitle = document.getElementById("subtitle");
+/* ====== Tabs ====== */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    const key = t.dataset.tab;
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+    t.classList.add("on");
 
-function badgeName(u){
-  if(!u) return "deslogado";
-  const icon = u.role==="adm" ? "⭐" : (u.role==="mod" ? "🔹" : "");
-  return icon ? (u.user+" "+icon) : u.user;
-}
-function getBlue(){
-  return Number(LS.get("ice_blue", 0))||0;
-}
-function setBlue(v){
-  LS.set("ice_blue", Number(v)||0);
-  blueBal.textContent = getBlue();
-}
-function pushHist(type, msg){
-  state.hist.unshift({id:uid(), ts:Date.now(), type, msg});
-  if(state.hist.length>80) state.hist.pop();
-  persist();
-}
+    Object.values(panels).forEach(p=>p.style.display="none");
 
-function renderTop(){
-  const u = me();
-  blueBal.textContent = getBlue();
-  who.textContent = u ? badgeName(u) : "deslogado";
-  subtitle.textContent = u ? (u.role==="adm" ? "ADM Master • intocável" : u.role==="mod" ? "Moderador • ações limitadas" : "Usuário • timeline") : "Timeline • Perfil • Carteira";
-}
-
-function mediaEl(p, small=false){
-  const wrap = document.createElement("div");
-  wrap.className = "card " + (small ? "small" : "");
-  wrap.style.padding = "10px";
-  wrap.style.background = "rgba(0,0,0,.18)";
-
-  const head = document.createElement("div");
-  head.className="hrow";
-  head.innerHTML = \`<span class="pill">\${roleIcon(p.by)} <b>\${escapeHtml(p.by)}</b></span><span class="muted">\${new Date(p.ts).toLocaleString()}</span>\`;
-  wrap.appendChild(head);
-
-  const m = document.createElement("div");
-  m.className="media";
-  if(p.type==="video"){
-    const v=document.createElement("video");
-    v.src=p.data; v.playsInline=true; v.muted=true; v.loop=true; v.controls=false;
-    v.addEventListener("click", ()=>{ try{ v.play(); }catch{} });
-    // double tap -> stage
-    let t=0;
-    v.addEventListener("touchend", (e)=>{
-      const now=Date.now(); if(now-t<280){ stageVideo(p.data); } t=now;
-    }, {passive:true});
-    v.addEventListener("dblclick", ()=> stageVideo(p.data));
-    m.appendChild(v);
-  } else {
-    const img=document.createElement("img");
-    img.src=p.data;
-    m.appendChild(img);
-  }
-  wrap.appendChild(m);
-
-  const tx = document.createElement("div");
-  tx.className="muted";
-  tx.style.marginTop="8px";
-  tx.textContent = p.text || "";
-  wrap.appendChild(tx);
-
-  // ações
-  const u = me();
-  const act = document.createElement("div");
-  act.className="row";
-  act.style.marginTop="10px";
-  act.style.justifyContent="space-between";
-  const left=document.createElement("div");
-  left.className="row";
-
-  const followBtn=document.createElement("button");
-  followBtn.className="btn";
-  followBtn.style.padding="10px 10px";
-  followBtn.innerHTML='<i class="fa-solid fa-user-plus"></i> Seguir';
-  followBtn.onclick=()=>{
-    if(!u) return alert("Entre primeiro.");
-    if(u.user===p.by) return;
-    if(!u.follows.includes(p.by)) u.follows.push(p.by);
-    persist(); renderAll();
-  };
-  left.appendChild(followBtn);
-
-  const childBtn=document.createElement("button");
-  childBtn.className="btn";
-  childBtn.style.padding="10px 10px";
-  childBtn.innerHTML='<i class="fa-solid fa-link"></i> Filho';
-  childBtn.onclick=()=>{
-    if(!u) return alert("Entre primeiro.");
-    // "ganhar como filho" — simples (demo)
-    if(!u.childs.includes(p.by) && p.by!==u.user) u.childs.push(p.by);
-    persist(); renderAll();
-  };
-  left.appendChild(childBtn);
-
-  const right=document.createElement("div");
-  right.className="row";
-  const banBtn=document.createElement("button");
-  banBtn.className="btn bad";
-  banBtn.style.padding="10px 10px";
-  banBtn.innerHTML='<i class="fa-solid fa-ban"></i>';
-  banBtn.title="Banir usuário (ADM/MOD)";
-  banBtn.onclick=()=>{
-    if(!canModerate(p.by)) return alert("Sem permissão.");
-    const target = state.users.find(x=>x.user===p.by);
-    if(!target) return;
-    target.banned = true;
-    pushHist("mod", \`Usuário \${p.by} banido.\`);
-    persist(); renderAll();
-  };
-  right.appendChild(banBtn);
-
-  act.appendChild(left);
-  act.appendChild(right);
-  wrap.appendChild(act);
-
-  return wrap;
-}
-function roleIcon(username){
-  const u = state.users.find(x=>x.user===username);
-  if(!u) return "";
-  if(u.role==="adm") return '<i class="fa-solid fa-star star-gold"></i>';
-  if(u.role==="mod") return '<i class="fa-solid fa-star star-blue"></i>';
-  return '<i class="fa-solid fa-user" style="color:var(--mut)"></i>';
-}
-function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m])) }
-
-function renderTimeline(){
-  const feed = document.getElementById("feed");
-  const reelRow = document.getElementById("reelRow");
-  const postCount = document.getElementById("postCount");
-  feed.innerHTML=""; reelRow.innerHTML="";
-
-  const u = me();
-  // Camada 1: seguindo/filhos
-  const layer1 = u ? state.posts.filter(p => u.follows.includes(p.by) || u.childs.includes(p.by) || p.by===u.user) : [];
-  // Camada 2: todos
-  const all = state.posts.slice().sort((a,b)=>b.ts-a.ts);
-
-  const show = (layer1.length ? layer1.concat(all) : all).filter((p,idx,arr)=>{
-    // remove duplicados por id mantendo ordem
-    return idx===arr.findIndex(x=>x.id===p.id);
-  });
-
-  postCount.textContent = String(show.length);
-
-  // Reels row: só vídeos
-  const vids = show.filter(p=>p.type==="video").slice(0,8);
-  vids.forEach(p=> reelRow.appendChild(mediaEl(p,true)));
-
-  show.forEach(p=> feed.appendChild(mediaEl(p,false)));
-}
-
-function renderPerfil(){
-  const u = me();
-  const btnLogout = document.getElementById("btnLogout");
-  btnLogout.classList.toggle("hide", !u);
-  document.getElementById("followCount").textContent = u ? String(u.follows.length) : "0";
-  document.getElementById("childCount").textContent = u ? String(u.childs.length) : "0";
-  document.getElementById("followList").textContent = u && u.follows.length ? u.follows.join(", ") : "—";
-  document.getElementById("childList").textContent = u && u.childs.length ? u.childs.join(", ") : "—";
-
-  const my = u ? state.posts.filter(p=>p.by===u.user).sort((a,b)=>b.ts-a.ts) : [];
-  document.getElementById("myCount").textContent = String(my.length);
-  const grid = document.getElementById("myPosts");
-  grid.innerHTML="";
-  my.forEach(p=> grid.appendChild(mediaEl(p,true)));
-}
-
-function renderCarteira(){
-  const hist = document.getElementById("hist");
-  const histCount = document.getElementById("histCount");
-  hist.innerHTML="";
-  histCount.textContent = String(state.hist.length);
-  state.hist.slice(0,30).forEach(h=>{
-    const d=document.createElement("div");
-    d.className="notice";
-    d.innerHTML = \`<div class="hrow"><b>\${escapeHtml(h.type.toUpperCase())}</b><span class="muted">\${new Date(h.ts).toLocaleString()}</span></div><div class="muted" style="margin-top:6px">\${escapeHtml(h.msg)}</div>\`;
-    hist.appendChild(d);
-  });
-}
-
-function renderTrocas(){
-  const swapCount = document.getElementById("swapCount");
-  const swapGrid = document.getElementById("swapGrid");
-  swapGrid.innerHTML="";
-  swapCount.textContent = String(state.swaps.length);
-  state.swaps.slice().sort((a,b)=>b.ts-a.ts).forEach(s=>{
-    const c=document.createElement("div");
-    c.className="card";
-    c.style.padding="10px";
-    c.style.background="rgba(0,0,0,.18)";
-    c.innerHTML = \`
-      <div class="hrow">
-        <span class="pill">\${roleIcon(s.by)} <b>\${escapeHtml(s.by)}</b></span>
-        <span class="muted">\${new Date(s.ts).toLocaleString()}</span>
-      </div>
-      <div class="muted" style="margin-top:8px"><b>\${escapeHtml(s.title)}</b> • quero: \${escapeHtml(s.want)}</div>
-      <div class="muted" style="margin-top:6px">\${escapeHtml(s.desc||"")}</div>
-    \`;
-    if(s.data){
-      const m=document.createElement("div");
-      m.className="media";
-      m.style.marginTop="8px";
-      if(s.type==="video"){
-        const v=document.createElement("video");
-        v.src=s.data; v.playsInline=true; v.controls=true;
-        m.appendChild(v);
-      }else{
-        const img=document.createElement("img");
-        img.src=s.data;
-        m.appendChild(img);
-      }
-      c.appendChild(m);
+    if(key==="timeline"){ panels.timeline.style.display="block"; subTitle.textContent="Timeline • Perfil • Carteira"; renderFeeds(); }
+    if(key==="profile"){ panels.profile.style.display="block"; subTitle.textContent="Perfil • Posts • Minerar"; }
+    if(key==="wallet"){ panels.wallet.style.display="block"; subTitle.textContent="Carteira • Depósito • Saque"; }
+    if(key==="swaps"){ panels.swaps.style.display="block"; subTitle.textContent="Trocas • Publicações"; renderSwaps(); }
+    if(key==="adm"){
+      if(!isADM()) return toast("Somente ADM.");
+      panels.adm.style.display="block"; subTitle.textContent="ADM • Moderadores • Saques";
+      renderWithdrawsAdm();
     }
-    swapGrid.appendChild(c);
+    if(key==="live"){
+      subTitle.textContent="LIVE • Câmera";
+      startCam();
+      // volta visualmente pra timeline mas com câmera ativa no topo
+      panels.timeline.style.display="block";
+      renderFeeds();
+    }
   });
+});
+
+/* ====== Auth ====== */
+function ensureUserDefaults(u){
+  u.blue = u.blue||0;
+  u.children = u.children||0;
+  u.following = u.following||[];
+  u.banned = !!u.banned;
+  u.role = u.role||"user";
+  return u;
 }
-
-function renderADM(){
-  if(!isADM()) return;
-  const uList = document.getElementById("uList");
-  const uCount = document.getElementById("uCount");
-  uList.innerHTML="";
-  uCount.textContent = String(state.users.length);
-
-  state.users.slice().sort((a,b)=>a.user.localeCompare(b.user)).forEach(u=>{
-    const box=document.createElement("div");
-    box.className="notice";
-    const roleTxt = u.role==="adm" ? "ADM" : (u.role==="mod" ? "MOD" : "USER");
-    box.innerHTML = \`
-      <div class="hrow">
-        <b>\${roleIcon(u.user)} \${escapeHtml(u.user)} <span class="muted">(\${roleTxt})</span></b>
-        <span class="muted">\${u.banned ? "BANIDO" : "OK"}</span>
-      </div>
-      <div class="row" style="margin-top:10px;justify-content:space-between">
-        <button class="btn" data-act="mod">\${u.role==="mod" ? "Rebaixar" : "Virar MOD"}</button>
-        <button class="btn bad" data-act="ban">\${u.banned ? "Desbanir" : "Banir"}</button>
-      </div>
-    \`;
-    const [bMod,bBan] = box.querySelectorAll("button");
-    bMod.onclick=()=>{
-      if(u.user==="${ADM_LOGIN}") return alert("ADM é intocável.");
-      u.role = (u.role==="mod") ? "user" : "mod";
-      pushHist("adm", \`Role de \${u.user} -> \${u.role}\`);
-      persist(); renderAll();
-    };
-    bBan.onclick=()=>{
-      if(u.user==="${ADM_LOGIN}") return alert("ADM é intocável.");
-      u.banned = !u.banned;
-      pushHist("adm", \`\${u.banned ? "Banido" : "Desbanido"}: \${u.user}\`);
-      persist(); renderAll();
-    };
-    uList.appendChild(box);
-  });
-
-  const wList = document.getElementById("wList");
-  const wCount = document.getElementById("wCount");
-  wList.innerHTML="";
-  wCount.textContent = String(state.withdrawals.length);
-
-  state.withdrawals.slice().sort((a,b)=>b.ts-a.ts).forEach(w=>{
-    const box=document.createElement("div");
-    box.className="notice";
-    box.innerHTML = \`
-      <div class="hrow"><b>\${escapeHtml(w.user)}</b><span class="muted">\${new Date(w.ts).toLocaleString()}</span></div>
-      <div class="muted" style="margin-top:6px">Valor: <b>\${w.amount}</b> BLUE • Status: <b>\${escapeHtml(w.status)}</b></div>
-      <div class="row" style="margin-top:10px;justify-content:space-between">
-        <button class="btn good">Aprovar</button>
-        <button class="btn bad">Recusar</button>
-      </div>
-    \`;
-    const [ap,re] = box.querySelectorAll("button");
-    ap.onclick=()=>{
-      if(w.status!=="pendente") return;
-      w.status="aprovado";
-      pushHist("saque", \`Saque aprovado para \${w.user}: \${w.amount} BLUE\`);
-      persist(); renderAll();
-    };
-    re.onclick=()=>{
-      if(w.status!=="pendente") return;
-      w.status="recusado";
-      // devolve saldo
-      setBlue(getBlue()+Number(w.amount||0));
-      pushHist("saque", \`Saque recusado. Devolvido: \${w.amount} BLUE\`);
-      persist(); renderAll();
-    };
-    wList.appendChild(box);
-  });
-}
-
-function renderAll(){
-  renderTop();
-  renderTimeline();
-  renderPerfil();
-  renderCarteira();
-  renderTrocas();
-  renderADM();
-}
-
-/* ----------------- STAGE / CAMERA ----------------- */
-const stageMain = document.getElementById("stageMain");
-const stageHint = document.getElementById("stageHint");
-function stageVideo(src){
-  stageHint.style.display="none";
-  stageMain.style.display="block";
-  stageMain.src = src;
-  stageMain.currentTime = 0;
-  stageMain.muted = false;
-  stageMain.play().catch(()=>{});
-}
-
-// câmera (mostra preview local, sem subir pra servidor)
-document.getElementById("camBtn").onclick = async ()=>{
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
-    stageHint.style.display="none";
-    stageMain.style.display="block";
-    stageMain.srcObject = stream;
-    stageMain.controls = false;
-    stageMain.muted = true;
-    stageMain.play().catch(()=>{});
-  }catch(e){
-    alert("Não deu permissão da câmera.");
-  }
-};
-
-/* ----------------- LOGIN / REGISTER ----------------- */
-document.getElementById("btnLogin").onclick = ()=>{
-  const user = (document.getElementById("lgUser").value||"").trim();
-  const pass = (document.getElementById("lgPass").value||"").trim();
-  const u = state.users.find(x=>x.user===user);
-  if(!u || u.pass!==pass) return alert("Login ou senha errados.");
-  if(u.banned) return alert("Você está banido.");
-  state.session = { user, ts: Date.now() };
-  persist(); renderAll(); alert("Logado!");
-};
-document.getElementById("btnReg").onclick = ()=>{
-  const user = (document.getElementById("lgUser").value||"").trim();
-  const pass = (document.getElementById("lgPass").value||"").trim();
-  if(user.length<3 || pass.length<3) return alert("Usuário e senha mínimo 3 letras.");
-  if(state.users.some(x=>x.user===user)) return alert("Já existe.");
-  state.users.push({user, pass, role:"user", banned:false, follows:[], childs:[]});
-  state.session = { user, ts: Date.now() };
-  persist(); renderAll(); alert("Conta criada!");
-};
-document.getElementById("btnLogout").onclick = ()=>{
-  state.session=null; persist(); renderAll(); alert("Saiu.");
-};
-
-/* ----------------- POST (FOTO/VÍDEO) ----------------- */
-let picked = null;
-document.getElementById("filePick").onchange = async (e)=>{
-  const f = e.target.files && e.target.files[0];
-  if(!f) return;
-  picked = await fileToDataURL(f);
-  document.getElementById("pickInfo").textContent = \`\${f.type} • \${Math.round(f.size/1024)}KB\`;
-};
-document.getElementById("postBtn").onclick = ()=>{
-  const u = me();
-  if(!u) return alert("Entre primeiro.");
-  if(u.banned) return alert("Banido.");
-  if(!picked) return alert("Escolha um arquivo.");
-  const isVideo = picked.startsWith("data:video");
-  state.posts.unshift({id:uid(), by:u.user, type:isVideo?"video":"img", data:picked, text:"", ts:Date.now()});
-  picked=null;
-  document.getElementById("pickInfo").textContent="Postado!";
-  persist(); renderAll();
-};
-
-function fileToDataURL(file){
-  return new Promise((resolve,reject)=>{
-    const fr=new FileReader();
-    fr.onload=()=> resolve(fr.result);
-    fr.onerror=reject;
-    fr.readAsDataURL(file);
-  });
-}
-
-/* ----------------- TROCAS ----------------- */
-let swapPicked=null;
-document.getElementById("swapFile").onchange = async (e)=>{
-  const f = e.target.files && e.target.files[0];
-  if(!f) return;
-  swapPicked = await fileToDataURL(f);
-  document.getElementById("swapPickInfo").textContent = \`\${f.type} • \${Math.round(f.size/1024)}KB\`;
-};
-document.getElementById("swapPost").onclick = ()=>{
-  const u = me();
-  if(!u) return alert("Entre primeiro.");
-  const title = (document.getElementById("swapTitle").value||"").trim();
-  const want = (document.getElementById("swapWant").value||"").trim();
-  const desc = (document.getElementById("swapDesc").value||"").trim();
-  if(!title || !want) return alert("Preencha nome e o que quer em troca.");
-  let type="", data="";
-  if(swapPicked){
-    data=swapPicked;
-    type = swapPicked.startsWith("data:video") ? "video" : "img";
-  }
-  state.swaps.unshift({id:uid(), by:u.user, title, want, desc, type, data, ts:Date.now()});
-  document.getElementById("swapTitle").value="";
-  document.getElementById("swapWant").value="";
-  document.getElementById("swapDesc").value="";
-  swapPicked=null;
-  document.getElementById("swapPickInfo").textContent="Publicado!";
-  persist(); renderAll();
-};
-
-/* ----------------- CARTEIRA (DEP/SAC) ----------------- */
-document.getElementById("depMock").onclick = ()=>{
-  const u = me(); if(!u) return alert("Entre primeiro.");
-  const v = Number((document.getElementById("depVal").value||"").replace(",","."));
-  if(!v || v<1) return alert("Valor inválido.");
-  setBlue(getBlue()+v);
-  pushHist("deposito", \`Depósito teste: +\${v} BLUE\`);
-  document.getElementById("depMsg").textContent = "Depósito teste aplicado.";
-  persist(); renderAll();
-};
-
-document.getElementById("depMP").onclick = async ()=>{
-  const u = me(); if(!u) return alert("Entre primeiro.");
-  const v = Number((document.getElementById("depVal").value||"").replace(",","."));
-  if(!v || v<1) return alert("Valor inválido.");
-
-  document.getElementById("depMsg").textContent = "Criando pagamento no Mercado Pago...";
-  try{
-    const r = await fetch("/api?op=mp_create", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ amount: v, user: u.user })
-    });
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error || "Falha");
-    document.getElementById("depMsg").textContent = "Abrindo pagamento...";
-    window.open(j.init_point, "_blank");
-    pushHist("deposito", \`Link MP gerado: R$\${v} (usuário \${u.user})\`);
-    persist(); renderAll();
-  }catch(e){
-    document.getElementById("depMsg").textContent = "Erro: " + (e.message||e);
-    alert("Depósito real não habilitado. Configure MP_ACCESS_TOKEN no Vercel.");
-  }
-};
-
-document.getElementById("saqReq").onclick = ()=>{
-  const u = me(); if(!u) return alert("Entre primeiro.");
-  const v = Number((document.getElementById("saqVal").value||"").replace(",","."));
-  if(!v || v<1) return alert("Valor inválido.");
-  if(getBlue() < v) return alert("Sem saldo.");
-  setBlue(getBlue()-v);
-  state.withdrawals.unshift({id:uid(), user:u.user, amount:v, status:"pendente", ts:Date.now()});
-  pushHist("saque", \`Pedido de saque: -\${v} BLUE (pendente)\`);
-  document.getElementById("saqMsg").textContent = "Pedido enviado. ADM vai aprovar/recusar.";
-  persist(); renderAll();
-};
-
-/* ----------------- MINER (JOGO) ----------------- */
-let ice = Number(LS.get("ice_ice", 100));
-function setIce(v){
-  ice = Math.max(0, Math.min(100, v));
-  LS.set("ice_ice", ice);
-  document.getElementById("iceFill").style.width = ice + "%";
-  document.getElementById("iceText").textContent = "Gelo " + ice + "%";
-}
-setIce(ice);
-
-document.getElementById("mineBtn").onclick = ()=>{
-  const u = me(); if(!u) return alert("Entre primeiro.");
-  if(!isADM()) return alert("Somente ADM pode iniciar o modo mineração.");
-  const hit = 8 + Math.floor(Math.random()*12);
-  setIce(ice - hit);
-  const gain = 1 + Math.floor(Math.random()*3);
-  setBlue(getBlue()+gain);
-  pushHist("mining", \`Urso quebrou \${hit}% do gelo • +\${gain} BLUE\`);
-  document.getElementById("mineMsg").textContent = \`+ \${gain} BLUE • gelo agora \${ice}%\`;
-  if(ice<=0){
-    const bonus = 20;
-    setBlue(getBlue()+bonus);
-    pushHist("mining", \`Bloco quebrado! Bônus: +\${bonus} BLUE\`);
-    setIce(100);
-    document.getElementById("mineMsg").textContent = "BLOCO QUEBRADO! +"+bonus+" BLUE (novo gelo 100%).";
-  }
-  persist(); renderAll();
-};
-
-/* ----------------- HELPERS / SAMPLE IMG ----------------- */
-function sampleImg(){
-  // florzinha simples (dataURL pequeno)
-  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='%2338bdf8'/><stop offset='1' stop-color='%230b2a6a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23g)'/><circle cx='140' cy='120' r='80' fill='rgba(255,255,255,.18)'/><circle cx='680' cy='90' r='120' fill='rgba(255,255,255,.10)'/><text x='40' y='280' fill='white' font-family='Arial' font-size='56' font-weight='900'>ICE-CUBO</text><text x='40' y='340' fill='rgba(255,255,255,.8)' font-family='Arial' font-size='26'>timeline • perfil • carteira</text></svg>"
-  );
-}
-function sampleImg2(){
-  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23061727'/><circle cx='520' cy='230' r='160' fill='rgba(56,189,248,.18)'/><text x='50' y='250' fill='%23e9f5ff' font-family='Arial' font-size='48' font-weight='900'>Arrasta pro lado</text><text x='50' y='310' fill='%239cc9ea' font-family='Arial' font-size='26'>e dá 2 toques no vídeo</text></svg>"
-  );
-}
-
-/* ----------------- START ----------------- */
-bootDefaults();
-renderAll();
-</script>
-</body>
-</html>`);
-  } catch (e) {
-    return sendJSON(res, 500, { ok: false, error: String(e && e.message ? e.message : e) });
-  }
-};
+$("btnCreate").onclick = ()=>{
+  const login = ($("uLogin").value||"").trim();
+  const pass  = ($("uPass").value||"").trim();
+  if(!login || !pass) return toast("Preencha login e senha.");
+  if(login === "${ADM_LOGIN}") return toast("Login reservado.");
+  const users =
