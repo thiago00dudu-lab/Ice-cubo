@@ -1,350 +1,320 @@
 const MP = "https://api.mercadopago.com";
 
-// ===== CONFIG =====
-const BLUE_PER_BRL = 100;
-const MIN_DEPOSIT_BRL = 0.05;   // se MP recusar, use 1.00
-const MIN_WITHDRAW_BLUE = 50;
+// ====== CONFIG (mude só aqui) ======
+const BLUE_PER_BRL = 100;      // 1,00 R$ = 100 BLUE
+const MIN_DEPOSIT_BRL = 1.00;  // MP quase sempre recusa 0,05 no Pix. Use 1,00 pra testar.
+const MIN_WITHDRAW_BLUE = 50;  // saque mínimo (pedido)
+const USER_SHARE = 0.85;       // 85% pro comprador (em BLUE)
+const SITE_SHARE = 0.10;       // 10% pro site (em BLUE)
+const REF_SHARE  = 0.05;       // 5% pro "pai" (indicador) ou pro site se não tiver pai
 
-// ===== DB (demo) =====
-globalThis.DB ||= { users:{}, deposits:{}, withdraws:[] };
+// ====== "DB" em memória (DEMO) ======
+globalThis.DB ||= {
+  users: {},      // username -> { pass, email, parent, blue, posts:[] }
+  sessions: {},   // sid -> username
+  deposits: {},   // paymentId -> { username, brl, blueTotal, createdAt, status }
+  withdraws: []   // { username, blue, pixKey, createdAt, status }
+};
 const DB = globalThis.DB;
 
-function uid(n=24){const a="abcdefghijklmnopqrstuvwxyz0123456789";let s="";for(let i=0;i<n;i++)s+=a[(Math.random()*a.length)|0];return s;}
+// ====== helpers ======
+function uid(n=24){
+  const a="abcdefghijklmnopqrstuvwxyz0123456789";
+  let s=""; for(let i=0;i<n;i++) s+=a[(Math.random()*a.length)|0];
+  return s;
+}
+function cookieGet(req,name){
+  const c=req.headers.cookie||"";
+  const m=c.match(new RegExp("(^|; )"+name+"=([^;]+)"));
+  return m?decodeURIComponent(m[2]):"";
+}
+function cookieSet(res,name,val){
+  res.setHeader("Set-Cookie", `${name}=${encodeURIComponent(val)}; Path=/; HttpOnly; SameSite=Lax`);
+}
 async function readBody(req){
-  let raw=""; await new Promise(r=>{req.on("data",c=>raw+=c); req.on("end",r);});
-  if(!raw) return {};
-  try{return JSON.parse(raw)}catch{return {}}
-}
-function json(res,code,obj){res.statusCode=code;res.setHeader("Content-Type","application/json; charset=utf-8");res.end(JSON.stringify(obj));}
-function html(res,str){res.statusCode=200;res.setHeader("Content-Type","text/html; charset=utf-8");res.end(str);}
-
-async function mpCreatePix({ token, email, amount }){
-  const transaction_amount = Math.round(Number(amount)*100)/100;
-  const r = await fetch(`${MP}/v1/payments`,{
-    method:"POST",
-    headers:{
-      Authorization:`Bearer ${token}`,
-      "Content-Type":"application/json",
-      "X-Idempotency-Key": uid(18)
-    },
-    body: JSON.stringify({
-      transaction_amount,
-      description:"Compra BLUE - ICE-CUBO",
-      payment_method_id:"pix",
-      payer:{ email }
-    })
+  if (req.body) return req.body;
+  let raw="";
+  await new Promise(r=>{
+    req.on("data",c=>raw+=c);
+    req.on("end",r);
   });
-  const data = await r.json();
-  if(!r.ok) throw new Error(JSON.stringify(data));
-  const tx = data.point_of_interaction?.transaction_data || {};
-  return {
-    paymentId:data.id,
-    status:data.status,
-    amount:data.transaction_amount,
-    qr_code:tx.qr_code||null,
-    qr_code_base64:tx.qr_code_base64||null
-  };
+  try { return raw?JSON.parse(raw):{}; } catch { return {}; }
+}
+function me(req){
+  const sid=cookieGet(req,"sid");
+  const u=DB.sessions[sid];
+  return u?{username:u, ...DB.users[u]}:null;
+}
+function json(res,code,obj){
+  res.statusCode=code;
+  res.setHeader("Content-Type","application/json; charset=utf-8");
+  res.end(JSON.stringify(obj));
+}
+function html(res,code,str){
+  res.statusCode=code;
+  res.setHeader("Content-Type","text/html; charset=utf-8");
+  res.end(str);
+}
+function splitCredit(username, blueTotal){
+  const buyer = Math.floor(blueTotal*USER_SHARE);
+  const site  = Math.floor(blueTotal*SITE_SHARE);
+  const ref   = Math.max(0, blueTotal - buyer - site);
+
+  DB.users[username].blue = (DB.users[username].blue||0) + buyer;
+
+  const parent = DB.users[username].parent;
+  if (parent && DB.users[parent]) {
+    DB.users[parent].blue = (DB.users[parent].blue||0) + ref;
+  } else {
+    // se não tem pai, vai pro site (admin)
+    if (DB.users["admin"]) DB.users["admin"].blue = (DB.users["admin"].blue||0) + ref;
+  }
+  if (DB.users["admin"]) DB.users["admin"].blue = (DB.users["admin"].blue||0) + site;
+
+  return { buyer, site, refTo: (parent && DB.users[parent]) ? parent : "admin", ref };
 }
 
-async function mpGetPayment({ token, id }){
-  const r = await fetch(`${MP}/v1/payments/${id}`,{ headers:{Authorization:`Bearer ${token}`}});
-  const data = await r.json();
-  if(!r.ok) throw new Error(JSON.stringify(data));
-  return data;
-}
+// ====== UI ======
+function page(user){
+  const u = user?.username || "";
+  const blue = user?.blue || 0;
 
-function creditBlue(username, amountBRL){
-  const u = DB.users[username]; if(!u) return;
-  const totalBlue = Math.floor(Number(amountBRL) * BLUE_PER_BRL);
-  u.blue = (u.blue||0) + totalBlue; // demo simples: credita 100% pro comprador
-}
+  const usersList = Object.keys(DB.users)
+    .filter(x=>x!=="admin")
+    .slice(0,50)
+    .map(x=>`<button class="uitem" onclick="openProfile('${x}')">@${x}</button>`)
+    .join("") || `<div class="muted">Sem usuários ainda.</div>`;
 
-function page(){
   return `<!doctype html><html lang="pt-br"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ICE-CUBO</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ICE-CUBO • BLUE</title>
 <style>
-:root{--bg:#0b1220;--card:#111c33;--line:#22314f;--txt:#eaf2ff;--mut:#9bb0d1;--pri:#4aa3ff;--ok:#22c55e;--bad:#ef4444}
-*{box-sizing:border-box} body{margin:0;font-family:system-ui;background:radial-gradient(900px 560px at 15% 10%,#132a55,transparent),var(--bg);color:var(--txt)}
-.wrap{max-width:720px;margin:0 auto;padding:14px}
-.card{border:1px solid var(--line);background:rgba(17,28,51,.78);border-radius:18px;padding:12px;margin-top:12px}
-h1,h2{margin:0 0 8px 0}
-.small{color:var(--mut);font-size:12px}
-.in{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0a1428;color:var(--txt);margin-top:8px}
-.btn{cursor:pointer;border:none;border-radius:14px;padding:12px 14px;font-weight:900;width:100%;margin-top:8px}
-.btnPri{background:linear-gradient(180deg,#4aa3ff,#2d7dff);color:#031027}
-.btnLine{background:transparent;border:1px solid var(--line);color:var(--txt)}
-.big{padding:14px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(74,163,255,.16),rgba(255,255,255,.03));cursor:pointer;margin-top:10px}
-.alert{display:none;margin-top:10px;padding:10px;border-radius:14px;border:1px solid var(--line)}
-.ok{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.1)}
-.bad{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.1)}
-.qr{display:none;margin-top:10px}
-.qr img{width:220px;height:220px;border-radius:14px;border:1px solid var(--line);background:#fff}
-</style></head>
-<body><div class="wrap">
-
-<div class="card">
-  <h1>ICE-CUBO • BLUE</h1>
-  <div class="small">Login/Cadastro • Depósito/Compra • Saque • Minerar</div>
-</div>
-
-<div class="card" id="auth">
-  <h2>Entrar</h2>
-  <input class="in" id="lu" placeholder="Usuário"/>
-  <input class="in" id="lp" type="password" placeholder="Senha"/>
-  <button class="btn btnPri" onclick="login()">Entrar</button>
-  <div class="small" style="margin-top:8px">ou</div>
-  <h2 style="margin-top:8px">Cadastrar</h2>
-  <input class="in" id="ru" placeholder="Novo usuário"/>
-  <input class="in" id="re" placeholder="Email (para PIX)"/>
-  <input class="in" id="rp" type="password" placeholder="Senha"/>
-  <button class="btn btnLine" onclick="reg()">Criar conta</button>
-  <div class="alert bad" id="amsg"></div>
-</div>
-
-<div class="card" id="app" style="display:none">
-  <h2>Meu perfil</h2>
-  <div class="small">Usuário: <b id="meu"></b> • BLUE: <b id="blue"></b></div>
-  <button class="btn btnLine" onclick="logout()">Sair</button>
-
-  <div class="big" onclick="showDep()">💳 Comprar / Depositar BLUE</div>
-  <div class="big" onclick="showW()">🏧 Sacar BLUE</div>
-  <div class="big" onclick="mine()">⛏️ Minerar (bloco) +50</div>
-
-  <div id="dep" style="display:none">
-    <input class="in" id="amount" placeholder="Valor em R$ (ex: 1.00)" inputmode="decimal"/>
-    <button class="btn btnPri" onclick="createPix()">Gerar PIX</button>
-    <div class="alert" id="dmsg"></div>
-    <div class="qr" id="qr">
-      <div class="small">QR:</div>
-      <img id="qrImg"/>
-      <div class="small" style="margin-top:8px">Copia e cola:</div>
-      <textarea class="in" id="qrText" rows="3" readonly></textarea>
-      <button class="btn btnLine" onclick="checkPay()">Verificar pagamento</button>
+:root{--bg:#071021;--card:#0c1a33;--b:#1b315e;--t:#dbeafe;--mut:#93c5fd;--a:#38bdf8;--g:#FFD700;}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:radial-gradient(1200px 800px at 10% 0%,#0b2a55,transparent 60%),var(--bg);color:var(--t)}
+.top{padding:14px 14px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{font-weight:900;letter-spacing:.5px}
+.bear{width:44px;height:44px;border-radius:14px;background:linear-gradient(180deg,#0ea5e9,#1d4ed8);
+display:grid;place-items:center;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.bear:before{content:"🐻‍❄️";font-size:26px;position:absolute;left:9px;top:8px;animation:bear 1.2s ease-in-out infinite}
+.bear:after{content:"🪙";position:absolute;right:8px;bottom:7px;font-size:18px;opacity:.9;animation:coin 1.2s ease-in-out infinite}
+@keyframes bear{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+@keyframes coin{0%,100%{transform:translateX(0)}50%{transform:translateX(-3px)}}
+.pill{background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.25);padding:6px 10px;border-radius:999px;font-size:12px;color:#c7f9ff}
+.wrap{padding:12px;display:grid;gap:12px;max-width:980px;margin:0 auto}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+border:1px solid rgba(147,197,253,.16);border-radius:18px;padding:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input,button{border-radius:14px;border:1px solid rgba(147,197,253,.22);background:#07162f;color:var(--t);padding:12px 12px;font-size:14px}
+button{cursor:pointer}
+.primary{background:linear-gradient(90deg,#38bdf8,#60a5fa);color:#001018;border:none;font-weight:800}
+.bigActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bigActions button{padding:14px 10px;font-weight:900}
+.badge{font-size:12px;color:#001018;background:var(--g);border-radius:999px;padding:4px 8px;font-weight:900}
+.muted{color:var(--mut);font-size:12px}
+.hr{height:1px;background:rgba(147,197,253,.12);margin:10px 0}
+.uitem{width:100%;text-align:left}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}.bigActions{grid-template-columns:1fr}}
+.qrimg{max-width:260px;width:100%;border-radius:14px;border:1px solid rgba(147,197,253,.2)}
+</style></head><body>
+<div class="top">
+  <div class="brand">
+    <div class="bear" title="O urso tenta tirar a moeda... mas nunca consegue 😅"></div>
+    <div>
+      <div class="logo">ICE-CUBO <span class="badge">BLUE</span></div>
+      <div class="muted">Depósito via Pix (Mercado Pago) • Crédito automático via webhook</div>
     </div>
   </div>
+  <div class="pill">${user?`Logado: <b>@${u}</b> • Saldo: <b>${blue} BLUE</b>`:`Você não está logado`}</div>
+</div>
 
-  <div id="w" style="display:none">
-    <input class="in" id="wamt" placeholder="Quantidade BLUE (mín ${MIN_WITHDRAW_BLUE})" inputmode="numeric"/>
-    <input class="in" id="wpix" placeholder="Sua chave PIX"/>
-    <button class="btn btnPri" onclick="withdraw()">Pedir saque</button>
-    <div class="alert" id="wmsg"></div>
+<div class="wrap">
+
+  <div class="card">
+    ${user ? `
+      <div class="row">
+        <button onclick="logout()">Sair</button>
+        <div class="muted">Indicação: se alguém entrar usando seu link, você vira “pai” e ganha <b>5%</b> dos depósitos do seu “filho”.</div>
+      </div>
+      <div class="hr"></div>
+
+      <div class="bigActions">
+        <button class="primary" onclick="openDeposit()">💳 DEPOSITAR (comprar BLUE)</button>
+        <button class="primary" onclick="openWithdraw()">🏦 SACAR (pedido)</button>
+        <button class="primary" onclick="mine()">⛏️ MINERAR (bloco)</button>
+      </div>
+
+      <div id="panel" class="card" style="margin-top:12px;display:none"></div>
+    ` : `
+      <div class="grid2">
+        <div>
+          <div style="font-weight:900;margin-bottom:8px">Entrar</div>
+          <div class="row">
+            <input id="l_user" placeholder="usuário">
+            <input id="l_pass" placeholder="senha" type="password">
+            <button class="primary" onclick="login()">Entrar</button>
+          </div>
+          <div class="muted" style="margin-top:6px">Se estiver entrando por indicação, o link já salva o “pai”.</div>
+        </div>
+        <div>
+          <div style="font-weight:900;margin-bottom:8px">Cadastrar</div>
+          <div class="row">
+            <input id="r_user" placeholder="usuário">
+            <input id="r_email" placeholder="email">
+            <input id="r_pass" placeholder="senha" type="password">
+            <button class="primary" onclick="register()">Cadastrar</button>
+          </div>
+          <div class="muted" style="margin-top:6px">Ganhe 5% dos depósitos dos seus indicados: compartilhe seu perfil!</div>
+        </div>
+      </div>
+    `}
   </div>
-</div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div style="font-weight:900">Perfis (toque para abrir)</div>
+      <button onclick="copyMyLink()" ${user?'':'disabled'}>Compartilhar meu link</button>
+    </div>
+    <div class="hr"></div>
+    <div style="display:grid;gap:8px">${usersList}</div>
+  </div>
+
+  <div class="card" id="profileBox" style="display:none"></div>
 
 </div>
+
 <script>
-let paymentId=null;
+const qs=new URLSearchParams(location.search);
+const parent=qs.get("ref");
+if(parent){ localStorage.setItem("ref_parent", parent); }
 
-function showAlert(id, ok, txt){
-  const el=document.getElementById(id);
-  el.className="alert "+(ok?"ok":"bad");
-  el.style.display="block";
-  el.textContent=txt;
+function showPanel(html){
+  const p=document.getElementById("panel");
+  p.style.display="block";
+  p.innerHTML=html;
 }
-
-async function post(a,data){
-  const r=await fetch("/api?a="+encodeURIComponent(a),{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(data||{})
-  });
-  return r.json().catch(()=>({ok:false,errorText:"json"}));
+function hidePanel(){
+  const p=document.getElementById("panel");
+  p.style.display="none";
+  p.innerHTML="";
 }
-
-function openApp(user){
-  localStorage.setItem("u", user.username);
-  document.getElementById("auth").style.display="none";
-  document.getElementById("app").style.display="block";
-  document.getElementById("meu").textContent="@"+user.username;
-  document.getElementById("blue").textContent=user.blue||0;
+async function api(path, body){
+  const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})});
+  return r.json();
 }
-async function refresh(){
-  const u=localStorage.getItem("u");
-  if(!u) return;
-  const j=await post("me",{});
-  if(j.ok) openApp(j.user);
-}
-
-async function reg(){
-  const j=await post("register",{username:ru.value,email:re.value,pass:rp.value});
-  if(!j.ok){showAlert("amsg",false,j.errorText||"erro");return;}
-  showAlert("amsg",true,"Conta criada! Faça login.");
+async function register(){
+  const u=document.getElementById("r_user").value.trim();
+  const e=document.getElementById("r_email").value.trim();
+  const p=document.getElementById("r_pass").value;
+  const parent=localStorage.getItem("ref_parent")||"";
+  const j=await api("/api/register",{username:u,email:e,pass:p,parent});
+  alert(j.ok?"Cadastrado! Recarregando...":"Erro: "+j.error);
+  if(j.ok) location.href="/";
 }
 async function login(){
-  const j=await post("login",{username:lu.value,pass:lp.value});
-  if(!j.ok){showAlert("amsg",false,j.errorText||"erro");return;}
-  openApp(j.user);
+  const u=document.getElementById("l_user").value.trim();
+  const p=document.getElementById("l_pass").value;
+  const j=await api("/api/login",{username:u,pass:p});
+  alert(j.ok?"Logado!":"Erro: "+j.error);
+  if(j.ok) location.href="/";
 }
-function logout(){
-  localStorage.removeItem("u");
-  location.reload();
+async function logout(){
+  await api("/api/logout",{});
+  location.href="/";
 }
 
-function showDep(){dep.style.display="block"; w.style.display="none";}
-function showW(){w.style.display="block"; dep.style.display="none";}
-
+function openDeposit(){
+  showPanel(\`
+    <div style="font-weight:900;margin-bottom:8px">💳 Depositar (Pix Mercado Pago)</div>
+    <div class="muted">Teste mínimo: <b>R$ ${MIN_DEPOSIT_BRL.toFixed(2)}</b>. (MP quase sempre recusa R$0,05)</div>
+    <div class="row" style="margin-top:10px">
+      <input id="dep_amount" type="number" step="0.01" min="${MIN_DEPOSIT_BRL}" value="${MIN_DEPOSIT_BRL}" style="flex:1" placeholder="valor em R$">
+      <button class="primary" onclick="createPix()">Gerar QR</button>
+      <button onclick="hidePanel()">Fechar</button>
+    </div>
+    <div id="dep_out" style="margin-top:10px"></div>
+    <div class="hr"></div>
+    <div class="muted"><b>Indique e ganhe:</b> 5% de cada depósito do seu “filho” é seu. Compartilhe seu perfil!</div>
+  \`);
+}
 async function createPix(){
-  const amount=String(document.getElementById("amount").value||"").replace(",",".");
-  const j=await post("create",{amount});
-  if(!j.ok){showAlert("dmsg",false,j.errorText||"erro");return;}
-  paymentId=j.paymentId;
-  showAlert("dmsg",true,"PIX criado. Pague e clique em verificar.");
-  qr.style.display="block";
-  qrText.value=j.qr_code||"";
-  if(j.qr_code_base64) qrImg.src="data:image/png;base64,"+j.qr_code_base64;
+  const v=Number(document.getElementById("dep_amount").value);
+  const out=document.getElementById("dep_out");
+  out.innerHTML="Gerando...";
+  const j=await api("/api/mp_create",{amount:v});
+  if(!j.ok){ out.innerHTML="<b>Erro:</b> "+JSON.stringify(j.error); return; }
+  const img=j.qr_code_base64?(\`<img class="qrimg" src="data:image/png;base64,\${j.qr_code_base64}">\`):"";
+  out.innerHTML=\`
+    <div class="card">
+      <div style="font-weight:900">QR gerado ✅</div>
+      <div class="muted">Pagamento: <b>#\${j.paymentId}</b> • Status: <b>\${j.status}</b></div>
+      <div style="margin-top:10px;display:grid;gap:10px;place-items:start">
+        \${img}
+        <textarea style="width:100%;min-height:90px" readonly>\${j.qr_code||""}</textarea>
+        <button class="primary" onclick="pollPaid('\${j.paymentId}')">Já paguei (verificar)</button>
+      </div>
+    </div>
+  \`;
+}
+async function pollPaid(id){
+  const out=document.getElementById("dep_out");
+  out.innerHTML+="<div class='muted'>Consultando pagamento...</div>";
+  const r=await fetch("/api/mp_status?id="+encodeURIComponent(id));
+  const j=await r.json();
+  if(!j.ok){ out.innerHTML+="<div><b>Erro:</b> "+JSON.stringify(j.error)+"</div>"; return; }
+  out.innerHTML+=\`<div><b>Status:</b> \${j.status} • <b>Credited:</b> \${j.credited?"SIM":"NÃO"}</div>\`;
+  if(j.credited){ out.innerHTML+="<div class='muted'>Se creditou, recarrega a página pra ver saldo.</div>"; }
 }
 
-async function checkPay(){
-  if(!paymentId){showAlert("dmsg",false,"Crie um PIX primeiro");return;}
-  const r=await fetch("/api?a=status&id="+encodeURIComponent(paymentId));
-  const j=await r.json().catch(()=>({ok:false}));
-  if(!j.ok){showAlert("dmsg",false,"Falha ao consultar");return;}
-  showAlert("dmsg",true,"Status: "+j.status);
-  if(j.status==="approved"){
-    document.getElementById("blue").textContent=j.myBlue;
+function openWithdraw(){
+  showPanel(\`
+    <div style="font-weight:900;margin-bottom:8px">🏦 Sacar (pedido)</div>
+    <div class="muted">Saque mínimo: <b>${MIN_WITHDRAW_BLUE} BLUE</b>. Aqui é <b>pedido</b> (sem transferência automática ainda).</div>
+    <div class="row" style="margin-top:10px">
+      <input id="w_blue" type="number" min="${MIN_WITHDRAW_BLUE}" value="${MIN_WITHDRAW_BLUE}" style="flex:1" placeholder="BLUE">
+      <input id="w_pix" placeholder="Sua chave Pix" style="flex:2">
+      <button class="primary" onclick="withdrawReq()">Pedir saque</button>
+      <button onclick="hidePanel()">Fechar</button>
+    </div>
+    <div id="w_out" style="margin-top:10px"></div>
+  \`);
+}
+async function withdrawReq(){
+  const blue=Number(document.getElementById("w_blue").value);
+  const pixKey=document.getElementById("w_pix").value.trim();
+  const j=await api("/api/withdraw",{blue,pixKey});
+  document.getElementById("w_out").innerHTML=j.ok
+    ? "<div class='card'><b>Pedido criado ✅</b><div class='muted'>Status: pendente</div></div>"
+    : "<b>Erro:</b> "+j.error;
+}
+
+let lastMine=Number(localStorage.getItem("lastMine")||0);
+function mine(){
+  const now=Date.now();
+  const cooldown=60*1000; // 1 min por bloco (DEMO)
+  if(now-lastMine<cooldown){
+    const s=Math.ceil((cooldown-(now-lastMine))/1000);
+    alert("Aguarde "+s+"s para minerar outro bloco.");
+    return;
   }
+  lastMine=now; localStorage.setItem("lastMine", String(now));
+  api("/api/mine",{}).then(j=>{
+    alert(j.ok ? ("Bloco minerado! +"+j.got+" BLUE (demo)") : ("Erro: "+j.error));
+    if(j.ok) location.reload();
+  });
 }
 
-async function withdraw(){
-  const amount=Number(wamt.value||0);
-  const pix=String(wpix.value||"").trim();
-  const j=await post("withdraw",{amount,pix});
-  if(!j.ok){showAlert("wmsg",false,j.errorText||"erro");return;}
-  showAlert("wmsg",true,"Pedido registrado (demo).");
-  document.getElementById("blue").textContent=j.myBlue;
-}
-
-async function mine(){
-  showAlert("dmsg",true,"Minerando... 5s");
-  await new Promise(r=>setTimeout(r,5000));
-  const j=await post("mine",{});
-  if(!j.ok){showAlert("dmsg",false,"falhou");return;}
-  showAlert("dmsg",true,"Bloco concluído! +50 BLUE");
-  document.getElementById("blue").textContent=j.myBlue;
-}
-
-refresh();
-</script>
-</body></html>`;
-}
-
-// ===== HANDLER =====
-module.exports = async (req,res)=>{
-  try{
-    const url=new URL(req.url,"https://x.local");
-    const a=url.searchParams.get("a")||"";
-    const token=process.env.MP_ACCESS_TOKEN||"";
-
-    if(req.method==="GET" && !a) return html(res,page());
-
-    // rotas
-    if(a==="register"){
-      const b=await readBody(req);
-      const username=String(b.username||"").trim().toLowerCase();
-      const email=String(b.email||"").trim();
-      const pass=String(b.pass||"").trim();
-      if(!username||!email||!pass) return json(res,400,{ok:false,errorText:"Preencha usuário/email/senha"});
-      if(DB.users[username]) return json(res,400,{ok:false,errorText:"Usuário já existe"});
-      DB.users[username]={email,pass,blue:0};
-      return json(res,200,{ok:true});
-    }
-
-    if(a==="login"){
-      const b=await readBody(req);
-      const username=String(b.username||"").trim().toLowerCase();
-      const pass=String(b.pass||"").trim();
-      const u=DB.users[username];
-      if(!u||u.pass!==pass) return json(res,401,{ok:false,errorText:"Login inválido"});
-      return json(res,200,{ok:true,user:{username,blue:u.blue||0,email:u.email}});
-    }
-
-    // "me" vem do localStorage (manda username no header/body)
-    if(a==="me"){
-      const b=await readBody(req);
-      const username=(b.username||"");
-      // no front eu não mando username aqui, então pego do referer/localStorage não dá — então devolvo ok false.
-      // solução: o front já guarda e não precisa desse endpoint para abrir.
-      return json(res,200,{ok:false});
-    }
-
-    if(a==="create"){
-      const b=await readBody(req);
-      const username=String(b.username||"").trim().toLowerCase();
-      // no nosso front, o username está no localStorage, então mandamos pelo próprio storage? (não mandamos)
-      // então vamos aceitar email do body também:
-      const email=String(b.email||"").trim();
-      const amount=Number(String(b.amount||"").replace(",","."));
-      if(!token) return json(res,500,{ok:false,errorText:"MP_ACCESS_TOKEN não configurado"});
-      if(Number.isNaN(amount)||amount<=0) return json(res,400,{ok:false,errorText:"Valor inválido"});
-      if(amount<MIN_DEPOSIT_BRL) return json(res,400,{ok:false,errorText:`Mínimo R$ ${MIN_DEPOSIT_BRL}`});
-      if(!email) return json(res,400,{ok:false,errorText:"Faltou email (cadastre e use o app)"}); // simples
-
-      const created=await mpCreatePix({token,email,amount});
-      DB.deposits[created.paymentId]={ username, email, amount, status:created.status, credited:false };
-      return json(res,200,{ok:true,...created});
-    }
-
-    if(a==="status"){
-      const id=url.searchParams.get("id");
-      if(!id) return json(res,400,{ok:false});
-      if(!token) return json(res,500,{ok:false});
-      const pay=await mpGetPayment({token,id});
-      const status=pay.status||"unknown";
-      DB.deposits[id] ||= { username:"", amount:pay.transaction_amount||0, credited:false };
-      DB.deposits[id].status=status;
-
-      if(status==="approved" && DB.deposits[id].credited!==true){
-        DB.deposits[id].credited=true;
-        if(DB.deposits[id].username) creditBlue(DB.deposits[id].username, pay.transaction_amount||DB.deposits[id].amount);
-      }
-      return json(res,200,{ok:true,status,myBlue:0});
-    }
-
-    if(a==="webhook"){
-      if(!token) return json(res,200,{ok:true});
-      const b=await readBody(req);
-      const pid=b?.data?.id || b?.id || url.searchParams.get("id") || null;
-      if(!pid) return json(res,200,{ok:true});
-      const pay=await mpGetPayment({token,id:pid});
-      const status=pay.status||"unknown";
-      const dep=DB.deposits[pid];
-      if(dep){
-        dep.status=status;
-        if(status==="approved" && dep.credited!==true){
-          dep.credited=true;
-          if(dep.username) creditBlue(dep.username, pay.transaction_amount||dep.amount);
-        }
-      }
-      return json(res,200,{ok:true});
-    }
-
-    if(a==="withdraw"){
-      const b=await readBody(req);
-      const username=String(b.username||"").trim().toLowerCase();
-      const amount=Math.floor(Number(b.amount||0));
-      const pix=String(b.pix||"").trim();
-      const u=DB.users[username];
-      if(!u) return json(res,401,{ok:false,errorText:"Faça login"});
-      if(!pix) return json(res,400,{ok:false,errorText:"Informe chave PIX"});
-      if(!amount || amount<MIN_WITHDRAW_BLUE) return json(res,400,{ok:false,errorText:`Mínimo ${MIN_WITHDRAW_BLUE} BLUE`});
-      if((u.blue||0)<amount) return json(res,400,{ok:false,errorText:"Saldo insuficiente"});
-      u.blue-=amount;
-      DB.withdraws.push({username,amount,pix,at:Date.now(),status:"pending"});
-      return json(res,200,{ok:true,myBlue:u.blue});
-    }
-
-    if(a==="mine"){
-      const b=await readBody(req);
-      const username=String(b.username||"").trim().toLowerCase();
-      const u=DB.users[username];
-      if(!u) return json(res,401,{ok:false});
-      u.blue=(u.blue||0)+50;
-      return json(res,200,{ok:true,myBlue:u.blue});
-    }
-
-    return html(res,page());
-  }catch(e){
-    return json(res,500,{ok:false,errorText:e.message});
-  }
-};
+async function openProfile(u){
+  const r=await fetch("/api/profile?u="+encodeURIComponent(u));
+  const j=await r.json();
+  const box=document.getElementById("profileBox");
+  box.style.display="block";
+  if(!j.ok){ box.innerHTML="<b>Erro:</b> "+JSON.stringify(j.error); return; }
+  box.innerHTML=\`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div style="font-weight:900">@\${j.username}</div>
+      <button onclick="copyLink('@\${j.username}','\${j.username}')">Copiar link</button>
+    </div>
+    <div class="muted">Saldo: <b>\${j.blue} BLUE</b> • Pai: <b>\${j.parent||"—"}</b></div>
+    <div class="hr"></div>
