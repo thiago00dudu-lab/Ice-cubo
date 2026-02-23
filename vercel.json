@@ -1,7 +1,8 @@
 {
+  "functions": {
+    "api/*.js": { "runtime": "nodejs20.x" }
+  },
   "rewrites": [
-    { "source": "/", "destination": "/api/index" },
-    { "source": "/api/mp_create", "destination": "/api/mp_create" },
-    { "source": "/api/mp_status", "destination": "/api/mp_status" }
+    { "source": "/", "destination": "/api/index" }
   ]
 }
