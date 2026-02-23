@@ -1,442 +1,459 @@
-// /api/index.js  (Vercel)
-// MVP funcional: Login ADM + usuários + moderadores + ban + estrelas/ícones
-// OBS: dados ficam no localStorage (protótipo). Para segurança real: usar DB/KV.
+// api/index.js (Vercel) — ICE-CUBO "um arquivo só"
+// UI + API no mesmo endpoint: /api?op=...
+// DEPÓSITO PIX: Mercado Pago (MP_ACCESS_TOKEN obrigatório)
+// Webhook (op=mp_webhook) é básico (recomendado usar verificação oficial MP)
+// SAQUE: protótipo (gera pedido p/ ADM aprovar). Saque real automático exige backend+compliance.
 
-module.exports=(req,res)=>{res.setHeader("Content-Type","text/html; charset=utf-8");res.status(200).end(`<!doctype html><html lang=pt-br><head>
-<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+const https = require("https");
+const { URL } = require("url");
+
+const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN?.trim();
+const BASE_URL = process.env.BASE_URL || ""; // ex: https://seuapp.vercel.app
+// Se você tiver webhook secret e quiser validar, você precisa implementar conforme docs oficiais do MP.
+const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET || "";
+
+const ADM_LOGIN = "ADM";
+const ADM_SENHA = "1533";
+
+// ======= util http =======
+function j(res, code, obj) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(obj));
+}
+function h(res, code, html) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.end(html);
+}
+function readBody(req) {
+  return new Promise((resolve) => {
+    let d = "";
+    req.on("data", (c) => (d += c));
+    req.on("end", () => resolve(d));
+  });
+}
+function httpJSON(method, url, headers, bodyObj) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const data = bodyObj ? JSON.stringify(bodyObj) : null;
+    const opts = {
+      method,
+      hostname: u.hostname,
+      path: u.pathname + (u.search || ""),
+      headers: {
+        "Content-Type": "application/json",
+        ...(data ? { "Content-Length": Buffer.byteLength(data) } : {}),
+        ...(headers || {}),
+      },
+    };
+    const r = https.request(opts, (resp) => {
+      let s = "";
+      resp.on("data", (c) => (s += c));
+      resp.on("end", () => {
+        let json = null;
+        try { json = s ? JSON.parse(s) : null; } catch {}
+        resolve({ status: resp.statusCode, json, text: s });
+      });
+    });
+    r.on("error", reject);
+    if (data) r.write(data);
+    r.end();
+  });
+}
+
+// ======= armazenamento serverless (VOLÁTIL!) =======
+// Em Vercel serverless isso pode resetar. Para “real”, use DB/KV.
+const MEM = global.__ICE_MEM__ || (global.__ICE_MEM__ = {
+  // pagamentos: id -> { userId, amount, status }
+  payments: {},
+  // créditos: userId -> blueNumber
+  blue: {},
+  // pedidos de saque: [{id,userId,amount,pixKey,status,ts}]
+  withdraws: [],
+});
+
+// ======= UI =======
+function pageHTML() {
+  // Observação: dados de usuários/posts ficam no localStorage (por dispositivo).
+  // O backend só entra em PIX (MP) e lista/aprovação de saques (protótipo).
+  return `<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>ICE-CUBO</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-:root{--bg:#071629;--bg2:#0b2a4d;--c:rgba(255,255,255,.07);--c2:rgba(255,255,255,.10);--l:rgba(255,255,255,.12);--t:#eaf3ff;--m:rgba(234,243,255,.72);--a:#38bdf8;--ok:#22c55e;--w:#f59e0b;--b:#ef4444;--gold:#ffd700}
-*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--t);
-background:radial-gradient(900px 700px at 20% -20%,rgba(56,189,248,.18),transparent 60%),radial-gradient(900px 700px at 110% 20%,rgba(14,165,233,.14),transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2));overflow:hidden}
-a{color:inherit}button{cursor:pointer;border:0}input,textarea{font:inherit}
-.wrap{height:100%;display:flex;flex-direction:column}
-.top{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--l);
-background:rgba(0,0,0,.25);backdrop-filter:blur(10px)}
-.brand{display:flex;align-items:center;gap:10px}
-.logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(180deg,rgba(56,189,248,.95),rgba(14,165,233,.95));display:grid;place-items:center;color:#06223f;font-weight:1000}
-.title{display:flex;flex-direction:column;line-height:1.05}
-.title b{letter-spacing:1.1px}
-.title small{color:var(--m);font-size:12px}
-.pill{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--l);border-radius:999px;background:rgba(255,255,255,.06)}
-.coin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);border:1px solid rgba(255,215,0,.55)}
-.coin span{color:var(--gold);font-weight:1000}
-.main{flex:1;overflow:auto;padding:12px 12px 92px}
-.box{width:min(920px,96vw);margin:0 auto}
-.card{border:1px solid var(--l);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));border-radius:22px;padding:14px;box-shadow:0 18px 60px rgba(0,0,0,.35);margin:10px 0}
-.h{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.h h2{margin:0;font-size:18px}
-.m{color:var(--m);font-size:12px}
-.hr{height:1px;background:rgba(255,255,255,.08);margin:12px 0}
-.field{width:100%;padding:13px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.18);color:var(--t)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.btn{padding:12px 14px;border-radius:14px;background:linear-gradient(180deg,rgba(56,189,248,.95),rgba(14,165,233,.95));color:#06223f;font-weight:900;display:inline-flex;gap:10px;align-items:center;justify-content:center}
-.ghost{background:rgba(255,255,255,.06);color:var(--t);border:1px solid rgba(255,255,255,.12);font-weight:800}
-.ok{background:linear-gradient(180deg,rgba(34,197,94,.95),rgba(22,163,74,.95));color:#06223f}
-.warn{background:linear-gradient(180deg,rgba(245,158,11,.95),rgba(217,119,6,.95));color:#06223f}
-.bad{background:linear-gradient(180deg,rgba(239,68,68,.95),rgba(220,38,38,.95));color:#fff}
-.nav{position:fixed;left:0;right:0;bottom:0;height:74px;display:flex;justify-content:center;padding:10px 10px calc(10px + env(safe-area-inset-bottom));
-background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.40))}
-.bar{width:min(720px,96vw);border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.28);backdrop-filter:blur(12px);border-radius:22px;display:flex;justify-content:space-around;padding:10px 12px}
-.nb{width:58px;height:48px;border-radius:16px;border:1px solid transparent;color:var(--m);display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font-size:18px}
-.nb span{font-size:10px;letter-spacing:.6px}
-.nb.on{color:var(--t);border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.10)}
-.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06)}
-.starG{color:var(--gold);filter:drop-shadow(0 10px 10px rgba(0,0,0,.45))}
-.starB{color:#60a5fa;filter:drop-shadow(0 10px 10px rgba(0,0,0,.45))}
-.tagADM{border-color:rgba(255,215,0,.25);background:linear-gradient(180deg,rgba(255,215,0,.12),rgba(255,255,255,.04))}
-.tagMOD{border-color:rgba(96,165,250,.25)}
-.list{display:flex;flex-direction:column;gap:10px}
-.item{border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18);border-radius:18px;padding:12px}
-.item .topi{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
-.small{font-size:12px;color:var(--m)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:92px;width:min(720px,92vw);padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.45);backdrop-filter:blur(10px);display:none;z-index:999}
-</style></head><body>
-<div class=wrap>
-  <div class=top>
-    <div class=brand>
-      <div class=logo>IC</div>
-      <div class=title>
-        <b>ICE-CUBO</b>
-        <small id=sub>Login • ADM • Moderadores</small>
+:root{
+  --bg1:#dff3ff;--bg2:#bfe8ff;--bg3:#072445;
+  --glass:rgba(255,255,255,.58);--line:rgba(7,36,69,.18);
+  --t:#06223f;--m:#2b587d;--a:#0ea5e9;--d:#0b2a6a;
+  --card:rgba(255,255,255,.65);--shadow:rgba(0,0,0,.12);
+  --ok:#16a34a;--warn:#f59e0b;--bad:#ef4444;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--t);
+  height:100vh;overflow:hidden;
+  background:
+    radial-gradient(1200px 700px at 15% -10%,rgba(255,255,255,.85),transparent 55%),
+    radial-gradient(900px 700px at 110% 20%,rgba(56,189,248,.25),transparent 60%),
+    linear-gradient(180deg,var(--bg1),var(--bg2) 45%,#7dd3fc 70%,#2aa9ff 86%,var(--bg3));
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cg fill='none'%3E%3Ccircle cx='22' cy='88' r='3' fill='%23ffffff' opacity='.35'/%3E%3Ccircle cx='35' cy='98' r='2' fill='%23ffffff' opacity='.25'/%3E%3Ccircle cx='48' cy='88' r='2' fill='%23ffffff' opacity='.2'/%3E%3Cpath d='M60 10c6 10 6 20 0 30c-6-10-6-20 0-30Z' fill='%230ea5e9' opacity='.35'/%3E%3Cpath d='M85 35c-10 6-20 6-30 0c10-6 20-6 30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Cpath d='M82 86c8-10 12-18 4-28c-9 6-14 12-4 28Z' fill='%230b5fa5' opacity='.22'/%3E%3Cpath d='M82 86c2-6 8-10 12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M82 86c-2-6-8-10-12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:160px 160px;
+}
+a{color:inherit}button{cursor:pointer}input,textarea{font:inherit}
+#app{height:100vh;display:flex;flex-direction:column}
+.top{
+  height:52vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;
+  background:rgba(0,0,0,.08);
+}
+.bub:before,.bub:after{
+  content:"";position:absolute;inset:-20%;
+  background:
+   radial-gradient(circle,rgba(255,255,255,.35) 0 2px,transparent 3px) 0 0/120px 120px,
+   radial-gradient(circle,rgba(255,255,255,.22) 0 1px,transparent 2px) 40px 20px/160px 160px;
+  animation:float 14s linear infinite;opacity:.55
+}
+.bub:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
+@keyframes float{to{transform:translateY(-120px)}}
+
+.brand{
+  position:absolute;top:10px;left:12px;right:12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:5;
+}
+.logo{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+  background:var(--glass);backdrop-filter:blur(10px);border-radius:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.10)
+}
+.avatar{
+  width:34px;height:34px;border-radius:14px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#38bdf8,#0b2a6a);color:#fff;font-weight:900;
+}
+.brandname{display:flex;flex-direction:column;line-height:1.05}
+.brandname b{letter-spacing:1.2px;font-size:15px}
+.brandname small{color:var(--m);font-size:11px}
+.roleBadge{display:inline-flex;align-items:center;gap:6px;font-weight:900;font-size:11px;margin-top:2px}
+.starGold{color:#ffd700;text-shadow:0 1px 0 rgba(0,0,0,.15)}
+.starBlue{color:#38bdf8;text-shadow:0 1px 0 rgba(0,0,0,.12)}
+.bear{font-size:16px}
+
+.pill{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+  background:var(--glass);backdrop-filter:blur(10px);border-radius:18px;
+}
+.coin{
+  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);
+  border:1px solid rgba(255,215,0,.55);
+  box-shadow:0 0 0 2px rgba(255,215,0,.18) inset
+}
+.coin span{color:#ffd700;font-weight:1000}
+.pill .meta{display:flex;flex-direction:column;line-height:1.05}
+.pill .meta b{font-size:12px}
+.pill .meta small{font-size:11px;color:var(--m)}
+
+.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#mainV,#camV{width:100%;height:100%;object-fit:cover;display:none}
+#mainCover{
+  width:100%;height:100%;display:grid;place-items:center;
+  background:linear-gradient(135deg,rgba(255,255,255,.25),rgba(255,255,255,.05));
+}
+.stageHint{
+  width:min(92%,520px);background:rgba(255,255,255,.55);border:1px solid var(--line);
+  border-radius:22px;backdrop-filter:blur(12px);padding:14px;
+  box-shadow:0 18px 60px rgba(0,0,0,.16)
+}
+.stageHint b{display:block;font-size:16px}
+.stageHint small{color:var(--m)}
+.stageBar{
+  position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:10px;z-index:6;
+}
+.btn{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px;border-radius:18px;border:1px solid var(--line);
+  background:rgba(255,255,255,.62);backdrop-filter:blur(12px);
+  box-shadow:0 12px 30px rgba(0,0,0,.10);
+  font-weight:900;color:var(--t)
+}
+.btn:active{transform:scale(.99)}
+.btn.ok{background:rgba(22,163,74,.18)}
+.btn.warn{background:rgba(245,158,11,.18)}
+.btn.bad{background:rgba(239,68,68,.16)}
+.btn.primary{background:rgba(14,165,233,.18)}
+
+.bottom{
+  flex:1;display:flex;flex-direction:column;gap:10px;padding:12px 12px 90px;
+}
+.cardsRow{
+  display:flex;gap:10px;overflow:auto;padding-bottom:4px;scrollbar-width:none
+}
+.cardsRow::-webkit-scrollbar{display:none}
+.card{
+  min-width:140px;max-width:140px;border-radius:18px;overflow:hidden;
+  border:1px solid var(--line);background:rgba(255,255,255,.60);backdrop-filter:blur(10px);
+  box-shadow:0 12px 30px rgba(0,0,0,.10);position:relative;
+}
+.thumb{height:88px;background:#0b2a6a;display:grid;place-items:center;color:#fff;font-weight:1000}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover}
+.card .cbody{padding:10px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:900;color:var(--m)}
+.card .title{font-weight:1000;margin-top:6px;font-size:12px}
+.card .hint{font-size:11px;color:var(--m);margin-top:4px}
+
+.panel{
+  display:none;flex-direction:column;gap:10px;
+  border:1px solid var(--line);background:rgba(255,255,255,.55);backdrop-filter:blur(12px);
+  border-radius:22px;padding:12px;box-shadow:0 18px 60px rgba(0,0,0,.14);
+}
+.panel.active{display:flex}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hrow h3{margin:0;font-size:14px}
+.muted{color:var(--m);font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.field{flex:1;min-width:140px}
+input,textarea{
+  width:100%;padding:12px 12px;border-radius:16px;border:1px solid var(--line);
+  background:rgba(255,255,255,.70);outline:none
+}
+textarea{min-height:90px;resize:none}
+.sbtn{
+  padding:12px 14px;border-radius:16px;border:1px solid var(--line);
+  background:rgba(255,255,255,.72);font-weight:900
+}
+.sbtn.ok{background:rgba(22,163,74,.20)}
+.sbtn.warn{background:rgba(245,158,11,.20)}
+.sbtn.bad{background:rgba(239,68,68,.18)}
+.hr{height:1px;background:rgba(7,36,69,.12);margin:6px 0}
+
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.post{
+  border:1px solid var(--line);border-radius:18px;overflow:hidden;background:rgba(255,255,255,.72)
+}
+.post .ph{height:110px;background:#0b2a6a;display:grid;place-items:center;color:#fff;font-weight:1000}
+.post img,.post video{width:100%;height:110px;object-fit:cover;display:block}
+.post .pb{padding:10px}
+.post .pb b{font-size:12px}
+.post .pb small{display:block;color:var(--m);font-size:11px;margin-top:4px}
+
+.nav{
+  position:fixed;left:12px;right:12px;bottom:14px;
+  display:flex;justify-content:space-between;gap:10px;
+  padding:10px;border-radius:22px;border:1px solid var(--line);
+  background:rgba(255,255,255,.55);backdrop-filter:blur(12px);
+  box-shadow:0 18px 60px rgba(0,0,0,.16);
+}
+.nbtn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:10px;border-radius:18px;color:var(--m);font-weight:900;font-size:11px;border:1px solid transparent
+}
+.nbtn i{font-size:18px}
+.nbtn.active{color:var(--t);background:rgba(14,165,233,.12);border-color:rgba(14,165,233,.20)}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;font-weight:1000;font-size:12px
+}
+.qrBox{
+  border:1px dashed rgba(7,36,69,.25);border-radius:18px;padding:12px;background:rgba(255,255,255,.7)
+}
+.k{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:12px;word-break:break-all;color:#06325b
+}
+.toast{
+  position:fixed;left:12px;right:12px;top:14px;z-index:50;
+  display:none;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-radius:18px;border:1px solid var(--line);
+  background:rgba(255,255,255,.75);backdrop-filter:blur(12px);
+  box-shadow:0 18px 60px rgba(0,0,0,.16);font-weight:900
+}
+.toast.show{display:flex}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"><span id="toastMsg">—</span><button class="sbtn" onclick="hideToast()">OK</button></div>
+
+<div id="app">
+  <div class="top bub">
+    <div class="brand">
+      <div class="logo">
+        <div class="avatar" id="ava">IC</div>
+        <div class="brandname">
+          <b>ICE-CUBO</b>
+          <small id="sub">Rede • Lives • BLUE</small>
+          <div class="roleBadge" id="roleBadge" style="display:none"></div>
+        </div>
+      </div>
+      <div class="pill">
+        <div class="coin"><span>B</span></div>
+        <div class="meta">
+          <b><span id="blueTop">0</span> BLUE</b>
+          <small id="whoTop">deslogado</small>
+        </div>
       </div>
     </div>
-    <div class=pill title="Saldo BLUE (demo)">
-      <div class=coin><span>B</span></div>
-      <div style="display:flex;flex-direction:column;line-height:1.05">
-        <b><span id=bal>0</span> BLUE</b>
-        <small class=small id=me>deslogado</small>
+
+    <div class="viewer">
+      <video id="mainV" playsinline muted loop></video>
+      <video id="camV" playsinline muted autoplay></video>
+      <div id="mainCover">
+        <div class="stageHint">
+          <b>Toque 2x em um card abaixo</b>
+          <small>Ele sobe pro palco. A câmera abre só no ícone.</small>
+        </div>
       </div>
+    </div>
+
+    <div class="stageBar">
+      <button class="btn primary" id="btnSwapMain"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Subir card</button>
+      <button class="btn ok" id="btnCam"><i class="fa-solid fa-video"></i> Câmera</button>
+      <button class="btn bad" id="btnStop"><i class="fa-solid fa-stop"></i> Parar</button>
     </div>
   </div>
 
-  <div class=main><div class=box id=view></div></div>
+  <div class="bottom">
+    <div class="cardsRow" id="cardsRow"></div>
 
-  <div class=nav><div class=bar>
-    <div class="nb on" data=t="home"><i class="fa-solid fa-house"></i><span>HOME</span></div>
-    <div class=nb data=t="profile"><i class="fa-solid fa-user"></i><span>PERFIL</span></div>
-    <div class=nb data=t="wallet"><i class="fa-solid fa-wallet"></i><span>CARTEIRA</span></div>
-    <div class=nb data=t="timeline"><i class="fa-solid fa-layer-group"></i><span>TIMELINE</span></div>
-    <div class=nb data=t="admin"><i class="fa-solid fa-shield-halved"></i><span>ADM</span></div>
-  </div></div>
+    <div class="panel active" id="panelTimeline">
+      <div class="hrow"><h3><i class="fa-solid fa-stream"></i> Timeline</h3><span class="muted">posts (local)</span></div>
+      <div class="row">
+        <button class="sbtn" id="btnRefresh"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+        <button class="sbtn" id="btnRef"><i class="fa-solid fa-link"></i> Link convite</button>
+        <button class="sbtn warn" id="btnMine"><i class="fa-solid fa-hammer"></i> Quebrar gelo</button>
+      </div>
+      <div class="muted" id="mineNote">Jogo: quebre o gelo e ganhe BLUE (protótipo, só local).</div>
+      <div class="hr"></div>
+      <div class="grid" id="tlGrid"></div>
+    </div>
 
-  <div class=toast id=toast></div>
+    <div class="panel" id="panelPerfil">
+      <div class="hrow"><h3><i class="fa-solid fa-user"></i> Seu perfil</h3><span class="muted">poste foto/vídeo</span></div>
+      <div class="row">
+        <div class="field"><input id="nick" placeholder="Seu nome (ex: Jessica)"></div>
+        <button class="sbtn" id="saveNick"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+      </div>
+      <div class="row">
+        <label class="sbtn" style="display:inline-flex;align-items:center;gap:8px">
+          <i class="fa-solid fa-image"></i> Abrir galeria
+          <input id="filePick" type="file" accept="image/*,video/*" style="display:none">
+        </label>
+        <button class="sbtn ok" id="postBtn"><i class="fa-solid fa-upload"></i> Postar</button>
+        <span class="muted" id="pickInfo">Nenhum arquivo</span>
+      </div>
+      <div class="hr"></div>
+      <div class="hrow"><h3 style="font-size:14px;margin:0"><i class="fa-solid fa-user-plus"></i> Seguindo</h3><span class="muted" id="followCount">0</span></div>
+      <div class="muted" id="followList">—</div>
+
+      <div class="hr"></div>
+      <div class="hrow"><h3 style="font-size:14px;margin:0"><i class="fa-solid fa-sitemap"></i> Filhos</h3><span class="muted" id="childCount">0</span></div>
+      <div class="muted" id="childList">—</div>
+
+      <div class="hr"></div>
+      <div class="muted" style="margin-bottom:8px">Seus posts:</div>
+      <div class="grid" id="myPosts"></div>
+    </div>
+
+    <div class="panel" id="panelCarteira">
+      <div class="hrow"><h3><i class="fa-solid fa-wallet"></i> Carteira</h3><span class="muted">depósito / saque</span></div>
+
+      <div class="row">
+        <div class="badge"><i class="fa-solid fa-coins"></i> <span id="blueWallet">0</span> BLUE</div>
+        <div class="muted" id="walletUser">—</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div style="font-weight:1000;font-size:14px"><i class="fa-solid fa-sack-dollar"></i> Depósito (PIX Mercado Pago)</div>
+      <div class="row">
+        <div class="field"><input id="depVal" type="number" min="1" step="1" placeholder="Valor (ex: 10)"></div>
+        <button class="sbtn ok" id="depBtn"><i class="fa-brands fa-pix"></i> Gerar PIX</button>
+      </div>
+      <div id="depOut" class="qrBox" style="display:none">
+        <div class="muted">PIX gerado. Copie e pague.</div>
+        <div class="k" id="pixCode">—</div>
+        <div class="row" style="margin-top:10px">
+          <button class="sbtn" id="copyPix"><i class="fa-solid fa-copy"></i> Copiar</button>
+          <button class="sbtn" id="checkPix"><i class="fa-solid fa-circle-check"></i> Verificar pagamento</button>
+        </div>
+        <div class="muted" id="pixStatus" style="margin-top:8px">—</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div style="font-weight:1000;font-size:14px"><i class="fa-solid fa-building-columns"></i> Saque (pedido)</div>
+      <div class="row">
+        <div class="field"><input id="saqueVal" type="number" min="1" step="1" placeholder="BLUE para sacar"></div>
+        <div class="field"><input id="pixKey" placeholder="Sua chave PIX (email/celular/cpf)"></div>
+        <button class="sbtn warn" id="saqueBtn"><i class="fa-solid fa-paper-plane"></i> Solicitar saque</button>
+      </div>
+      <div class="muted">Saque aqui é pedido (protótipo). O ADM aprova/rejeita.</div>
+
+      <div class="hr"></div>
+      <div class="hrow"><h3 style="font-size:14px;margin:0"><i class="fa-solid fa-list-check"></i> Meus pedidos</h3><span class="muted" id="wCount">0</span></div>
+      <div id="wList" class="muted">—</div>
+    </div>
+
+    <div class="panel" id="panelADM">
+      <div class="hrow"><h3><i class="fa-solid fa-shield-halved"></i> ADM</h3><span class="muted">somente ADM master</span></div>
+
+      <div id="admGate">
+        <div class="row">
+          <div class="field"><input id="admLogin" placeholder="Login"></div>
+          <div class="field"><input id="admSenha" placeholder="Senha" type="password"></div>
+        </div>
+        <button class="sbtn ok" id="admEntrar"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+        <div class="muted">ADM master: ${ADM_LOGIN} / ${ADM_SENHA}</div>
+      </div>
+
+      <div id="admPanel" style="display:none">
+        <div class="row">
+          <button class="sbtn" id="admSync"><i class="fa-solid fa-rotate"></i> Atualizar lista</button>
+          <button class="sbtn bad" id="admLogout"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        </div>
+        <div class="hr"></div>
+        <div style="font-weight:1000">Usuários (local)</div>
+        <div class="muted" id="admUsers">—</div>
+
+        <div class="hr"></div>
+        <div style="font-weight:1000">Pedidos de Saque (server protótipo)</div>
+        <div class="muted" id="admWithdraws">—</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nav">
+    <div class="nbtn active" data-tab="timeline"><i class="fa-solid fa-house"></i><div>HOME</div></div>
+    <div class="nbtn" data-tab="perfil"><i class="fa-solid fa-user"></i><div>PERFIL</div></div>
+    <div class="nbtn" data-tab="carteira"><i class="fa-solid fa-wallet"></i><div>CARTEIRA</div></div>
+    <div class="nbtn" data-tab="timeline"><i class="fa-solid fa-layer-group"></i><div>TIMELINE</div></div>
+    <div class="nbtn" data-tab="adm"><i class="fa-solid fa-star"></i><div>ADM</div></div>
+  </div>
 </div>
 
 <script>
-/*** CONFIG ADM MASTER (como você pediu) ***/
-const ADM_LOGIN="ADM";
-const ADM_PASS="1533";
-
-/*** STORAGE (protótipo local) ***/
-const KEY="icecubo_roles_v1";
-const now=()=>Date.now();
-const $=s=>document.querySelector(s);
-const view=$("#view"),toast=$("#toast");
-const esc=s=>String(s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
-const fmt=n=>String(Math.round((Number(n)||0)*100)/100).replace(".",",");
-const uid=()=>("u"+Math.random().toString(16).slice(2)+now().toString(16)).slice(0,18);
-
-const defaults=()=>({
-  me:null, // {id,name,role:"adm|mod|user",banned:false}
-  blue:40,
-  users:[
-    // ADM não precisa estar aqui, mas deixo como referência
-  ],
-  timeline:[{id:"p1",t:now()-3600e3,by:"Sistema",txt:"Bem-vindo ao ICE-CUBO (protótipo)."}],
-  withdraws:[], deposits:[]
-});
-let S=load();
-function load(){try{const r=localStorage.getItem(KEY);return r?Object.assign(defaults(),JSON.parse(r)):defaults()}catch(e){return defaults()}}
-function save(){localStorage.setItem(KEY,JSON.stringify(S));syncTop()}
-function msg(t,kind=""){toast.textContent=t;toast.style.display="block";
-toast.style.borderColor=kind==="bad"?"rgba(239,68,68,.35)":kind==="ok"?"rgba(34,197,94,.35)":"rgba(56,189,248,.35)";
-clearTimeout(window.__t);window.__t=setTimeout(()=>toast.style.display="none",2200);
-}
-function roleLabel(r){
-  if(r==="adm") return '<span class="badge tagADM"><i class="fa-solid fa-star starG"></i><b>ADM MASTER</b></span>';
-  if(r==="mod") return '<span class="badge tagMOD"><i class="fa-solid fa-star starB"></i><b>MODERADOR</b></span>';
-  return '<span class="badge"><i class="fa-regular fa-user"></i><b>USUÁRIO</b></span>';
-}
-function canSeeAdmin(){return S.me && S.me.role==="adm";}
-function isBanned(){return S.me && S.me.banned;}
-function syncTop(){
-  $("#bal").textContent=fmt(S.blue||0);
-  $("#me").innerHTML=S.me? (esc(S.me.name)+" • "+(S.me.role==="adm"?"ADM":S.me.role==="mod"?"MOD":"USER")) : "deslogado";
-}
-function setTab(t){
-  document.querySelectorAll(".nb").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
-  render(t);
-}
-window.setTab=setTab;
-
-/*** AUTH (protótipo) ***/
-function loginAdm(){
-  const u=($("#u")?.value||"").trim();
-  const p=($("#p")?.value||"").trim();
-  if(u===ADM_LOGIN && p===ADM_PASS){
-    S.me={id:"adm_master",name:"ADM",role:"adm",banned:false};
-    save(); msg("✅ Logado como ADM MASTER","ok"); setTab("home");
-  } else msg("Login/senha ADM inválidos.","bad");
-}
-function loginUser(){
-  const name=($("#n")?.value||"").trim();
-  if(!name) return msg("Digite seu nome.","bad");
-  // cria/acha usuário pelo nome (protótipo)
-  let u=S.users.find(x=>x.name.toLowerCase()===name.toLowerCase());
-  if(!u){u={id:uid(),name,role:"user",banned:false};S.users.push(u)}
-  if(u.banned) return msg("Você está bloqueado.","bad");
-  S.me={id:u.id,name:u.name,role:u.role,banned:u.banned};
-  save(); msg("✅ Logado","ok"); setTab("home");
-}
-function logout(){S.me=null;save();msg("Saiu.","ok");setTab("home")}
-
-/*** REGRAS DE PODER (funcional) ***/
-function mustLogin(){ if(!S.me){msg("Faça login primeiro.","bad"); setTab("home"); return false} return true }
-function mustNotBanned(){ if(isBanned()){msg("Você está bloqueado.","bad"); return false} return true }
-function findUser(id){return S.users.find(x=>x.id===id)}
-function syncMeFromDb(){
-  if(!S.me) return;
-  if(S.me.role==="adm") return; // ADM é intocável
-  const u=findUser(S.me.id);
-  if(u){S.me.role=u.role;S.me.banned=!!u.banned;S.me.name=u.name;}
-}
-
-/*** PAGES ***/
-function card(h){return '<div class=card>'+h+'</div>'}
-function pageHome(){
-  syncMeFromDb();
-  const who=S.me? (S.me.role==="adm"?'<i class="fa-solid fa-star starG"></i> <b>ADM MASTER</b>':S.me.role==="mod"?'<i class="fa-solid fa-star starB"></i> <b>MODERADOR</b>':'<b>USUÁRIO</b>') : "<b>VISITANTE</b>";
-  const banNote = isBanned()? '<div class="badge" style="border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><i class="fa-solid fa-ban"></i><b>VOCÊ ESTÁ BLOQUEADO</b></div>' : "";
-  return card(`
-    <div class=h><h2>🏠 Home</h2><div>${banNote}</div></div>
-    <div class=m>Você é: ${who}</div>
-    <div class=hr></div>
-
-    ${!S.me?`
-      <div class=row>
-        <div style="flex:1;min-width:240px">
-          <div class=m>Login ADM</div>
-          <input class=field id=u placeholder="Login (ADM)" value="">
-          <div style="height:8px"></div>
-          <input class=field id=p placeholder="Senha (1533)" type=password value="">
-          <div style="height:10px"></div>
-          <button class="btn ok" onclick="loginAdm()"><i class="fa-solid fa-crown"></i> Entrar como ADM</button>
-        </div>
-        <div style="flex:1;min-width:240px">
-          <div class=m>Entrar como usuário (sem senha - protótipo)</div>
-          <input class=field id=n placeholder="Seu nome">
-          <div style="height:10px"></div>
-          <button class="btn" onclick="loginUser()"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
-        </div>
-      </div>
-      <div class=hr></div>
-      <div class=m>⚠️ Protótipo: usuários/roles ficam salvos no seu celular (localStorage).</div>
-    `:`
-      <div class=row>
-        <span class=badge>${roleLabel(S.me.role)}</span>
-        <button class="btn ghost" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
-        ${S.me.role==="adm"?'<button class="btn warn" onclick="setTab(\\'admin\\')"><i class="fa-solid fa-shield-halved"></i> Painel ADM</button>':''}
-      </div>
-      <div class=hr></div>
-      <div class=row>
-        <button class="btn" onclick="setTab('profile')"><i class="fa-solid fa-user"></i> Meu Perfil</button>
-        <button class="btn" onclick="setTab('wallet')"><i class="fa-solid fa-wallet"></i> Carteira</button>
-        <button class="btn" onclick="setTab('timeline')"><i class="fa-solid fa-layer-group"></i> Timeline</button>
-      </div>
-    `}
-  `);
-}
-
-function pageProfile(){
-  if(!mustLogin()) return pageHome();
-  syncMeFromDb();
-  return card(`
-    <div class=h><h2>👤 Perfil</h2>${roleLabel(S.me.role)}</div>
-    <div class=m>Seu nome:</div>
-    <input class=field id=nm value="${esc(S.me.name)}">
-    <div style="height:10px"></div>
-    <div class=row>
-      <button class="btn ok" onclick="saveName()"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
-      ${S.me.role==="mod" ? '<span class="badge tagMOD"><i class="fa-solid fa-star starB"></i><b>MOD</b> pode banir usuários</span>' : ''}
-      ${S.me.role==="adm" ? '<span class="badge tagADM"><i class="fa-solid fa-star starG"></i><b>ADM intocável</b></span>' : ''}
-    </div>
-    ${isBanned()?'<div class=hr></div><div class="badge" style="border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><i class="fa-solid fa-ban"></i><b>Você está bloqueado</b></div>':''}
-  `);
-}
-
-function pageWallet(){
-  if(!mustLogin()) return pageHome();
-  syncMeFromDb();
-  if(!mustNotBanned()) return card(`<h2>💳 Carteira</h2><div class=m>Você está bloqueado.</div>`);
-  return card(`
-    <div class=h><h2>💳 Carteira</h2><div class=badge><div class=coin><span>B</span></div><b>${fmt(S.blue)} BLUE</b></div></div>
-    <div class=m>Depósito/Saque “real” precisa integração (mp_create/mp_status + DB). Aqui fica protótipo.</div>
-    <div class=hr></div>
-    <div class=row>
-      <div style="flex:1;min-width:260px" class=item>
-        <div class=topi><b>Depósito (demo)</b><span class=badge><i class="fa-brands fa-pix"></i> PIX</span></div>
-        <div style="height:8px"></div>
-        <input class=field id=dep type=number min=1 step=1 value=10 placeholder="Valor (R$)">
-        <div style="height:10px"></div>
-        <button class="btn ok" onclick="depDemo()"><i class="fa-solid fa-circle-plus"></i> Simular Depósito</button>
-        <div class=small style="margin-top:8px">Regra demo: R$1 = 1 BLUE</div>
-      </div>
-      <div style="flex:1;min-width:260px" class=item>
-        <div class=topi><b>Saque (solicitação)</b><span class=badge><i class="fa-solid fa-building-columns"></i> PIX</span></div>
-        <div style="height:8px"></div>
-        <input class=field id=wd type=number min=1 step=1 placeholder="Valor (BLUE)">
-        <div style="height:8px"></div>
-        <input class=field id=pix placeholder="Chave PIX">
-        <div style="height:10px"></div>
-        <button class="btn warn" onclick="withdrawReq()"><i class="fa-solid fa-file-invoice-dollar"></i> Solicitar Saque</button>
-        <div class=small style="margin-top:8px">Status: PENDENTE (protótipo)</div>
-      </div>
-    </div>
-  `);
-}
-
-function pageTimeline(){
-  const items=[...S.timeline].sort((a,b)=>b.t-a.t);
-  const list=items.map(p=>`
-    <div class=item>
-      <div class=topi><b>${esc(p.by)}</b><span class=small>${new Date(p.t).toLocaleString()}</span></div>
-      <div style="margin-top:6px" class=m>${esc(p.txt)}</div>
-      ${S.me && (S.me.role==="mod"||S.me.role==="adm") ? `<div class=row style="margin-top:10px">
-        <button class="btn bad" onclick="delPost('${p.id}')"><i class="fa-solid fa-trash"></i> Apagar</button>
-      </div>`:''}
-    </div>
-  `).join("") || `<div class=m>Sem posts.</div>`;
-
-  return card(`
-    <div class=h><h2>🧩 Timeline</h2><button class="btn ghost" onclick="openPost()"><i class="fa-solid fa-plus"></i> Postar</button></div>
-    <div class=m>${S.me?(S.me.role==="mod"?"MOD pode apagar posts (exceto do ADM se quiser bloquear isso depois)":""):"Entre para postar"}</div>
-    <div class=hr></div>
-    <div class=list>${list}</div>
-  `);
-}
-
-function pageAdmin(){
-  if(!mustLogin()) return pageHome();
-  syncMeFromDb();
-  if(!canSeeAdmin()) return card(`<h2>🛡️ Painel ADM</h2><div class=m>Somente ADM MASTER.</div>`);
-  const users=S.users.slice().sort((a,b)=> (a.role>b.role?-1:1));
-  const list=users.map(u=>{
-    const isAdm = (u.id==="adm_master"); // não usamos, mas por clareza
-    const role=u.role||"user";
-    const isMod = role==="mod";
-    const banned=!!u.banned;
-    return `
-      <div class=item>
-        <div class=topi>
-          <div class=row style="gap:10px">
-            <b>${esc(u.name)}</b>
-            ${role==="mod"?'<i class="fa-solid fa-star starB" title="Moderador"></i>':''}
-            ${banned?'<span class="badge" style="border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><i class="fa-solid fa-ban"></i><b>BLOQUEADO</b></span>':''}
-          </div>
-          <span class=small>ID: ${esc(u.id)}</span>
-        </div>
-        <div class=row style="margin-top:10px">
-          <button class="btn ok" onclick="promote('${u.id}')"><i class="fa-solid fa-arrow-up"></i> Virar MOD</button>
-          <button class="btn ghost" onclick="demote('${u.id}')"><i class="fa-solid fa-arrow-down"></i> Tirar MOD</button>
-          <button class="btn bad" onclick="ban('${u.id}')"><i class="fa-solid fa-user-slash"></i> Bloquear</button>
-          <button class="btn warn" onclick="unban('${u.id}')"><i class="fa-solid fa-user-check"></i> Desbloquear</button>
-        </div>
-        <div class=small style="margin-top:8px">
-          Regra: MOD não pode afetar ADM (já bloqueado no código).
-        </div>
-      </div>
-    `;
-  }).join("") || `<div class=m>Nenhum usuário ainda.</div>`;
-
-  return card(`
-    <div class=h><h2>🛡️ Painel ADM MASTER</h2>${roleLabel("adm")}</div>
-    <div class=m>Você pode promover moderadores (estrela azul), banir/desbanir usuários. ADM é intocável.</div>
-    <div class=hr></div>
-    <div class=list>${list}</div>
-  `);
-}
-
-/*** Actions ***/
-window.loginAdm=loginAdm; window.loginUser=loginUser; window.logout=logout;
-
-window.saveName=()=>{
-  if(!mustLogin()) return;
-  const nm=($("#nm")?.value||"").trim()||"Você";
-  if(S.me.role!=="adm"){
-    const u=findUser(S.me.id); if(u) u.name=nm;
-    S.me.name=nm;
-  } else S.me.name="ADM"; // ADM fixo (se quiser mudar, tira isso)
-  save(); msg("✅ Nome salvo","ok"); setTab("profile");
+/* ===========================
+   Storage local (protótipo)
+=========================== */
+const LS = {
+  get(k, def){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):def }catch{return def} },
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)) }
 };
 
-window.depDemo=()=>{
-  if(!mustLogin()) return;
-  syncMeFromDb(); if(!mustNotBanned()) return;
-  const v=Number(($("#dep")?.value||"").replace(",",".")); if(!v||v<=0) return msg("Valor inválido.","bad");
-  S.blue=Math.round((S.blue+v)*100)/100; S.deposits.push({t:now(),by:S.me.id,amount:v});
-  save(); msg("✅ Depósito demo +"+fmt(v)+" BLUE","ok"); setTab("wallet");
-};
+// "banco" local
+let me = LS.get("ice.me", null);
+let users = LS.get("ice.users", {}); // id -> {id,nick,role,banned,children:[],following:[]}
+let posts = LS.get("ice.posts", []); // {id,uid,type,data,ts}
+let mine = LS.get("ice.mine", {ice:100, last:0}); // jogo
 
-window.withdrawReq=()=>{
-  if(!mustLogin()) return;
-  syncMeFromDb(); if(!mustNotBanned()) return;
-  const v=Number(($("#wd")?.value||"").replace(",",".")); const pix=($("#pix")?.value||"").trim();
-  if(!v||v<=0) return msg("Valor inválido.","bad");
-  if(!pix) return msg("Informe chave PIX.","bad");
-  if((S.blue||0)<v) return msg("Saldo insuficiente.","bad");
-  S.blue=Math.round((S.blue-v)*100)/100;
-  S.withdraws.push({t:now(),by:S.me.id,amount:v,pix,status:"PENDENTE"});
-  save(); msg("✅ Saque solicitado (PENDENTE)","ok"); setTab("wallet");
-};
-
-window.openPost=()=>{
-  setTab("timeline");
-  if(!S.me) return msg("Entre para postar.","bad");
-  if(isBanned()) return msg("Bloqueado não posta.","bad");
-  const txt=prompt("Escreva seu post:"); if(!txt) return;
-  S.timeline.push({id:uid(),t:now(),by:S.me.name,txt});
-  save(); msg("✅ Postado","ok"); setTab("timeline");
-};
-
-window.delPost=(id)=>{
-  if(!S.me) return msg("Sem permissão.","bad");
-  if(!(S.me.role==="mod"||S.me.role==="adm")) return msg("Só MOD/ADM apaga.","bad");
-  // regra extra (se você quiser): MOD não apaga posts do ADM (aqui é simples porque post guarda só 'by' texto)
-  S.timeline=S.timeline.filter(p=>p.id!==id);
-  save(); msg("🗑️ Post apagado","ok"); setTab("timeline");
-};
-
-// MOD/ADM: bloquear usuário (mas nunca ADM)
-function canModerate(){
-  syncMeFromDb();
-  if(!S.me) return false;
-  if(S.me.role==="adm") return true;
-  if(S.me.role==="mod") return true;
-  return false;
+function uid(){
+  return "u_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(2,6);
 }
-function modGuard(targetId){
-  if(!canModerate()) {msg("Sem permissão.","bad"); return false;}
-  if(targetId==="adm_master") {msg("ADM é intocável.","bad"); return false;}
-  return true;
-}
-window.ban=(id)=>{
-  if(!modGuard(id)) return;
-  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
-  u.banned=true;
-  // se banir quem está logado no mesmo aparelho, sincroniza
-  if(S.me && S.me.id===u.id){S.me.banned=true; S.me.role=u.role}
-  save(); msg("🚫 Usuário bloqueado","ok"); setTab(canSeeAdmin()?"admin":"timeline");
-};
-window.unban=(id)=>{
-  if(!(S.me&&S.me.role==="adm")) return msg("Só ADM desbloqueia.","bad");
-  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
-  u.banned=false;
-  if(S.me && S.me.id===u.id){S.me.banned=false}
-  save(); msg("✅ Desbloqueado","ok"); setTab("admin");
-};
-window.promote=(id)=>{
-  if(!(S.me&&S.me.role==="adm")) return msg("Só ADM promove.","bad");
-  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
-  u.role="mod"; u.banned=false;
-  if(S.me && S.me.id===u.id){S.me.role="mod"; S.me.banned=false}
-  save(); msg("⭐ Virou MOD","ok"); setTab("admin");
-};
-window.demote=(id)=>{
-  if(!(S.me&&S.me.role==="adm")) return msg("Só ADM rebaixa.","bad");
-  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
-  u.role="user";
-  if(S.me && S.me.id===u.id){S.me.role="user"}
-  save(); msg("⬇️ MOD removido","ok"); setTab("admin");
-};
+function now(){ return Date.now(); }
 
-/*** Router ***/
-function render(t){
-  syncMeFromDb(); syncTop();
-  if(t==="home") view.innerHTML=pageHome();
-  else if(t==="profile") view.innerHTML=pageProfile();
-  else if(t==="wallet") view.innerHTML=pageWallet();
-  else if(t==="timeline") view.innerHTML=pageTimeline();
-  else if(t==="admin") view.innerHTML=pageAdmin();
-  else view.innerHTML=pageHome();
-  syncTop();
-}
-document.querySelectorAll(".nb").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.t)));
-
-/*** Boot ***/
-save(); setTab("home");
-</script></body></html>`);};
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ICE-CUBO</title>
-</head>
-<body>
-  <script>
-    location.replace("/api");
-  </script>
-</body>
-</html>
+function toast(msg){
+ 
