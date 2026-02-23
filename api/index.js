@@ -1,350 +1,294 @@
-// api/index.js  (Vercel)  — TUDO EM UM ARQUIVO SÓ
-const crypto = require("crypto");
-const MP = "https://api.mercadopago.com";
-const RATE_BRL_TO_BLUE = 1000; // ⭐ 1 real = 1000 BLUE => R$0,05 = 50 BLUE (se o MP aceitar)
-// Se o MP recusar 0,05, use R$1,00. (O MP pode ter mínimo)
+export default async function handler(req, res) {
+  const MP = "https://api.mercadopago.com";
+  const token = process.env.MP_ACCESS_TOKEN;
 
-// ===== "DB" (DEMO) =====
-let USERS = global.USERS || {};             // email -> {id,email,ref}
-let BAL = global.BAL || {};                 // email -> blue balance
-let SITE = global.SITE || { blue: 0 };      // site balance
-let CREDITED = global.CREDITED || {};       // paymentId -> true (evita creditar 2x)
+  // --- helpers server ---
+  const send = (code, body, type = "text/html; charset=utf-8") => {
+    res.statusCode = code;
+    res.setHeader("Content-Type", type);
+    res.end(body);
+  };
 
-let POW = global.POW || {                   // mineração estilo BTC (simulação)
-  cap: 21000000,
-  minted: 0,
-  blocks: 0,
-  reward: 50,
-  halvEvery: 210000,  // pra testar rápido, coloque 20
-  nextHalv: 210000,
-  diff: 4,            // dificuldade PoW (3 = mais fácil no celular)
-  challenges: {}      // email -> {nonce,ts}
-};
+  const readBody = async () => {
+    if (req.body) return req.body;
+    let raw = "";
+    await new Promise((resolve) => {
+      req.on("data", (c) => (raw += c));
+      req.on("end", resolve);
+    });
+    if (!raw) return {};
+    try { return JSON.parse(raw); } catch { return {}; }
+  };
 
-global.USERS = USERS;
-global.BAL = BAL;
-global.SITE = SITE;
-global.CREDITED = CREDITED;
-global.POW = POW;
+  // =========================
+  // API ROUTES (same file)
+  // =========================
+  const a = (req.query && req.query.a) ? String(req.query.a) : "";
 
-function j(res, code, obj) {
-  res.statusCode = code;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.end(JSON.stringify(obj));
-}
-async function readBody(req) {
-  if (req.body) return req.body;
-  let raw = "";
-  await new Promise((r) => {
-    req.on("data", (c) => (raw += c));
-    req.on("end", r);
-  });
-  try { return raw ? JSON.parse(raw) : {}; } catch { return {}; }
-}
-function sha256hex(s) {
-  return crypto.createHash("sha256").update(s).digest("hex");
-}
-function getUser(email) {
-  email = String(email || "").trim().toLowerCase();
-  if (!email) return null;
-  if (!USERS[email]) USERS[email] = { id: email, email, ref: null };
-  if (BAL[email] == null) BAL[email] = 0;
-  return USERS[email];
-}
+  // --- Create PIX payment (POST) ---
+  if (a === "mp_create") {
+    try {
+      if (!token) return send(500, JSON.stringify({ ok: false, error: "MP_ACCESS_TOKEN não configurado" }), "application/json");
+      if (req.method !== "POST") return send(405, JSON.stringify({ ok: false, error: "Use POST" }), "application/json");
 
-// ===== BLUE mint helper (cap) =====
-function mintBlue(amountBlue) {
-  const can = Math.max(0, Math.min(amountBlue, POW.cap - POW.minted));
-  POW.minted += can;
-  return can;
-}
-
-// ===== Depósito split =====
-function creditDeposit(email, amountBRL, paymentId) {
-  // idempotência
-  if (paymentId && CREDITED[paymentId]) return { ok: true, already: true };
-  const u = getUser(email);
-  if (!u) return { ok: false, error: "email inválido" };
-
-  // Converte BRL -> BLUE
-  let totalBlue = amountBRL * RATE_BRL_TO_BLUE;
-
-  // respeita cap
-  const minted = mintBlue(totalBlue);
-  if (minted <= 0) return { ok: false, error: "Cap 21.000.000 atingido." };
-  totalBlue = minted;
-
-  const buyer = totalBlue * 0.85;
-  const ref = totalBlue * 0.05;
-  const site = totalBlue * 0.05;
-  // 5% “extra” (se não tiver pai vai pro site)
-  const extra = totalBlue * 0.05;
-
-  BAL[email] = (BAL[email] || 0) + buyer;
-
-  if (u.ref && USERS[u.ref]) {
-    BAL[u.ref] = (BAL[u.ref] || 0) + ref;
-    SITE.blue += site;
-  } else {
-    // sem pai: 5% do pai vira do site
-    SITE.blue += (ref + site);
-  }
-  SITE.blue += extra;
-
-  if (paymentId) CREDITED[paymentId] = true;
-  return { ok: true, buyer, totalBlue };
-}
-
-// ===== Mercado Pago helpers =====
-async function mpFetch(path, method, token, bodyObj) {
-  const r = await fetch(MP + path, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "X-Idempotency-Key": Date.now().toString(36) + Math.random().toString(16).slice(2),
-    },
-    body: bodyObj ? JSON.stringify(bodyObj) : undefined,
-  });
-  const data = await r.json().catch(() => ({}));
-  return { ok: r.ok, data, status: r.status };
-}
-
-// ===== Handler =====
-module.exports = async (req, res) => {
-  try {
-    const url = new URL(req.url, "http://x");
-    const action = (url.searchParams.get("a") || "").trim(); // a = ação (tudo no mesmo endpoint)
-    const token = process.env.MP_ACCESS_TOKEN;
-
-    // ---------- API ACTIONS ----------
-    // REGISTER
-    if (action === "register") {
-      const b = await readBody(req);
-      const email = String(b.email || "").trim().toLowerCase();
-      const ref = String(b.ref || "").trim().toLowerCase();
-
-      if (!email) return j(res, 400, { ok: false, error: "email obrigatório" });
-      const u = getUser(email);
-
-      // salva ref só se ainda não tem e ref existe
-      if (!u.ref && ref && ref !== email) {
-        getUser(ref); // garante que existe
-        u.ref = ref;
-      }
-      return j(res, 200, { ok: true, user: u, balance: BAL[email] || 0 });
-    }
-
-    // BALANCE
-    if (action === "bal") {
-      const email = String(url.searchParams.get("email") || "").trim().toLowerCase();
-      getUser(email);
-      return j(res, 200, { ok: true, balance: BAL[email] || 0, site: SITE.blue || 0, pow: { minted: POW.minted, cap: POW.cap, reward: POW.reward, blocks: POW.blocks } });
-    }
-
-    // WITHDRAW (DEMO)
-    if (action === "withdraw") {
-      const b = await readBody(req);
-      const email = String(b.email || "").trim().toLowerCase();
-      const amount = Number(b.amount || 0);
-      if (!email) return j(res, 400, { ok: false, error: "email obrigatório" });
-      getUser(email);
-      if (amount < 50) return j(res, 400, { ok: false, error: "Saque mínimo: 50 BLUE" });
-      if ((BAL[email] || 0) < amount) return j(res, 400, { ok: false, error: "Saldo insuficiente", balance: BAL[email] || 0 });
-      BAL[email] -= amount;
-      return j(res, 200, { ok: true, balance: BAL[email] });
-    }
-
-    // MINE GET (desafio)
-    if (action === "mine_get") {
-      const email = String(url.searchParams.get("email") || "").trim().toLowerCase();
-      if (!email) return j(res, 400, { ok: false, error: "email obrigatório" });
-      getUser(email);
-      const nonce = Date.now().toString(36) + Math.random().toString(16).slice(2);
-      POW.challenges[email] = { nonce, ts: Date.now() };
-      return j(res, 200, { ok: true, nonce, diff: POW.diff, reward: POW.reward, blocks: POW.blocks, minted: POW.minted, cap: POW.cap });
-    }
-
-    // MINE POST (solução)
-    if (action === "mine") {
-      const b = await readBody(req);
-      const email = String(b.email || "").trim().toLowerCase();
-      const nonce = String(b.nonce || "").trim();
-      const sol = String(b.solution || "").trim();
-      if (!email || !nonce || !sol) return j(res, 400, { ok: false, error: "Envie {email, nonce, solution}" });
-
-      const ch = POW.challenges[email];
-      if (!ch || ch.nonce !== nonce) return j(res, 400, { ok: false, error: "Desafio inválido. Gere outro." });
-      if (Date.now() - ch.ts > 5 * 60 * 1000) return j(res, 400, { ok: false, error: "Desafio expirou. Gere outro." });
-
-      const h = sha256hex(nonce + "|" + email + "|" + sol);
-      const target = "0".repeat(POW.diff);
-      if (!h.startsWith(target)) return j(res, 400, { ok: false, error: "PoW inválido", hash: h });
-
-      delete POW.challenges[email];
-
-      if (POW.minted >= POW.cap) return j(res, 200, { ok: true, cap: true, msg: "Cap atingido" });
-
-      POW.blocks += 1;
-
-      let canMint = Math.min(POW.reward, POW.cap - POW.minted);
-      canMint = mintBlue(canMint); // respeita cap
-      BAL[email] = (BAL[email] || 0) + canMint;
-
-      if (POW.blocks >= POW.nextHalv) {
-        POW.reward = Math.max(0.00000001, POW.reward / 2);
-        POW.nextHalv += POW.halvEvery;
+      const body = await readBody();
+      const email = String(body.email || "").trim();
+      const amount = Number(body.amount);
+      const ref = String(body.ref || "").trim(); // pai (opcional)
+      if (!email || !amount || Number.isNaN(amount)) {
+        return send(400, JSON.stringify({ ok: false, error: "Envie { email, amount }" }), "application/json");
       }
 
-      return j(res, 200, { ok: true, mined: canMint, balance: BAL[email], blocks: POW.blocks, reward: POW.reward, minted: POW.minted, cap: POW.cap });
-    }
-
-    // MP CREATE PIX
-    if (action === "mp_create") {
-      if (!token) return j(res, 500, { ok: false, error: "MP_ACCESS_TOKEN não configurado" });
-      if (req.method !== "POST") return j(res, 405, { ok: false, error: "Use POST" });
-
-      const b = await readBody(req);
-      const email = String(b.email || "").trim().toLowerCase();
-      const amount = Number(b.amount || 0);
-
-      if (!email || !amount || Number.isNaN(amount)) return j(res, 400, { ok: false, error: "Envie { email, amount }" });
-      getUser(email);
-
+      // MercadoPago costuma rejeitar valores muito baixos. Teste 1.00 se 0.05 falhar.
       const transaction_amount = Math.round(amount * 100) / 100;
 
-      const r = await mpFetch("/v1/payments", "POST", token, {
-        transaction_amount,
-        description: "Compra BLUE - ICE-CUBO",
-        payment_method_id: "pix",
-        payer: { email },
+      // Criando pagamento PIX
+      const r = await fetch(`${MP}/v1/payments`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "X-Idempotency-Key": (Date.now().toString(36) + Math.random().toString(16).slice(2)),
+        },
+        body: JSON.stringify({
+          transaction_amount,
+          description: "Compra BLUE - ICE-CUBO",
+          payment_method_id: "pix",
+          payer: { email },
+          external_reference: email,
+          metadata: { email, ref }
+        }),
       });
 
-      if (!r.ok) return j(res, 400, { ok: false, error: r.data });
+      const data = await r.json();
+      if (!r.ok) return send(400, JSON.stringify({ ok: false, error: data }), "application/json");
 
-      const tx = r.data.point_of_interaction?.transaction_data || {};
-      return j(res, 200, {
+      const tx = data.point_of_interaction?.transaction_data || {};
+      return send(200, JSON.stringify({
         ok: true,
-        paymentId: r.data.id,
-        status: r.data.status,
-        amount: r.data.transaction_amount,
+        paymentId: data.id,
+        status: data.status,
+        amount: data.transaction_amount,
         qr_code: tx.qr_code || null,
         qr_code_base64: tx.qr_code_base64 || null,
+      }), "application/json");
+    } catch (e) {
+      return send(500, JSON.stringify({ ok: false, error: e.message }), "application/json");
+    }
+  }
+
+  // --- Check payment status (GET) ---
+  if (a === "mp_check") {
+    try {
+      if (!token) return send(500, JSON.stringify({ ok: false, error: "MP_ACCESS_TOKEN não configurado" }), "application/json");
+      const paymentId = String((req.query && req.query.paymentId) || "").trim();
+      if (!paymentId) return send(400, JSON.stringify({ ok: false, error: "Envie paymentId" }), "application/json");
+
+      const r = await fetch(`${MP}/v1/payments/${paymentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      const data = await r.json();
+      if (!r.ok) return send(400, JSON.stringify({ ok: false, error: data }), "application/json");
+
+      return send(200, JSON.stringify({
+        ok: true,
+        id: data.id,
+        status: data.status, // approved / pending / rejected
+        amount: data.transaction_amount,
+        payer_email: data.payer?.email || data.metadata?.email || null,
+        ref: data.metadata?.ref || "",
+      }), "application/json");
+    } catch (e) {
+      return send(500, JSON.stringify({ ok: false, error: e.message }), "application/json");
     }
+  }
 
-    // MP STATUS (fallback manual)
-    if (action === "mp_status") {
-      if (!token) return j(res, 500, { ok: false, error: "MP_ACCESS_TOKEN não configurado" });
-      const paymentId = String(url.searchParams.get("id") || "").trim();
-      const email = String(url.searchParams.get("email") || "").trim().toLowerCase();
-      if (!paymentId || !email) return j(res, 400, { ok: false, error: "Envie id e email" });
+  // --- Webhook (optional) ---
+  if (a === "mp_webhook") {
+    // Sem banco, a gente só responde 200 para o MP não ficar reenviando.
+    // Se depois você quiser "auto-sem-clicar", aí a gente liga um banco (Vercel KV / Upstash / Supabase).
+    return send(200, "ok", "text/plain; charset=utf-8");
+  }
 
-      const r = await mpFetch(`/v1/payments/${paymentId}`, "GET", token);
-      if (!r.ok) return j(res, 400, { ok: false, error: r.data });
-
-      const st = r.data.status;
-      if (st === "approved") {
-        const out = creditDeposit(email, Number(r.data.transaction_amount || 0), String(r.data.id));
-        return j(res, 200, { ok: true, status: st, credited: out.ok, already: out.already || false, balance: BAL[email] || 0 });
-      }
-      return j(res, 200, { ok: true, status: st, balance: BAL[email] || 0 });
-    }
-
-    // MP WEBHOOK (automático)
-    if (action === "mp_webhook") {
-      // MP envia POST com {type:"payment", data:{id}}
-      if (!token) return res.status(200).end();
-      if (req.method !== "POST") return res.status(200).end();
-
-      let raw = "";
-      await new Promise((r) => { req.on("data", (c) => (raw += c)); req.on("end", r); });
-      let data = {};
-      try { data = raw ? JSON.parse(raw) : {}; } catch {}
-
-      if (data.type !== "payment") return res.status(200).end();
-      const paymentId = data.data?.id;
-      if (!paymentId) return res.status(200).end();
-
-      const pr = await mpFetch(`/v1/payments/${paymentId}`, "GET", token);
-      if (!pr.ok) return res.status(200).end();
-
-      if (pr.data.status === "approved") {
-        const email = String(pr.data.payer?.email || "").trim().toLowerCase();
-        const amount = Number(pr.data.transaction_amount || 0);
-        if (email && amount) creditDeposit(email, amount, String(pr.data.id));
-      }
-      return res.status(200).end();
-    }
-
-    // ---------- DEFAULT: SERVE O SITE ----------
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-
-    // pega ref do link (?ref=)
-    const refFromUrl = (url.searchParams.get("ref") || "").trim().toLowerCase();
-
-    res.statusCode = 200;
-    res.end(`<!doctype html><html lang="pt-br"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  // =========================
+  // FRONTEND (HTML)
+  // =========================
+  return send(200, `<!doctype html><html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>ICE-CUBO</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <style>
-:root{--bg1:#dff3ff;--bg2:#bfe8ff;--bg3:#072445;--g:rgba(255,255,255,.60);--l:rgba(7,36,69,.18);--t:#06223f;--m:#2b587d;--a:#0ea5e9}
+:root{--bg1:#dff3ff;--bg2:#bfe8ff;--bg3:#072445;--g:rgba(255,255,255,.58);--l:rgba(7,36,69,.18);--t:#06223f;--m:#2b587d;--a:#0ea5e9;--ok:#16a34a;--bad:#fb7185}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--t);height:100vh;overflow:hidden;
-background:radial-gradient(1200px 700px at 15% -10%,rgba(255,255,255,.85),transparent 55%),
+background:radial-gradient(1200px 700px at 15% -10%,rgba(255,255,255,.88),transparent 55%),
 radial-gradient(900px 700px at 110% 20%,rgba(56,189,248,.25),transparent 60%),
-linear-gradient(180deg,var(--bg1),var(--bg2) 45%,#7dd3fc 70%,#2aa9ff 86%,var(--bg3));}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:multiply;
-background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none'%3E%3Cpath d='M60 10c6 10 6 20 0 30c-6-10-6-20 0-30Z' fill='%230ea5e9' opacity='.35'/%3E%3Cpath d='M35 35c10 6 20 6 30 0c-10-6-20-6-30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Cpath d='M85 35c-10 6-20 6-30 0c10-6 20-6 30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Ccircle cx='22' cy='88' r='3' fill='%23ffffff' opacity='.35'/%3E%3Ccircle cx='35' cy='98' r='2' fill='%23ffffff' opacity='.25'/%3E%3Ccircle cx='48' cy='88' r='2' fill='%23ffffff' opacity='.2'/%3E%3Cpath d='M82 86c8-10 12-18 4-28c-9 6-14 12-4 28Z' fill='%230b5fa5' opacity='.22'/%3E%3Cpath d='M82 86c2-6 8-10 12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M82 86c-2-6-8-10-12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");background-size:140px 140px;}
-button{cursor:pointer;border:0}input{font:inherit}
+linear-gradient(180deg,var(--bg1),var(--bg2) 45%,#7dd3fc 70%,#2aa9ff 86%,var(--bg3));
+}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.36;mix-blend-mode:multiply;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none'%3E%3Cpath d='M60 10c6 10 6 20 0 30c-6-10-6-20 0-30Z' fill='%230ea5e9' opacity='.35'/%3E%3Cpath d='M35 35c10 6 20 6 30 0c-10-6-20-6-30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Cpath d='M85 35c-10 6-20 6-30 0c10-6 20-6 30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Ccircle cx='22' cy='88' r='3' fill='%23ffffff' opacity='.35'/%3E%3Ccircle cx='35' cy='98' r='2' fill='%23ffffff' opacity='.25'/%3E%3Ccircle cx='48' cy='88' r='2' fill='%23ffffff' opacity='.2'/%3E%3Cpath d='M82 86c8-10 12-18 4-28c-9 6-14 12-4 28Z' fill='%230b5fa5' opacity='.22'/%3E%3Cpath d='M82 86c2-6 8-10 12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M82 86c-2-6-8-10-12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+background-size:140px 140px;
+}
+button{cursor:pointer}input,textarea{font:inherit}
 .wrap{height:100vh;display:flex;flex-direction:column}
-.top{height:42vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;background:rgba(0,0,0,.06)}
+.top{height:50vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;background:rgba(0,0,0,.06)}
 .bub:before,.bub:after{content:"";position:absolute;inset:-20%;background:
-radial-gradient(circle,rgba(255,255,255,.35) 0 2px,transparent 3px) 0 0/120px 120px,
-radial-gradient(circle,rgba(255,255,255,.22) 0 1px,transparent 2px) 40px 20px/160px 160px;
+radial-gradient(circle,rgba(255,255,255,.38) 0 2px,transparent 3px) 0 0/120px 120px,
+radial-gradient(circle,rgba(255,255,255,.24) 0 1px,transparent 2px) 40px 20px/160px 160px;
 animation:float 14s linear infinite;opacity:.55}
 .bub:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
 @keyframes float{to{transform:translateY(-120px)}}
 .brand{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:3}
-.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(10px);border-radius:18px}
-.bear{width:44px;height:44px;border-radius:16px;border:1px solid rgba(7,36,69,.14);background:rgba(255,255,255,.65);display:grid;place-items:center;overflow:hidden}
-@keyframes paw{0%,100%{transform:translate(0,0) rotate(-3deg)}50%{transform:translate(2px,-1px) rotate(6deg)}}
-@keyframes coin{0%,100%{transform:translate(0,0)}50%{transform:translate(0,-1px)}}
-.paw{transform-origin:24px 24px;animation:paw 1.1s ease-in-out infinite}
-.coinAnim{transform-origin:22px 26px;animation:coin 1.1s ease-in-out infinite}
+.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(10px);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.10)}
+.brandname{display:flex;flex-direction:column;line-height:1.05}
+.brandname b{letter-spacing:1.2px;font-size:15px}
+.brandname small{color:var(--m);font-size:11px}
 .pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(10px);border-radius:18px}
 .coin{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);
 border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) inset}
 .coin span{color:#ffd700;font-weight:1000}
-.mid{flex:1;overflow:auto;padding:12px 12px 80px}
-.card{background:rgba(255,255,255,.65);border:1px solid var(--l);border-radius:18px;padding:12px;margin:10px 0;backdrop-filter:blur(10px)}
-h1,h2{margin:0 0 8px} .mut{color:var(--m);font-size:12px}
-.btn{padding:12px 12px;border-radius:16px;background:rgba(14,165,233,.16);border:1px solid rgba(14,165,233,.25);color:#075985;font-weight:900}
-.row{display:flex;gap:10px;flex-wrap:wrap}
-.field{flex:1;min-width:170px}
-.field input{width:100%;padding:12px;border-radius:14px;border:1px solid rgba(7,36,69,.14);background:rgba(255,255,255,.85)}
-.nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:10px}
-.nav button{flex:1;padding:12px 10px;border-radius:20px;border:1px solid var(--l);background:rgba(255,255,255,.65);backdrop-filter:blur(14px);color:var(--t);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:900}
-pre{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.06);padding:10px;border-radius:14px;border:1px solid rgba(7,36,69,.12)}
-img.qr{width:220px;max-width:100%;border-radius:14px;border:1px solid rgba(7,36,69,.12);background:#fff;padding:8px}
+.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#mainV,#mainI{width:100%;height:100%;object-fit:cover;display:none}
+.hint{position:absolute;inset:auto 12px 72px 12px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);border-radius:18px;color:var(--m);text-align:center}
+.stageBar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:4}
+.card{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);border-radius:18px;min-width:0}
+.av{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;font-weight:1000;background:linear-gradient(135deg,#38bdf8,#1d4ed8);position:relative;color:#fff}
+.meta2{min-width:0}
+.meta2 .name{font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}
+.meta2 .sub{font-size:12px;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.star{font-size:13px}
+.star.gold{color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.35)}
+.star.blue{color:#0ea5e9;text-shadow:0 0 10px rgba(14,165,233,.25)}
+.sbtn{padding:10px 12px;border-radius:18px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);color:var(--t)}
+.sbtn:active{transform:scale(.98)}
+.bottom{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 10px 74px;overflow:hidden}
+.carousel{display:flex;gap:10px;overflow:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.item{min-width:190px;max-width:190px;height:120px;border-radius:18px;overflow:hidden;border:1px solid var(--l);background:rgba(255,255,255,.35);scroll-snap-align:center;position:relative}
+.item video,.item img{width:100%;height:100%;object-fit:cover;display:block}
+.tag{position:absolute;left:8px;bottom:8px;padding:6px 10px;border:1px solid rgba(7,36,69,.18);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);border-radius:14px;font-size:12px;display:flex;gap:8px;align-items:center;color:#053055}
+.tag .mini{width:18px;height:18px;border-radius:7px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#38bdf8,#1d4ed8);color:#fff}
+.panel{flex:1;overflow:auto;border:1px solid var(--l);background:rgba(255,255,255,.55);backdrop-filter:blur(12px);border-radius:22px;padding:12px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hrow h3{margin:0;font-size:16px}
+.muted{color:var(--m);font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box{border:1px solid var(--l);background:rgba(255,255,255,.38);border-radius:18px;padding:10px}
+.box h4{margin:0 0 8px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{flex:1;min-width:180px}
+.field input,.field textarea{width:100%;padding:12px;border-radius:18px;border:1px solid rgba(7,36,69,.14);background:rgba(255,255,255,.78);color:var(--t);outline:none}
+.field textarea{min-height:70px;resize:vertical}
+hr{border:0;border-top:1px solid rgba(7,36,69,.12);margin:10px 0}
+.nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:10px;z-index:10}
+.nav button{flex:1;padding:12px 10px;border-radius:20px;border:1px solid var(--l);background:rgba(255,255,255,.55);backdrop-filter:blur(14px);color:var(--t);display:flex;align-items:center;justify-content:center;gap:8px}
+.nav button.active{outline:2px solid rgba(14,165,233,.9)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{width:min(760px,100%);max-height:86vh;border-radius:26px 26px 0 0;overflow:hidden;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.88);backdrop-filter:blur(18px)}
+.sheetTop{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(7,36,69,.12)}
+.sheetBody{padding:12px 12px 14px;overflow:auto;max-height:calc(86vh - 52px)}
+.center{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:18px}
+.cardLogin{width:min(420px,100%);border:1px solid var(--l);background:rgba(255,255,255,.7);backdrop-filter:blur(12px);border-radius:22px;padding:14px}
+.cardLogin h2{margin:0 0 8px}
+.cardLogin small{color:var(--m)}
+.btnWide{width:100%;padding:12px;border-radius:18px;border:1px solid rgba(14,165,233,.25);background:rgba(14,165,233,.12);font-weight:900}
+.bad{color:#b91c1c;font-weight:900}
+.ok{color:#166534;font-weight:900}
+
+/* bear anim (CSS) */
+.bearWrap{width:44px;height:44px;border-radius:16px;border:1px solid rgba(7,36,69,.14);background:rgba(255,255,255,.66);display:grid;place-items:center;overflow:hidden}
+.bearWrap svg{width:44px;height:44px}
+@keyframes paw{0%,100%{transform:translate(0,0) rotate(-3deg)}50%{transform:translate(2px,-1px) rotate(6deg)}}
+@keyframes coin{0%,100%{transform:translate(0,0)}50%{transform:translate(0,-1px)}}
+.paw{transform-origin:24px 24px}.coinAnim{transform-origin:22px 26px}
+.bearWrap .paw{animation:paw 1.1s ease-in-out infinite}
+.bearWrap .coinAnim{animation:coin 1.1s ease-in-out infinite}
 </style></head><body>
-<div class="wrap">
+
+<div id="screenLogin" class="center" style="display:none">
+  <div class="cardLogin">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+      <div class="bearWrap" title="urso tentando pegar BLUE">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ice" x1="10" y1="20" x2="50" y2="54">
+              <stop stop-color="#9ae6ff" stop-opacity=".9"/><stop offset="1" stop-color="#1f4ed8" stop-opacity=".55"/>
+            </linearGradient>
+            <radialGradient id="gold" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(34 36) rotate(45) scale(18)">
+              <stop stop-color="#ffeaa7"/><stop offset="1" stop-color="#ffb703"/>
+            </radialGradient>
+          </defs>
+          <rect x="10" y="26" width="40" height="28" rx="6" fill="url(#ice)" stroke="rgba(255,255,255,.35)"/>
+          <g class="coinAnim">
+            <circle cx="30" cy="40" r="10" fill="url(#gold)" stroke="rgba(255,215,0,.65)"/>
+            <path d="M30 33v14M24 36h10a4 4 0 0 1 0 8H24" stroke="#0b2a6a" stroke-width="3" stroke-linecap="round"/>
+          </g>
+          <g class="paw">
+            <circle cx="50" cy="24" r="10" fill="rgba(255,255,255,.95)"/>
+            <circle cx="44" cy="18" r="3" fill="rgba(255,255,255,.95)"/>
+            <circle cx="56" cy="18" r="3" fill="rgba(255,255,255,.95)"/>
+            <circle cx="50" cy="25" r="2" fill="#0b2a6a"/>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <h2 style="margin:0">ICE-CUBO</h2>
+        <small>Login + Cadastro • BLUE • Depósito PIX</small>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="field"><input id="lgUser" placeholder="Usuário (ex: jessica) ou admin"/></div>
+      <div class="field"><input id="lgPass" placeholder="Senha" type="password"/></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="field"><input id="lgRef" placeholder="(Opcional) Código do pai / indicou"/></div>
+    </div>
+
+    <div style="height:10px"></div>
+    <button class="btnWide" id="btnLogin"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+    <div style="height:10px"></div>
+    <button class="btnWide" id="btnGoCad" style="background:rgba(255,255,255,.65)"><i class="fa-solid fa-user-plus"></i> Criar conta</button>
+    <div id="lgMsg" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<div id="screenCad" class="center" style="display:none">
+  <div class="cardLogin">
+    <h2 style="margin:0 0 6px">Criar conta</h2>
+    <small>Qualquer pessoa pode cadastrar</small>
+    <div style="height:10px"></div>
+    <div class="row">
+      <div class="field"><input id="cdUser" placeholder="Novo usuário"/></div>
+      <div class="field"><input id="cdPass" placeholder="Senha" type="password"/></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div class="field"><input id="cdRef" placeholder="(Opcional) Código do pai (indicação)"/></div>
+    </div>
+    <div style="height:10px"></div>
+    <button class="btnWide" id="btnCad"><i class="fa-solid fa-check"></i> Cadastrar</button>
+    <div style="height:10px"></div>
+    <button class="btnWide" id="btnBack" style="background:rgba(255,255,255,.65)"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+    <div id="cdMsg" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<div id="app" class="wrap" style="display:none">
   <div class="top bub">
     <div class="brand">
       <div class="logo">
-        <div class="bear" title="urso tentando tirar BLUE">
+        <div class="bearWrap" title="urso tentando pegar BLUE">
           <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="ice" x1="10" y1="20" x2="50" y2="54">
+              <linearGradient id="ice2" x1="10" y1="20" x2="50" y2="54">
                 <stop stop-color="#9ae6ff" stop-opacity=".9"/><stop offset="1" stop-color="#1f4ed8" stop-opacity=".55"/>
               </linearGradient>
-              <radialGradient id="gold" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(34 36) rotate(45) scale(18)">
+              <radialGradient id="gold2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(34 36) rotate(45) scale(18)">
                 <stop stop-color="#ffeaa7"/><stop offset="1" stop-color="#ffb703"/>
               </radialGradient>
             </defs>
-            <rect x="10" y="26" width="40" height="28" rx="6" fill="url(#ice)" stroke="rgba(255,255,255,.35)"/>
+            <rect x="10" y="26" width="40" height="28" rx="6" fill="url(#ice2)" stroke="rgba(255,255,255,.35)"/>
             <g class="coinAnim">
-              <circle cx="30" cy="40" r="10" fill="url(#gold)" stroke="rgba(255,215,0,.65)"/>
+              <circle cx="30" cy="40" r="10" fill="url(#gold2)" stroke="rgba(255,215,0,.65)"/>
               <path d="M30 33v14M24 36h10a4 4 0 0 1 0 8H24" stroke="#0b2a6a" stroke-width="3" stroke-linecap="round"/>
             </g>
             <g class="paw">
@@ -355,226 +299,606 @@ img.qr{width:220px;max-width:100%;border-radius:14px;border:1px solid rgba(7,36,
             </g>
           </svg>
         </div>
-        <div>
-          <div style="font-weight:1000;letter-spacing:1.1px">ICE-CUBO</div>
-          <div class="mut">depósito • mineração • indicação</div>
+        <div class="brandname">
+          <b>ICE-CUBO</b>
+          <small id="subline">Feed • Perfil • BLUE • Trocas</small>
         </div>
       </div>
-      <div class="pill" title="BLUE">
+
+      <div class="pill" title="Saldo BLUE">
         <div class="coin"><span>B</span></div>
         <div>
           <div style="font-weight:1000" id="blueBal">0.000000 BLUE</div>
-          <div class="mut" id="blueInfo">cap 21.000.000</div>
+          <div class="muted" id="whoAmI">—</div>
         </div>
       </div>
+    </div>
+
+    <div class="viewer">
+      <div class="hint" id="hint">Depósito/Saque/Minerar ficam no Perfil (bem visível). Clique no avatar para abrir o perfil do usuário.</div>
+      <video id="mainV" playsinline controls></video>
+      <img id="mainI"/>
+    </div>
+
+    <div class="stageBar">
+      <div class="card" id="ownerCard">
+        <div class="av" id="ownerAv">U</div>
+        <div class="meta2">
+          <div class="name" id="ownerName">Usuário</div>
+          <div class="sub" id="ownerSub">Toque para abrir o perfil</div>
+        </div>
+      </div>
+      <button class="sbtn" id="logoutBtn" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
     </div>
   </div>
 
-  <div class="mid">
-    <div class="card" id="loginCard">
-      <h2><i class="fa-solid fa-right-to-bracket"></i> Entrar</h2>
-      <div class="mut">Cole seu email. Indicação é opcional.</div>
-      <div class="row" style="margin-top:10px">
-        <div class="field"><input id="email" placeholder="seu@email.com"></div>
-        <div class="field"><input id="ref" placeholder="pai (email) opcional" value="${refFromUrl || ""}"></div>
+  <div class="bottom">
+    <div class="carousel" id="carousel"></div>
+
+    <div class="panel" id="panelFeed">
+      <div class="hrow">
+        <h3><i class="fa-solid fa-film"></i> Timeline</h3>
+        <span class="muted">toque para destacar</span>
       </div>
-      <div style="margin-top:10px" class="row">
-        <button class="btn" onclick="entrar()">Entrar</button>
-      </div>
+      <div class="muted">Toque no card acima para mostrar em tela grande. Toque no cartão do usuário (embaixo) para abrir perfil dele.</div>
+      <hr/>
+      <div class="grid" id="feedGrid"></div>
     </div>
 
-    <div id="panel" style="display:none">
-      <div class="card">
-        <h2><i class="fa-solid fa-wallet"></i> Seu saldo</h2>
-        <div style="font-size:26px;font-weight:1000" id="saldo">0.000000</div>
-        <div class="mut" id="net"></div>
-      </div>
+    <div class="panel" id="panelHome" style="display:none">
+      <div class="hrow"><h3><i class="fa-solid fa-user"></i> Seu perfil</h3><span class="muted">depósito • saque • minerar</span></div>
 
-      <div class="card">
-        <h2><i class="fa-solid fa-qrcode"></i> Depósito PIX (Mercado Pago)</h2>
-        <div class="mut">Teste: R$0,05 vira 50 BLUE (se o MP aceitar). Se falhar, teste R$1,00.</div>
-        <div class="row" style="margin-top:10px">
-          <div class="field"><input id="valor" placeholder="valor em R$ (ex: 0.05)"></div>
-          <button class="btn" onclick="depositar()">Gerar PIX</button>
+      <!-- BIG ACTIONS -->
+      <div class="grid">
+        <div class="box">
+          <h4><i class="fa-solid fa-money-bill-wave"></i> Depósito PIX (Mercado Pago)</h4>
+          <div class="row">
+            <div class="field"><input id="depAmount" placeholder="Valor em R$ (ex: 1.00)" /></div>
+          </div>
+          <div style="height:8px"></div>
+          <div class="row">
+            <button class="sbtn" id="btnGerarPix"><i class="fa-solid fa-qrcode"></i> Gerar PIX</button>
+            <button class="sbtn" id="btnCheckPix"><i class="fa-solid fa-rotate"></i> Verificar pagamento</button>
+          </div>
+          <div id="pixBox" class="muted" style="margin-top:8px"></div>
+          <div class="muted" style="margin-top:6px">
+            Regras: 85% BLUE pra você • 10% pro site • 5% pro seu pai (ou pro site se não tiver pai).<br/>
+            <b>Compartilhe:</b> “5% de cada depósito do seu filho é seu. Traga filhos pro ICE!”
+          </div>
         </div>
-        <div id="pixBox" style="margin-top:10px"></div>
-      </div>
 
-      <div class="card">
-        <h2><i class="fa-solid fa-hammer"></i> Minerar BLUE (estilo BTC)</h2>
-        <div class="mut">50 BLUE/bloco • halving por blocos • cap 21M • blocos continuam sempre</div>
-        <button class="btn" onclick="minerar()">Minerar 1 bloco</button>
-        <div id="mineStatus" class="mut" style="margin-top:10px"></div>
-      </div>
-
-      <div class="card">
-        <h2><i class="fa-solid fa-arrow-up-right-dots"></i> Saque</h2>
-        <div class="mut">Saque mínimo: 50 BLUE</div>
-        <div class="row" style="margin-top:10px">
-          <div class="field"><input id="saque" placeholder="quantidade BLUE (mín. 50)"></div>
-          <button class="btn" onclick="sacar()">Solicitar</button>
+        <div class="box">
+          <h4><i class="fa-solid fa-hammer"></i> Minerar bloco BLUE (estilo BTC)</h4>
+          <div class="muted">Para ganhar, você precisa minerar um bloco (prova simples no celular).</div>
+          <div style="height:8px"></div>
+          <div class="row">
+            <button class="sbtn" id="btnMinerar"><i class="fa-solid fa-cube"></i> Minerar bloco</button>
+            <span class="muted" id="mineInfo">Recompensa: 50 BLUE/bloco (simulação)</span>
+          </div>
+          <div id="mineBox" class="muted" style="margin-top:8px"></div>
         </div>
-        <div id="wmsg" class="mut" style="margin-top:10px"></div>
+
+        <div class="box">
+          <h4><i class="fa-solid fa-right-left"></i> Saque (demo)</h4>
+          <div class="muted">Aqui é simulação (sem enviar dinheiro ainda).</div>
+          <div style="height:8px"></div>
+          <div class="row">
+            <div class="field"><input id="wdAmount" placeholder="Sacar BLUE (ex: 50)" /></div>
+          </div>
+          <div style="height:8px"></div>
+          <button class="sbtn" id="btnSaque"><i class="fa-solid fa-arrow-up-right-from-square"></i> Solicitar saque</button>
+          <div id="wdBox" class="muted" style="margin-top:8px"></div>
+        </div>
+
+        <div class="box">
+          <h4><i class="fa-solid fa-image"></i> Postar foto/vídeo (local)</h4>
+          <div class="row">
+            <label class="sbtn" style="display:inline-flex;align-items:center;gap:8px">
+              <i class="fa-solid fa-images"></i> Abrir galeria
+              <input id="filePick" type="file" accept="image/*,video/*" style="display:none">
+            </label>
+            <button class="sbtn" id="postBtn"><i class="fa-solid fa-upload"></i> Postar</button>
+          </div>
+          <div id="pickInfo" class="muted" style="margin-top:8px">Nenhum arquivo selecionado</div>
+        </div>
       </div>
 
-      <div class="card">
-        <h2><i class="fa-solid fa-share-nodes"></i> Indicação</h2>
-        <div class="mut">5% de cada depósito do seu filho é seu. Se não tiver pai, esses 5% vão pro site.</div>
-        <div class="mut" style="margin-top:10px">Seu link:</div>
-        <pre id="link"></pre>
-        <button class="btn" onclick="copiar()">Copiar link</button>
-      </div>
+      <hr/>
+      <div class="muted">Seus posts:</div>
+      <div class="grid" id="myPosts"></div>
     </div>
   </div>
+</div>
 
-  <div class="nav">
-    <button onclick="atualizar()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
-    <button onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+<div class="nav">
+  <button id="navFeed" class="active"><i class="fa-solid fa-film"></i><span>Feed</span></button>
+  <button id="navHome"><i class="fa-solid fa-user"></i><span>Perfil</span></button>
+</div>
+
+<div class="modal" id="modalUser">
+  <div class="sheet">
+    <div class="sheetTop">
+      <b id="userTitle">Perfil</b>
+      <button class="sbtn" id="closeUser"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sheetBody" id="userBody"></div>
   </div>
 </div>
 
 <script>
-let email = localStorage.getItem("ice_email") || "";
-let lastPaymentId = localStorage.getItem("ice_last_pay") || "";
+/* ========= Storage ========= */
+const LS_USERS="ice_users_v1", LS_SESS="ice_sess_v1", LS_STATE="ice_state_v1", LS_CHAT="ice_chat_v1";
+const ROLE={USER:"user",MOD:"mod",ADM:"adm"};
+const starHtml=r=>r===ROLE.ADM?'<span class="star gold"><i class="fa-solid fa-star"></i></span>':(r===ROLE.MOD?'<span class="star blue"><i class="fa-solid fa-star"></i></span>':"");
+const uid=()=>Date.now().toString(36)+Math.random().toString(16).slice(2);
+const esc=s=>(s||"").replace(/[&<>"]/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[m]));
+const now=()=>Date.now();
 
-function fmt(n){ return Number(n||0).toFixed(6); }
+const getUsers=()=>JSON.parse(localStorage.getItem(LS_USERS)||"null")||{};
+const setUsers=u=>localStorage.setItem(LS_USERS,JSON.stringify(u));
+const getSess=()=>JSON.parse(localStorage.getItem(LS_SESS)||"null");
+const setSess=s=>localStorage.setItem(LS_SESS,JSON.stringify(s));
+const clearSess=()=>localStorage.removeItem(LS_SESS);
 
-function showPanel(on){
-  document.getElementById("loginCard").style.display = on ? "none" : "block";
-  document.getElementById("panel").style.display = on ? "block" : "none";
+const state=JSON.parse(localStorage.getItem(LS_STATE)||"null")||{
+  balances:{}, // username -> BLUE
+  siteBlue:0,
+  feed:[],
+  myPosts:{}, // username -> [{id,type,url,ts}]
+  pendingPay:{} // username -> {paymentId, amount, ref}
+};
+const saveState=()=>localStorage.setItem(LS_STATE,JSON.stringify(state));
+
+/* ========= Defaults / seed ========= */
+(function seed(){
+  const users=getUsers();
+  // Admin fixo
+  if(!users.admin) users.admin={pass:"1533",role:ROLE.ADM,ref:""};
+  // IA / fake
+  if(!users.iceia) users.iceia={pass:"",role:ROLE.MOD,ref:""};
+  setUsers(users);
+
+  if(state.feed.length===0){
+    state.feed=[
+      {id:"f1",type:"video",url:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",owner:"iceia",ts:now()-60000},
+      {id:"f2",type:"video",url:"https://www.w3schools.com/html/mov_bbb.mp4",owner:"iceia",ts:now()-120000},
+      {id:"f3",type:"image",url:"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=60",owner:"iceia",ts:now()-180000},
+    ];
+  }
+  saveState();
+})();
+
+/* ========= UI refs ========= */
+const $=id=>document.getElementById(id);
+const screenLogin=$("screenLogin"), screenCad=$("screenCad"), app=$("app");
+const lgUser=$("lgUser"), lgPass=$("lgPass"), lgRef=$("lgRef"), lgMsg=$("lgMsg");
+const cdUser=$("cdUser"), cdPass=$("cdPass"), cdRef=$("cdRef"), cdMsg=$("cdMsg");
+const btnLogin=$("btnLogin"), btnGoCad=$("btnGoCad"), btnCad=$("btnCad"), btnBack=$("btnBack");
+
+const navFeed=$("navFeed"), navHome=$("navHome"), panelFeed=$("panelFeed"), panelHome=$("panelHome");
+const carousel=$("carousel"), feedGrid=$("feedGrid");
+const mainV=$("mainV"), mainI=$("mainI"), hint=$("hint");
+const ownerCard=$("ownerCard"), ownerAv=$("ownerAv"), ownerName=$("ownerName"), ownerSub=$("ownerSub");
+const whoAmI=$("whoAmI"), blueBal=$("blueBal");
+const logoutBtn=$("logoutBtn");
+
+const modalUser=$("modalUser"), closeUser=$("closeUser"), userTitle=$("userTitle"), userBody=$("userBody");
+
+const depAmount=$("depAmount"), btnGerarPix=$("btnGerarPix"), btnCheckPix=$("btnCheckPix"), pixBox=$("pixBox");
+const btnMinerar=$("btnMinerar"), mineBox=$("mineBox"), mineInfo=$("mineInfo");
+const wdAmount=$("wdAmount"), btnSaque=$("btnSaque"), wdBox=$("wdBox");
+const filePick=$("filePick"), postBtn=$("postBtn"), pickInfo=$("pickInfo"), myPosts=$("myPosts");
+
+let session=null, selected=null;
+
+/* ========= Screens ========= */
+function showLogin(){screenLogin.style.display="flex";screenCad.style.display="none";app.style.display="none";}
+function showCad(){screenLogin.style.display="none";screenCad.style.display="flex";app.style.display="none";}
+function showApp(){screenLogin.style.display="none";screenCad.style.display="none";app.style.display="flex";}
+
+function msg(el, html, ok=false){
+  el.innerHTML = "<div class='"+(ok?"ok":"bad")+"'>"+html+"</div>";
 }
 
-async function entrar(){
-  const e = (document.getElementById("email").value || "").trim().toLowerCase();
-  const ref = (document.getElementById("ref").value || "").trim().toLowerCase();
-  if(!e) return alert("Digite um email");
-  email = e;
-  localStorage.setItem("ice_email", email);
-  await fetch("?a=register", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ email, ref }) }).catch(()=>{});
-  showPanel(true);
-  document.getElementById("link").textContent = location.origin + location.pathname + "?ref=" + encodeURIComponent(email);
-  atualizar();
+/* ========= Auth ========= */
+function login(user, pass, ref){
+  user=(user||"").trim().toLowerCase();
+  pass=String(pass||"");
+  const users=getUsers();
+  const u=users[user];
+  if(!u) return {ok:false,error:"Usuário não existe. Clique em Criar conta."};
+  if(user==="admin"){
+    if(pass!=="1533") return {ok:false,error:"Senha do admin errada."};
+  }else{
+    if(u.pass!==pass) return {ok:false,error:"Senha errada."};
+  }
+  // salva sessão
+  session={user,role:u.role||ROLE.USER,ref:(u.ref||ref||"").trim().toLowerCase()};
+  setSess(session);
+  if(!state.balances[user]) state.balances[user]=0;
+  saveState();
+  return {ok:true};
+}
+function signup(user, pass, ref){
+  user=(user||"").trim().toLowerCase();
+  pass=String(pass||"");
+  ref=(ref||"").trim().toLowerCase();
+  if(!user || user.length<3) return {ok:false,error:"Usuário muito curto (min 3 letras)."};
+  if(user==="admin") return {ok:false,error:"Esse nome é reservado."};
+  if(!pass || pass.length<3) return {ok:false,error:"Senha muito curta."};
+  const users=getUsers();
+  if(users[user]) return {ok:false,error:"Usuário já existe."};
+  users[user]={pass,role:ROLE.USER,ref};
+  setUsers(users);
+  if(!state.balances[user]) state.balances[user]=0;
+  saveState();
+  return {ok:true};
 }
 
-function logout(){
-  localStorage.removeItem("ice_email");
-  email="";
-  showPanel(false);
+/* ========= Navigation ========= */
+function setTab(t){
+  navFeed.classList.toggle("active",t==="feed");
+  navHome.classList.toggle("active",t==="home");
+  panelFeed.style.display=t==="feed"?"block":"none";
+  panelHome.style.display=t==="home"?"block":"none";
+}
+navFeed.onclick=()=>setTab("feed");
+navHome.onclick=()=>setTab("home");
+
+/* ========= Feed render ========= */
+function getUserObj(username){
+  const users=getUsers();
+  const u=users[username]||{role:ROLE.USER};
+  return {name:username, role:u.role||ROLE.USER};
+}
+function setOwner(username){
+  const u=getUserObj(username);
+  ownerAv.textContent=(u.name||"u")[0].toUpperCase();
+  ownerName.innerHTML="@"+esc(u.name)+" "+starHtml(u.role);
+  ownerSub.textContent="Toque para abrir o perfil";
+}
+function showMedia(p){
+  selected=p; setOwner(p.owner);
+  hint.style.display="none";
+  mainV.pause(); mainV.removeAttribute("src"); mainV.load(); mainV.style.display="none";
+  mainI.style.display="none";
+  if(p.type==="video"){ mainV.src=p.url; mainV.style.display="block"; mainV.play().catch(()=>{}); }
+  else { mainI.src=p.url; mainI.style.display="block"; }
+  [...carousel.children].forEach(el=>el.classList.toggle("active",el.dataset.id===p.id));
 }
 
-async function atualizar(){
-  if(!email) return;
-  const d = await fetch("?a=bal&email="+encodeURIComponent(email)).then(r=>r.json()).catch(()=>({}));
-  if(!d.ok) return;
-  document.getElementById("saldo").textContent = fmt(d.balance);
-  document.getElementById("blueBal").textContent = fmt(d.balance) + " BLUE";
-  document.getElementById("blueInfo").textContent = "cap 21.000.000 • minted " + Math.floor(d.pow.minted).toLocaleString("pt-BR") + " • reward " + d.pow.reward;
-  document.getElementById("net").textContent = "Site BLUE (demo): " + fmt(d.site) + " • Blocos: " + d.pow.blocks;
+function render(){
+  // header
+  whoAmI.textContent = "logado: @"+session.user+" • "+(session.role===ROLE.ADM?"ADM MASTER":"usuário");
+  blueBal.textContent = (state.balances[session.user]||0).toFixed(6)+" BLUE";
+
+  // carousel
+  const all=[...state.feed].sort((a,b)=>b.ts-a.ts);
+  carousel.innerHTML="";
+  all.slice(0,25).forEach(p=>{
+    const div=document.createElement("div");
+    div.className="item"+(selected&&selected.id===p.id?" active":"");
+    div.dataset.id=p.id;
+    div.innerHTML = p.type==="video"
+      ? \`<video muted playsinline src="\${p.url}"></video>\`
+      : \`<img src="\${p.url}"/>\`;
+    const tag=document.createElement("div");
+    tag.className="tag";
+    tag.innerHTML=\`<span class="mini">\${(p.owner||"u")[0].toUpperCase()}</span>@\${esc(p.owner)} \${starHtml(getUserObj(p.owner).role)}\`;
+    div.appendChild(tag);
+    div.onclick=()=>showMedia(p);
+    carousel.appendChild(div);
+  });
+
+  // grid
+  feedGrid.innerHTML="";
+  all.slice(0,60).forEach(p=>{
+    const c=document.createElement("div"); c.className="box";
+    c.innerHTML = p.type==="video"
+      ? \`<video muted playsinline style="width:100%;border-radius:14px" src="\${p.url}"></video>\`
+      : \`<img style="width:100%;border-radius:14px" src="\${p.url}"/>\`;
+    const u=getUserObj(p.owner);
+    const bar=document.createElement("div");
+    bar.style.display="flex";bar.style.justifyContent="space-between";bar.style.alignItems="center";bar.style.gap="10px";bar.style.marginTop="8px";
+    bar.innerHTML=\`<div class="muted" style="display:flex;align-items:center;gap:8px;min-width:0">
+        <b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@\${esc(u.name)}</b> \${starHtml(u.role)}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="sbtn" style="padding:8px 10px" title="perfil"><i class="fa-solid fa-user"></i></button>
+        <button class="sbtn" style="padding:8px 10px" title="destacar"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+      </div>\`;
+    const btns=bar.querySelectorAll("button");
+    btns[0].onclick=()=>openUser(p.owner);
+    btns[1].onclick=()=>showMedia(p);
+    c.appendChild(bar);
+    feedGrid.appendChild(c);
+  });
+
+  // meus posts
+  const mine=(state.myPosts[session.user]||[]).sort((a,b)=>b.ts-a.ts);
+  myPosts.innerHTML = mine.length ? "" : "<div class='muted'>Sem posts ainda.</div>";
+  mine.forEach(p=>{
+    const c=document.createElement("div"); c.className="box";
+    c.innerHTML = p.type==="video"
+      ? \`<video muted playsinline style="width:100%;border-radius:14px" src="\${p.url}"></video>\`
+      : \`<img style="width:100%;border-radius:14px" src="\${p.url}"/>\`;
+    const bar=document.createElement("div");
+    bar.style.display="flex";bar.style.justifyContent="space-between";bar.style.alignItems="center";bar.style.gap="10px";bar.style.marginTop="8px";
+    bar.innerHTML=\`<div class="muted"><b>Seu post</b></div><button class="sbtn" style="padding:8px 10px"><i class="fa-solid fa-trash"></i></button>\`;
+    bar.querySelector("button").onclick=()=>{
+      state.myPosts[session.user]=state.myPosts[session.user].filter(x=>x.id!==p.id);
+      saveState(); render();
+    };
+    c.appendChild(bar); myPosts.appendChild(c);
+  });
+
+  // default selected
+  if(!selected && all[0]) showMedia(all[0]);
 }
 
-async function depositar(){
-  if(!email) return alert("Entre primeiro.");
-  const amount = Number(document.getElementById("valor").value || 0);
-  if(!amount) return alert("Digite um valor");
-  const box = document.getElementById("pixBox");
-  box.innerHTML = "Gerando PIX…";
+/* ========= Perfil de usuário (modal) ========= */
+function openUser(username){
+  const u=getUserObj(username);
+  userTitle.textContent="Perfil • @"+u.name;
+  const posts=(state.myPosts[username]||[]);
+  userBody.innerHTML=\`
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+      <div class="av" style="width:54px;height:54px;border-radius:18px">\${(username||"u")[0].toUpperCase()}</div>
+      <div>
+        <div style="font-weight:1000;font-size:16px">@\${esc(u.name)} \${starHtml(u.role)}</div>
+        <div class="muted">Posts: \${posts.length}</div>
+      </div>
+    </div>
+    <hr/>
+    <div class="grid" id="uPosts"></div>
+  \`;
+  const grid=userBody.querySelector("#uPosts");
+  if(!posts.length) grid.innerHTML="<div class='muted'>Sem posts ainda.</div>";
+  posts.slice().sort((a,b)=>b.ts-a.ts).slice(0,20).forEach(p=>{
+    const box=document.createElement("div"); box.className="box";
+    box.innerHTML = p.type==="video"
+      ? \`<video muted playsinline style="width:100%;border-radius:14px" src="\${p.url}"></video>\`
+      : \`<img style="width:100%;border-radius:14px" src="\${p.url}"/>\`;
+    grid.appendChild(box);
+  });
+  modalUser.style.display="flex";
+}
+closeUser.onclick=()=>modalUser.style.display="none";
+ownerCard.onclick=()=>{ if(selected) openUser(selected.owner); };
 
-  const r = await fetch("?a=mp_create", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ email, amount })
-  }).then(r=>r.json()).catch(()=>({ok:false}));
+/* ========= Logout ========= */
+logoutBtn.onclick=()=>{ clearSess(); location.reload(); };
 
-  if(!r.ok){
-    box.innerHTML = "<b>Erro:</b> " + (typeof r.error==="string" ? r.error : JSON.stringify(r.error));
+/* ========= Posts (local) ========= */
+let pickedFile=null;
+filePick.onchange=e=>{
+  pickedFile=e.target.files&&e.target.files[0]?e.target.files[0]:null;
+  pickInfo.textContent=pickedFile?(pickedFile.name+" • "+Math.round(pickedFile.size/1024)+"KB"):"Nenhum arquivo selecionado";
+};
+postBtn.onclick=()=>{
+  if(!pickedFile) return pickInfo.innerHTML="<span class='bad'>Selecione um arquivo primeiro.</span>";
+  const type=pickedFile.type.startsWith("video")?"video":"image";
+  const url=URL.createObjectURL(pickedFile);
+  const post={id:"p_"+uid(),type,url,ts:now()};
+  state.myPosts[session.user]=state.myPosts[session.user]||[];
+  state.myPosts[session.user].unshift(post);
+  // também joga no feed
+  state.feed.unshift({id:"f_"+uid(),type,url,owner:session.user,ts:post.ts});
+  saveState();
+  pickedFile=null; filePick.value=""; pickInfo.innerHTML="<span class='ok'>Postado ✅</span>";
+  render();
+};
+
+/* ========= BLUE Mining: block simulation ========= */
+function ensureBal(u){ if(state.balances[u]==null) state.balances[u]=0; }
+function addBlue(u,amt){ ensureBal(u); state.balances[u]+=amt; }
+
+const mineState=JSON.parse(localStorage.getItem("ice_mine_v1")||"null")||{
+  cap:21000000, minted:0, reward:50, blocks:0, halvEvery:210000, nextHalv:210000
+};
+const saveMine=()=>localStorage.setItem("ice_mine_v1",JSON.stringify(mineState));
+
+async function mineBlock(){
+  // prova leve (não trava tanto no celular)
+  // acha nonce onde hash simples termina com "000"
+  const base = session.user + "|" + Date.now();
+  let nonce=0;
+  mineBox.innerHTML="<span class='muted'>Minerando... (pode levar alguns segundos)</span>";
+  btnMinerar.disabled=true;
+
+  const target="000";
+  let found=false;
+  const t0=performance.now();
+
+  while(!found){
+    // rodar em "lotes" pra não travar
+    for(let i=0;i<4000;i++){
+      nonce++;
+      const s=base+"|"+nonce;
+      // hash simples
+      let h=0;
+      for(let j=0;j<s.length;j++) h=(h*31 + s.charCodeAt(j))>>>0;
+      const hx=h.toString(16);
+      if(hx.endsWith(target)){ found=true; break; }
+    }
+    await new Promise(r=>setTimeout(r,0));
+  }
+
+  const dt=Math.round(performance.now()-t0);
+
+  // recompensa btc-like
+  if(mineState.minted >= mineState.cap){
+    mineBox.innerHTML="<span class='bad'>Cap 21.000.000 atingido.</span>";
+    btnMinerar.disabled=false;
     return;
   }
 
-  lastPaymentId = r.paymentId;
-  localStorage.setItem("ice_last_pay", lastPaymentId);
+  mineState.blocks++;
+  const can = Math.min(mineState.reward, mineState.cap - mineState.minted);
+  mineState.minted += can;
 
-  const img = r.qr_code_base64 ? \`<img class="qr" src="data:image/png;base64,\${r.qr_code_base64}">\` : "";
-  const code = r.qr_code ? \`<pre>\${r.qr_code}</pre>\` : "";
+  // distribuição da mineração: 100% pro minerador (você)
+  addBlue(session.user, can);
 
-  box.innerHTML = \`
-    <div class="mut">Pague o PIX. O crédito entra automático via webhook. Se demorar, clique Verificar.</div>
-    <div style="margin-top:10px">\${img}</div>
-    <div style="margin-top:10px">\${code}</div>
-    <button class="btn" style="margin-top:10px" onclick="verificar()">Verificar pagamento</button>
-  \`;
-}
-
-async function verificar(){
-  if(!email || !lastPaymentId) return alert("Sem pagamento para verificar.");
-  const box = document.getElementById("pixBox");
-  box.insertAdjacentHTML("beforeend", "<div class='mut' style='margin-top:8px'>Verificando…</div>");
-  const r = await fetch("?a=mp_status&id="+encodeURIComponent(lastPaymentId)+"&email="+encodeURIComponent(email)).then(r=>r.json()).catch(()=>({}));
-  if(r.ok){
-    box.insertAdjacentHTML("beforeend", "<div class='mut'>Status: <b>"+r.status+"</b> • saldo: "+fmt(r.balance)+"</div>");
-    atualizar();
-  }
-}
-
-async function sacar(){
-  const v = Number(document.getElementById("saque").value||0);
-  const w = document.getElementById("wmsg");
-  w.textContent = "Enviando…";
-  const r = await fetch("?a=withdraw", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ email, amount:v }) }).then(r=>r.json()).catch(()=>({}));
-  w.textContent = r.ok ? ("✅ OK • saldo: "+fmt(r.balance)) : ("❌ " + (r.error||"erro"));
-  atualizar();
-}
-
-async function sha256hex(str){
-  const enc = new TextEncoder();
-  const buf = await crypto.subtle.digest("SHA-256", enc.encode(str));
-  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
-}
-
-async function minerar(){
-  if(!email) return alert("Entre primeiro.");
-  const st = document.getElementById("mineStatus");
-  st.textContent = "Gerando desafio…";
-
-  const ch = await fetch("?a=mine_get&email="+encodeURIComponent(email)).then(r=>r.json()).catch(()=>({ok:false}));
-  if(!ch.ok) return st.textContent = "Erro: "+(ch.error||"");
-
-  const diff = ch.diff, nonce = ch.nonce, target = "0".repeat(diff);
-  st.textContent = "Minerando… (no celular pode levar alguns segundos)";
-
-  let sol = 0, tries = 0;
-  while(true){
-    const h = await sha256hex(nonce + "|" + email + "|" + sol);
-    tries++;
-    if(h.startsWith(target)) break;
-    sol++;
-    if(tries % 250 === 0) st.textContent = "Minerando… tentativas: " + tries;
+  // halving
+  if(mineState.blocks >= mineState.nextHalv){
+    mineState.reward = Math.max(0.00000001, mineState.reward/2);
+    mineState.nextHalv += mineState.halvEvery;
   }
 
-  st.textContent = "Enviando bloco…";
-  const out = await fetch("?a=mine", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ email, nonce, solution:String(sol) }) }).then(r=>r.json()).catch(()=>({ok:false}));
-  if(!out.ok) return st.textContent = "Falhou: " + (out.error||"");
-
-  st.textContent = "✅ Bloco minerado! +" + out.mined + " BLUE • Blocos: " + out.blocks + " • Reward: " + out.reward;
-  atualizar();
+  saveMine(); saveState();
+  mineBox.innerHTML="<span class='ok'>Bloco minerado ✅ +" + can + " BLUE (tempo: "+dt+"ms)</span>";
+  mineInfo.textContent="Recompensa atual: "+mineState.reward+" BLUE/bloco • Minted: "+Math.floor(mineState.minted).toLocaleString("pt-BR");
+  btnMinerar.disabled=false;
+  render();
 }
+btnMinerar.onclick=mineBlock;
 
-function copiar(){
-  const t = document.getElementById("link").textContent;
-  navigator.clipboard?.writeText(t).then(()=>alert("Link copiado ✅")).catch(()=>alert("Copie manualmente 👍"));
+/* ========= Mercado Pago PIX deposit ========= */
+function apiUrl(a, params={}){
+  const u = new URL(location.href);
+  u.pathname = "/api/index";
+  u.searchParams.set("a", a);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  return u.toString();
 }
+function setPix(html){ pixBox.innerHTML=html; }
 
-// auto-login
-if(email){
-  showPanel(true);
-  document.getElementById("link").textContent = location.origin + location.pathname + "?ref=" + encodeURIComponent(email);
-  atualizar();
-} else {
-  showPanel(false);
-}
-</script></body></html>`);
-  } catch (e) {
-    res.statusCode = 500;
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.end("Erro: " + e.message);
+let pending=null; // {paymentId, amount, ref}
+
+btnGerarPix.onclick=async()=>{
+  const amt=Number(String(depAmount.value||"").replace(",","."));
+  if(!amt || Number.isNaN(amt)) return setPix("<span class='bad'>Coloque um valor (ex: 1.00)</span>");
+
+  const email = session.user + "@icecubo.local"; // demo: MP precisa email válido; você pode trocar depois
+  const ref = (getUsers()[session.user]?.ref || session.ref || "").trim();
+
+  setPix("Gerando PIX...");
+  try{
+    const r=await fetch(apiUrl("mp_create"),{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ email, amount: amt, ref })
+    });
+    const data=await r.json();
+    if(!data.ok) return setPix("<span class='bad'>Erro: "+esc(JSON.stringify(data.error))+"</span>");
+
+    pending={paymentId:data.paymentId, amount:data.amount, ref};
+    state.pendingPay[session.user]=pending;
+    saveState();
+
+    const img = data.qr_code_base64 ? "<img style='width:220px;max-width:100%;border-radius:14px;border:1px solid rgba(7,36,69,.18)' src='data:image/png;base64,"+data.qr_code_base64+"'/>" : "";
+    const copia = data.qr_code ? ("<textarea style='width:100%;padding:10px;border-radius:14px;border:1px solid rgba(7,36,69,.18)'>"+data.qr_code+"</textarea>") : "";
+
+    setPix(\`
+      <div class="ok">PIX criado ✅ paymentId: \${data.paymentId}</div>
+      <div style="height:8px"></div>
+      \${img}
+      <div style="height:8px"></div>
+      <div class="muted">Copia e Cola:</div>
+      \${copia || "<div class='muted'>Sem QR (tente de novo).</div>"}
+      <div style="height:8px"></div>
+      <div class="muted">Depois de pagar, clique em <b>Verificar pagamento</b>.</div>
+    \`);
+  }catch(e){
+    setPix("<span class='bad'>Erro: "+esc(e.message)+"</span>");
   }
 };
+
+btnCheckPix.onclick=async()=>{
+  pending = state.pendingPay[session.user] || pending;
+  if(!pending?.paymentId) return setPix("<span class='bad'>Nenhum PIX pendente. Clique em Gerar PIX.</span>");
+
+  setPix("Verificando pagamento...");
+  try{
+    const r=await fetch(apiUrl("mp_check",{paymentId: pending.paymentId}));
+    const data=await r.json();
+    if(!data.ok) return setPix("<span class='bad'>Erro: "+esc(JSON.stringify(data.error))+"</span>");
+
+    if(data.status!=="approved"){
+      return setPix("<span class='muted'>Status: <b>"+esc(data.status)+"</b>. Se ainda não pagou, pague e tente de novo.</span>");
+    }
+
+    // CREDITAR BLUE (regra 85/10/5)
+    // taxa: 1 real = 100 BLUE (ajusta depois)
+    const rate = 100;
+    const totalBlue = Math.round((Number(data.amount)||0) * rate * 1000000) / 1000000;
+
+    const buyer = session.user;
+    const father = (pending.ref || "").trim().toLowerCase();
+    const site = "site";
+
+    const toBuyer = totalBlue * 0.85;
+    const toSiteBase = totalBlue * 0.10;
+    const toFatherOrSite = totalBlue * 0.05;
+
+    addBlue(buyer, toBuyer);
+    state.siteBlue = (state.siteBlue||0) + toSiteBase;
+
+    // paga 5% pro pai se existir e estiver cadastrado
+    const users=getUsers();
+    if(father && users[father]){
+      addBlue(father, toFatherOrSite);
+    }else{
+      state.siteBlue = (state.siteBlue||0) + toFatherOrSite;
+    }
+
+    // limpar pendência
+    delete state.pendingPay[session.user];
+    saveState();
+
+    setPix(\`
+      <div class="ok">Pagamento aprovado ✅</div>
+      <div class="muted">Total: \${totalBlue.toFixed(6)} BLUE</div>
+      <div class="muted">Você: +\${toBuyer.toFixed(6)} • Site: +\${toSiteBase.toFixed(6)} • Pai/Site: +\${toFatherOrSite.toFixed(6)}</div>
+    \`);
+    render();
+  }catch(e){
+    setPix("<span class='bad'>Erro: "+esc(e.message)+"</span>");
+  }
+};
+
+/* ========= Saque (demo) ========= */
+btnSaque.onclick=()=>{
+  const v=Number(String(wdAmount.value||"").replace(",","."));
+  if(!v || Number.isNaN(v)) return wdBox.innerHTML="<span class='bad'>Digite quanto quer sacar (ex: 50)</span>";
+  const bal=state.balances[session.user]||0;
+  if(v>bal) return wdBox.innerHTML="<span class='bad'>Saldo insuficiente.</span>";
+  if(v<50) return wdBox.innerHTML="<span class='bad'>Saque mínimo: 50 BLUE (demo)</span>";
+  state.balances[session.user]=bal-v;
+  saveState();
+  wdBox.innerHTML="<span class='ok'>Saque solicitado ✅ (demo). (-"+v+" BLUE)</span>";
+  render();
+};
+
+/* ========= Boot ========= */
+function boot(){
+  const s=getSess();
+  if(!s){ showLogin(); return; }
+  session=s;
+  showApp();
+  setTab("feed");
+  // info mineração
+  mineInfo.textContent="Recompensa atual: "+mineState.reward+" BLUE/bloco • Minted: "+Math.floor(mineState.minted).toLocaleString("pt-BR");
+  render();
+}
+boot();
+
+/* ========= Login events ========= */
+btnGoCad.onclick=()=>showCad();
+btnBack.onclick=()=>showLogin();
+
+btnLogin.onclick=()=>{
+  const r=login(lgUser.value, lgPass.value, lgRef.value);
+  if(!r.ok) return msg(lgMsg, r.error);
+  location.reload();
+};
+
+btnCad.onclick=()=>{
+  const r=signup(cdUser.value, cdPass.value, cdRef.value);
+  if(!r.ok) return msg(cdMsg, r.error);
+  msg(cdMsg, "Conta criada ✅ Agora faça login.", true);
+};
+</script>
+</body></html>`);
+}
