@@ -1,196 +1,515 @@
-module.exports = (req, res) => {
-res.setHeader("Content-Type", "text/html; charset=utf-8");
-res.status(200).end(`<!DOCTYPE html>
+module.exports = async (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+
+  res.status(200).end(`<!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>ICE-CUBO</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 :root{
---bg:#0b1220;
---card:#111c32;
---accent:#38bdf8;
---gold:#ffd700;
---text:#fff;
+  --bg1:#dff3ff;--bg2:#bfe8ff;--bg3:#072445;
+  --glass:rgba(255,255,255,.58);--line:rgba(7,36,69,.18);
+  --t:#06223f;--m:#2b587d;--a:#0ea5e9;--gold:#ffd700;
+  --dark:#07101f;
 }
 *{box-sizing:border-box}
 body{
-margin:0;
-font-family:Arial,Helvetica,sans-serif;
-background:linear-gradient(180deg,#0b1220,#07101f);
-color:var(--text);
+  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--t);
+  height:100vh;overflow:hidden;
+  background:
+    radial-gradient(1200px 700px at 15% -10%,rgba(255,255,255,.88),transparent 55%),
+    radial-gradient(900px 700px at 110% 20%,rgba(56,189,248,.25),transparent 60%),
+    linear-gradient(180deg,var(--bg1),var(--bg2) 45%,#7dd3fc 70%,#2aa9ff 86%,var(--bg3));
 }
-header{
-padding:14px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:var(--card);
-border-bottom:1px solid rgba(255,255,255,.05);
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.34;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none'%3E%3Cpath d='M60 10c6 10 6 20 0 30c-6-10-6-20 0-30Z' fill='%230ea5e9' opacity='.35'/%3E%3Cpath d='M35 35c10 6 20 6 30 0c-10-6-20-6-30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Cpath d='M85 35c-10 6-20 6-30 0c10-6 20-6 30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Ccircle cx='22' cy='88' r='3' fill='%23ffffff' opacity='.35'/%3E%3Ccircle cx='35' cy='98' r='2' fill='%23ffffff' opacity='.25'/%3E%3Ccircle cx='48' cy='88' r='2' fill='%23ffffff' opacity='.2'/%3E%3Cpath d='M82 86c8-10 12-18 4-28c-9 6-14 12-4 28Z' fill='%230b5fa5' opacity='.22'/%3E%3Cpath d='M82 86c2-6 8-10 12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M82 86c-2-6-8-10-12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:140px 140px;
+}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer}
+input,textarea{font:inherit}
+
+#app{height:100vh;display:flex;flex-direction:column}
+.top{
+  height:52vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;
+  background:rgba(0,0,0,.08);
+  box-shadow:0 18px 50px rgba(0,0,0,.22);
+}
+.bub:before,.bub:after{
+  content:"";position:absolute;inset:-20%;
+  background:
+    radial-gradient(circle,rgba(255,255,255,.35) 0 2px,transparent 3px) 0 0/120px 120px,
+    radial-gradient(circle,rgba(255,255,255,.22) 0 1px,transparent 2px) 40px 20px/160px 160px;
+  animation:float 14s linear infinite;opacity:.55
+}
+.bub:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
+@keyframes float{to{transform:translateY(-120px)}}
+
+.brand{
+  position:absolute;top:10px;left:12px;right:12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:5
 }
 .logo{
-font-weight:bold;
-font-size:18px;
-color:var(--accent);
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+  background:var(--glass);backdrop-filter:blur(10px);border-radius:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.10)
 }
-.saldo{
-display:flex;
-align-items:center;
-gap:8px;
-background:#0f1a30;
-padding:8px 12px;
-border-radius:20px;
-border:1px solid rgba(255,215,0,.3);
+.brandname{display:flex;flex-direction:column;line-height:1.05}
+.brandname b{letter-spacing:1.2px;font-size:15px}
+.brandname small{color:var(--m);font-size:11px}
+
+.pill{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+  background:var(--glass);backdrop-filter:blur(10px);border-radius:18px
 }
-.saldo span{
-color:var(--gold);
-font-weight:bold;
+.coin{
+  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);
+  border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) inset
 }
-main{
-padding:20px;
+.coin span{color:var(--gold);font-weight:1000}
+.pill .meta{display:flex;flex-direction:column;line-height:1.05}
+.pill .meta b{font-size:12px}
+.pill .meta small{font-size:11px;color:var(--m)}
+
+.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#main{
+  width:100%;height:100%;object-fit:cover;
+  filter:saturate(1.05) contrast(1.03);
 }
-.box{
-background:var(--card);
-padding:18px;
-border-radius:18px;
-margin-bottom:18px;
-box-shadow:0 10px 30px rgba(0,0,0,.3);
+#hint{
+  position:absolute;bottom:12px;left:12px;right:12px;z-index:6;
+  display:flex;justify-content:space-between;gap:10px;pointer-events:none;
 }
-.box h2{
-margin:0 0 10px;
-color:var(--accent);
+.hchip{
+  padding:8px 10px;border-radius:14px;border:1px solid var(--line);
+  background:rgba(255,255,255,.62);backdrop-filter:blur(10px);
+  font-size:11px;color:var(--m)
 }
-button{
-width:100%;
-padding:14px;
-border:none;
-border-radius:14px;
-margin-top:10px;
-font-weight:bold;
-font-size:15px;
-cursor:pointer;
+
+.mid{
+  flex:1;display:flex;flex-direction:column;gap:10px;
+  padding:12px 12px 86px;
 }
-.deposit{
-background:linear-gradient(90deg,#22c55e,#16a34a);
-color:white;
+.wallet{
+  border:1px solid var(--line);background:rgba(255,255,255,.70);backdrop-filter:blur(12px);
+  border-radius:22px;box-shadow:0 18px 40px rgba(0,0,0,.14);
+  padding:12px;
 }
-.withdraw{
-background:linear-gradient(90deg,#f59e0b,#d97706);
-color:white;
+.whead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.wtitle{display:flex;flex-direction:column;gap:2px}
+.wtitle b{font-size:14px;letter-spacing:.4px}
+.wtitle small{font-size:11px;color:var(--m)}
+.wtitle i{color:var(--a)}
+.wbal{display:flex;flex-direction:column;align-items:flex-end;line-height:1.05}
+.wbal span{font-size:11px;color:var(--m)}
+.wbal b{font-size:14px}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wbtn{
+  border:1px solid var(--line);border-radius:18px;padding:12px;
+  background:rgba(255,255,255,.55);display:flex;align-items:center;gap:10px;
+  transition:.15s transform;
 }
-input{
-width:100%;
-padding:12px;
-border-radius:10px;
-border:none;
-margin-top:8px;
+.wbtn:active{transform:scale(.98)}
+.wbtn i{font-size:18px}
+.wbtn b{display:block;font-size:13px}
+.wbtn small{display:block;font-size:11px;color:var(--m)}
+.wbtn.dep i{color:#16a34a}
+.wbtn.saq i{color:#f59e0b}
+
+.wform{margin-top:10px;border-top:1px dashed rgba(7,36,69,.18);padding-top:10px;display:none}
+.row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.row label{font-size:11px;color:var(--m)}
+.row input,.row textarea{
+  width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(7,36,69,.18);
+  background:rgba(255,255,255,.80);outline:none
 }
-.footer{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-background:var(--card);
-display:flex;
-justify-content:space-around;
-padding:12px;
-border-top:1px solid rgba(255,255,255,.05);
+.wsubmit{
+  width:100%;padding:12px 14px;border-radius:16px;border:0;
+  background:linear-gradient(90deg,#38bdf8,#0ea5e9);color:#06223f;font-weight:900
 }
-.footer i{
-font-size:20px;
-color:var(--accent);
+.wsubmit.ghost{
+  margin-top:8px;background:rgba(255,255,255,.55);
+  border:1px solid rgba(7,36,69,.18);color:var(--t)
 }
-.msg{
-margin-top:10px;
-font-size:13px;
-opacity:.8;
+.pixbox{margin-top:10px;display:none;flex-direction:column;gap:8px}
+.pixbox b{font-size:12px}
+.pixbox small{font-size:11px;color:var(--m)}
+.pixbox img{width:220px;max-width:75vw;border-radius:14px;border:1px solid rgba(7,36,69,.18)}
+.hint2{display:block;margin-top:8px;font-size:11px;color:var(--m)}
+
+.carousel{
+  border:1px solid var(--line);background:rgba(255,255,255,.60);backdrop-filter:blur(10px);
+  border-radius:22px;padding:10px;box-shadow:0 14px 34px rgba(0,0,0,.12);
 }
+.crow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.crow b{font-size:13px}
+.crow small{font-size:11px;color:var(--m)}
+.citems{display:flex;gap:10px;overflow:auto;padding-bottom:4px;scrollbar-width:none}
+.citems::-webkit-scrollbar{display:none}
+.card{
+  min-width:150px;max-width:150px;border-radius:18px;overflow:hidden;position:relative;
+  border:1px solid rgba(7,36,69,.16);background:rgba(255,255,255,.55);
+}
+.card img{width:100%;height:92px;object-fit:cover;display:block}
+.card .cap{padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tag{font-size:11px;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.heart{width:34px;height:34px;border-radius:14px;border:1px solid rgba(7,36,69,.16);
+  background:rgba(255,255,255,.6);display:grid;place-items:center;color:#ef4444}
+.card.active{outline:2px solid rgba(14,165,233,.8)}
+.toast{
+  position:fixed;left:12px;right:12px;bottom:88px;z-index:99;
+  background:rgba(7,16,31,.82);color:#fff;border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(10px);border-radius:18px;padding:10px 12px;
+  display:none;align-items:center;justify-content:space-between;gap:10px
+}
+.toast small{opacity:.85}
+
+.bottom{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  display:flex;justify-content:space-around;align-items:center;
+  padding:12px 10px;background:rgba(7,16,31,.78);backdrop-filter:blur(10px);
+  border-top:1px solid rgba(255,255,255,.10)
+}
+.bico{
+  width:46px;height:46px;border-radius:18px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);display:grid;place-items:center;color:#cfefff;
+}
+.bico.primary{background:linear-gradient(180deg,rgba(56,189,248,.35),rgba(14,165,233,.18));border-color:rgba(56,189,248,.35)}
+.bico:active{transform:scale(.98)}
 </style>
 </head>
+
 <body>
+<div id="app">
+  <section class="top bub">
+    <div class="brand">
+      <div class="logo">
+        <div class="coin"><span>฿</span></div>
+        <div class="brandname">
+          <b>ICE-CUBO</b>
+          <small>feed • lives • blue</small>
+        </div>
+      </div>
 
-<header>
-<div class="logo">ICE-CUBO</div>
-<div class="saldo">
-<i class="fa-solid fa-coins"></i>
-<span id="saldo">0</span> BLUE
-</div>
-</header>
+      <div class="pill" id="pillSaldo" title="Saldo BLUE">
+        <div class="coin"><span>฿</span></div>
+        <div class="meta">
+          <b><span id="saldoTxt">0</span> BLUE</b>
+          <small>carteira</small>
+        </div>
+      </div>
+    </div>
 
-<main>
+    <div class="viewer">
+      <img id="main" alt="Conteúdo" />
+    </div>
 
-<div class="box">
-<h2>💰 Depósito</h2>
-<input type="number" id="valor" placeholder="Digite o valor em R$">
-<button class="deposit" onclick="depositar()">Depositar via PIX</button>
-<div class="msg" id="depositMsg"></div>
-</div>
+    <div id="hint">
+      <div class="hchip"><i class="fa-solid fa-hand-pointer"></i> 2 toques no card: sobe</div>
+      <div class="hchip"><i class="fa-solid fa-arrows-left-right"></i> arraste no topo: troca</div>
+    </div>
+  </section>
 
-<div class="box">
-<h2>🏦 Saque</h2>
-<input type="number" id="saqueValor" placeholder="Valor para sacar">
-<button class="withdraw" onclick="sacar()">Solicitar Saque</button>
-<div class="msg" id="saqueMsg"></div>
-</div>
+  <section class="mid">
+    <div class="wallet">
+      <div class="whead">
+        <div class="wtitle">
+          <i class="fa-solid fa-wallet"></i>
+          <b>Carteira</b>
+          <small>Depósito / Saque (bem visível)</small>
+        </div>
+        <div class="wbal">
+          <span>Saldo</span>
+          <b><span id="saldoTxt2">0</span> BLUE</b>
+        </div>
+      </div>
 
-</main>
+      <div class="wgrid">
+        <button class="wbtn dep" id="btnDeposito">
+          <i class="fa-solid fa-circle-plus"></i>
+          <div><b>Depositar</b><small>PIX (QR + copia/cola)</small></div>
+        </button>
 
-<div class="footer">
-<i class="fa-solid fa-house"></i>
-<i class="fa-solid fa-video"></i>
-<i class="fa-solid fa-triangle-exclamation"></i>
+        <button class="wbtn saq" id="btnSaque">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <div><b>Sacar</b><small>Pedido de saque</small></div>
+        </button>
+      </div>
+
+      <div class="wform" id="formDeposito">
+        <div class="row">
+          <label>Email</label>
+          <input id="depEmail" placeholder="seuemail@gmail.com" />
+        </div>
+        <div class="row">
+          <label>Valor (R$)</label>
+          <input id="depValor" inputmode="decimal" placeholder="10.00" />
+        </div>
+        <button class="wsubmit" id="gerarPix">Gerar PIX</button>
+
+        <div class="pixbox" id="pixBox">
+          <b>PIX gerado</b>
+          <small id="pixStatus">Aguardando pagamento…</small>
+          <img id="pixImg" alt="QR Code"/>
+          <textarea id="pixCopia" rows="3" readonly placeholder="copia e cola"></textarea>
+          <button class="wsubmit ghost" id="copiarPix">Copiar código</button>
+        </div>
+      </div>
+
+      <div class="wform" id="formSaque">
+        <div class="row">
+          <label>Chave PIX</label>
+          <input id="saqChave" placeholder="CPF / Email / Celular / Aleatória" />
+        </div>
+        <div class="row">
+          <label>Valor (BLUE)</label>
+          <input id="saqValor" inputmode="numeric" placeholder="100" />
+        </div>
+        <button class="wsubmit" id="pedirSaque">Pedir Saque</button>
+        <small class="hint2">
+          * Saque REAL via Pix precisa de um endpoint de payout (Asaas/MercadoPago payouts). Aqui o pedido fica registrado e desconta do saldo local.
+        </small>
+      </div>
+    </div>
+
+    <div class="carousel">
+      <div class="crow">
+        <b>Vídeos</b>
+        <small>toque 2x para subir</small>
+      </div>
+      <div class="citems" id="citems"></div>
+    </div>
+  </section>
+
+  <div class="bottom">
+    <button class="bico primary" id="btnHome" title="Home"><i class="fa-solid fa-house"></i></button>
+    <button class="bico" id="btnCam" title="Câmera (placeholder)"><i class="fa-solid fa-video"></i></button>
+    <button class="bico" id="btnDanger" title="Perigo (placeholder)"><i class="fa-solid fa-triangle-exclamation"></i></button>
+  </div>
+
+  <div class="toast" id="toast"><small id="toastTxt"></small><i class="fa-solid fa-xmark" id="toastX"></i></div>
 </div>
 
 <script>
+const $ = (id)=>document.getElementById(id);
 
-let saldo = 0;
-const saldoEl = document.getElementById("saldo");
+const FEED = [
+  {title:"Flor", img:"https://picsum.photos/id/102/900/1200"},
+  {title:"Mar", img:"https://picsum.photos/id/1011/900/1200"},
+  {title:"Cidade", img:"https://picsum.photos/id/1012/900/1200"},
+  {title:"Montanha", img:"https://picsum.photos/id/1002/900/1200"},
+  {title:"Natureza", img:"https://picsum.photos/id/103/900/1200"},
+  {title:"Céu", img:"https://picsum.photos/id/1015/900/1200"},
+];
 
-function atualizarSaldo(){
-saldoEl.innerText = saldo;
+let idx = 0;
+let lastTap = 0;
+let saldo = Number(localStorage.getItem("ICE_SALDO")||"0");
+let lastPaymentId = localStorage.getItem("ICE_LAST_PID")||"";
+
+function setSaldo(v){
+  saldo = Math.max(0, Math.floor(Number(v)||0));
+  localStorage.setItem("ICE_SALDO", String(saldo));
+  $("saldoTxt").textContent = saldo;
+  $("saldoTxt2").textContent = saldo;
+}
+setSaldo(saldo);
+
+function toast(msg){
+  $("toastTxt").textContent = msg;
+  $("toast").style.display = "flex";
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>$("toast").style.display="none", 2600);
+}
+$("toastX").onclick=()=>$("toast").style.display="none";
+
+function renderMain(i){
+  idx = (i+FEED.length)%FEED.length;
+  $("main").src = FEED[idx].img;
+  document.querySelectorAll(".card").forEach((c,ci)=>c.classList.toggle("active", ci===idx));
 }
 
-async function depositar(){
-const valor = document.getElementById("valor").value;
-if(!valor) return;
-
-document.getElementById("depositMsg").innerText="Gerando PIX...";
-
-const r = await fetch("/api/mp_create",{
-method:"POST",
-headers:{ "Content-Type":"application/json"},
-body:JSON.stringify({ email:"cliente@ice.com", amount:Number(valor) })
-});
-
-const data = await r.json();
-
-if(data.qr_code){
-document.getElementById("depositMsg").innerText="PIX gerado. Copie e pague.";
-saldo += Number(valor);
-atualizarSaldo();
-}else{
-document.getElementById("depositMsg").innerText="Erro ao gerar PIX.";
-}
-}
-
-function sacar(){
-const v = document.getElementById("saqueValor").value;
-if(!v) return;
-
-if(Number(v) > saldo){
-document.getElementById("saqueMsg").innerText="Saldo insuficiente.";
-return;
+function buildCarousel(){
+  const wrap = $("citems");
+  wrap.innerHTML = "";
+  FEED.forEach((it,i)=>{
+    const d = document.createElement("div");
+    d.className = "card"+(i===idx?" active":"");
+    d.innerHTML = \`
+      <img src="\${it.img}" alt="">
+      <div class="cap">
+        <div class="tag">\${it.title}</div>
+        <div class="heart" title="Curtir"><i class="fa-solid fa-heart"></i></div>
+      </div>
+    \`;
+    d.onclick = ()=>renderMain(i);
+    d.ondblclick = ()=>{
+      renderMain(i);
+      toast("Subiu para o vídeo principal ✅");
+    };
+    wrap.appendChild(d);
+  });
 }
 
-saldo -= Number(v);
-atualizarSaldo();
-document.getElementById("saqueMsg").innerText="Solicitação enviada.";
+buildCarousel();
+renderMain(0);
+
+// swipe no topo
+let sx=0, dragging=false;
+document.querySelector(".top").addEventListener("touchstart",(e)=>{
+  sx = e.touches[0].clientX; dragging=true;
+},{passive:true});
+document.querySelector(".top").addEventListener("touchmove",(e)=>{
+  if(!dragging) return;
+},{passive:true});
+document.querySelector(".top").addEventListener("touchend",(e)=>{
+  if(!dragging) return;
+  dragging=false;
+  const ex = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : sx;
+  const dx = ex - sx;
+  if(Math.abs(dx) > 40){
+    renderMain(idx + (dx<0 ? 1 : -1));
+  }
+},{passive:true});
+
+// botões rodapé (placeholder)
+$("btnHome").onclick = ()=>toast("Home ✅");
+$("btnCam").onclick = ()=>toast("Câmera: você pode integrar getUserMedia depois.");
+$("btnDanger").onclick = ()=>toast("Perigo: área para denúncias/moderação.");
+
+// carteira
+function toggle(el){ el.style.display = (el.style.display==="none"||!el.style.display) ? "block" : "none"; }
+
+$("btnDeposito").onclick = ()=>{
+  $("formSaque").style.display="none";
+  toggle($("formDeposito"));
+};
+$("btnSaque").onclick = ()=>{
+  $("formDeposito").style.display="none";
+  toggle($("formSaque"));
+};
+
+// Depósito REAL via /api/mp_create
+async function gerarPix(){
+  const email = $("depEmail").value.trim();
+  const amount = $("depValor").value.trim().replace(",", ".");
+  if(!email || !amount){ toast("Preencha email e valor."); return; }
+
+  $("pixBox").style.display="none";
+  toast("Gerando PIX…");
+
+  const r = await fetch("/api/mp_create",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ email, amount: Number(amount) })
+  });
+
+  const j = await r.json();
+  if(!j.ok){ toast(j.error || "Erro ao gerar PIX"); return; }
+
+  lastPaymentId = j.paymentId || "";
+  localStorage.setItem("ICE_LAST_PID", lastPaymentId);
+
+  $("pixBox").style.display="flex";
+  $("pixStatus").textContent = "Aguardando pagamento…";
+  $("pixCopia").value = j.qr_code || "";
+  if(j.qr_code_base64){
+    $("pixImg").style.display="block";
+    $("pixImg").src = "data:image/png;base64,"+j.qr_code_base64;
+  }else{
+    $("pixImg").style.display="none";
+    $("pixImg").removeAttribute("src");
+  }
+
+  // começar a checar status (se existir /api/mp_status)
+  if(lastPaymentId) startPoll(lastPaymentId, Number(amount));
 }
 
+$("gerarPix").onclick = gerarPix;
+
+$("copiarPix").onclick = async ()=>{
+  const txt = $("pixCopia").value || "";
+  if(!txt){ toast("Sem código para copiar."); return; }
+  try{
+    await navigator.clipboard.writeText(txt);
+    toast("Código PIX copiado ✅");
+  }catch{
+    $("pixCopia").focus();
+    $("pixCopia").select();
+    document.execCommand("copy");
+    toast("Copiado ✅");
+  }
+};
+
+// Checagem do status do pagamento
+let pollTimer = null;
+async function checkStatus(paymentId){
+  // seu /api/mp_status pode aceitar query ?id=... (ajuste aqui se for diferente)
+  const r = await fetch("/api/mp_status?id="+encodeURIComponent(paymentId));
+  return await r.json();
+}
+
+function startPoll(paymentId, amount){
+  if(pollTimer) clearInterval(pollTimer);
+  let tries = 0;
+  pollTimer = setInterval(async ()=>{
+    tries++;
+    if(tries>40){ // ~2min
+      clearInterval(pollTimer);
+      pollTimer=null;
+      $("pixStatus").textContent = "Ainda aguardando… (você pode checar depois)";
+      return;
+    }
+    try{
+      const s = await checkStatus(paymentId);
+      const st = (s.status || s.mp_status || "").toLowerCase();
+
+      // MercadoPago costuma retornar: approved / pending / rejected / cancelled
+      if(st){
+        $("pixStatus").textContent = "Status: "+st;
+      }
+
+      if(st === "approved" || st === "paid"){
+        clearInterval(pollTimer);
+        pollTimer=null;
+        $("pixStatus").textContent = "Pagamento aprovado ✅";
+        // creditar BLUE (exemplo: 1 real = 1 blue)
+        setSaldo(saldo + Math.floor(Number(amount)||0));
+        toast("Depósito confirmado ✅ Saldo atualizado.");
+      }
+    }catch(e){
+      // se status falhar, não trava
+    }
+  }, 3000);
+}
+
+// Saque (funcional no app; real precisa endpoint)
+$("pedirSaque").onclick = ()=>{
+  const chave = $("saqChave").value.trim();
+  const v = Number(($("saqValor").value||"").trim());
+  if(!chave || !v){ toast("Preencha chave e valor."); return; }
+  if(v <= 0){ toast("Valor inválido."); return; }
+  if(v > saldo){ toast("Saldo insuficiente."); return; }
+
+  const pedidos = JSON.parse(localStorage.getItem("ICE_SAQUES")||"[]");
+  pedidos.unshift({chave, valor:v, at: Date.now(), status:"pendente"});
+  localStorage.setItem("ICE_SAQUES", JSON.stringify(pedidos));
+
+  setSaldo(saldo - Math.floor(v));
+  toast("Saque solicitado ✅ (pendente)");
+};
+
+// clique no pill abre/fecha depósito
+$("pillSaldo").onclick = ()=> {
+  $("formSaque").style.display="none";
+  toggle($("formDeposito"));
+};
 </script>
-
 </body>
 </html>`);
 };
