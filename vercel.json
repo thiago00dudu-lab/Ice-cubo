@@ -1,0 +1,258 @@
+const MP="https://api.mercadopago.com";
+
+function readBody(req){
+  return new Promise((resolve)=>{
+    let raw="";
+    req.on("data",(c)=>raw+=c);
+    req.on("end",()=>{
+      if(!raw) return resolve({});
+      try{ resolve(JSON.parse(raw)); }catch{ resolve({}); }
+    });
+  });
+}
+
+function send(res,code,body,ctype){
+  res.statusCode=code;
+  res.setHeader("Content-Type", ctype||"application/json; charset=utf-8");
+  res.end(ctype?.includes("text/html")? body : JSON.stringify(body));
+}
+
+function page(){
+  return `<!doctype html><html lang="pt-br"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>ICE-CUBO</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{--bg:#0f172a;--card:#0b1220;--b:#1f2a44;--a:#38bdf8}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial;background:var(--bg);color:#fff;height:100vh;overflow:hidden}
+.stage{height:45vh;background:#000;position:relative;border-radius:0 0 24px 24px;overflow:hidden}
+#viewer,#cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+#hint{position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,.45);padding:8px 10px;border-radius:14px;font-size:12px;border:1px solid rgba(255,255,255,.15)}
+.ocean{position:absolute;inset:0;pointer-events:none;opacity:.28;background:
+radial-gradient(circle at 12% 22%,#7dd3fc33 0 18px,transparent 19px),
+radial-gradient(circle at 72% 30%,#93c5fd2a 0 14px,transparent 15px),
+radial-gradient(circle at 40% 70%,#38bdf826 0 22px,transparent 23px),
+radial-gradient(circle at 85% 78%,#60a5fa22 0 16px,transparent 17px);
+animation:float 8s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.grid{height:calc(55vh - 72px);padding:10px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;overflow:auto}
+.tile{background:linear-gradient(180deg,#0b1220,#0a1326);border:1px solid var(--b);border-radius:18px;min-height:150px;position:relative;overflow:hidden;touch-action:pan-y}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.1) contrast(1.05)}
+.badge{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.45);padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.15)}
+.x{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.35);color:#fff}
+.bar{position:fixed;left:0;right:0;bottom:0;height:72px;background:rgba(15,23,42,.92);border-top:1px solid var(--b);
+display:flex;align-items:center;justify-content:space-around;backdrop-filter:blur(8px)}
+.btn{width:56px;height:56px;border-radius:18px;border:1px solid var(--b);background:rgba(11,18,32,.8);color:#fff;font-size:20px}
+.btn:active{transform:scale(.98)}
+.pill{padding:10px 14px;border-radius:999px;border:1px solid var(--b);background:rgba(11,18,32,.8);color:#fff;font-size:13px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px}
+.card{width:min(520px,100%);background:#0b1220;border:1px solid var(--b);border-radius:22px;padding:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}input{flex:1;min-width:180px;padding:12px 12px;border-radius:14px;border:1px solid var(--b);background:#081026;color:#fff}
+a{color:var(--a);text-decoration:none}
+</style></head><body>
+
+<div class="stage">
+  <div class="ocean"></div>
+  <video id="viewer" controls playsinline></video>
+  <video id="cam" autoplay muted playsinline></video>
+  <div id="hint">Dê <b>2 toques</b> num vídeo abaixo pra subir • <b>arraste pro lado</b> pra descartar</div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="bar">
+  <button class="btn" id="home" title="Casa"><i class="fa-solid fa-house"></i></button>
+  <button class="btn" id="camera" title="Câmera"><i class="fa-solid fa-camera"></i></button>
+  <button class="btn" id="pay" title="Comprar BLUE (Pix)"><i class="fa-brands fa-pix"></i></button>
+  <button class="btn" id="danger" title="Perigo"><i class="fa-solid fa-triangle-exclamation"></i></button>
+  <button class="btn" id="profile" title="Perfil"><i class="fa-solid fa-user"></i></button>
+</div>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <b>Comprar BLUE via Pix (Mercado Pago)</b>
+      <button class="x" id="close">✕</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <input id="email" placeholder="seu email"/>
+      <input id="amount" placeholder="valor (ex: 10)" inputmode="decimal"/>
+      <button class="pill" id="go">Gerar Pix</button>
+    </div>
+    <div id="out" style="margin-top:10px;font-size:13px;opacity:.95"></div>
+  </div>
+</div>
+
+<script>
+const tiles=[
+ {t:"Mar 1",img:"https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=70"},
+ {t:"Mar 2",img:"https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=50&sat=-10"},
+ {t:"Ilha",img:"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=70"},
+ {t:"Bolhas",img:"https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=45&con=20"}
+];
+
+const grid=document.getElementById("grid");
+const viewer=document.getElementById("viewer");
+const cam=document.getElementById("cam");
+
+function makeTile(i){
+  const d=document.createElement("div"); d.className="tile"; d.dataset.i=i;
+  d.innerHTML=\`<img src="\${tiles[i].img}" alt=""><div class="badge">\${tiles[i].t}</div>\`;
+  let lastTap=0, startX=0, dx=0, dragging=false;
+
+  d.addEventListener("touchstart",(e)=>{dragging=true; startX=e.touches[0].clientX; dx=0;},{passive:true});
+  d.addEventListener("touchmove",(e)=>{ if(!dragging) return; dx=e.touches[0].clientX-startX; d.style.transform=\`translateX(\${dx}px)\`; d.style.opacity=String(1-Math.min(Math.abs(dx)/220,.7));},{passive:true});
+  d.addEventListener("touchend",()=>{
+    dragging=false;
+    if(Math.abs(dx)>140){ // descarta -> troca por outro aleatório
+      d.style.transform=""; d.style.opacity="1";
+      const j=Math.floor(Math.random()*tiles.length);
+      d.querySelector("img").src=tiles[j].img;
+      d.querySelector(".badge").textContent=tiles[j].t+" (novo)";
+      return;
+    }
+    d.style.transform=""; d.style.opacity="1";
+  });
+
+  d.addEventListener("click",()=>{
+    const now=Date.now();
+    if(now-lastTap<280){ // double tap
+      cam.style.display="none"; cam.srcObject=null;
+      viewer.style.display="block";
+      viewer.src=tiles[i].img; // “fake vídeo” (imagem) mas mantém a mecânica
+      viewer.play?.().catch(()=>{});
+      // troca o tile por outro aleatório no lugar
+      const j=Math.floor(Math.random()*tiles.length);
+      d.querySelector("img").src=tiles[j].img;
+      d.querySelector(".badge").textContent=tiles[j].t+" (novo)";
+    }
+    lastTap=now;
+  });
+
+  grid.appendChild(d);
+}
+
+tiles.forEach((_,i)=>makeTile(i));
+
+async function openCam(){
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    viewer.pause?.(); viewer.style.display="none";
+    cam.style.display="block";
+    cam.srcObject=s;
+  }catch(e){ alert("Não consegui abrir a câmera: "+e.message); }
+}
+
+document.getElementById("camera").onclick=openCam;
+document.getElementById("home").onclick=()=>{ viewer.style.display="none"; cam.style.display="none"; try{cam.srcObject?.getTracks()?.forEach(t=>t.stop())}catch{} };
+document.getElementById("danger").onclick=()=>alert("Modo perigo (placeholder) — aqui você liga suas ações.");
+document.getElementById("profile").onclick=()=>alert("Perfil (placeholder) — dá pra ligar com login depois.");
+
+const modal=document.getElementById("modal");
+document.getElementById("pay").onclick=()=>modal.style.display="flex";
+document.getElementById("close").onclick=()=>modal.style.display="none";
+modal.addEventListener("click",(e)=>{ if(e.target===modal) modal.style.display="none"; });
+
+document.getElementById("go").onclick=async ()=>{
+  const email=document.getElementById("email").value.trim();
+  const amount=Number(String(document.getElementById("amount").value).replace(",","."))||0;
+  const out=document.getElementById("out");
+  out.textContent="Gerando Pix...";
+  const r=await fetch("/api/mp_create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,amount})});
+  const j=await r.json().catch(()=>({ok:false,error:"Resposta inválida"}));
+  if(!j.ok){ out.textContent="Erro: "+(j.error?.message||j.error||""); return; }
+  out.innerHTML=\`
+    <div><b>PaymentID:</b> \${j.paymentId}</div>
+    <div><b>Status:</b> \${j.status}</div>
+    <div style="margin-top:8px">
+      <div><b>QR Copia e Cola:</b></div>
+      <textarea style="width:100%;height:90px;border-radius:14px;border:1px solid #1f2a44;background:#081026;color:#fff;padding:10px">\${j.qr_code||""}</textarea>
+    </div>
+    <div style="margin-top:8px">
+      <button class="pill" id="chk">Verificar status</button>
+    </div>
+  \`;
+  setTimeout(()=>{
+    const b=document.getElementById("chk");
+    if(!b) return;
+    b.onclick=async ()=>{
+      const rr=await fetch("/api/mp_status?paymentId="+encodeURIComponent(j.paymentId));
+      const jj=await rr.json().catch(()=>({ok:false,error:"Resposta inválida"}));
+      out.insertAdjacentHTML("beforeend","<div style='margin-top:10px'><b>Status atual:</b> "+(jj.status||jj.error||"")+"</div>");
+    };
+  },0);
+};
+</script></body></html>`;
+}
+
+module.exports = async (req,res) => {
+  try{
+    const url = new URL(req.url, "http://localhost");
+    const path = url.pathname.replace(/^\/api\/?/, "/"); // normaliza
+
+    // HOME (tela)
+    if(req.method==="GET" && (path==="/" || path==="/api" || path==="/index")){
+      return send(res,200,page(),"text/html; charset=utf-8");
+    }
+
+    // MERCADO PAGO: criar pagamento PIX
+    if(path==="/mp_create"){
+      const token = process.env.MP_ACCESS_TOKEN;
+      if(!token) return send(res,500,{ok:false,error:"MP_ACCESS_TOKEN não configurado"});
+      if(req.method!=="POST") return send(res,405,{ok:false,error:"Use POST"});
+      const body = req.body || await readBody(req);
+      const email = String(body.email||"").trim();
+      const amount = Number(body.amount);
+      if(!email || !amount || Number.isNaN(amount)) return send(res,400,{ok:false,error:'Envie { email, amount }'});
+      const transaction_amount = Math.round(amount*100)/100;
+
+      const r = await fetch(\`\${MP}/v1/payments\`,{
+        method:"POST",
+        headers:{
+          Authorization:\`Bearer \${token}\`,
+          "Content-Type":"application/json",
+          "X-Idempotency-Key":(Date.now().toString(36)+Math.random().toString(16).slice(2))
+        },
+        body:JSON.stringify({
+          transaction_amount,
+          description:"Compra BLUE - ICE-CUBO",
+          payment_method_id:"pix",
+          payer:{ email }
+        })
+      });
+
+      const data = await r.json().catch(()=>null);
+      if(!r.ok) return send(res,400,{ok:false,error:data||"Erro Mercado Pago"});
+      const tx = data?.point_of_interaction?.transaction_data || {};
+      return send(res,200,{
+        ok:true,
+        paymentId:data.id,
+        status:data.status,
+        amount:data.transaction_amount,
+        qr_code:tx.qr_code||null,
+        qr_code_base64:tx.qr_code_base64||null
+      });
+    }
+
+    // MERCADO PAGO: status do pagamento
+    if(path==="/mp_status"){
+      const token = process.env.MP_ACCESS_TOKEN;
+      if(!token) return send(res,500,{ok:false,error:"MP_ACCESS_TOKEN não configurado"});
+      if(req.method!=="GET") return send(res,405,{ok:false,error:"Use GET"});
+      const paymentId = url.searchParams.get("paymentId");
+      if(!paymentId) return send(res,400,{ok:false,error:"Passe ?paymentId="});
+
+      const r = await fetch(\`\${MP}/v1/payments/\${paymentId}\`,{
+        headers:{ Authorization:\`Bearer \${token}\` }
+      });
+      const data = await r.json().catch(()=>null);
+      if(!r.ok) return send(res,400,{ok:false,error:data||"Erro Mercado Pago"});
+      return send(res,200,{ok:true,id:data.id,status:data.status,amount:data.transaction_amount});
+    }
+
+    return send(res,404,{ok:false,error:"Rota não encontrada"});
+  }catch(e){
+    return send(res,500,{ok:false,error:e.message||"Falha geral"});
+  }
+};
