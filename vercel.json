@@ -1,7 +1,7 @@
 {
-  "functions": {
-    "api/index.js": {
-      "runtime": "nodejs18.x"
-    }
+  "name": "pix-api",
+  "version": "1.0.0",
+  "dependencies": {
+    "axios": "^1.6.0"
   }
 }
