@@ -6,7 +6,6 @@ module.exports = async (req, res) => {
     if (!token) return res.status(500).json({ ok: false, error: "MP_ACCESS_TOKEN não configurado" });
     if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Use POST" });
 
-    // Lê body (funciona tanto com req.body quanto stream)
     let body = req.body;
     if (!body) {
       let raw = "";
@@ -24,7 +23,6 @@ module.exports = async (req, res) => {
       return res.status(400).json({ ok: false, error: "Envie { email, amount }" });
     }
 
-    // OBS: Mercado Pago pode ter valor mínimo (se 0,05 falhar, teste 1,00)
     const transaction_amount = Math.round(amount * 100) / 100;
 
     const r = await fetch(`${MP}/v1/payments`, {
