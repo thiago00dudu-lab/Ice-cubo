@@ -1,340 +1,106 @@
-const BLUE_PER_BRL = 100;      // 1 real = 100 BLUE
-const MIN_DEPOSIT = 0.05;      // pode falhar no MP, se falhar usa 1.00
-const MIN_WITHDRAW = 50;       // saque mínimo em BLUE
-const MINE_REWARD = 50;        // 50 BLUE por bloco
-const USER_SHARE = 0.85;       // 85% pro comprador (em BLUE)
-const REF_SHARE = 0.05;        // 5% pro "pai" (se tiver)
-const SITE_SHARE = 0.10;       // 10% "taxa do site" (só contabiliza em log)
-
-globalThis.DB ||= {
-  users: {},      // username -> { pass, email, parent, blue, posts:[] }
-  sessions: {},   // sid -> username
-  pending: {},    // paymentId -> { username, brl, createdAt }
-  withdraws: []   // { username, amount, pix, at }
-};
-const DB = globalThis.DB;
-
-const uid = (n=24)=>{ const a="abcdefghijklmnopqrstuvwxyz0123456789"; let s=""; for(let i=0;i<n;i++) s+=a[(Math.random()*a.length)|0]; return s; };
-
-function cookieGet(req, name){
-  const c = req.headers.cookie || "";
-  const m = c.match(new RegExp("(?:^|;\\s*)"+name+"=([^;]+)"));
-  return m ? decodeURIComponent(m[1]) : "";
-}
-function cookieSet(res, name, val){
-  res.setHeader("Set-Cookie", `${name}=${encodeURIComponent(val)}; Path=/; HttpOnly; SameSite=Lax`);
-}
-async function readBody(req){
-  if (req.body) return req.body;
-  let raw=""; await new Promise(r=>{ req.on("data",c=>raw+=c); req.on("end",r); });
-  if(!raw) return {};
-  try { return JSON.parse(raw); } catch { return {}; }
-}
-function me(req){
-  const sid = cookieGet(req,"sid");
-  const u = sid && DB.sessions[sid];
-  return u ? DB.users[u] && u : null;
-}
-
-function page(title, body){
-  return `<!doctype html><html lang="pt-br"><head>
+module.exports = (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.status(200).end(`<!doctype html>
+<html lang="pt-br">
+<head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
-<title>${title}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>ICE-CUBO</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-  :root{--bg:#071526;--card:rgba(255,255,255,.06);--b:rgba(255,255,255,.12);--t:#e9f4ff;--a:#38bdf8;--g:#22c55e;--r:#ef4444;}
-  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:radial-gradient(900px 500px at 70% 0%,rgba(56,189,248,.22),transparent),var(--bg);color:var(--t)}
-  .wrap{max-width:980px;margin:0 auto;padding:16px}
-  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid var(--b);border-radius:18px;background:var(--card);position:sticky;top:10px;backdrop-filter:blur(10px)}
-  .brand{display:flex;align-items:center;gap:10px}
-  .logo{width:44px;height:44px;border-radius:14px;background:radial-gradient(circle at 30% 30%,#7dd3fc, #1d4ed8);display:grid;place-items:center;font-weight:900}
-  .name{font-weight:900;letter-spacing:.4px}
-  .sub{opacity:.8;font-size:12px}
-  .bear{width:70px;height:44px;position:relative;overflow:hidden}
-  .bear:before{content:"🐻‍❄️";font-size:34px;position:absolute;left:0;top:2px;animation:bear 1.1s ease-in-out infinite}
-  .bear:after{content:"🧊";font-size:26px;position:absolute;right:6px;top:10px;animation:ice 1.1s ease-in-out infinite}
-  @keyframes bear{0%,100%{transform:translateX(0)}50%{transform:translateX(10px)}}
-  @keyframes ice{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(10deg)}}
-  .card{margin-top:14px;padding:14px;border:1px solid var(--b);border-radius:18px;background:var(--card)}
-  .row{display:flex;gap:10px;flex-wrap:wrap}
-  input,button{font:inherit}
-  input{width:100%;padding:12px 12px;border-radius:14px;border:1px solid var(--b);background:rgba(0,0,0,.22);color:var(--t);outline:none}
-  .btn{padding:12px 14px;border-radius:14px;border:1px solid var(--b);background:rgba(56,189,248,.18);color:var(--t);font-weight:800}
-  .btnG{background:rgba(34,197,94,.18)}
-  .btnR{background:rgba(239,68,68,.18)}
-  .kpi{display:flex;gap:12px;flex-wrap:wrap}
-  .pill{padding:10px 12px;border-radius:16px;border:1px solid var(--b);background:rgba(0,0,0,.18)}
-  .bigActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .big{padding:14px;border-radius:18px;border:1px solid var(--b);background:rgba(0,0,0,.18);font-weight:900}
-  .big span{display:block;font-size:12px;opacity:.8;font-weight:700}
-  @media (max-width:780px){.bigActions{grid-template-columns:1fr}}
-  .qr{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-  .qr img{width:220px;max-width:100%;border-radius:16px;border:1px solid var(--b);background:#fff}
-  .muted{opacity:.8;font-size:12px}
-  .link{color:var(--a);text-decoration:none;font-weight:800}
-</style></head><body><div class="wrap">${body}</div>
-<script>
-async function api(url, data){
-  const r = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data||{})});
-  return r.json();
+:root{--bg1:#dff3ff;--bg2:#bfe8ff;--bg3:#072445;--g:rgba(255,255,255,.55);--l:rgba(7,36,69,.18);--t:#06223f;--m:#2b587d;--a:#0ea5e9}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--t);height:100vh;overflow:hidden;
+background:radial-gradient(1200px 700px at 15% -10%,rgba(255,255,255,.85),transparent 55%),
+radial-gradient(900px 700px at 110% 20%,rgba(56,189,248,.25),transparent 60%),
+linear-gradient(180deg,var(--bg1),var(--bg2) 45%,#7dd3fc 70%,#2aa9ff 86%,var(--bg3));
 }
-async function postForm(action){
-  const f = document.querySelector("form[data-action='"+action+"']");
-  const data = Object.fromEntries(new FormData(f).entries());
-  const out = await api("/api", { action, ...data });
-  alert(out.ok ? (out.msg||"OK") : ("ERRO: "+(out.error||"")));
-  if(out.reload) location.reload();
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;mix-blend-mode:multiply;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none'%3E%3Cpath d='M60 10c6 10 6 20 0 30c-6-10-6-20 0-30Z' fill='%230ea5e9' opacity='.35'/%3E%3Cpath d='M35 35c10 6 20 6 30 0c-10-6-20-6-30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Cpath d='M85 35c-10 6-20 6-30 0c10-6 20-6 30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Ccircle cx='22' cy='88' r='3' fill='%23ffffff' opacity='.35'/%3E%3Ccircle cx='35' cy='98' r='2' fill='%23ffffff' opacity='.25'/%3E%3Ccircle cx='48' cy='88' r='2' fill='%23ffffff' opacity='.2'/%3E%3Cpath d='M82 86c8-10 12-18 4-28c-9 6-14 12-4 28Z' fill='%230b5fa5' opacity='.22'/%3E%3Cpath d='M82 86c2-6 8-10 12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M82 86c-2-6-8-10-12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+background-size:140px 140px;
 }
-async function deposit(){
-  const brl = Number(document.getElementById("dep_brl").value||0);
-  const out = await api("/api", { action:"deposit_create", brl });
-  if(!out.ok) return alert("ERRO: "+out.error);
-  document.getElementById("payId").textContent = out.paymentId;
-  document.getElementById("qrwrap").style.display="block";
-  document.getElementById("qrimg").src = out.qr_code_base64 ? ("data:image/png;base64,"+out.qr_code_base64) : "";
-  document.getElementById("qrcopy").value = out.qr_code || "";
-}
-async function paid(){
-  const pid = document.getElementById("payId").textContent.trim();
-  const out = await api("/api", { action:"deposit_confirm", paymentId: pid });
-  if(!out.ok) return alert("ERRO: "+out.error);
-  alert(out.msg);
-  location.reload();
-}
-async function mine(){
-  const btn=document.getElementById("mineBtn");
-  btn.disabled=true; btn.textContent="Minerando bloco...";
-  const out = await api("/api", { action:"mine" });
-  btn.disabled=false; btn.textContent="⛏️ Minerar BLUE (Bloco)";
-  alert(out.ok ? out.msg : ("ERRO: "+out.error));
-  if(out.ok) location.reload();
-}
-</script></body></html>`;
-}
+a{color:inherit}button{cursor:pointer}input,textarea{font:inherit}
+#app{height:100vh;display:flex;flex-direction:column}
+.top{height:52vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;background:rgba(0,0,0,.08)}
+.bub:before,.bub:after{content:"";position:absolute;inset:-20%;background:
+radial-gradient(circle,rgba(255,255,255,.35) 0 2px,transparent 3px) 0 0/120px 120px,
+radial-gradient(circle,rgba(255,255,255,.22) 0 1px,transparent 2px) 40px 20px/160px 160px;
+animation:float 14s linear infinite;opacity:.55}
+.bub:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
+@keyframes float{to{transform:translateY(-120px)}}
 
-function loginPage(){
-  return page("ICE-CUBO", `
-  <div class="top">
-    <div class="brand">
-      <div class="logo">IC</div>
-      <div>
-        <div class="name">ICE-CUBO <span class="muted">• BLUE</span></div>
-        <div class="sub">Login & Cadastro</div>
-      </div>
-    </div>
-    <div class="bear" title="urso tentando tirar a moeda (loop)"></div>
-  </div>
+.brand{position:absolute;top:10px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:3}
+.logo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(10px);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.10)}
+.brandname{display:flex;flex-direction:column;line-height:1.05}
+.brandname b{letter-spacing:1.2px;font-size:15px}
+.brandname small{color:var(--m);font-size:11px}
 
-  <div class="card">
-    <div class="row">
-      <div style="flex:1;min-width:220px">
-        <h3 style="margin:0 0 10px">Entrar</h3>
-        <form data-action="login" onsubmit="event.preventDefault();postForm('login')">
-          <input name="username" placeholder="Usuário" required>
-          <div style="height:10px"></div>
-          <input name="pass" type="password" placeholder="Senha" required>
-          <div style="height:10px"></div>
-          <button class="btn btnG" type="submit">Entrar</button>
-        </form>
-      </div>
+.pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(10px);border-radius:18px}
+.coin{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);
+border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) inset}
+.coin span{color:#ffd700;font-weight:1000}
+.pill .meta{display:flex;flex-direction:column;line-height:1.05}
+.pill .meta b{font-size:12px}
+.pill .meta small{font-size:11px;color:var(--m)}
 
-      <div style="flex:1;min-width:220px">
-        <h3 style="margin:0 0 10px">Cadastrar</h3>
-        <form data-action="signup" onsubmit="event.preventDefault();postForm('signup')">
-          <input name="username" placeholder="Usuário" required>
-          <div style="height:10px"></div>
-          <input name="email" type="email" placeholder="Email" required>
-          <div style="height:10px"></div>
-          <input name="pass" type="password" placeholder="Senha" required>
-          <div style="height:10px"></div>
-          <input name="ref" placeholder="Indicação (opcional) ex: @thiago">
-          <div style="height:10px"></div>
-          <button class="btn" type="submit">Criar conta</button>
-        </form>
-        <div class="muted" style="margin-top:10px">
-          Regra: 5% de cada depósito do seu “filho” é seu. Compartilhe seu link!
-        </div>
-      </div>
-    </div>
-  </div>
-  `);
-}
+.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
+#mainV{width:100%;height:100%;object-fit:cover;display:none}
+#mainI{width:100%;height:100%;object-fit:cover;display:none}
+#hint{position:absolute;inset:auto 12px 72px 12px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);border-radius:18px;color:var(--m);text-align:center}
 
-function appPage(username){
-  const u = DB.users[username];
-  const parent = u.parent ? "@"+u.parent : "sem pai";
-  const shareLink = `?ref=@${encodeURIComponent(username)}`;
-  return page("ICE-CUBO", `
-  <div class="top">
-    <div class="brand">
-      <div class="logo">IC</div>
-      <div>
-        <div class="name">ICE-CUBO <span class="muted">• BLUE</span></div>
-        <div class="sub">Logado como <b>@${username}</b> • pai: <b>${parent}</b></div>
-      </div>
-    </div>
-    <div class="bear"></div>
-  </div>
+.stageBar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:4}
+.card{flex:1;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);border-radius:18px;min-width:0}
+.av{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;font-weight:1000;background:linear-gradient(135deg,#38bdf8,#1d4ed8);position:relative;color:#fff}
+.meta2{min-width:0}
+.meta2 .name{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}
+.meta2 .sub{font-size:12px;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.star{font-size:13px}
+.star.gold{color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.35)}
+.star.blue{color:#0ea5e9;text-shadow:0 0 10px rgba(14,165,233,.25)}
+.sbtn{padding:10px 12px;border-radius:18px;border:1px solid var(--l);background:var(--g);backdrop-filter:blur(12px);color:var(--t)}
+.sbtn:active{transform:scale(.98)}
 
-  <div class="card">
-    <div class="kpi">
-      <div class="pill"><b>Saldo:</b> ${Math.floor(u.blue)} BLUE</div>
-      <div class="pill"><b>Email:</b> ${u.email}</div>
-      <div class="pill"><b>Seu link:</b> <a class="link" href="${shareLink}">${shareLink}</a></div>
-      <div class="pill"><button class="btn btnR" onclick="location.href='/api?logout=1'">Sair</button></div>
-    </div>
-  </div>
+.bottom{flex:1;display:flex;flex-direction:column;gap:10px;padding:10px 10px 74px;overflow:hidden}
+.carousel{display:flex;gap:10px;overflow:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.item{min-width:190px;max-width:190px;height:120px;border-radius:18px;overflow:hidden;border:1px solid var(--l);background:rgba(255,255,255,.35);scroll-snap-align:center;position:relative}
+.item video,.item img{width:100%;height:100%;object-fit:cover;display:block}
+.tag{position:absolute;left:8px;bottom:8px;padding:6px 10px;border:1px solid rgba(7,36,69,.18);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);border-radius:14px;font-size:12px;display:flex;gap:8px;align-items:center;color:#053055}
+.tag .mini{width:18px;height:18px;border-radius:7px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#38bdf8,#1d4ed8);color:#fff}
+.item.active{outline:2px solid rgba(14,165,233,.9)}
 
-  <div class="card">
-    <h3 style="margin:0 0 10px">Ações (em destaque)</h3>
-    <div class="bigActions">
-      <div class="big">💳 Depositar <span>Compra BLUE via PIX Mercado Pago</span></div>
-      <div class="big">🏦 Sacar <span>Solicitar saque (mínimo ${MIN_WITHDRAW} BLUE)</span></div>
-      <button id="mineBtn" class="big" onclick="mine()">⛏️ Minerar BLUE (Bloco)<span>1 bloco = ${MINE_REWARD} BLUE</span></button>
-    </div>
-  </div>
+.panel{flex:1;overflow:auto;border:1px solid var(--l);background:rgba(255,255,255,.55);backdrop-filter:blur(12px);border-radius:22px;padding:12px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hrow h3{margin:0;font-size:16px}
+.muted{color:var(--m);font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.post{border:1px solid var(--l);background:rgba(255,255,255,.35);border-radius:18px;overflow:hidden}
+.post video,.post img{width:100%;height:140px;object-fit:cover;display:block}
+.pbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px}
+.badge{font-size:12px;color:var(--m);display:flex;align-items:center;gap:8px;min-width:0}
+.badge .mini{width:18px;height:18px;border-radius:7px;display:grid;place-items:center;font-weight:900;background:linear-gradient(135deg,#38bdf8,#1d4ed8);color:#fff;flex:0 0 auto;position:relative}
+.badge b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:105px}
+.chip{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid rgba(14,165,233,.25);background:rgba(14,165,233,.10);color:#075985}
+.icon{border:0;background:transparent;color:#ef4444;padding:6px 8px;border-radius:12px}
+.icon:active{transform:scale(.96)}
 
-  <div class="card">
-    <h3 style="margin:0 0 10px">Depósito (PIX)</h3>
-    <div class="row">
-      <div style="flex:1;min-width:220px">
-        <input id="dep_brl" type="number" step="0.01" min="${MIN_DEPOSIT}" placeholder="Valor em R$ (ex: 1.00)">
-        <div style="height:10px"></div>
-        <button class="btn btnG" onclick="deposit()">Gerar QR Code</button>
-        <div class="muted" style="margin-top:8px">Se R$0,05 falhar no MP, use R$1,00.</div>
-      </div>
-      <div id="qrwrap" style="display:none;flex:1;min-width:220px">
-        <div class="pill">paymentId: <b id="payId"></b></div>
-        <div class="qr" style="margin-top:10px">
-          <img id="qrimg" alt="QR PIX"/>
-          <div style="flex:1;min-width:220px">
-            <div class="muted">Copia e cola PIX:</div>
-            <input id="qrcopy" readonly>
-            <div style="height:10px"></div>
-            <button class="btn btnG" onclick="paid()">✅ JÁ PAGUEI (Confirmar)</button>
-            <div class="muted" style="margin-top:8px">
-              Quando aprovado, credita BLUE automático (85% pra você e 5% pro pai se existir).
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+.nav{position:fixed;left:10px;right:10px;bottom:10px;display:flex;gap:10px;z-index:10}
+.nav button{flex:1;padding:12px 10px;border-radius:20px;border:1px solid var(--l);background:rgba(255,255,255,.55);backdrop-filter:blur(14px);color:var(--t);display:flex;align-items:center;justify-content:center;gap:8px}
+.nav button.active{outline:2px solid rgba(14,165,233,.9)}
 
-  <div class="card">
-    <h3 style="margin:0 0 10px">Saque</h3>
-    <form data-action="withdraw" onsubmit="event.preventDefault();postForm('withdraw')">
-      <input name="amount" type="number" min="${MIN_WITHDRAW}" step="1" placeholder="Quantidade em BLUE (mín ${MIN_WITHDRAW})" required>
-      <div style="height:10px"></div>
-      <input name="pix" placeholder="Sua chave PIX para receber" required>
-      <div style="height:10px"></div>
-      <button class="btn">Solicitar saque</button>
-    </form>
-    <div class="muted" style="margin-top:10px">No demo, o saque fica registrado. Pagamento real depois a gente integra.</div>
-  </div>
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{width:min(760px,100%);max-height:86vh;border-radius:26px 26px 0 0;overflow:hidden;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.88);backdrop-filter:blur(18px)}
+.sheetTop{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(7,36,69,.12)}
+.sheetTop b{font-size:14px}
+.sheetBody{padding:12px 12px 14px;overflow:auto;max-height:calc(86vh - 52px)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{flex:1;min-width:180px}
+.field input,.field textarea{width:100%;padding:12px;border-radius:18px;border:1px solid rgba(7,36,69,.14);background:rgba(255,255,255,.75);color:var(--t);outline:none}
+.field textarea{min-height:74px;resize:vertical}
+hr{border:0;border-top:1px solid rgba(7,36,69,.12);margin:10px 0}
 
-  <div class="card">
-    <h3 style="margin:0 0 10px">Perfis (demo)</h3>
-    <div class="muted">Toque em um usuário para abrir o perfil dele (posts demo).</div>
-    <div class="row" style="margin-top:10px">
-      ${Object.keys(DB.users).slice(0,12).map(x=>`
-        <button class="btn" onclick="location.href='/api?profile=${encodeURIComponent(x)}'">@${x}</button>
-      `).join("") || "<div class='muted'>Sem usuários ainda</div>"}
-    </div>
-  </div>
-  `);
-}
+/* filtros */
+.filt{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 10px}
+.filt button{padding:8px 10px;border-radius:999px;border:1px solid rgba(7,36,69,.14);background:rgba(255,255,255,.7)}
+.filt button.on{outline:2px solid rgba(14,165,233,.9);background:rgba(14,165,233,.12)}
 
-function profilePage(viewer, target){
-  const u = DB.users[target];
-  if(!u) return page("Perfil", `<div class="card">Perfil não existe. <a class="link" href="/api">Voltar</a></div>`);
-  return page("Perfil", `
-    <div class="top">
-      <div class="brand">
-        <div class="logo">👤</div>
-        <div>
-          <div class="name">@${target}</div>
-          <div class="sub">Saldo: <b>${Math.floor(u.blue)} BLUE</b> • pai: <b>${u.parent?("@"+u.parent):"sem pai"}</b></div>
-        </div>
-      </div>
-      <a class="link" href="/api">Voltar</a>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 10px">Posts (demo)</h3>
-      ${(u.posts||[]).length ? (u.posts.map(p=>`<div class="pill" style="margin-top:10px">${p}</div>`).join("")) :
-        `<div class="muted">Ainda sem posts. (Depois a gente coloca fotos/vídeos de verdade.)</div>`}
-    </div>
-
-    ${viewer ? `<div class="card muted">Você está logado como @${viewer}</div>` : ""}
-  `);
-}
-
-module.exports = async (req, res) => {
-  try {
-    // logout
-    const url = new URL(req.url, "http://localhost");
-    if (url.searchParams.get("logout")) {
-      const sid = cookieGet(req,"sid");
-      if (sid) delete DB.sessions[sid];
-      cookieSet(res,"sid","");
-      res.statusCode=302; res.setHeader("Location","/api"); return res.end();
-    }
-
-    // view profile
-    const prof = url.searchParams.get("profile");
-    const viewer = me(req);
-    if (prof) {
-      res.setHeader("Content-Type","text/html; charset=utf-8");
-      return res.end(profilePage(viewer, prof));
-    }
-
-    // API actions
-    if (req.method === "POST") {
-      const body = await readBody(req);
-      const action = body.action;
-
-      // signup
-      if (action === "signup") {
-        const username = String(body.username||"").trim().replace(/^@/,"");
-        const email = String(body.email||"").trim();
-        const pass = String(body.pass||"");
-        const ref = String(body.ref||"").trim().replace(/^\\?/,"").replace(/^ref=/,"").trim();
-        const parent = ref ? ref.replace(/^@/,"") : (url.searchParams.get("ref")||"").replace(/^@/,"");
-
-        if (!username || !email || !pass) return res.end(JSON.stringify({ok:false,error:"Preencha tudo"}));
-        if (DB.users[username]) return res.end(JSON.stringify({ok:false,error:"Usuário já existe"}));
-
-        DB.users[username] = { pass, email, parent: (parent && DB.users[parent]) ? parent : "", blue: 0, posts:[`Olá, eu sou @${username}!`] };
-
-        // auto-login
-        const sid = uid(28);
-        DB.sessions[sid]=username;
-        cookieSet(res,"sid",sid);
-
-        res.setHeader("Content-Type","application/json");
-        return res.end(JSON.stringify({ok:true,msg:"Conta criada!",reload:true}));
-      }
-
-      // login
-      if (action === "login") {
-        const username = String(body.username||"").trim().replace(/^@/,"");
-        const pass = String(body.pass||"");
-        const u = DB.users[username];
-        if(!u || u.pass !== pass) return res.end(JSON.stringify({ok:false,error:"Login inválido"}));
-        const sid = uid(28);
-        DB.sessions[sid]=username;
-        cookieSet(res,"sid",sid);
-        res.setHeader("Content-Type","application/json");
-        return res.end(JSON.stringify({ok:true,msg:"Logado!",reload:true}));
-      }
-
-      // must be logged for below
-      const username = me(req);
-      if (!username) {
-        res.setHeader("Content-Type","application/json");
-        return res.end(JSON.stringify({ok:false,error:"Faça login"}));
-      }
-
-      // deposit create -> calls /api/mp_create
-      if (action === "
+/* bear */
+.bearWrap{width:44px;height:44px;border-radius:16px;border:1px solid rgba(7,36,69,.14);background:rgba(255,255,255,.65);display:grid;place-items:center;overflow:hidden}
