@@ -1,22 +1,196 @@
-<!doctype html>
+module.exports = (req, res) => {
+res.setHeader("Content-Type", "text/html; charset=utf-8");
+res.status(200).end(`<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ICE-CUBO</title>
-  <style>
-    body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
-    font-family:Arial;background:#0b1220;color:#fff}
-    .box{padding:22px 18px;border:1px solid #1f2a44;border-radius:16px;text-align:center}
-    h1{margin:0 0 10px;color:#38bdf8}
-    a{color:#38bdf8;text-decoration:none}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ICE-CUBO</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+--bg:#0b1220;
+--card:#111c32;
+--accent:#38bdf8;
+--gold:#ffd700;
+--text:#fff;
+}
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Arial,Helvetica,sans-serif;
+background:linear-gradient(180deg,#0b1220,#07101f);
+color:var(--text);
+}
+header{
+padding:14px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:var(--card);
+border-bottom:1px solid rgba(255,255,255,.05);
+}
+.logo{
+font-weight:bold;
+font-size:18px;
+color:var(--accent);
+}
+.saldo{
+display:flex;
+align-items:center;
+gap:8px;
+background:#0f1a30;
+padding:8px 12px;
+border-radius:20px;
+border:1px solid rgba(255,215,0,.3);
+}
+.saldo span{
+color:var(--gold);
+font-weight:bold;
+}
+main{
+padding:20px;
+}
+.box{
+background:var(--card);
+padding:18px;
+border-radius:18px;
+margin-bottom:18px;
+box-shadow:0 10px 30px rgba(0,0,0,.3);
+}
+.box h2{
+margin:0 0 10px;
+color:var(--accent);
+}
+button{
+width:100%;
+padding:14px;
+border:none;
+border-radius:14px;
+margin-top:10px;
+font-weight:bold;
+font-size:15px;
+cursor:pointer;
+}
+.deposit{
+background:linear-gradient(90deg,#22c55e,#16a34a);
+color:white;
+}
+.withdraw{
+background:linear-gradient(90deg,#f59e0b,#d97706);
+color:white;
+}
+input{
+width:100%;
+padding:12px;
+border-radius:10px;
+border:none;
+margin-top:8px;
+}
+.footer{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:var(--card);
+display:flex;
+justify-content:space-around;
+padding:12px;
+border-top:1px solid rgba(255,255,255,.05);
+}
+.footer i{
+font-size:20px;
+color:var(--accent);
+}
+.msg{
+margin-top:10px;
+font-size:13px;
+opacity:.8;
+}
+</style>
 </head>
 <body>
-  <div class="box">
-    <h1>ICE-CUBO funcionando 🚀</h1>
-    <p><a href="/api">Abrir API</a></p>
-    <p><a href="/api/mp_create">mp_create</a> · <a href="/api/mp_status">mp_status</a></p>
-  </div>
+
+<header>
+<div class="logo">ICE-CUBO</div>
+<div class="saldo">
+<i class="fa-solid fa-coins"></i>
+<span id="saldo">0</span> BLUE
+</div>
+</header>
+
+<main>
+
+<div class="box">
+<h2>💰 Depósito</h2>
+<input type="number" id="valor" placeholder="Digite o valor em R$">
+<button class="deposit" onclick="depositar()">Depositar via PIX</button>
+<div class="msg" id="depositMsg"></div>
+</div>
+
+<div class="box">
+<h2>🏦 Saque</h2>
+<input type="number" id="saqueValor" placeholder="Valor para sacar">
+<button class="withdraw" onclick="sacar()">Solicitar Saque</button>
+<div class="msg" id="saqueMsg"></div>
+</div>
+
+</main>
+
+<div class="footer">
+<i class="fa-solid fa-house"></i>
+<i class="fa-solid fa-video"></i>
+<i class="fa-solid fa-triangle-exclamation"></i>
+</div>
+
+<script>
+
+let saldo = 0;
+const saldoEl = document.getElementById("saldo");
+
+function atualizarSaldo(){
+saldoEl.innerText = saldo;
+}
+
+async function depositar(){
+const valor = document.getElementById("valor").value;
+if(!valor) return;
+
+document.getElementById("depositMsg").innerText="Gerando PIX...";
+
+const r = await fetch("/api/mp_create",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({ email:"cliente@ice.com", amount:Number(valor) })
+});
+
+const data = await r.json();
+
+if(data.qr_code){
+document.getElementById("depositMsg").innerText="PIX gerado. Copie e pague.";
+saldo += Number(valor);
+atualizarSaldo();
+}else{
+document.getElementById("depositMsg").innerText="Erro ao gerar PIX.";
+}
+}
+
+function sacar(){
+const v = document.getElementById("saqueValor").value;
+if(!v) return;
+
+if(Number(v) > saldo){
+document.getElementById("saqueMsg").innerText="Saldo insuficiente.";
+return;
+}
+
+saldo -= Number(v);
+atualizarSaldo();
+document.getElementById("saqueMsg").innerText="Solicitação enviada.";
+}
+
+</script>
+
 </body>
-</html>
+</html>`);
+};
