@@ -1,515 +1,429 @@
-module.exports = async (req, res) => {
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
+// /api/index.js  (Vercel)
+// MVP funcional: Login ADM + usuários + moderadores + ban + estrelas/ícones
+// OBS: dados ficam no localStorage (protótipo). Para segurança real: usar DB/KV.
 
-  res.status(200).end(`<!doctype html>
-<html lang="pt-br">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+module.exports=(req,res)=>{res.setHeader("Content-Type","text/html; charset=utf-8");res.status(200).end(`<!doctype html><html lang=pt-br><head>
+<meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ICE-CUBO</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-:root{
-  --bg1:#dff3ff;--bg2:#bfe8ff;--bg3:#072445;
-  --glass:rgba(255,255,255,.58);--line:rgba(7,36,69,.18);
-  --t:#06223f;--m:#2b587d;--a:#0ea5e9;--gold:#ffd700;
-  --dark:#07101f;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--t);
-  height:100vh;overflow:hidden;
-  background:
-    radial-gradient(1200px 700px at 15% -10%,rgba(255,255,255,.88),transparent 55%),
-    radial-gradient(900px 700px at 110% 20%,rgba(56,189,248,.25),transparent 60%),
-    linear-gradient(180deg,var(--bg1),var(--bg2) 45%,#7dd3fc 70%,#2aa9ff 86%,var(--bg3));
-}
-body:before{
-  content:"";position:fixed;inset:0;pointer-events:none;opacity:.34;mix-blend-mode:multiply;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none'%3E%3Cpath d='M60 10c6 10 6 20 0 30c-6-10-6-20 0-30Z' fill='%230ea5e9' opacity='.35'/%3E%3Cpath d='M35 35c10 6 20 6 30 0c-10-6-20-6-30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Cpath d='M85 35c-10 6-20 6-30 0c10-6 20-6 30 0Z' fill='%230ea5e9' opacity='.25'/%3E%3Ccircle cx='22' cy='88' r='3' fill='%23ffffff' opacity='.35'/%3E%3Ccircle cx='35' cy='98' r='2' fill='%23ffffff' opacity='.25'/%3E%3Ccircle cx='48' cy='88' r='2' fill='%23ffffff' opacity='.2'/%3E%3Cpath d='M82 86c8-10 12-18 4-28c-9 6-14 12-4 28Z' fill='%230b5fa5' opacity='.22'/%3E%3Cpath d='M82 86c2-6 8-10 12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M82 86c-2-6-8-10-12-12' stroke='%230b5fa5' opacity='.22' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
-  background-size:140px 140px;
-}
-a{color:inherit;text-decoration:none}
-button{cursor:pointer}
-input,textarea{font:inherit}
-
-#app{height:100vh;display:flex;flex-direction:column}
-.top{
-  height:52vh;position:relative;border-radius:0 0 26px 26px;overflow:hidden;
-  background:rgba(0,0,0,.08);
-  box-shadow:0 18px 50px rgba(0,0,0,.22);
-}
-.bub:before,.bub:after{
-  content:"";position:absolute;inset:-20%;
-  background:
-    radial-gradient(circle,rgba(255,255,255,.35) 0 2px,transparent 3px) 0 0/120px 120px,
-    radial-gradient(circle,rgba(255,255,255,.22) 0 1px,transparent 2px) 40px 20px/160px 160px;
-  animation:float 14s linear infinite;opacity:.55
-}
-.bub:after{animation-duration:20s;opacity:.35;transform:scale(1.15)}
-@keyframes float{to{transform:translateY(-120px)}}
-
-.brand{
-  position:absolute;top:10px;left:12px;right:12px;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:5
-}
-.logo{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
-  background:var(--glass);backdrop-filter:blur(10px);border-radius:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,.10)
-}
-.brandname{display:flex;flex-direction:column;line-height:1.05}
-.brandname b{letter-spacing:1.2px;font-size:15px}
-.brandname small{color:var(--m);font-size:11px}
-
-.pill{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
-  background:var(--glass);backdrop-filter:blur(10px);border-radius:18px
-}
-.coin{
-  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
-  background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);
-  border:1px solid rgba(255,215,0,.55);box-shadow:0 0 0 2px rgba(255,215,0,.18) inset
-}
+:root{--bg:#071629;--bg2:#0b2a4d;--c:rgba(255,255,255,.07);--c2:rgba(255,255,255,.10);--l:rgba(255,255,255,.12);--t:#eaf3ff;--m:rgba(234,243,255,.72);--a:#38bdf8;--ok:#22c55e;--w:#f59e0b;--b:#ef4444;--gold:#ffd700}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--t);
+background:radial-gradient(900px 700px at 20% -20%,rgba(56,189,248,.18),transparent 60%),radial-gradient(900px 700px at 110% 20%,rgba(14,165,233,.14),transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2));overflow:hidden}
+a{color:inherit}button{cursor:pointer;border:0}input,textarea{font:inherit}
+.wrap{height:100%;display:flex;flex-direction:column}
+.top{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--l);
+background:rgba(0,0,0,.25);backdrop-filter:blur(10px)}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:34px;height:34px;border-radius:12px;background:linear-gradient(180deg,rgba(56,189,248,.95),rgba(14,165,233,.95));display:grid;place-items:center;color:#06223f;font-weight:1000}
+.title{display:flex;flex-direction:column;line-height:1.05}
+.title b{letter-spacing:1.1px}
+.title small{color:var(--m);font-size:12px}
+.pill{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--l);border-radius:999px;background:rgba(255,255,255,.06)}
+.coin{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 30%,#38bdf8,#0b2a6a);border:1px solid rgba(255,215,0,.55)}
 .coin span{color:var(--gold);font-weight:1000}
-.pill .meta{display:flex;flex-direction:column;line-height:1.05}
-.pill .meta b{font-size:12px}
-.pill .meta small{font-size:11px;color:var(--m)}
-
-.viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2}
-#main{
-  width:100%;height:100%;object-fit:cover;
-  filter:saturate(1.05) contrast(1.03);
-}
-#hint{
-  position:absolute;bottom:12px;left:12px;right:12px;z-index:6;
-  display:flex;justify-content:space-between;gap:10px;pointer-events:none;
-}
-.hchip{
-  padding:8px 10px;border-radius:14px;border:1px solid var(--line);
-  background:rgba(255,255,255,.62);backdrop-filter:blur(10px);
-  font-size:11px;color:var(--m)
-}
-
-.mid{
-  flex:1;display:flex;flex-direction:column;gap:10px;
-  padding:12px 12px 86px;
-}
-.wallet{
-  border:1px solid var(--line);background:rgba(255,255,255,.70);backdrop-filter:blur(12px);
-  border-radius:22px;box-shadow:0 18px 40px rgba(0,0,0,.14);
-  padding:12px;
-}
-.whead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.wtitle{display:flex;flex-direction:column;gap:2px}
-.wtitle b{font-size:14px;letter-spacing:.4px}
-.wtitle small{font-size:11px;color:var(--m)}
-.wtitle i{color:var(--a)}
-.wbal{display:flex;flex-direction:column;align-items:flex-end;line-height:1.05}
-.wbal span{font-size:11px;color:var(--m)}
-.wbal b{font-size:14px}
-.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.wbtn{
-  border:1px solid var(--line);border-radius:18px;padding:12px;
-  background:rgba(255,255,255,.55);display:flex;align-items:center;gap:10px;
-  transition:.15s transform;
-}
-.wbtn:active{transform:scale(.98)}
-.wbtn i{font-size:18px}
-.wbtn b{display:block;font-size:13px}
-.wbtn small{display:block;font-size:11px;color:var(--m)}
-.wbtn.dep i{color:#16a34a}
-.wbtn.saq i{color:#f59e0b}
-
-.wform{margin-top:10px;border-top:1px dashed rgba(7,36,69,.18);padding-top:10px;display:none}
-.row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-.row label{font-size:11px;color:var(--m)}
-.row input,.row textarea{
-  width:100%;padding:10px 12px;border-radius:14px;border:1px solid rgba(7,36,69,.18);
-  background:rgba(255,255,255,.80);outline:none
-}
-.wsubmit{
-  width:100%;padding:12px 14px;border-radius:16px;border:0;
-  background:linear-gradient(90deg,#38bdf8,#0ea5e9);color:#06223f;font-weight:900
-}
-.wsubmit.ghost{
-  margin-top:8px;background:rgba(255,255,255,.55);
-  border:1px solid rgba(7,36,69,.18);color:var(--t)
-}
-.pixbox{margin-top:10px;display:none;flex-direction:column;gap:8px}
-.pixbox b{font-size:12px}
-.pixbox small{font-size:11px;color:var(--m)}
-.pixbox img{width:220px;max-width:75vw;border-radius:14px;border:1px solid rgba(7,36,69,.18)}
-.hint2{display:block;margin-top:8px;font-size:11px;color:var(--m)}
-
-.carousel{
-  border:1px solid var(--line);background:rgba(255,255,255,.60);backdrop-filter:blur(10px);
-  border-radius:22px;padding:10px;box-shadow:0 14px 34px rgba(0,0,0,.12);
-}
-.crow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.crow b{font-size:13px}
-.crow small{font-size:11px;color:var(--m)}
-.citems{display:flex;gap:10px;overflow:auto;padding-bottom:4px;scrollbar-width:none}
-.citems::-webkit-scrollbar{display:none}
-.card{
-  min-width:150px;max-width:150px;border-radius:18px;overflow:hidden;position:relative;
-  border:1px solid rgba(7,36,69,.16);background:rgba(255,255,255,.55);
-}
-.card img{width:100%;height:92px;object-fit:cover;display:block}
-.card .cap{padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.tag{font-size:11px;color:var(--m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.heart{width:34px;height:34px;border-radius:14px;border:1px solid rgba(7,36,69,.16);
-  background:rgba(255,255,255,.6);display:grid;place-items:center;color:#ef4444}
-.card.active{outline:2px solid rgba(14,165,233,.8)}
-.toast{
-  position:fixed;left:12px;right:12px;bottom:88px;z-index:99;
-  background:rgba(7,16,31,.82);color:#fff;border:1px solid rgba(255,255,255,.12);
-  backdrop-filter:blur(10px);border-radius:18px;padding:10px 12px;
-  display:none;align-items:center;justify-content:space-between;gap:10px
-}
-.toast small{opacity:.85}
-
-.bottom{
-  position:fixed;left:0;right:0;bottom:0;z-index:50;
-  display:flex;justify-content:space-around;align-items:center;
-  padding:12px 10px;background:rgba(7,16,31,.78);backdrop-filter:blur(10px);
-  border-top:1px solid rgba(255,255,255,.10)
-}
-.bico{
-  width:46px;height:46px;border-radius:18px;border:1px solid rgba(255,255,255,.14);
-  background:rgba(255,255,255,.06);display:grid;place-items:center;color:#cfefff;
-}
-.bico.primary{background:linear-gradient(180deg,rgba(56,189,248,.35),rgba(14,165,233,.18));border-color:rgba(56,189,248,.35)}
-.bico:active{transform:scale(.98)}
-</style>
-</head>
-
-<body>
-<div id="app">
-  <section class="top bub">
-    <div class="brand">
-      <div class="logo">
-        <div class="coin"><span>฿</span></div>
-        <div class="brandname">
-          <b>ICE-CUBO</b>
-          <small>feed • lives • blue</small>
-        </div>
-      </div>
-
-      <div class="pill" id="pillSaldo" title="Saldo BLUE">
-        <div class="coin"><span>฿</span></div>
-        <div class="meta">
-          <b><span id="saldoTxt">0</span> BLUE</b>
-          <small>carteira</small>
-        </div>
+.main{flex:1;overflow:auto;padding:12px 12px 92px}
+.box{width:min(920px,96vw);margin:0 auto}
+.card{border:1px solid var(--l);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));border-radius:22px;padding:14px;box-shadow:0 18px 60px rgba(0,0,0,.35);margin:10px 0}
+.h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.h h2{margin:0;font-size:18px}
+.m{color:var(--m);font-size:12px}
+.hr{height:1px;background:rgba(255,255,255,.08);margin:12px 0}
+.field{width:100%;padding:13px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.18);color:var(--t)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:12px 14px;border-radius:14px;background:linear-gradient(180deg,rgba(56,189,248,.95),rgba(14,165,233,.95));color:#06223f;font-weight:900;display:inline-flex;gap:10px;align-items:center;justify-content:center}
+.ghost{background:rgba(255,255,255,.06);color:var(--t);border:1px solid rgba(255,255,255,.12);font-weight:800}
+.ok{background:linear-gradient(180deg,rgba(34,197,94,.95),rgba(22,163,74,.95));color:#06223f}
+.warn{background:linear-gradient(180deg,rgba(245,158,11,.95),rgba(217,119,6,.95));color:#06223f}
+.bad{background:linear-gradient(180deg,rgba(239,68,68,.95),rgba(220,38,38,.95));color:#fff}
+.nav{position:fixed;left:0;right:0;bottom:0;height:74px;display:flex;justify-content:center;padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.40))}
+.bar{width:min(720px,96vw);border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.28);backdrop-filter:blur(12px);border-radius:22px;display:flex;justify-content:space-around;padding:10px 12px}
+.nb{width:58px;height:48px;border-radius:16px;border:1px solid transparent;color:var(--m);display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font-size:18px}
+.nb span{font-size:10px;letter-spacing:.6px}
+.nb.on{color:var(--t);border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.10)}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06)}
+.starG{color:var(--gold);filter:drop-shadow(0 10px 10px rgba(0,0,0,.45))}
+.starB{color:#60a5fa;filter:drop-shadow(0 10px 10px rgba(0,0,0,.45))}
+.tagADM{border-color:rgba(255,215,0,.25);background:linear-gradient(180deg,rgba(255,215,0,.12),rgba(255,255,255,.04))}
+.tagMOD{border-color:rgba(96,165,250,.25)}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18);border-radius:18px;padding:12px}
+.item .topi{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.small{font-size:12px;color:var(--m)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:92px;width:min(720px,92vw);padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.45);backdrop-filter:blur(10px);display:none;z-index:999}
+</style></head><body>
+<div class=wrap>
+  <div class=top>
+    <div class=brand>
+      <div class=logo>IC</div>
+      <div class=title>
+        <b>ICE-CUBO</b>
+        <small id=sub>Login • ADM • Moderadores</small>
       </div>
     </div>
-
-    <div class="viewer">
-      <img id="main" alt="Conteúdo" />
-    </div>
-
-    <div id="hint">
-      <div class="hchip"><i class="fa-solid fa-hand-pointer"></i> 2 toques no card: sobe</div>
-      <div class="hchip"><i class="fa-solid fa-arrows-left-right"></i> arraste no topo: troca</div>
-    </div>
-  </section>
-
-  <section class="mid">
-    <div class="wallet">
-      <div class="whead">
-        <div class="wtitle">
-          <i class="fa-solid fa-wallet"></i>
-          <b>Carteira</b>
-          <small>Depósito / Saque (bem visível)</small>
-        </div>
-        <div class="wbal">
-          <span>Saldo</span>
-          <b><span id="saldoTxt2">0</span> BLUE</b>
-        </div>
-      </div>
-
-      <div class="wgrid">
-        <button class="wbtn dep" id="btnDeposito">
-          <i class="fa-solid fa-circle-plus"></i>
-          <div><b>Depositar</b><small>PIX (QR + copia/cola)</small></div>
-        </button>
-
-        <button class="wbtn saq" id="btnSaque">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          <div><b>Sacar</b><small>Pedido de saque</small></div>
-        </button>
-      </div>
-
-      <div class="wform" id="formDeposito">
-        <div class="row">
-          <label>Email</label>
-          <input id="depEmail" placeholder="seuemail@gmail.com" />
-        </div>
-        <div class="row">
-          <label>Valor (R$)</label>
-          <input id="depValor" inputmode="decimal" placeholder="10.00" />
-        </div>
-        <button class="wsubmit" id="gerarPix">Gerar PIX</button>
-
-        <div class="pixbox" id="pixBox">
-          <b>PIX gerado</b>
-          <small id="pixStatus">Aguardando pagamento…</small>
-          <img id="pixImg" alt="QR Code"/>
-          <textarea id="pixCopia" rows="3" readonly placeholder="copia e cola"></textarea>
-          <button class="wsubmit ghost" id="copiarPix">Copiar código</button>
-        </div>
-      </div>
-
-      <div class="wform" id="formSaque">
-        <div class="row">
-          <label>Chave PIX</label>
-          <input id="saqChave" placeholder="CPF / Email / Celular / Aleatória" />
-        </div>
-        <div class="row">
-          <label>Valor (BLUE)</label>
-          <input id="saqValor" inputmode="numeric" placeholder="100" />
-        </div>
-        <button class="wsubmit" id="pedirSaque">Pedir Saque</button>
-        <small class="hint2">
-          * Saque REAL via Pix precisa de um endpoint de payout (Asaas/MercadoPago payouts). Aqui o pedido fica registrado e desconta do saldo local.
-        </small>
+    <div class=pill title="Saldo BLUE (demo)">
+      <div class=coin><span>B</span></div>
+      <div style="display:flex;flex-direction:column;line-height:1.05">
+        <b><span id=bal>0</span> BLUE</b>
+        <small class=small id=me>deslogado</small>
       </div>
     </div>
-
-    <div class="carousel">
-      <div class="crow">
-        <b>Vídeos</b>
-        <small>toque 2x para subir</small>
-      </div>
-      <div class="citems" id="citems"></div>
-    </div>
-  </section>
-
-  <div class="bottom">
-    <button class="bico primary" id="btnHome" title="Home"><i class="fa-solid fa-house"></i></button>
-    <button class="bico" id="btnCam" title="Câmera (placeholder)"><i class="fa-solid fa-video"></i></button>
-    <button class="bico" id="btnDanger" title="Perigo (placeholder)"><i class="fa-solid fa-triangle-exclamation"></i></button>
   </div>
 
-  <div class="toast" id="toast"><small id="toastTxt"></small><i class="fa-solid fa-xmark" id="toastX"></i></div>
+  <div class=main><div class=box id=view></div></div>
+
+  <div class=nav><div class=bar>
+    <div class="nb on" data=t="home"><i class="fa-solid fa-house"></i><span>HOME</span></div>
+    <div class=nb data=t="profile"><i class="fa-solid fa-user"></i><span>PERFIL</span></div>
+    <div class=nb data=t="wallet"><i class="fa-solid fa-wallet"></i><span>CARTEIRA</span></div>
+    <div class=nb data=t="timeline"><i class="fa-solid fa-layer-group"></i><span>TIMELINE</span></div>
+    <div class=nb data=t="admin"><i class="fa-solid fa-shield-halved"></i><span>ADM</span></div>
+  </div></div>
+
+  <div class=toast id=toast></div>
 </div>
 
 <script>
-const $ = (id)=>document.getElementById(id);
+/*** CONFIG ADM MASTER (como você pediu) ***/
+const ADM_LOGIN="ADM";
+const ADM_PASS="1533";
 
-const FEED = [
-  {title:"Flor", img:"https://picsum.photos/id/102/900/1200"},
-  {title:"Mar", img:"https://picsum.photos/id/1011/900/1200"},
-  {title:"Cidade", img:"https://picsum.photos/id/1012/900/1200"},
-  {title:"Montanha", img:"https://picsum.photos/id/1002/900/1200"},
-  {title:"Natureza", img:"https://picsum.photos/id/103/900/1200"},
-  {title:"Céu", img:"https://picsum.photos/id/1015/900/1200"},
-];
+/*** STORAGE (protótipo local) ***/
+const KEY="icecubo_roles_v1";
+const now=()=>Date.now();
+const $=s=>document.querySelector(s);
+const view=$("#view"),toast=$("#toast");
+const esc=s=>String(s||"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+const fmt=n=>String(Math.round((Number(n)||0)*100)/100).replace(".",",");
+const uid=()=>("u"+Math.random().toString(16).slice(2)+now().toString(16)).slice(0,18);
 
-let idx = 0;
-let lastTap = 0;
-let saldo = Number(localStorage.getItem("ICE_SALDO")||"0");
-let lastPaymentId = localStorage.getItem("ICE_LAST_PID")||"";
-
-function setSaldo(v){
-  saldo = Math.max(0, Math.floor(Number(v)||0));
-  localStorage.setItem("ICE_SALDO", String(saldo));
-  $("saldoTxt").textContent = saldo;
-  $("saldoTxt2").textContent = saldo;
+const defaults=()=>({
+  me:null, // {id,name,role:"adm|mod|user",banned:false}
+  blue:40,
+  users:[
+    // ADM não precisa estar aqui, mas deixo como referência
+  ],
+  timeline:[{id:"p1",t:now()-3600e3,by:"Sistema",txt:"Bem-vindo ao ICE-CUBO (protótipo)."}],
+  withdraws:[], deposits:[]
+});
+let S=load();
+function load(){try{const r=localStorage.getItem(KEY);return r?Object.assign(defaults(),JSON.parse(r)):defaults()}catch(e){return defaults()}}
+function save(){localStorage.setItem(KEY,JSON.stringify(S));syncTop()}
+function msg(t,kind=""){toast.textContent=t;toast.style.display="block";
+toast.style.borderColor=kind==="bad"?"rgba(239,68,68,.35)":kind==="ok"?"rgba(34,197,94,.35)":"rgba(56,189,248,.35)";
+clearTimeout(window.__t);window.__t=setTimeout(()=>toast.style.display="none",2200);
 }
-setSaldo(saldo);
-
-function toast(msg){
-  $("toastTxt").textContent = msg;
-  $("toast").style.display = "flex";
-  clearTimeout(toast._t);
-  toast._t = setTimeout(()=>$("toast").style.display="none", 2600);
+function roleLabel(r){
+  if(r==="adm") return '<span class="badge tagADM"><i class="fa-solid fa-star starG"></i><b>ADM MASTER</b></span>';
+  if(r==="mod") return '<span class="badge tagMOD"><i class="fa-solid fa-star starB"></i><b>MODERADOR</b></span>';
+  return '<span class="badge"><i class="fa-regular fa-user"></i><b>USUÁRIO</b></span>';
 }
-$("toastX").onclick=()=>$("toast").style.display="none";
+function canSeeAdmin(){return S.me && S.me.role==="adm";}
+function isBanned(){return S.me && S.me.banned;}
+function syncTop(){
+  $("#bal").textContent=fmt(S.blue||0);
+  $("#me").innerHTML=S.me? (esc(S.me.name)+" • "+(S.me.role==="adm"?"ADM":S.me.role==="mod"?"MOD":"USER")) : "deslogado";
+}
+function setTab(t){
+  document.querySelectorAll(".nb").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  render(t);
+}
+window.setTab=setTab;
 
-function renderMain(i){
-  idx = (i+FEED.length)%FEED.length;
-  $("main").src = FEED[idx].img;
-  document.querySelectorAll(".card").forEach((c,ci)=>c.classList.toggle("active", ci===idx));
+/*** AUTH (protótipo) ***/
+function loginAdm(){
+  const u=($("#u")?.value||"").trim();
+  const p=($("#p")?.value||"").trim();
+  if(u===ADM_LOGIN && p===ADM_PASS){
+    S.me={id:"adm_master",name:"ADM",role:"adm",banned:false};
+    save(); msg("✅ Logado como ADM MASTER","ok"); setTab("home");
+  } else msg("Login/senha ADM inválidos.","bad");
+}
+function loginUser(){
+  const name=($("#n")?.value||"").trim();
+  if(!name) return msg("Digite seu nome.","bad");
+  // cria/acha usuário pelo nome (protótipo)
+  let u=S.users.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(!u){u={id:uid(),name,role:"user",banned:false};S.users.push(u)}
+  if(u.banned) return msg("Você está bloqueado.","bad");
+  S.me={id:u.id,name:u.name,role:u.role,banned:u.banned};
+  save(); msg("✅ Logado","ok"); setTab("home");
+}
+function logout(){S.me=null;save();msg("Saiu.","ok");setTab("home")}
+
+/*** REGRAS DE PODER (funcional) ***/
+function mustLogin(){ if(!S.me){msg("Faça login primeiro.","bad"); setTab("home"); return false} return true }
+function mustNotBanned(){ if(isBanned()){msg("Você está bloqueado.","bad"); return false} return true }
+function findUser(id){return S.users.find(x=>x.id===id)}
+function syncMeFromDb(){
+  if(!S.me) return;
+  if(S.me.role==="adm") return; // ADM é intocável
+  const u=findUser(S.me.id);
+  if(u){S.me.role=u.role;S.me.banned=!!u.banned;S.me.name=u.name;}
 }
 
-function buildCarousel(){
-  const wrap = $("citems");
-  wrap.innerHTML = "";
-  FEED.forEach((it,i)=>{
-    const d = document.createElement("div");
-    d.className = "card"+(i===idx?" active":"");
-    d.innerHTML = \`
-      <img src="\${it.img}" alt="">
-      <div class="cap">
-        <div class="tag">\${it.title}</div>
-        <div class="heart" title="Curtir"><i class="fa-solid fa-heart"></i></div>
+/*** PAGES ***/
+function card(h){return '<div class=card>'+h+'</div>'}
+function pageHome(){
+  syncMeFromDb();
+  const who=S.me? (S.me.role==="adm"?'<i class="fa-solid fa-star starG"></i> <b>ADM MASTER</b>':S.me.role==="mod"?'<i class="fa-solid fa-star starB"></i> <b>MODERADOR</b>':'<b>USUÁRIO</b>') : "<b>VISITANTE</b>";
+  const banNote = isBanned()? '<div class="badge" style="border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><i class="fa-solid fa-ban"></i><b>VOCÊ ESTÁ BLOQUEADO</b></div>' : "";
+  return card(`
+    <div class=h><h2>🏠 Home</h2><div>${banNote}</div></div>
+    <div class=m>Você é: ${who}</div>
+    <div class=hr></div>
+
+    ${!S.me?`
+      <div class=row>
+        <div style="flex:1;min-width:240px">
+          <div class=m>Login ADM</div>
+          <input class=field id=u placeholder="Login (ADM)" value="">
+          <div style="height:8px"></div>
+          <input class=field id=p placeholder="Senha (1533)" type=password value="">
+          <div style="height:10px"></div>
+          <button class="btn ok" onclick="loginAdm()"><i class="fa-solid fa-crown"></i> Entrar como ADM</button>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <div class=m>Entrar como usuário (sem senha - protótipo)</div>
+          <input class=field id=n placeholder="Seu nome">
+          <div style="height:10px"></div>
+          <button class="btn" onclick="loginUser()"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+        </div>
       </div>
-    \`;
-    d.onclick = ()=>renderMain(i);
-    d.ondblclick = ()=>{
-      renderMain(i);
-      toast("Subiu para o vídeo principal ✅");
-    };
-    wrap.appendChild(d);
-  });
+      <div class=hr></div>
+      <div class=m>⚠️ Protótipo: usuários/roles ficam salvos no seu celular (localStorage).</div>
+    `:`
+      <div class=row>
+        <span class=badge>${roleLabel(S.me.role)}</span>
+        <button class="btn ghost" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        ${S.me.role==="adm"?'<button class="btn warn" onclick="setTab(\\'admin\\')"><i class="fa-solid fa-shield-halved"></i> Painel ADM</button>':''}
+      </div>
+      <div class=hr></div>
+      <div class=row>
+        <button class="btn" onclick="setTab('profile')"><i class="fa-solid fa-user"></i> Meu Perfil</button>
+        <button class="btn" onclick="setTab('wallet')"><i class="fa-solid fa-wallet"></i> Carteira</button>
+        <button class="btn" onclick="setTab('timeline')"><i class="fa-solid fa-layer-group"></i> Timeline</button>
+      </div>
+    `}
+  `);
 }
 
-buildCarousel();
-renderMain(0);
-
-// swipe no topo
-let sx=0, dragging=false;
-document.querySelector(".top").addEventListener("touchstart",(e)=>{
-  sx = e.touches[0].clientX; dragging=true;
-},{passive:true});
-document.querySelector(".top").addEventListener("touchmove",(e)=>{
-  if(!dragging) return;
-},{passive:true});
-document.querySelector(".top").addEventListener("touchend",(e)=>{
-  if(!dragging) return;
-  dragging=false;
-  const ex = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : sx;
-  const dx = ex - sx;
-  if(Math.abs(dx) > 40){
-    renderMain(idx + (dx<0 ? 1 : -1));
-  }
-},{passive:true});
-
-// botões rodapé (placeholder)
-$("btnHome").onclick = ()=>toast("Home ✅");
-$("btnCam").onclick = ()=>toast("Câmera: você pode integrar getUserMedia depois.");
-$("btnDanger").onclick = ()=>toast("Perigo: área para denúncias/moderação.");
-
-// carteira
-function toggle(el){ el.style.display = (el.style.display==="none"||!el.style.display) ? "block" : "none"; }
-
-$("btnDeposito").onclick = ()=>{
-  $("formSaque").style.display="none";
-  toggle($("formDeposito"));
-};
-$("btnSaque").onclick = ()=>{
-  $("formDeposito").style.display="none";
-  toggle($("formSaque"));
-};
-
-// Depósito REAL via /api/mp_create
-async function gerarPix(){
-  const email = $("depEmail").value.trim();
-  const amount = $("depValor").value.trim().replace(",", ".");
-  if(!email || !amount){ toast("Preencha email e valor."); return; }
-
-  $("pixBox").style.display="none";
-  toast("Gerando PIX…");
-
-  const r = await fetch("/api/mp_create",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ email, amount: Number(amount) })
-  });
-
-  const j = await r.json();
-  if(!j.ok){ toast(j.error || "Erro ao gerar PIX"); return; }
-
-  lastPaymentId = j.paymentId || "";
-  localStorage.setItem("ICE_LAST_PID", lastPaymentId);
-
-  $("pixBox").style.display="flex";
-  $("pixStatus").textContent = "Aguardando pagamento…";
-  $("pixCopia").value = j.qr_code || "";
-  if(j.qr_code_base64){
-    $("pixImg").style.display="block";
-    $("pixImg").src = "data:image/png;base64,"+j.qr_code_base64;
-  }else{
-    $("pixImg").style.display="none";
-    $("pixImg").removeAttribute("src");
-  }
-
-  // começar a checar status (se existir /api/mp_status)
-  if(lastPaymentId) startPoll(lastPaymentId, Number(amount));
+function pageProfile(){
+  if(!mustLogin()) return pageHome();
+  syncMeFromDb();
+  return card(`
+    <div class=h><h2>👤 Perfil</h2>${roleLabel(S.me.role)}</div>
+    <div class=m>Seu nome:</div>
+    <input class=field id=nm value="${esc(S.me.name)}">
+    <div style="height:10px"></div>
+    <div class=row>
+      <button class="btn ok" onclick="saveName()"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+      ${S.me.role==="mod" ? '<span class="badge tagMOD"><i class="fa-solid fa-star starB"></i><b>MOD</b> pode banir usuários</span>' : ''}
+      ${S.me.role==="adm" ? '<span class="badge tagADM"><i class="fa-solid fa-star starG"></i><b>ADM intocável</b></span>' : ''}
+    </div>
+    ${isBanned()?'<div class=hr></div><div class="badge" style="border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><i class="fa-solid fa-ban"></i><b>Você está bloqueado</b></div>':''}
+  `);
 }
 
-$("gerarPix").onclick = gerarPix;
-
-$("copiarPix").onclick = async ()=>{
-  const txt = $("pixCopia").value || "";
-  if(!txt){ toast("Sem código para copiar."); return; }
-  try{
-    await navigator.clipboard.writeText(txt);
-    toast("Código PIX copiado ✅");
-  }catch{
-    $("pixCopia").focus();
-    $("pixCopia").select();
-    document.execCommand("copy");
-    toast("Copiado ✅");
-  }
-};
-
-// Checagem do status do pagamento
-let pollTimer = null;
-async function checkStatus(paymentId){
-  // seu /api/mp_status pode aceitar query ?id=... (ajuste aqui se for diferente)
-  const r = await fetch("/api/mp_status?id="+encodeURIComponent(paymentId));
-  return await r.json();
+function pageWallet(){
+  if(!mustLogin()) return pageHome();
+  syncMeFromDb();
+  if(!mustNotBanned()) return card(`<h2>💳 Carteira</h2><div class=m>Você está bloqueado.</div>`);
+  return card(`
+    <div class=h><h2>💳 Carteira</h2><div class=badge><div class=coin><span>B</span></div><b>${fmt(S.blue)} BLUE</b></div></div>
+    <div class=m>Depósito/Saque “real” precisa integração (mp_create/mp_status + DB). Aqui fica protótipo.</div>
+    <div class=hr></div>
+    <div class=row>
+      <div style="flex:1;min-width:260px" class=item>
+        <div class=topi><b>Depósito (demo)</b><span class=badge><i class="fa-brands fa-pix"></i> PIX</span></div>
+        <div style="height:8px"></div>
+        <input class=field id=dep type=number min=1 step=1 value=10 placeholder="Valor (R$)">
+        <div style="height:10px"></div>
+        <button class="btn ok" onclick="depDemo()"><i class="fa-solid fa-circle-plus"></i> Simular Depósito</button>
+        <div class=small style="margin-top:8px">Regra demo: R$1 = 1 BLUE</div>
+      </div>
+      <div style="flex:1;min-width:260px" class=item>
+        <div class=topi><b>Saque (solicitação)</b><span class=badge><i class="fa-solid fa-building-columns"></i> PIX</span></div>
+        <div style="height:8px"></div>
+        <input class=field id=wd type=number min=1 step=1 placeholder="Valor (BLUE)">
+        <div style="height:8px"></div>
+        <input class=field id=pix placeholder="Chave PIX">
+        <div style="height:10px"></div>
+        <button class="btn warn" onclick="withdrawReq()"><i class="fa-solid fa-file-invoice-dollar"></i> Solicitar Saque</button>
+        <div class=small style="margin-top:8px">Status: PENDENTE (protótipo)</div>
+      </div>
+    </div>
+  `);
 }
 
-function startPoll(paymentId, amount){
-  if(pollTimer) clearInterval(pollTimer);
-  let tries = 0;
-  pollTimer = setInterval(async ()=>{
-    tries++;
-    if(tries>40){ // ~2min
-      clearInterval(pollTimer);
-      pollTimer=null;
-      $("pixStatus").textContent = "Ainda aguardando… (você pode checar depois)";
-      return;
-    }
-    try{
-      const s = await checkStatus(paymentId);
-      const st = (s.status || s.mp_status || "").toLowerCase();
+function pageTimeline(){
+  const items=[...S.timeline].sort((a,b)=>b.t-a.t);
+  const list=items.map(p=>`
+    <div class=item>
+      <div class=topi><b>${esc(p.by)}</b><span class=small>${new Date(p.t).toLocaleString()}</span></div>
+      <div style="margin-top:6px" class=m>${esc(p.txt)}</div>
+      ${S.me && (S.me.role==="mod"||S.me.role==="adm") ? `<div class=row style="margin-top:10px">
+        <button class="btn bad" onclick="delPost('${p.id}')"><i class="fa-solid fa-trash"></i> Apagar</button>
+      </div>`:''}
+    </div>
+  `).join("") || `<div class=m>Sem posts.</div>`;
 
-      // MercadoPago costuma retornar: approved / pending / rejected / cancelled
-      if(st){
-        $("pixStatus").textContent = "Status: "+st;
-      }
-
-      if(st === "approved" || st === "paid"){
-        clearInterval(pollTimer);
-        pollTimer=null;
-        $("pixStatus").textContent = "Pagamento aprovado ✅";
-        // creditar BLUE (exemplo: 1 real = 1 blue)
-        setSaldo(saldo + Math.floor(Number(amount)||0));
-        toast("Depósito confirmado ✅ Saldo atualizado.");
-      }
-    }catch(e){
-      // se status falhar, não trava
-    }
-  }, 3000);
+  return card(`
+    <div class=h><h2>🧩 Timeline</h2><button class="btn ghost" onclick="openPost()"><i class="fa-solid fa-plus"></i> Postar</button></div>
+    <div class=m>${S.me?(S.me.role==="mod"?"MOD pode apagar posts (exceto do ADM se quiser bloquear isso depois)":""):"Entre para postar"}</div>
+    <div class=hr></div>
+    <div class=list>${list}</div>
+  `);
 }
 
-// Saque (funcional no app; real precisa endpoint)
-$("pedirSaque").onclick = ()=>{
-  const chave = $("saqChave").value.trim();
-  const v = Number(($("saqValor").value||"").trim());
-  if(!chave || !v){ toast("Preencha chave e valor."); return; }
-  if(v <= 0){ toast("Valor inválido."); return; }
-  if(v > saldo){ toast("Saldo insuficiente."); return; }
+function pageAdmin(){
+  if(!mustLogin()) return pageHome();
+  syncMeFromDb();
+  if(!canSeeAdmin()) return card(`<h2>🛡️ Painel ADM</h2><div class=m>Somente ADM MASTER.</div>`);
+  const users=S.users.slice().sort((a,b)=> (a.role>b.role?-1:1));
+  const list=users.map(u=>{
+    const isAdm = (u.id==="adm_master"); // não usamos, mas por clareza
+    const role=u.role||"user";
+    const isMod = role==="mod";
+    const banned=!!u.banned;
+    return `
+      <div class=item>
+        <div class=topi>
+          <div class=row style="gap:10px">
+            <b>${esc(u.name)}</b>
+            ${role==="mod"?'<i class="fa-solid fa-star starB" title="Moderador"></i>':''}
+            ${banned?'<span class="badge" style="border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><i class="fa-solid fa-ban"></i><b>BLOQUEADO</b></span>':''}
+          </div>
+          <span class=small>ID: ${esc(u.id)}</span>
+        </div>
+        <div class=row style="margin-top:10px">
+          <button class="btn ok" onclick="promote('${u.id}')"><i class="fa-solid fa-arrow-up"></i> Virar MOD</button>
+          <button class="btn ghost" onclick="demote('${u.id}')"><i class="fa-solid fa-arrow-down"></i> Tirar MOD</button>
+          <button class="btn bad" onclick="ban('${u.id}')"><i class="fa-solid fa-user-slash"></i> Bloquear</button>
+          <button class="btn warn" onclick="unban('${u.id}')"><i class="fa-solid fa-user-check"></i> Desbloquear</button>
+        </div>
+        <div class=small style="margin-top:8px">
+          Regra: MOD não pode afetar ADM (já bloqueado no código).
+        </div>
+      </div>
+    `;
+  }).join("") || `<div class=m>Nenhum usuário ainda.</div>`;
 
-  const pedidos = JSON.parse(localStorage.getItem("ICE_SAQUES")||"[]");
-  pedidos.unshift({chave, valor:v, at: Date.now(), status:"pendente"});
-  localStorage.setItem("ICE_SAQUES", JSON.stringify(pedidos));
+  return card(`
+    <div class=h><h2>🛡️ Painel ADM MASTER</h2>${roleLabel("adm")}</div>
+    <div class=m>Você pode promover moderadores (estrela azul), banir/desbanir usuários. ADM é intocável.</div>
+    <div class=hr></div>
+    <div class=list>${list}</div>
+  `);
+}
 
-  setSaldo(saldo - Math.floor(v));
-  toast("Saque solicitado ✅ (pendente)");
+/*** Actions ***/
+window.loginAdm=loginAdm; window.loginUser=loginUser; window.logout=logout;
+
+window.saveName=()=>{
+  if(!mustLogin()) return;
+  const nm=($("#nm")?.value||"").trim()||"Você";
+  if(S.me.role!=="adm"){
+    const u=findUser(S.me.id); if(u) u.name=nm;
+    S.me.name=nm;
+  } else S.me.name="ADM"; // ADM fixo (se quiser mudar, tira isso)
+  save(); msg("✅ Nome salvo","ok"); setTab("profile");
 };
 
-// clique no pill abre/fecha depósito
-$("pillSaldo").onclick = ()=> {
-  $("formSaque").style.display="none";
-  toggle($("formDeposito"));
+window.depDemo=()=>{
+  if(!mustLogin()) return;
+  syncMeFromDb(); if(!mustNotBanned()) return;
+  const v=Number(($("#dep")?.value||"").replace(",",".")); if(!v||v<=0) return msg("Valor inválido.","bad");
+  S.blue=Math.round((S.blue+v)*100)/100; S.deposits.push({t:now(),by:S.me.id,amount:v});
+  save(); msg("✅ Depósito demo +"+fmt(v)+" BLUE","ok"); setTab("wallet");
 };
-</script>
-</body>
-</html>`);
+
+window.withdrawReq=()=>{
+  if(!mustLogin()) return;
+  syncMeFromDb(); if(!mustNotBanned()) return;
+  const v=Number(($("#wd")?.value||"").replace(",",".")); const pix=($("#pix")?.value||"").trim();
+  if(!v||v<=0) return msg("Valor inválido.","bad");
+  if(!pix) return msg("Informe chave PIX.","bad");
+  if((S.blue||0)<v) return msg("Saldo insuficiente.","bad");
+  S.blue=Math.round((S.blue-v)*100)/100;
+  S.withdraws.push({t:now(),by:S.me.id,amount:v,pix,status:"PENDENTE"});
+  save(); msg("✅ Saque solicitado (PENDENTE)","ok"); setTab("wallet");
 };
+
+window.openPost=()=>{
+  setTab("timeline");
+  if(!S.me) return msg("Entre para postar.","bad");
+  if(isBanned()) return msg("Bloqueado não posta.","bad");
+  const txt=prompt("Escreva seu post:"); if(!txt) return;
+  S.timeline.push({id:uid(),t:now(),by:S.me.name,txt});
+  save(); msg("✅ Postado","ok"); setTab("timeline");
+};
+
+window.delPost=(id)=>{
+  if(!S.me) return msg("Sem permissão.","bad");
+  if(!(S.me.role==="mod"||S.me.role==="adm")) return msg("Só MOD/ADM apaga.","bad");
+  // regra extra (se você quiser): MOD não apaga posts do ADM (aqui é simples porque post guarda só 'by' texto)
+  S.timeline=S.timeline.filter(p=>p.id!==id);
+  save(); msg("🗑️ Post apagado","ok"); setTab("timeline");
+};
+
+// MOD/ADM: bloquear usuário (mas nunca ADM)
+function canModerate(){
+  syncMeFromDb();
+  if(!S.me) return false;
+  if(S.me.role==="adm") return true;
+  if(S.me.role==="mod") return true;
+  return false;
+}
+function modGuard(targetId){
+  if(!canModerate()) {msg("Sem permissão.","bad"); return false;}
+  if(targetId==="adm_master") {msg("ADM é intocável.","bad"); return false;}
+  return true;
+}
+window.ban=(id)=>{
+  if(!modGuard(id)) return;
+  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
+  u.banned=true;
+  // se banir quem está logado no mesmo aparelho, sincroniza
+  if(S.me && S.me.id===u.id){S.me.banned=true; S.me.role=u.role}
+  save(); msg("🚫 Usuário bloqueado","ok"); setTab(canSeeAdmin()?"admin":"timeline");
+};
+window.unban=(id)=>{
+  if(!(S.me&&S.me.role==="adm")) return msg("Só ADM desbloqueia.","bad");
+  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
+  u.banned=false;
+  if(S.me && S.me.id===u.id){S.me.banned=false}
+  save(); msg("✅ Desbloqueado","ok"); setTab("admin");
+};
+window.promote=(id)=>{
+  if(!(S.me&&S.me.role==="adm")) return msg("Só ADM promove.","bad");
+  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
+  u.role="mod"; u.banned=false;
+  if(S.me && S.me.id===u.id){S.me.role="mod"; S.me.banned=false}
+  save(); msg("⭐ Virou MOD","ok"); setTab("admin");
+};
+window.demote=(id)=>{
+  if(!(S.me&&S.me.role==="adm")) return msg("Só ADM rebaixa.","bad");
+  const u=findUser(id); if(!u) return msg("Usuário não existe.","bad");
+  u.role="user";
+  if(S.me && S.me.id===u.id){S.me.role="user"}
+  save(); msg("⬇️ MOD removido","ok"); setTab("admin");
+};
+
+/*** Router ***/
+function render(t){
+  syncMeFromDb(); syncTop();
+  if(t==="home") view.innerHTML=pageHome();
+  else if(t==="profile") view.innerHTML=pageProfile();
+  else if(t==="wallet") view.innerHTML=pageWallet();
+  else if(t==="timeline") view.innerHTML=pageTimeline();
+  else if(t==="admin") view.innerHTML=pageAdmin();
+  else view.innerHTML=pageHome();
+  syncTop();
+}
+document.querySelectorAll(".nb").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.t)));
+
+/*** Boot ***/
+save(); setTab("home");
+</script></body></html>`);};
