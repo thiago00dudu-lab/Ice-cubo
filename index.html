@@ -1,31 +1,22 @@
-module.exports = (req, res) => {
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.status(200).send(`
-    <!doctype html>
-    <html lang="pt-br">
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width,initial-scale=1" />
-      <title>ICE-CUBO</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          background: #0f172a;
-          color: white;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100vh;
-          margin: 0;
-        }
-        h1 {
-          color: #38bdf8;
-        }
-      </style>
-    </head>
-    <body>
-      <h1>ICE-CUBO funcionando 🚀</h1>
-    </body>
-    </html>
-  `);
-};
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ICE-CUBO</title>
+  <style>
+    body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
+    font-family:Arial;background:#0b1220;color:#fff}
+    .box{padding:22px 18px;border:1px solid #1f2a44;border-radius:16px;text-align:center}
+    h1{margin:0 0 10px;color:#38bdf8}
+    a{color:#38bdf8;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>ICE-CUBO funcionando 🚀</h1>
+    <p><a href="/api">Abrir API</a></p>
+    <p><a href="/api/mp_create">mp_create</a> · <a href="/api/mp_status">mp_status</a></p>
+  </div>
+</body>
+</html>
