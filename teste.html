@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teste PIX</title>
+</head>
+<body>
+
+<h2>Gerar PIX</h2>
+
+<input type="number" id="valor" placeholder="Valor" />
+<button onclick="gerarPix()">Gerar PIX</button>
+
+<pre id="resultado"></pre>
+
+<script>
+async function gerarPix() {
+  const valor = document.getElementById("valor").value;
+
+  const resposta = await fetch("https://json-zo7f.vercel.app/api/pix", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      valor: valor,
+      email: "teste@teste.com"
+    })
+  });
+
+  const dados = await resposta.json();
+  document.getElementById("resultado").innerText = JSON.stringify(dados, null, 2);
+}
+</script>
+
+</body>
+</html>
