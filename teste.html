@@ -1,36 +1,63 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="pt-br">
 <head>
-  <title>Teste PIX</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Gerar PIX (produção)</title>
+  <style>
+    body{font-family:system-ui;margin:20px}
+    input,button{padding:12px;border-radius:10px;border:1px solid #ccc;width:100%;max-width:420px;margin:8px 0}
+    pre{background:#111;color:#0f0;padding:12px;border-radius:10px;overflow:auto;max-width:720px}
+    img{max-width:260px;display:block;margin:10px 0}
+  </style>
 </head>
 <body>
+  <h2>Gerar PIX (dinheiro real)</h2>
 
-<h2>Gerar PIX</h2>
+  <input id="valor" type="number" placeholder="Valor (ex: 10.50)" step="0.01" />
+  <input id="email" type="email" placeholder="Seu email (ex: voce@email.com)" />
+  <button onclick="gerar()">Gerar PIX</button>
 
-<input type="number" id="valor" placeholder="Valor" />
-<button onclick="gerarPix()">Gerar PIX</button>
+  <div id="out"></div>
 
-<pre id="resultado"></pre>
+  <script>
+    async function gerar(){
+      const valor = Number(document.getElementById("valor").value);
+      const email = document.getElementById("email").value.trim();
+      const out = document.getElementById("out");
+      out.innerHTML = "Gerando...";
 
-<script>
-async function gerarPix() {
-  const valor = document.getElementById("valor").value;
+      try{
+        const r = await fetch("/api/pix", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ valor, email })
+        });
 
-  const resposta = await fetch("https://json-zo7f.vercel.app/api/pix", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      valor: valor,
-      email: "teste@teste.com"
-    })
-  });
+        const data = await r.json();
 
-  const dados = await resposta.json();
-  document.getElementById("resultado").innerText = JSON.stringify(dados, null, 2);
-}
-</script>
+        if(!r.ok){
+          out.innerHTML = "<pre>"+JSON.stringify(data,null,2)+"</pre>";
+          return;
+        }
 
+        const img = data.qr_code_base64
+          ? `<img src="data:image/png;base64,${data.qr_code_base64}" alt="QR PIX"/>`
+          : "";
+
+        const copia = data.qr_code
+          ? `<p><b>Copia e cola:</b></p><pre>${data.qr_code}</pre>`
+          : "";
+
+        out.innerHTML = `
+          <p><b>ID:</b> ${data.id}</p>
+          ${img}
+          ${copia}
+        `;
+      }catch(e){
+        out.innerHTML = "<pre>"+String(e)+"</pre>";
+      }
+    }
+  </script>
 </body>
 </html>
