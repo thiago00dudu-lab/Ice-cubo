@@ -14,3 +14,72 @@
     button{background:#38bdf8;color:#001019;border:none;font-weight:700;cursor:pointer}
     button:disabled{opacity:.6;cursor:not-allowed}
     .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row input{flex:1;min-width:160px}
+    pre{background:#020617;border:1px solid #1f2937;border-radius:14px;padding:12px;overflow:auto;white-space:pre-wrap}
+    img{max-width:280px;border-radius:16px;border:1px solid #334155;margin-top:10px}
+    .ok{color:#34d399;font-weight:700}
+    .err{color:#fb7185;font-weight:700}
+    .small{font-size:12px;opacity:.75;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Ice Cubo — Gerar PIX</h1>
+      <p>Preencha valor e e-mail. Isso gera <b>QR Code</b> e <b>Copia e Cola</b> (produção).</p>
+
+      <div class="row">
+        <input id="valor" type="number" step="0.01" placeholder="Valor (ex: 10.50)">
+        <input id="email" type="email" placeholder="Email (ex: voce@email.com)">
+      </div>
+
+      <button id="btn">Gerar PIX</button>
+
+      <div id="out" style="margin-top:12px"></div>
+      <div class="small">Se der erro, o detalhe vai aparecer em vermelho (pra gente corrigir rápido).</div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById("btn");
+    const out = document.getElementById("out");
+
+    btn.onclick = async () => {
+      const valor = Number(document.getElementById("valor").value);
+      const email = (document.getElementById("email").value || "").trim();
+
+      out.innerHTML = "";
+      btn.disabled = true;
+      btn.textContent = "Gerando...";
+
+      try {
+        const r = await fetch("/api/pix", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ valor, email })
+        });
+
+        const data = await r.json();
+
+        if (!r.ok) {
+          out.innerHTML = `<div class="err">Erro:</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+          return;
+        }
+
+        out.innerHTML = `
+          <div class="ok">PIX gerado ✅</div>
+          <div style="margin-top:8px"><b>ID:</b> ${data.id}</div>
+          <div><b>Status:</b> ${data.status}</div>
+          ${data.qr_code_base64 ? `<img alt="QR PIX" src="data:image/png;base64,${data.qr_code_base64}">` : ""}
+          ${data.qr_code ? `<div style="margin-top:10px"><b>Copia e cola:</b></div><pre>${data.qr_code}</pre>` : "<div class='err'>Não veio qr_code.</div>"}
+        `;
+      } catch (e) {
+        out.innerHTML = `<div class="err">Falha:</div><pre>${String(e)}</pre>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Gerar PIX";
+      }
+    };
+  </script>
+</body>
+</html>
