@@ -1,8 +1,4 @@
-// /api/mp.js  (Vercel Serverless Function)
-// ENV na Vercel:
-// ACCESS_TOKEN = seu token privado Mercado Pago
-// MP_WEBHOOK_SECRET = sua chave secreta do webhook (opcional, mas recomendado)
-
+// /api/mp.js (Vercel Serverless Function)
 import crypto from "crypto";
 
 const MP_API = "https://api.mercadopago.com";
@@ -13,18 +9,11 @@ function json(res, code, data) {
 }
 
 function getHeader(req, name) {
-  return (req.headers?.[name] || req.headers?.[name.toLowerCase()] || "").toString();
+  return (req.headers?.[name] || req.headers?.[name?.toLowerCase()] || "").toString();
 }
 
-/**
- * Validação de assinatura do webhook (quando presente):
- * x-signature: ts=... , v1=...
- * x-request-id: ...
- * manifest: id:{id};request-id:{x-request-id};ts:{ts};
- * HMAC-SHA256(manifest, secret) === v1
- */
 function verifyWebhookSignature({ secret, xSignature, xRequestId, id }) {
-  if (!secret) return true; // se você não setar secret, não bloqueia
+  if (!secret) return true;
   if (!xSignature || !xRequestId || !id) return false;
 
   const parts = xSignature.split(",").map((p) => p.trim());
@@ -33,16 +22,19 @@ function verifyWebhookSignature({ secret, xSignature, xRequestId, id }) {
 
   for (const p of parts) {
     const [k, val] = p.split("=");
-    if (!k || !val) continue;
-    if (k.trim() === "ts") ts = val.trim();
-    if (k.trim() === "v1") v1 = val.trim();
+    if (k?.trim() === "ts") ts = (val || "").trim();
+    if (k?.trim() === "v1") v1 = (val || "").trim();
   }
-
   if (!ts || !v1) return false;
 
   const manifest = `id:${id};request-id:${xRequestId};ts:${ts};`;
   const hmac = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
-  return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
+  } catch {
+    return false;
+  }
 }
 
 async function mpFetch(path, { accessToken, method = "GET", body, idempotencyKey } = {}) {
@@ -52,7 +44,6 @@ async function mpFetch(path, { accessToken, method = "GET", body, idempotencyKey
     Authorization: `Bearer ${accessToken}`,
     "Content-Type": "application/json",
   };
-
   if (idempotencyKey) headers["X-Idempotency-Key"] = idempotencyKey;
 
   const resp = await fetch(`${MP_API}${path}`, {
@@ -63,21 +54,15 @@ async function mpFetch(path, { accessToken, method = "GET", body, idempotencyKey
 
   const text = await resp.text();
   let data;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = { raw: text };
-  }
+  try { data = JSON.parse(text); } catch { data = { raw: text }; }
 
   if (!resp.ok) {
     const msg = data?.message || data?.error || `Erro Mercado Pago (${resp.status})`;
-    const detail = data?.cause || data;
     const err = new Error(msg);
     err.status = resp.status;
-    err.detail = detail;
+    err.detail = data;
     throw err;
   }
-
   return data;
 }
 
@@ -98,39 +83,25 @@ export default async function handler(req, res) {
     const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
     const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET;
 
-    // Healthcheck
+    // PING
     if (req.method === "GET" && req.query?.ping) {
       return json(res, 200, {
         ok: true,
         online: "ICE CUBO Online na Vercel ✅",
         hasAccessToken: !!ACCESS_TOKEN,
         hasWebhookSecret: !!MP_WEBHOOK_SECRET,
-        endpoints: {
-          create_pix: "/api/mp?action=create_pix  (POST JSON)",
-          status: "/api/mp?action=status&id=PAYMENT_ID (GET)",
-          webhook: "/api/mp (POST)",
-        },
       });
     }
 
-    // =========================
-    // 1) CRIAR PIX (POST)
-    // =========================
+    // CRIAR PIX
     if (req.method === "POST" && req.query?.action === "create_pix") {
       const { amount, email, description } = req.body || {};
 
-      if (!amount || Number(amount) <= 0) {
-        return json(res, 400, { ok: false, error: "Informe amount > 0" });
-      }
-      if (!email) {
-        return json(res, 400, { ok: false, error: "Informe email do pagador" });
-      }
+      if (!amount || Number(amount) <= 0) return json(res, 400, { ok: false, error: "Informe amount > 0" });
+      if (!email) return json(res, 400, { ok: false, error: "Informe email do pagador" });
 
-      // Idempotência (evita duplicar cobrança se apertar 2x)
       const idem = crypto.randomUUID();
 
-      // Mercado Pago: Pix via POST /v1/payments com payment_method_id="pix"
-      // (docs: criar pagamento /v1/payments e integração pix) 2
       const payment = await mpFetch("/v1/payments", {
         accessToken: ACCESS_TOKEN,
         method: "POST",
@@ -146,14 +117,11 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true, pix: pickPixData(payment) });
     }
 
-    // =========================
-    // 2) STATUS / CONFIRMAR (GET)
-    // =========================
+    // STATUS
     if (req.method === "GET" && req.query?.action === "status") {
       const id = req.query?.id;
       if (!id) return json(res, 400, { ok: false, error: "Passe ?id=PAYMENT_ID" });
 
-      // GET /v1/payments/{id} 3
       const payment = await mpFetch(`/v1/payments/${encodeURIComponent(id)}`, {
         accessToken: ACCESS_TOKEN,
         method: "GET",
@@ -162,17 +130,11 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true, payment: pickPixData(payment) });
     }
 
-    // =========================
-    // 3) WEBHOOK (POST)
-    // =========================
-    // Configure o webhook no painel do Mercado Pago apontando para:
-    // https://SEUAPP.vercel.app/api/mp
+    // WEBHOOK
     if (req.method === "POST") {
       const body = req.body || {};
       const dataId = body?.data?.id || body?.id || req.query?.id || req.query?.["data.id"];
 
-      // Validação assinatura (quando MP enviar headers)
-      // Webhooks possuem assinatura x-signature + x-request-id com secret 4
       const xSignature = getHeader(req, "x-signature");
       const xRequestId = getHeader(req, "x-request-id");
 
@@ -183,30 +145,17 @@ export default async function handler(req, res) {
         id: dataId,
       });
 
-      if (!okSig) {
-        return json(res, 401, { ok: false, error: "Webhook assinatura inválida" });
-      }
+      if (!okSig) return json(res, 401, { ok: false, error: "Webhook assinatura inválida" });
+      if (!dataId) return json(res, 200, { ok: true, note: "Webhook recebido sem data.id" });
 
-      // Se não tiver id, responde OK pra não ficar reenviando, mas loga
-      if (!dataId) {
-        return json(res, 200, { ok: true, note: "Webhook recebido sem data.id" });
-      }
-
-      // Confirma pagamento consultando no MP (fonte da verdade)
       const payment = await mpFetch(`/v1/payments/${encodeURIComponent(dataId)}`, {
         accessToken: ACCESS_TOKEN,
         method: "GET",
       });
 
-      // Aqui você atualiza seu “banco”/usuário (como você ainda não tem DB, só retorna)
-      return json(res, 200, {
-        ok: true,
-        confirmed: true,
-        payment: pickPixData(payment),
-      });
+      return json(res, 200, { ok: true, confirmed: true, payment: pickPixData(payment) });
     }
 
-    // Método não permitido
     res.setHeader("Allow", "GET, POST");
     return json(res, 405, { ok: false, error: "Method not allowed" });
   } catch (err) {
