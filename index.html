@@ -1,181 +1,135 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Ice Cubo — Depósito & Saque</title>
-  <style>
-    body{margin:0;font-family:system-ui;background:#0b1220;color:#fff}
-    .wrap{max-width:860px;margin:0 auto;padding:18px}
-    .top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .brand{font-weight:800;letter-spacing:.5px}
-    .tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .tab{padding:10px 14px;border-radius:14px;border:1px solid #23314a;background:#0f172a;color:#fff;cursor:pointer;font-weight:700}
-    .tab.active{background:#38bdf8;color:#001019;border-color:#38bdf8}
-    .card{margin-top:14px;background:#111827;border:1px solid #243044;border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    h1{margin:0 0 6px;font-size:20px}
-    p{margin:6px 0 14px;opacity:.85}
-    input,button,select{width:100%;max-width:560px;padding:12px 14px;border-radius:14px;border:1px solid #334155;background:#0b1220;color:#fff;margin:8px 0;font-size:16px}
-    button{background:#38bdf8;color:#001019;border:none;font-weight:800;cursor:pointer}
-    button:disabled{opacity:.6;cursor:not-allowed}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .row > *{flex:1;min-width:170px}
-    pre{background:#020617;border:1px solid #1f2937;border-radius:14px;padding:12px;overflow:auto;white-space:pre-wrap}
-    img{max-width:280px;border-radius:16px;border:1px solid #334155;margin-top:10px}
-    .ok{color:#34d399;font-weight:800}
-    .err{color:#fb7185;font-weight:800}
-    .hint{font-size:12px;opacity:.75}
-    .sep{height:1px;background:#1f2937;margin:14px 0}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ice Blue - Carteira</title>
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#0b1d3a;
+  color:white;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.card{
+  background:#112a55;
+  padding:25px;
+  border-radius:20px;
+  width:95%;
+  max-width:420px;
+  text-align:center;
+  box-shadow:0 0 25px rgba(0,0,0,0.4);
+}
+
+h2{margin-top:0}
+
+input{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  margin-top:10px;
+  border:none;
+  border-radius:14px;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.deposit{background:#00d4ff;color:#000;}
+.saque{background:#ff9800;color:#000;}
+
+pre{
+  background:#000;
+  padding:10px;
+  border-radius:10px;
+  font-size:12px;
+  overflow:auto;
+}
+img{max-width:250px;margin-top:10px}
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand">ICE CUBO</div>
-      <div class="tabs">
-        <button class="tab active" id="tDep">Depósito (PIX)</button>
-        <button class="tab" id="tSaq">Saque</button>
-      </div>
-    </div>
 
-    <div class="card" id="dep">
-      <h1>Depósito via PIX</h1>
-      <p>Digite valor e e-mail. Vai gerar QR Code e “Copia e Cola”.</p>
+<div class="card">
+<h2>💰 Carteira Ice Blue</h2>
 
-      <div class="row">
-        <input id="valor" type="number" step="0.01" placeholder="Valor (ex: 10.50)">
-        <input id="email" type="email" placeholder="Email (ex: voce@email.com)">
-      </div>
+<h3>Depositar</h3>
+<input type="number" id="valor" placeholder="Valor (ex: 10.00)">
+<input type="email" id="email" placeholder="Seu email">
+<button class="deposit" onclick="depositar()">Gerar PIX</button>
 
-      <button id="btnPix">Gerar PIX</button>
+<hr style="margin:20px 0;border-color:#1e3d75;">
 
-      <div id="outPix" style="margin-top:12px"></div>
-      <div class="hint">Obs: o dinheiro só entra quando alguém pagar o QR.</div>
-    </div>
+<h3>Solicitar Saque</h3>
+<input type="number" id="valorSaque" placeholder="Valor do saque">
+<input type="text" id="nome" placeholder="Seu nome">
+<input type="text" id="chavePix" placeholder="Sua chave PIX">
+<button class="saque" onclick="sacar()">Solicitar Saque</button>
 
-    <div class="card" id="saq" style="display:none">
-      <h1>Saque</h1>
-      <p>Por segurança, aqui está como <b>pedido de saque</b> (simulado). Depois dá pra evoluir pra saque real com validações.</p>
+<div id="resultado"></div>
+</div>
 
-      <div class="row">
-        <input id="saqueValor" type="number" step="0.01" placeholder="Valor do saque (ex: 20.00)">
-        <select id="chaveTipo">
-          <option value="CPF">Chave PIX: CPF</option>
-          <option value="EMAIL">Chave PIX: Email</option>
-          <option value="CELULAR">Chave PIX: Celular</option>
-          <option value="ALEATORIA">Chave PIX: Aleatória</option>
-        </select>
-      </div>
+<script>
 
-      <input id="chavePix" placeholder="Sua chave PIX (digite aqui)">
+async function depositar(){
+  const valor = Number(document.getElementById("valor").value);
+  const email = document.getElementById("email").value;
 
-      <button id="btnSaque">Solicitar saque</button>
+  const r = await fetch("/api/pix",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ valor,email })
+  });
 
-      <div id="outSaque" style="margin-top:12px"></div>
-      <div class="hint">Saque real exige regras/validação/antifraude. Mas o “pedido” já fica pronto.</div>
-    </div>
-  </div>
+  const data = await r.json();
 
-  <script>
-    // Tabs
-    const tDep = document.getElementById("tDep");
-    const tSaq = document.getElementById("tSaq");
-    const dep = document.getElementById("dep");
-    const saq = document.getElementById("saq");
+  if(!r.ok){
+    document.getElementById("resultado").innerHTML =
+      "<pre>"+JSON.stringify(data,null,2)+"</pre>";
+    return;
+  }
 
-    function setTab(which){
-      if(which==="dep"){
-        tDep.classList.add("active"); tSaq.classList.remove("active");
-        dep.style.display="block"; saq.style.display="none";
-      } else {
-        tSaq.classList.add("active"); tDep.classList.remove("active");
-        saq.style.display="block"; dep.style.display="none";
-      }
-    }
-    tDep.onclick = ()=>setTab("dep");
-    tSaq.onclick = ()=>setTab("saq");
+  document.getElementById("resultado").innerHTML = `
+    <p><b>ID:</b> ${data.id}</p>
+    <p><b>Status:</b> ${data.status}</p>
+    ${data.qr_code_base64 ? `<img src="data:image/png;base64,${data.qr_code_base64}">` : ""}
+    ${data.qr_code ? `<pre>${data.qr_code}</pre>` : ""}
+  `;
+}
 
-    // Depósito PIX
-    const btnPix = document.getElementById("btnPix");
-    const outPix = document.getElementById("outPix");
+async function sacar(){
+  const valor = Number(document.getElementById("valorSaque").value);
+  const nome = document.getElementById("nome").value;
+  const chavePix = document.getElementById("chavePix").value;
 
-    btnPix.onclick = async () => {
-      const valor = Number(document.getElementById("valor").value);
-      const email = (document.getElementById("email").value || "").trim();
+  const r = await fetch("/api/saque",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ valor,nome,chavePix })
+  });
 
-      outPix.innerHTML = "";
-      btnPix.disabled = true;
-      btnPix.textContent = "Gerando...";
+  const data = await r.json();
 
-      try {
-        const r = await fetch("/api/pix", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ valor, email })
-        });
+  document.getElementById("resultado").innerHTML =
+    "<pre>"+JSON.stringify(data,null,2)+"</pre>";
+}
 
-        const data = await r.json();
+</script>
 
-        if (!r.ok) {
-          outPix.innerHTML = `<div class="err">Erro:</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
-          return;
-        }
-
-        outPix.innerHTML = `
-          <div class="ok">PIX gerado ✅</div>
-          <div class="sep"></div>
-          <div><b>ID:</b> ${data.id}</div>
-          <div><b>Status:</b> ${data.status || "gerado"}</div>
-          ${data.qr_code_base64 ? `<img alt="QR PIX" src="data:image/png;base64,${data.qr_code_base64}">` : ""}
-          ${data.qr_code ? `<div style="margin-top:10px"><b>Copia e Cola:</b></div><pre>${data.qr_code}</pre>` : "<div class='err'>Não veio qr_code.</div>"}
-        `;
-      } catch (e) {
-        outPix.innerHTML = `<div class="err">Falha:</div><pre>${String(e)}</pre>`;
-      } finally {
-        btnPix.disabled = false;
-        btnPix.textContent = "Gerar PIX";
-      }
-    };
-
-    // Saque (pedido)
-    const btnSaque = document.getElementById("btnSaque");
-    const outSaque = document.getElementById("outSaque");
-
-    btnSaque.onclick = async () => {
-      const valor = Number(document.getElementById("saqueValor").value);
-      const tipo = document.getElementById("chaveTipo").value;
-      const chave = (document.getElementById("chavePix").value || "").trim();
-
-      outSaque.innerHTML = "";
-      btnSaque.disabled = true;
-      btnSaque.textContent = "Enviando...";
-
-      try {
-        const r = await fetch("/api/saque", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ valor, tipo, chave })
-        });
-
-        const data = await r.json();
-
-        if (!r.ok) {
-          outSaque.innerHTML = `<div class="err">Erro:</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
-          return;
-        }
-
-        outSaque.innerHTML = `
-          <div class="ok">Pedido de saque enviado ✅</div>
-          <div class="sep"></div>
-          <pre>${JSON.stringify(data, null, 2)}</pre>
-        `;
-      } catch (e) {
-        outSaque.innerHTML = `<div class="err">Falha:</div><pre>${String(e)}</pre>`;
-      } finally {
-        btnSaque.disabled = false;
-        btnSaque.textContent = "Solicitar saque";
-      }
-    };
-  </script>
 </body>
 </html>
