@@ -1,56 +1,64 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Teste PIX</title>
-  <style>
-    body{font-family:system-ui;margin:20px}
-    input,button{padding:12px;border-radius:10px;border:1px solid #ccc;width:100%;max-width:420px;margin:8px 0}
-    pre{background:#111;color:#0f0;padding:12px;border-radius:10px;overflow:auto;max-width:720px;white-space:pre-wrap}
-    img{max-width:280px;display:block;margin:10px 0}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamento PIX - Cubo de Gelo</title>
+    <style>
+        body { font-family: sans-serif; background-color: #0d1117; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: #161b22; padding: 2rem; border-radius: 8px; width: 100%; max-width: 400px; text-align: center; border: 1px solid #30363d; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: 1px solid #30363d; background: #0d1117; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2ea043; }
+        #resultado { margin-top: 20px; word-break: break-all; }
+        img { max-width: 200px; margin-top: 10px; border: 5px solid white; border-radius: 4px; }
+        .pix-code { background: #0d1117; padding: 10px; border: 1px dashed #30363d; margin-top: 10px; font-size: 0.8rem; }
+    </style>
 </head>
 <body>
-  <h2>Gerar PIX (produção)</h2>
+    <div class="container">
+        <h2>Gerar PIX</h2>
+        <input type="number" id="valor" placeholder="Valor (ex: 10.00)">
+        <input type="email" id="email" placeholder="Seu e-mail">
+        <button onclick="gerarPix()">Gerar Pagamento</button>
 
-  <input id="valor" type="number" step="0.01" placeholder="Valor (ex: 10.50)">
-  <input id="email" type="email" placeholder="Email do pagador (ex: voce@email.com)">
-  <button id="btn">Gerar PIX</button>
+        <div id="resultado"></div>
+    </div>
 
-  <div id="out"></div>
+    <script>
+        async function gerarPix() {
+            const valor = document.getElementById('valor').value;
+            const email = document.getElementById('email').value;
+            const resDiv = document.getElementById('resultado');
 
-  <script>
-    document.getElementById("btn").onclick = async () => {
-      const valor = Number(document.getElementById("valor").value);
-      const email = document.getElementById("email").value.trim();
-      const out = document.getElementById("out");
-      out.innerHTML = "Gerando...";
+            if(!valor || !email) return alert("Preencha todos os campos!");
 
-      try{
-        const r = await fetch("/api/pix", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ valor, email })
-        });
+            resDiv.innerHTML = "Gerando...";
 
-        const data = await r.json();
+            try {
+                // Faz a chamada para a sua função na pasta /api/pix.js
+                const response = await fetch('/api/pix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ valentia: valor, email: email })
+                });
 
-        if(!r.ok){
-          out.innerHTML = "<pre>"+JSON.stringify(data,null,2)+"</pre>";
-          return;
+                const data = await response.json();
+
+                if (data.qr_code) {
+                    resDiv.innerHTML = `
+                        <p style="color: #2ea043;">PIX Gerado com Sucesso!</p>
+                        <img src="data:image/jpeg;base64,${data.qr_code_base64}" alt="QR Code PIX">
+                        <p>Copia e Cola:</p>
+                        <div class="pix-code">${data.qr_code}</div>
+                    `;
+                } else {
+                    resDiv.innerHTML = "<p style='color:red;'>Erro ao gerar PIX. Verifique os logs.</p>";
+                }
+            } catch (err) {
+                resDiv.innerHTML = "<p style='color:red;'>Erro de conexão com o servidor.</p>";
+            }
         }
-
-        out.innerHTML = `
-          <p><b>ID:</b> ${data.id}</p>
-          <p><b>Status:</b> ${data.status}</p>
-          ${data.qr_code_base64 ? `<img src="data:image/png;base64,${data.qr_code_base64}" alt="QR PIX">` : ""}
-          ${data.qr_code ? `<p><b>Copia e cola:</b></p><pre>${data.qr_code}</pre>` : "<p>Não veio qr_code.</p>"}
-        `;
-      }catch(e){
-        out.innerHTML = "<pre>"+String(e)+"</pre>";
-      }
-    };
-  </script>
+    </script>
 </body>
 </html>
