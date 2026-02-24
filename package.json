@@ -1,0 +1,10 @@
+package.json
+
+{
+  "nome" : "ice-cubo" , 
+  "versão" : "1.0.0 " 
+  "privado" : verdadeiro , 
+  "dependências" : { 
+    "express" : "^4.18.2" 
+  }
+}
