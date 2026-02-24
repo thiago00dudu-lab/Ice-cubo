@@ -1,112 +1,75 @@
-// api/mp/index.js
-// Vercel Serverless Function – Mercado Pago PIX
-
-const crypto = require("crypto");
-
+// api/mp/index.js (Vercel Serverless Function - CommonJS)
 const MP_API = "https://api.mercadopago.com";
 
-function json(res, code, data) {
-  res.setHeader("Content-Type", "application/json");
-  return res.status(code).send(data);
+function send(res, status, data) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(data));
 }
 
-async function mpFetch(path, { method = "GET", body } = {}) {
-  const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
-
-  if (!ACCESS_TOKEN) {
-    throw new Error("ACCESS_TOKEN não configurado na Vercel");
-  }
-
-  const response = await fetch(`${MP_API}${path}`, {
-    method,
+async function mpFetch(path, accessToken, opts = {}) {
+  const r = await fetch(`${MP_API}${path}`, {
+    method: opts.method || "GET",
     headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
 
-  const text = await response.text();
-  let data;
-
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = { raw: text };
-  }
-
-  if (!response.ok) {
-    const err = new Error(data?.message || "Erro Mercado Pago");
-    err.status = response.status;
-    throw err;
-  }
-
-  return data;
+  const text = await r.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch {}
+  if (!r.ok) throw { status: r.status, detail: json || text };
+  return json || {};
 }
 
-module.exports = async function handler(req, res) {
+module.exports = async (req, res) => {
   try {
-    // TESTE DA API
-    if (req.method === "GET" && req.query?.ping) {
-      return json(res, 200, {
-        ok: true,
-        message: "API ICE PIX ONLINE ✅",
-      });
+    const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+    if (!ACCESS_TOKEN) return send(res, 500, { ok:false, error:"Missing env ACCESS_TOKEN" });
+
+    // PING
+    if (req.method === "GET" && req.query?.ping === "1") {
+      return send(res, 200, { ok:true, route:"/api/mp", ping:true });
     }
 
     // CRIAR PIX
     if (req.method === "POST" && req.query?.action === "create_pix") {
-      const { amount, email } = req.body || {};
+      const { email, value } = req.body || {};
+      const amount = Number(value || 0);
+      if (!email || !amount || amount <= 0) return send(res, 400, { ok:false, error:"email e value obrigatórios" });
 
-      if (!amount || !email) {
-        return json(res, 400, { ok: false, error: "Informe amount e email" });
-      }
+      const body = {
+        transaction_amount: amount,
+        description: "ICE-CUBO PIX",
+        payment_method_id: "pix",
+        payer: { email },
+      };
 
-      const payment = await mpFetch("/v1/payments", {
-        method: "POST",
-        body: {
-          transaction_amount: Number(amount),
-          payment_method_id: "pix",
-          description: "ICE CUBO PIX",
-          payer: { email },
-        },
-      });
-
-      const pixData = payment?.point_of_interaction?.transaction_data || {};
-
-      return json(res, 200, {
+      const payment = await mpFetch("/v1/payments", ACCESS_TOKEN, { method:"POST", body });
+      const tx = payment?.point_of_interaction?.transaction_data || {};
+      return send(res, 200, {
         ok: true,
-        payment_id: payment.id,
+        id: payment.id,
         status: payment.status,
-        qr_code: pixData.qr_code,
-        qr_code_base64: pixData.qr_code_base64,
-        ticket_url: pixData.ticket_url,
+        qr_code: tx.qr_code || null,
+        qr_code_base64: tx.qr_code_base64 || null,
       });
     }
 
-    // CONSULTAR STATUS
+    // STATUS
     if (req.method === "GET" && req.query?.action === "status") {
-      const id = req.query?.id;
+      const id = req.query.id;
+      if (!id) return send(res, 400, { ok:false, error:"id obrigatório" });
 
-      if (!id) {
-        return json(res, 400, { ok: false, error: "Passe o id do pagamento" });
-      }
-
-      const payment = await mpFetch(`/v1/payments/${id}`);
-
-      return json(res, 200, {
-        ok: true,
-        status: payment.status,
-        status_detail: payment.status_detail,
-      });
+      const payment = await mpFetch(`/v1/payments/${encodeURIComponent(id)}`, ACCESS_TOKEN);
+      return send(res, 200, { ok:true, id: payment.id, status: payment.status, status_detail: payment.status_detail });
     }
 
-    return json(res, 405, { ok: false, error: "Método não permitido" });
-
-  } catch (err) {
-    return json(res, err.status || 500, {
-      ok: false,
-      error: err.message,
-    });
+    res.setHeader("Allow", "GET, POST");
+    return send(res, 405, { ok:false, error:"Method not allowed" });
+  } catch (e) {
+    return send(res, e.status || 500, { ok:false, error:"API error", detail: e.detail || String(e) });
   }
 };
