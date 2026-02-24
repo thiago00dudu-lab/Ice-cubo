@@ -2,26 +2,26 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Gerar PIX (produção)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Teste PIX</title>
   <style>
     body{font-family:system-ui;margin:20px}
     input,button{padding:12px;border-radius:10px;border:1px solid #ccc;width:100%;max-width:420px;margin:8px 0}
-    pre{background:#111;color:#0f0;padding:12px;border-radius:10px;overflow:auto;max-width:720px}
-    img{max-width:260px;display:block;margin:10px 0}
+    pre{background:#111;color:#0f0;padding:12px;border-radius:10px;overflow:auto;max-width:720px;white-space:pre-wrap}
+    img{max-width:280px;display:block;margin:10px 0}
   </style>
 </head>
 <body>
-  <h2>Gerar PIX (dinheiro real)</h2>
+  <h2>Gerar PIX (produção)</h2>
 
-  <input id="valor" type="number" placeholder="Valor (ex: 10.50)" step="0.01" />
-  <input id="email" type="email" placeholder="Seu email (ex: voce@email.com)" />
-  <button onclick="gerar()">Gerar PIX</button>
+  <input id="valor" type="number" step="0.01" placeholder="Valor (ex: 10.50)">
+  <input id="email" type="email" placeholder="Email do pagador (ex: voce@email.com)">
+  <button id="btn">Gerar PIX</button>
 
   <div id="out"></div>
 
   <script>
-    async function gerar(){
+    document.getElementById("btn").onclick = async () => {
       const valor = Number(document.getElementById("valor").value);
       const email = document.getElementById("email").value.trim();
       const out = document.getElementById("out");
@@ -29,8 +29,8 @@
 
       try{
         const r = await fetch("/api/pix", {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ valor, email })
         });
 
@@ -41,23 +41,16 @@
           return;
         }
 
-        const img = data.qr_code_base64
-          ? `<img src="data:image/png;base64,${data.qr_code_base64}" alt="QR PIX"/>`
-          : "";
-
-        const copia = data.qr_code
-          ? `<p><b>Copia e cola:</b></p><pre>${data.qr_code}</pre>`
-          : "";
-
         out.innerHTML = `
           <p><b>ID:</b> ${data.id}</p>
-          ${img}
-          ${copia}
+          <p><b>Status:</b> ${data.status}</p>
+          ${data.qr_code_base64 ? `<img src="data:image/png;base64,${data.qr_code_base64}" alt="QR PIX">` : ""}
+          ${data.qr_code ? `<p><b>Copia e cola:</b></p><pre>${data.qr_code}</pre>` : "<p>Não veio qr_code.</p>"}
         `;
       }catch(e){
         out.innerHTML = "<pre>"+String(e)+"</pre>";
       }
-    }
+    };
   </script>
 </body>
 </html>
