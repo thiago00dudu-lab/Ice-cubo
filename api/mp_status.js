@@ -1,7 +1,4 @@
-Fonte
 
-Saída
-api/mp_status.js
 
 const MP = "https://api.mercadopago.com" ;   
 
