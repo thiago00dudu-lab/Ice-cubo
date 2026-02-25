@@ -1,134 +1,60 @@
 const https = require("https");
+const { URL } = require("url");
 
-function send(res, status, contentType, body) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", contentType);
-  res.end(body);
+function sendHTML(res, html) {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.end(html);
 }
 
-function readBody(req) {
-  return new Promise((resolve) => {
-    let data = "";
-    req.on("data", (chunk) => (data += chunk));
-    req.on("end", () => resolve(data));
-  });
+function sendJSON(res, code, obj) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(obj));
 }
 
 module.exports = async (req, res) => {
-  const token = process.env.MP_ACCESS_TOKEN;
+  try {
+    const proto = req.headers["x-forwarded-proto"] || "https";
+    const host = req.headers.host;
+    const u = new URL(req.url, `${proto}://${host}`);
+    const op = u.searchParams.get("op") || "";
 
-  // =========================
-  // ROTA DE PAGAMENTO (POST)
-  // =========================
-  if (req.method === "POST") {
-    if (!token) {
-      return send(res, 500, "application/json",
-        JSON.stringify({ ok: false, error: "MP_ACCESS_TOKEN não configurado" })
-      );
-    }
+    // Rota de Teste (Health Check)
+    if (op === "health") return sendJSON(res, 200, { ok: true, msg: "API ICE-CUBO online" });
 
-    const raw = await readBody(req);
-    const body = raw ? JSON.parse(raw) : {};
+    // HTML Principal (O seu site)
+    const html = `
+    <!doctype html>
+    <html lang="pt-br">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>ICE-CUBO</title>
+      <style>
+        body{margin:0;font-family:Arial;background:#0b1220;color:#fff}
+        .top{height:45vh;background:#000;display:flex;align-items:center;justify-content:center}
+        .bar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;padding:12px;background:rgba(15,23,42,.9);border-top:1px solid #1f2a44}
+        .btn{padding:10px 14px;border-radius:14px;border:1px solid #1f2a44;background:#0f172a;color:#38bdf8}
+        .wrap{padding:14px 14px 90px}
+      </style>
+    </head>
+    <body>
+      <div class="top">SITE EM RECUPERAÇÃO ✅</div>
+      <div class="wrap">
+        <h2>Recuperação do ICE-CUBO</h2>
+        <p>Seu site foi restaurado com sucesso.</p>
+      </div>
+      <div class="bar">
+        <button class="btn">Casa</button>
+        <button class="btn">Câmera</button>
+        <button class="btn">Perigo</button>
+      </div>
+    </body>
+    </html>`;
 
-    const email = body.email;
-    const amount = Number(body.amount);
-
-    if (!email || !amount) {
-      return send(res, 400, "application/json",
-        JSON.stringify({ ok: false, error: "Envie email e amount" })
-      );
-    }
-
-    const paymentData = JSON.stringify({
-      transaction_amount: amount,
-      description: "Compra ICE-CUBO",
-      payment_method_id: "pix",
-      payer: { email },
-    });
-
-    const options = {
-      hostname: "api.mercadopago.com",
-      path: "/v1/payments",
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(paymentData),
-      },
-    };
-
-    const mpReq = https.request(options, (mpRes) => {
-      let data = "";
-      mpRes.on("data", (chunk) => (data += chunk));
-      mpRes.on("end", () => {
-        const json = JSON.parse(data);
-        const tx = json.point_of_interaction?.transaction_data || {};
-
-        send(res, 200, "application/json", JSON.stringify({
-          ok: true,
-          qr_code: tx.qr_code || null,
-          qr_code_base64: tx.qr_code_base64 || null,
-        }));
-      });
-    });
-
-    mpReq.on("error", (err) => {
-      send(res, 500, "application/json",
-        JSON.stringify({ ok: false, error: err.message })
-      );
-    });
-
-    mpReq.write(paymentData);
-    mpReq.end();
-    return;
+    return sendHTML(res, html);
+  } catch (e) {
+    return sendJSON(res, 500, { ok: false, error: e.message });
   }
-
-  // =========================
-  // PÁGINA PRINCIPAL (GET)
-  // =========================
-  send(res, 200, "text/html; charset=utf-8", `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>ICE-CUBO PIX</title>
-</head>
-<body>
-<h2>Pagamento PIX - ICE-CUBO</h2>
-
-<input type="email" id="email" placeholder="Seu email" />
-<input type="number" id="valor" placeholder="Valor" />
-<button onclick="pagar()">Gerar PIX</button>
-
-<div id="resultado"></div>
-
-<script>
-async function pagar() {
-  const email = document.getElementById("email").value;
-  const amount = document.getElementById("valor").value;
-
-  const r = await fetch("/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, amount })
-  });
-
-  const data = await r.json();
-
-  if (!data.ok) {
-    document.getElementById("resultado").innerHTML =
-      "<p style='color:red'>" + data.error + "</p>";
-    return;
-  }
-
-  document.getElementById("resultado").innerHTML = \`
-    <img src="data:image/png;base64,\${data.qr_code_base64}" width="250"/>
-    <textarea rows="4" cols="40">\${data.qr_code}</textarea>
-  \`;
-}
-</script>
-
-</body>
-</html>
-  `);
 };
