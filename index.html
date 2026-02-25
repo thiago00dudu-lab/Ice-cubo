@@ -1,11 +1,52 @@
-<! doctype html > 
-< html lang = " pt-br " > 
-< cabeçalho >
-  < meta charset = " utf-8 " />  
-  < meta name = " viewport " content = " width=device-width,initial-scale=1 " />   
-  <title> ICE - CUBO </title>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento PIX</title>
 </head>
-< corpo >
-  <script> location.replace ( " / api " ) ; </script>
+<body>
+
+  <h2>Pagamento via PIX</h2>
+
+  <input type="email" id="email" placeholder="Seu email" />
+  <input type="number" id="valor" placeholder="Valor" />
+  <button onclick="pagar()">Gerar PIX</button>
+
+  <div id="resultado" style="margin-top:20px;"></div>
+
+  <script>
+    async function pagar() {
+      const email = document.getElementById("email").value;
+      const amount = document.getElementById("valor").value;
+
+      const resposta = await fetch("SEU_LINK_DA_API_AQUI", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: email,
+          amount: Number(amount)
+        })
+      });
+
+      const data = await resposta.json();
+
+      if (!data.ok) {
+        document.getElementById("resultado").innerHTML =
+          "<p style='color:red;'>Erro: " + JSON.stringify(data.error) + "</p>";
+        return;
+      }
+
+      document.getElementById("resultado").innerHTML = `
+        <p><strong>Status:</strong> ${data.status}</p>
+        <p><strong>Valor:</strong> R$ ${data.amount}</p>
+        <img src="data:image/png;base64,${data.qr_code_base64}" width="250"/>
+        <p><strong>Copia e cola:</strong></p>
+        <textarea rows="4" cols="40">${data.qr_code}</textarea>
+      `;
+    }
+  </script>
+
 </body>
-</ html >
+</html>
