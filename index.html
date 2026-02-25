@@ -1,20 +1,11 @@
-async function gerarPix() {
-  try {
-    const response = await fetch('/api/mp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ valor: 10.00 }) // Exemplo de envio de dados
-    });
-
-    const data = await response.json(); // Aqui ele lê o JSON corretamente
-
-    if (data.qr_code) {
-      // Aqui você exibe o QR Code ou a chave Pix no seu site
-      console.log('Pix Gerado:', data.qr_code);
-    } else {
-      alert('Erro: ' + (data.error || 'Falha na resposta'));
-    }
-  } catch (error) {
-    console.error('Erro ao conectar com a API:', error);
-  }
-}
+<! doctype html > 
+< html lang = " pt-br " > 
+< cabeçalho >
+  < meta charset = " utf-8 " />  
+  < meta name = " viewport " content = " width=device-width,initial-scale=1 " />   
+  <title> ICE - CUBO </title>
+</head>
+< corpo >
+  <script> location.replace ( " / api " ) ; </script>
+</body>
+</ html >
