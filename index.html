@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICE-CUBO | Mineração</title>
+    <style>
+        /* Estilo para rodar bem no celular */
+        body { background: #061727; color: #e9f5ff; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: auto; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; border: 1px solid #1a3a5a; }
+        h1 { font-weight: 900; color: #38bdf8; margin-bottom: 5px; }
+        .barra-gelo { width: 100%; background: #0b2a6a; height: 25px; border-radius: 12px; margin: 20px 0; overflow: hidden; border: 2px solid #1a3a5a; }
+        #iceFill { background: linear-gradient(90deg, #38bdf8, #0077be); height: 100%; width: 100%; transition: width 0.4s ease; }
+        button { width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        #mineBtn { background: #38bdf8; color: #061727; }
+        #mineBtn:active { transform: scale(0.95); }
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; font-weight: bold; }
+        input { width: 90%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #38bdf8; background: #061727; color: white; }
+        .msg { font-size: 14px; margin-top: 10px; color: #9cc9ea; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ICE-CUBO</h1>
+    <p style="color: rgba(255,255,255,0.6)">timeline • perfil • carteira</p>
+
+    <div class="stats">
+        <div>Saldo: <span id="saldoBlue">0</span> BLUE</div>
+        <div id="iceText">Gelo 100%</div>
+    </div>
+
+    <!-- BARRA DE GELO (JOGO) -->
+    <div class="barra-gelo">
+        <div id="iceFill"></div>
+    </div>
+
+    <button id="mineBtn">⛏️ MINERAR</button>
+    <p id="mineMsg" class="msg"></p>
+
+    <hr style="border: 0.1px solid #1a3a5a; margin: 30px 0;">
+
+    <!-- SISTEMA DE SAQUE -->
+    <h3>Solicitar Saque</h3>
+    <input type="number" id="saqueValor" placeholder="Quantidade BLUE">
+    <button onclick="solicitarSaque()" style="background: #22c55e; color: white;">EFETUAR SAQUE</button>
+    <p id="saqMsg" class="msg"></p>
+</div>
+
+<script>
+/* ----------------- SISTEMA BASE (SIMULADO) ----------------- */
+const LS = {
+    get: (k, d) => localStorage.getItem(k) || d,
+    set: (k, v) => localStorage.setItem(k, v)
+};
+
+let state = {
+    user: { user: "Jogador", isADM: true }, // Altere isADM para false para testar a trava
+    blue: Number(LS.get("blue_balance", 0)),
+    withdrawals: []
+};
+
+function getBlue() { return state.blue; }
+function setBlue(v) { 
+    state.blue = v; 
+    LS.set("blue_balance", v);
+    document.getElementById("saldoBlue").textContent = v;
+}
+function me() { return state.user; }
+function isADM() { return state.user.isADM; }
+function uid() { return Math.random().toString(36).substr(2, 9); }
+function persist() { console.log("Estado salvo."); }
+function renderAll() { document.getElementById("saldoBlue").textContent = state.blue; }
+function pushHist(type, msg) { console.log(`[${type}] ${msg}`); }
+
+/* ----------------- MINER (JOGO IGUAL AO PRINT) ----------------- */
+let ice = Number(LS.get("ice_ice", 100));
+
+function setIce(v){
+    ice = Math.max(0, Math.min(100, v));
+    LS.set("ice_ice", ice);
+    document.getElementById("iceFill").style.width = ice + "%";
+    document.getElementById("iceText").textContent = "Gelo " + ice + "%";
+}
+
+// Inicia o gelo
+setIce(ice);
+renderAll();
+
+document.getElementById("mineBtn").onclick = ()=>{
+    const u = me(); 
+    if(!u) return alert("Entre primeiro.");
+    
+    // Trava de ADM do código original
+    if(!isADM()) return alert("Somente ADM pode iniciar o modo mineração.");
+
+    // Lógica de quebra (hit) e ganho (gain)
+    const hit = 8 + Math.floor(Math.random()*12);
+    setIce(ice - hit);
+
+    const gain = 1 + Math.floor(Math.random()*3);
+    setBlue(getBlue()+gain);
+
+    pushHist("mining", `Urso quebrou ${hit}% do gelo • +${gain} BLUE`);
+    document.getElementById("mineMsg").textContent = `+ ${gain} BLUE • gelo agora ${ice}%`;
+
+    if(ice<=0){
+        const bonus = 20;
+        setBlue(getBlue()+bonus);
+        pushHist("mining", `Bloco quebrado! Bônus: +${bonus} BLUE`);
+        setIce(100);
+        document.getElementById("mineMsg").textContent = "BLOCO QUEBRADO! +"+bonus+" BLUE (novo gelo 100%).";
+    }
+    persist(); renderAll();
+};
+
+/* ----------------- SAQUE (IGUAL AO PRINT) ----------------- */
+window.solicitarSaque = () => {
+    const v = Number(document.getElementById("saqueValor").value);
+    const u = me();
+    
+    if(!v || v<1) return alert("Valor inválido.");
+    if(getBlue() < v) return alert("Sem saldo.");
+
+    setBlue(getBlue()-v);
+    
+    state.withdrawals.unshift({
+        id:uid(), 
+        user:u.user, 
+        amount:v, 
+        status:"pendente", 
+        ts:Date.now()
+    });
+
+    pushHist("saque", `Pedido de saque: -${v} BLUE (pendente)`);
+    document.getElementById("saqMsg").textContent = "Pedido enviado. ADM vai aprovar/recusar.";
+    
+    persist(); renderAll();
+};
+</script>
+
+</body>
+</html>
