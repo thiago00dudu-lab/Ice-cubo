@@ -6,6 +6,6 @@
     "mercadopago": "^1.5.17"
   },
   "engines": {
-    "node": "18.x"
+    "node": "20.x"
   }
 }
