@@ -1029,3 +1029,106 @@ setTab("timeline");
 </body>
 </html>`);
 }
+let pixTimer = null;
+let lastPaymentId = null;
+
+async function startPix(){
+  const email = (document.getElementById("pixEmail").value || "").trim();
+  const amount = Number((document.getElementById("pixVal").value || "").replace(",", "."));
+
+  if(!email) return alert("Digite seu e-mail.");
+  if(!amount || Number.isNaN(amount) || amount < 1) return alert("Valor inválido.");
+
+  const box = document.getElementById("pixBox");
+  const st  = document.getElementById("pixStatus");
+  const msg = document.getElementById("pixMsg");
+  const img = document.getElementById("pixImg");
+  const code= document.getElementById("pixCode");
+
+  box.classList.remove("hide");
+  st.textContent = "gerando...";
+  msg.textContent = "";
+
+  const r = await fetch("/api/mp_create", {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ email, amount })
+  });
+
+  const data = await r.json();
+  if(!r.ok || !data.ok){
+    st.textContent = "erro";
+    msg.textContent = (data && (data.error?.message || data.error || data.message)) || "Erro ao gerar PIX.";
+    return;
+  }
+
+  lastPaymentId = data.paymentId;
+  st.textContent = "aguardando pagamento";
+  msg.textContent = "Abra o app do banco, pague o Pix e aguarde confirmar...";
+
+  // QR base64
+  if(data.qr_code_base64){
+    img.src = `data:image/png;base64,${data.qr_code_base64}`;
+  } else {
+    img.removeAttribute("src");
+  }
+
+  // Copia e cola
+  code.value = data.qr_code || "";
+
+  // começa a checar status
+  if(pixTimer) clearInterval(pixTimer);
+  pixTimer = setInterval(checkPixStatus, 3500);
+  checkPixStatus();
+}
+
+async function checkPixStatus(){
+  if(!lastPaymentId) return;
+  const st  = document.getElementById("pixStatus");
+  const msg = document.getElementById("pixMsg");
+
+  const r = await fetch(`/api/mp_status?paymentId=${encodeURIComponent(lastPaymentId)}`);
+  const data = await r.json();
+
+  if(!r.ok || !data.ok){
+    st.textContent = "erro";
+    msg.textContent = "Erro consultando status.";
+    return;
+  }
+
+  st.textContent = data.status;
+
+  if(data.status === "approved"){
+    msg.textContent = "Pagamento aprovado ✅ Crédito liberado.";
+    clearInterval(pixTimer); pixTimer = null;
+
+    // Aqui é onde você credita BLUE de verdade.
+    // Por enquanto: soma no saldo local (igual seu protótipo).
+    setBlue(getBlue() + Number(data.amount || 0));
+    pushHist("dep", `Pix aprovado: +${Number(data.amount||0)} BLUE`);
+    renderAll();
+  } else if(data.status === "rejected"){
+    msg.textContent = "Pagamento recusado.";
+    clearInterval(pixTimer); pixTimer = null;
+  }
+}
+
+// botões
+document.getElementById("pixBtn").onclick = startPix;
+
+document.getElementById("pixCopy").onclick = async ()=>{
+  const code = document.getElementById("pixCode").value || "";
+  try{
+    await navigator.clipboard.writeText(code);
+    alert("Copiado!");
+  }catch(e){
+    alert("Não deu pra copiar automaticamente. Segura e copia manual.");
+  }
+};
+
+document.getElementById("pixCancel").onclick = ()=>{
+  document.getElementById("pixBox").classList.add("hide");
+  if(pixTimer) clearInterval(pixTimer);
+  pixTimer = null;
+  lastPaymentId = null;
+};
