@@ -1,38 +1,32 @@
 const MP = "https://api.mercadopago.com";
 
 module.exports = async (req, res) => {
-    try {
-        const token = process.env.MP_ACCESS_TOKEN;
-        if (!token) {
-            return res.status(500).json({ OK: false, error: "MP_ACCESS_TOKEN não configurado" });
-        }
+  try {
+    const token = (process.env.MP_ACCESS_TOKEN || "").trim();
+    if (!token)
+      return res
+        .status(500)
+        .json({ ok: false, error: "MP_ACCESS_TOKEN não configurado" });
 
-        const { payment_id } = req.query;
+    const url = new URL(req.url, "http://localhost");
+    const paymentId = url.searchParams.get("paymentId");
+    if (!paymentId)
+      return res.status(400).json({ ok: false, error: "Passe ?paymentId=" });
 
-        if (!payment_id) {
-            return res.status(400).json({ OK: false, error: "Passe ?payment_id=" });
-        }
+    const r = await fetch(`${MP}/v1/payments/${paymentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-        const r = await fetch(`${MP}/v1/payments/${payment_id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+    const data = await r.json();
+    if (!r.ok) return res.status(400).json({ ok: false, error: data });
 
-        const dados = await r.json();
-
-        if (!r.ok) {
-            return res.status(400).json({ OK: false, error: dados });
-        }
-
-        return res.status(200).json({
-            OK: true,
-            id: dados.id,
-            status: dados.status,
-            valor: dados.transaction_amount,
-        });
-
-    } catch (e) {
-        return res.status(500).json({ OK: false, error: e.message });
-    }
+    return res.status(200).json({
+      ok: true,
+      id: data.id,
+      status: data.status,
+      amount: data.transaction_amount,
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
 };
