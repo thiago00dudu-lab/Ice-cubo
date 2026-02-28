@@ -1,8 +1,3 @@
-{
-  "nome" : "ice-cubo" , 
-  "versão" : "1.0.0 " 
-  "privado" : verdadeiro , 
-  "dependências" : { 
-    "express" : "^4.18.2" 
-  }
+export default function handler(req, res) {
+  res.status(200).send("ICE CUBO Online on Vercel ✅");
 }
