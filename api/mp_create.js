@@ -6,38 +6,43 @@ export default async function handler(req, res) {
     if (!token) return res.status(500).json({ ok: false, error: "MP_ACCESS_TOKEN not configured" });
 
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    const { title = "Depósito ICE", amount } = body || {};
+    const amount = Number(body?.amount || 0);
+    const email = body?.email || "comprador@test.com";
 
-    const value = Number(amount);
-    if (!value || value < 1) return res.status(400).json({ ok: false, error: "amount inválido" });
+    if (!amount || amount < 1) {
+      return res.status(400).json({ ok: false, error: "amount inválido" });
+    }
 
-    // Preference (Checkout Pro): abre tela do Mercado Pago (Pix/cartão)
-    const preference = {
-      items: [{ title, quantity: 1, unit_price: value }],
-      // IMPORTANTE: coloque sua URL real depois
-      back_urls: {
-        success: "https://SEU-DOMINIO.vercel.app/?pay=success",
-        pending: "https://SEU-DOMINIO.vercel.app/?pay=pending",
-        failure: "https://SEU-DOMINIO.vercel.app/?pay=failure"
-      },
-      auto_return: "approved",
-      notification_url: "https://SEU-DOMINIO.vercel.app/api/mp_webhook"
+    const payload = {
+      transaction_amount: amount,
+      description: "Depósito ICE",
+      payment_method_id: "pix",
+      payer: { email }
     };
 
-    const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    const r = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(preference)
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": `${Date.now()}-${Math.random()}`
+      },
+      body: JSON.stringify(payload)
     });
 
     const data = await r.json();
     if (!r.ok) return res.status(r.status).json({ ok: false, error: data });
 
+    const tx = data?.point_of_interaction?.transaction_data;
+
     return res.status(200).json({
       ok: true,
-      preferenceId: data.id,
-      init_point: data.init_point
+      paymentId: data.id,
+      status: data.status,
+      qr_code: tx?.qr_code || null,              // copia e cola
+      qr_code_base64: tx?.qr_code_base64 || null // imagem base64
     });
+
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
   }
