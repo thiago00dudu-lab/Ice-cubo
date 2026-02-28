@@ -1,8 +1,5 @@
 {
-  "name": "ice-cubo",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "express": "^4.18.2"
-  }
+  "nome" : "ice-cubo" , 
+  "versão" : "1.0.0 " 
+  "privado" : verdadeiro 
 }
