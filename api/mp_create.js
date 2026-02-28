@@ -1,71 +1,44 @@
-
-const MP_API_URL = "https://api.mercadopago.com";
-
 export default async function handler(req, res) {
   try {
+    if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Use POST" });
+
     const token = process.env.MP_ACCESS_TOKEN;
+    if (!token) return res.status(500).json({ ok: false, error: "MP_ACCESS_TOKEN not configured" });
 
-    // 1. Validações Iniciais
-    if (!token) {
-      return res.status(500).json({ ok: false, error: "MP_ACCESS_TOKEN is not configured" });
-    }
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const { title = "Depósito ICE", amount } = body || {};
 
-    if (req.method !== "POST") {
-      return res.status(405).json({ ok: false, error: "Method Not Allowed. Use POST" });
-    }
+    const value = Number(amount);
+    if (!value || value < 1) return res.status(400).json({ ok: false, error: "amount inválido" });
 
-    // 2. Processamento do Body (Vercel já costuma parsear o body automaticamente)
-    const body = req.body || {};
-    const email = String(body.email || "").trim();
-    const amount = Number(body.amount);
-
-    if (!email || !amount || isNaN(amount)) {
-      return res.status(400).json({ ok: false, error: "Please provide { email, amount }" });
-    }
-
-    const transaction_amount = Math.round(amount * 100) / 100;
-
-    // 3. Chamada à API do Mercado Pago usando Fetch
-    const response = await fetch(MP_API_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "X-Idempotency-Key": `${Date.now()}-${Math.random().toString(36).substring(2)}`,
+    // Preference (Checkout Pro): abre tela do Mercado Pago (Pix/cartão)
+    const preference = {
+      items: [{ title, quantity: 1, unit_price: value }],
+      // IMPORTANTE: coloque sua URL real depois
+      back_urls: {
+        success: "https://SEU-DOMINIO.vercel.app/?pay=success",
+        pending: "https://SEU-DOMINIO.vercel.app/?pay=pending",
+        failure: "https://SEU-DOMINIO.vercel.app/?pay=failure"
       },
-      body: JSON.stringify({
-        transaction_amount,
-        description: "ICE-CUBO Purchase",
-        payment_method_id: "pix",
-        payer: {
-          email: email,
-          first_name: "Customer", // Requisito opcional mas recomendado
-          last_name: "IceCubo"
-        },
-      }),
+      auto_return: "approved",
+      notification_url: "https://SEU-DOMINIO.vercel.app/api/mp_webhook"
+    };
+
+    const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(preference)
     });
 
-    const data = await response.json();
+    const data = await r.json();
+    if (!r.ok) return res.status(r.status).json({ ok: false, error: data });
 
-    if (!response.ok) {
-      return res.status(response.status).json({ ok: false, error: data });
-    }
-
-    // 4. Retorno formatado para o seu App
-    const tx = data.point_of_interaction?.transaction_data || {};
-    
     return res.status(200).json({
       ok: true,
-      payment_id: data.id,
-      status: data.status,
-      amount: data.transaction_amount,
-      qr_code: tx.qr_code || null,
-      qr_code_base64: tx.qr_code_base64 || null,
-      copy_paste: tx.qr_code || null // Facilita o "Copia e Cola" no app
+      preferenceId: data.id,
+      init_point: data.init_point
     });
-
-  } catch (error) {
-    console.error("Payment Error:", error);
-    return res.status(500).json({ ok: false, error: "Internal Server Error", message: error.message });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
   }
 }
