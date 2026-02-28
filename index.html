@@ -4,104 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ICE CUBO</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
-body{
-margin:0;
-font-family:Arial, sans-serif;
-background:#0b1220;
-color:#fff;
-padding:15px;
-}
-.card{
-background:#0f1a2e;
-border:1px solid #223255;
-border-radius:15px;
-padding:15px;
-margin-bottom:15px;
-}
-input, textarea{
-width:100%;
-padding:10px;
-margin-top:8px;
-background:#0a1326;
-border:1px solid #223255;
-color:#fff;
-border-radius:10px;
-}
-button{
-margin-top:10px;
-padding:10px;
-border:none;
-border-radius:20px;
-background:#38bdf8;
-color:#000;
-font-weight:bold;
-cursor:pointer;
-}
-.post{
-background:#0a1326;
-padding:10px;
-border-radius:10px;
-margin-top:10px;
-border:1px solid #223255;
-}
+body{margin:0;font-family:Arial;background:#071022;color:#fff;padding:18px}
+.card{background:#0f1a2e;border:1px solid #223255;border-radius:20px;padding:16px;max-width:520px;margin:0 auto}
+input,textarea{width:100%;padding:12px;margin-top:10px;border-radius:14px;border:1px solid #223255;background:#0a1326;color:#fff}
+button{margin-top:12px;padding:12px 18px;border:none;border-radius:999px;background:#38bdf8;color:#000;font-weight:bold}
+.post{margin-top:12px;padding:12px;border-radius:16px;border:1px solid #223255;background:#0a1326}
 </style>
 </head>
-
 <body>
-
-<div class="card">
-<h2>📦 Trocas</h2>
-
-<input id="titulo" placeholder="Nome do produto">
-<input id="troca" placeholder="Quero em troca">
-<textarea id="desc" placeholder="Descrição"></textarea>
-
-<button onclick="publicar()">Publicar</button>
-
-<div id="lista"></div>
-</div>
+  <div class="card">
+    <h2>📦 Trocas</h2>
+    <input id="titulo" placeholder="Nome do produto">
+    <input id="troca" placeholder="Quero em troca">
+    <textarea id="desc" placeholder="Descrição"></textarea>
+    <button onclick="publicar()">Publicar</button>
+    <div id="lista"></div>
+  </div>
 
 <script>
 let posts = JSON.parse(localStorage.getItem("ice_posts") || "[]");
 
 function render(){
-const lista = document.getElementById("lista");
-lista.innerHTML = "";
-posts.slice().reverse().forEach(p=>{
-lista.innerHTML += `
-<div class="post">
-<b>${p.titulo}</b><br>
-Quero: ${p.troca}<br>
-${p.desc}
-</div>
-`;
-});
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+  posts.slice().reverse().forEach(p=>{
+    lista.innerHTML += `
+      <div class="post">
+        <b>${p.titulo}</b><br>
+        Quero: ${p.troca}<br>
+        ${p.desc || ""}
+      </div>`;
+  });
 }
 
 function publicar(){
-const titulo = document.getElementById("titulo").value;
-const troca = document.getElementById("troca").value;
-const desc = document.getElementById("desc").value;
+  const titulo = document.getElementById("titulo").value.trim();
+  const troca  = document.getElementById("troca").value.trim();
+  const desc   = document.getElementById("desc").value.trim();
 
-if(!titulo || !troca){
-alert("Preencha os campos!");
-return;
+  if(!titulo || !troca){ alert("Preencha Nome do produto e Quero em troca"); return; }
+
+  posts.push({titulo,troca,desc});
+  localStorage.setItem("ice_posts", JSON.stringify(posts));
+
+  document.getElementById("titulo").value="";
+  document.getElementById("troca").value="";
+  document.getElementById("desc").value="";
+  render();
 }
-
-posts.push({titulo,troca,desc});
-localStorage.setItem("ice_posts", JSON.stringify(posts));
-
-document.getElementById("titulo").value="";
-document.getElementById("troca").value="";
-document.getElementById("desc").value="";
-
-render();
-}
-
 render();
 </script>
-
 </body>
 </html>
