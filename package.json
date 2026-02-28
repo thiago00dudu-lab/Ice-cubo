@@ -1,5 +1,5 @@
 {
-  "nome" : "ice-cubo" , 
-  "versão" : "1.0.0 " 
-  "privado" : verdadeiro 
+  "name": "ice-cubo",
+  "version": "1.0.0",
+  "private": true
 }
