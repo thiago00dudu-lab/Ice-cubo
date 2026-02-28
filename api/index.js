@@ -1,3 +1,3 @@
-export default function handler(req, res) {
-  res.status(204).end(); // retorna vazio (sem erro)
-}
+módulo . exports = ( req , res ) => {    
+  res . status ( 200 ) . send ( "ICE CUBO Online na Vercel ✅" ) ;
+} ;
