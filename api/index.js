@@ -3,143 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICE-CUBO | Carteira</title>
+    <title>ICE CUBO</title>
     <style>
-        :root {
-            --bg: #0a0a0a;
-            --card-bg: #111111;
-            --border: #333333;
-            --accent: #0070f3;
-            --text-muted: #888;
-        }
+        /* RESET E CORES PRINCIPAIS */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #000; color: #fff; display: flex; flex-direction: column; min-height: 100vh; padding: 20px; }
 
-        body { 
-            background-color: var(--bg); 
-            color: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; padding: 20px;
-            padding-bottom: 80px;
-        }
+        /* CABEÇALHO */
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #222; margin-bottom: 20px; }
+        .logo { font-size: 18px; font-weight: bold; color: #0070f3; }
+        .badge { background: #111; border: 1px solid #e3b341; color: #e3b341; padding: 4px 8px; border-radius: 5px; font-size: 11px; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .badge { background: #002d5e; color: #0070f3; padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; }
-
-        .card { 
-            background: var(--card-bg); 
-            border: 1px solid var(--border); 
-            border-radius: 8px; 
-            padding: 20px; 
-            margin-bottom: 20px; 
-        }
-
-        .alert { background: rgba(255, 165, 0, 0.1); border: 1px solid orange; color: orange; padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 15px; }
-
-        h2 { font-size: 16px; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        /* CARDS */
+        .card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        .card-title { color: #0070f3; font-size: 14px; font-weight: bold; margin-bottom: 15px; display: block; }
         
-        input { 
-            width: 100%; padding: 12px; margin: 10px 0; 
-            border-radius: 6px; border: 1px solid var(--border); 
-            background: #1a1a1a; color: #fff; box-sizing: border-box; 
-        }
+        /* FORMULÁRIO */
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; }
+        button { width: 100%; padding: 14px; background: #0070f3; color: #fff; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
 
-        .btn-primary { 
-            width: 100%; padding: 12px; background: #0070f3; color: #fff; 
-            border: none; border-radius: 6px; font-weight: bold; cursor: pointer; 
-        }
+        /* TABELA DE HISTÓRICO */
+        .hist-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; }
+        .hist-info span { display: block; color: #888; font-size: 10px; }
+        .val-pos { color: #00ff00; font-weight: bold; }
 
-        /* Tabela de Histórico */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th { text-align: left; color: var(--text-muted); padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-        td { padding: 12px 0; border-bottom: 1px solid #222; }
-        .type { font-weight: bold; display: block; }
-        .date { color: var(--text-muted); font-size: 11px; }
-        .val { text-align: right; font-weight: bold; }
-
-        /* Menu Inferior */
-        .footer-nav { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: #000; border-top: 1px solid var(--border); 
-            display: flex; justify-content: space-around; padding: 15px 0; 
-        }
-        .nav-item { color: var(--text-muted); font-size: 10px; text-align: center; text-decoration: none; }
-        .nav-item.active { color: var(--accent); }
+        /* MENU INFERIOR FIXO */
+        .footer-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #080808; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 15px 0; }
+        .nav-item { text-align: center; color: #888; font-size: 10px; text-decoration: none; }
+        .nav-item.active { color: #0070f3; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 3px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <span>ICE-CUBO</span>
+    <header>
+        <div class="logo">ICE CUBO</div>
         <div class="badge">0 BLUE ADM ★</div>
+    </header>
+
+    <!-- DEPÓSITO -->
+    <div class="card">
+        <span class="card-title">📥 DEPÓSITO RÁPIDO</span>
+        <input type="number" id="valor" placeholder="Valor em R$ (ex: 10)">
+        <button onclick="gerar()">GERAR PIX</button>
+        <div id="res" style="margin-top:15px; text-align:center; font-size:12px;"></div>
     </div>
 
+    <!-- HISTÓRICO -->
     <div class="card">
-        <h2>💳 Carteira</h2>
-        <div class="alert">
-            <strong>⚠️ Importante</strong><br>
-            Depósito real exige MP_ACCESS_TOKEN. Aqui é apenas o modo demo.
+        <span class="card-title">📜 HISTÓRICO RECENTE</span>
+        <div class="hist-row">
+            <div class="hist-info">DEPÓSITO <span>28/02/2026</span></div>
+            <div class="val-pos">+10 BLUE</div>
         </div>
-
-        <label>Depósito</label>
-        <input type="number" id="valor" placeholder="10">
-        <button class="btn-primary" onclick="gerarPix()">⚡ Depósito rápido</button>
-        <div id="status"></div>
+        <div class="hist-row">
+            <div class="hist-info">POST ADM <span>27/02/2026</span></div>
+            <div>INFO</div>
+        </div>
     </div>
 
-    <div class="card">
-        <h2>📜 Histórico</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>ATIVIDADE</th>
-                    <th style="text-align: right;">VALOR</th>
-                </tr>
-            </thead>
-            <tbody id="historico">
-                <tr>
-                    <td><span class="type">DEP</span><span class="date">28/02/2026, 00:13</span></td>
-                    <td class="val" style="color: #00ff00;">+10 BLUE</td>
-                </tr>
-                <tr>
-                    <td><span class="type">SAQUE</span><span class="date">27/02/2026, 22:45</span></td>
-                    <td class="val" style="color: #ff4444;">-10 BLUE</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
+    <!-- BARRA DE NAVEGAÇÃO -->
     <nav class="footer-nav">
-        <a href="#" class="nav-item">🏠<br>HOME</a>
-        <a href="#" class="nav-item">👤<br>PERFIL</a>
-        <a href="#" class="nav-item active">👛<br>CARTEIRA</a>
-        <a href="#" class="nav-item">🔄<br>TROCAS</a>
+        <a href="#" class="nav-item"> <span class="nav-icon">🏠</span> CASA </a>
+        <a href="#" class="nav-item"> <span class="nav-icon">📷</span> CÂMERA </a>
+        <a href="#" class="nav-item active"> <span class="nav-icon">💳</span> CARTEIRA </a>
+        <a href="#" class="nav-item"> <span class="nav-icon">⚠️</span> PERIGO </a>
     </nav>
 
     <script>
-        async function gerarPix() {
+        async function gerar() {
             const valor = document.getElementById('valor').value;
-            const status = document.getElementById('status');
-            
-            if(!valor) return alert("Digite um valor");
+            const resDiv = document.getElementById('res');
+            if(!valor) return alert("Digite um valor!");
 
-            status.innerHTML = "<p style='font-size:12px; color:gray;'>Processando...</p>";
+            resDiv.innerHTML = "Gerando Pix...";
 
             try {
-                const res = await fetch('/api/mp_create', {
+                const response = await fetch('/api/mp_create', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ quantia: valor })
                 });
 
-                // Verificação de erro para evitar o "Unexpected Token <"
-                if (!res.ok) throw new Error("Erro no servidor (404 ou 500)");
+                if (!response.ok) throw new Error();
+                const dados = await response.json();
 
-                const data = await res.json();
-                status.innerHTML = `<input value="${data.codigo_qr}" readonly onclick="this.select()" style="border-color: #00ff00">`;
-            } catch (err) {
-                status.innerHTML = `<p style="color:red; font-size:12px;">Erro: Verifique sua rota /api/mp_create</p>`;
+                resDiv.innerHTML = `
+                    <p style="color:#00ff00; margin-bottom:5px;">Pix Gerado com Sucesso!</p>
+                    <input value="${dados.codigo_qr}" readonly onclick="this.select()" style="border-color:#0070f3">
+                `;
+            } catch (e) {
+                resDiv.innerHTML = "<span style='color:red'>Erro na API. Verifique os logs.</span>";
             }
         }
     </script>
+
 </body>
 </html>
-                
