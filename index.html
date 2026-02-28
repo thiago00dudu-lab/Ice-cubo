@@ -1,40 +1,28 @@
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>ICE - Pagamentos</title>
-  <style>
-    body{font-family:sans-serif;background:#0b1220;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
-    .card{background:#111a2e;border:1px solid #223; padding:18px;border-radius:16px; width:min(420px,92vw)}
-    input,button{width:100%;padding:12px;border-radius:12px;border:none;margin-top:10px}
-    button{font-weight:700;cursor:pointer}
-    small{opacity:.8}
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>Depósito</h2>
-    <input id="amt" type="number" min="1" placeholder="Valor (ex: 10)"/>
-    <button onclick="depositar()">Gerar pagamento (Pix/Cartão)</button>
-    <small id="msg"></small>
-  </div>
-
 <script>
 async function depositar(){
   const amount = Number(document.getElementById("amt").value || 0);
   const msg = document.getElementById("msg");
   msg.textContent = "Gerando...";
-  const r = await fetch("/api/mp_create", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ amount, title:"Depósito ICE" })
-  });
-  const data = await r.json();
-  if(!data.ok){ msg.textContent = "Erro: " + JSON.stringify(data.error); return; }
-  msg.textContent = "Abrindo Mercado Pago...";
-  window.location.href = data.init_point;
+
+  try {
+    const r = await fetch("/api/mp_create", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ amount, title:"Depósito ICE" })
+    });
+
+    const data = await r.json().catch(() => ({}));
+
+    if (!r.ok || !data.ok || !data.init_point) {
+      msg.textContent = "ERRO ao gerar: " + JSON.stringify(data.error || data || "sem resposta");
+      return;
+    }
+
+    msg.textContent = "Abrindo Mercado Pago...";
+    window.location.href = data.init_point;
+
+  } catch (e) {
+    msg.textContent = "ERRO: " + e.message;
+  }
 }
 </script>
-</body>
-</html>
