@@ -1,55 +1,36 @@
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+const mercadopago = require('mercadopago');
 
-// Conecta com as variáveis que você mostrou no print
-const client = new MercadoPagoConfig({ 
-  accessToken: process.env.MP_ACCESS_TOKEN 
-});
+mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
 export default async function handler(req, res) {
-  // Só aceita requisições do tipo POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Método não permitido' });
-  }
+  if (req.method === 'POST') {
+    // Pegando os dados que o seu formulário envia
+    const { email, valor } = req.body;
 
-  try {
-    // Pega os dados que o usuário digitou no site
-    const { email, amount, description } = req.body;
-
-    // VERIFICAÇÃO CRUCIAL: Se o e-mail não vier, o código para aqui com aviso
-    if (!email || email.trim() === "") {
-      return res.status(400).json({ 
-        error: "E-mail não recebido. Verifique o formulário do site." 
-      });
+    // Se o email não chegar, o código para aqui com um aviso
+    if (!email) {
+      return res.status(400).json({ error: "E-mail não enviado pelo formulário" });
     }
 
-    const preference = new Preference(client);
+    const preference = {
+      items: [{
+        title: 'Depósito Ice-Cubo',
+        unit_price: Number(valor) || 10, // Valor padrão de 10 se não vier nada
+        quantity: 1,
+      }],
+      payer: { email: email },
+      back_urls: {
+        success: "https://ice-cubo.vercel.app",
+        failure: "https://ice-cubo.vercel.app",
+      },
+      auto_return: "approved",
+    };
 
-    const result = await preference.create({
-      body: {
-        items: [
-          {
-            title: description || 'Compra no Site',
-            unit_price: Number(amount) || 10.0,
-            quantity: 1,
-            currency_id: 'BRL'
-          }
-        ],
-        payer: {
-          email: email // Agora garantimos que o e-mail existe
-        },
-        back_urls: {
-          success: `https://${req.headers.host}/sucesso`,
-          failure: `https://${req.headers.host}/erro`,
-        },
-        auto_return: "approved",
-      }
-    });
-
-    // Retorna o link ou o ID para o site abrir o pagamento
-    return res.status(200).json({ id: result.id, init_point: result.init_point });
-
-  } catch (error) {
-    console.error("Erro no Mercado Pago:", error);
-    return res.status(500).json({ error: "Erro ao gerar pagamento" });
+    try {
+      const response = await mercadopago.preferences.create(preference);
+      res.status(200).json({ id: response.body.id });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 }
