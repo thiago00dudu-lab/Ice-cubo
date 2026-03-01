@@ -3,3 +3,8 @@
   "version": "1.0.0",
   "private": true
 }
+"dependencies": {
+  "mercadopago": "^2.0.11",
+  "next": "14.x.x", 
+  "react": "18.x.x"
+}
