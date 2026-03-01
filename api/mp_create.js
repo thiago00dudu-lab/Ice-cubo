@@ -1,67 +1,67 @@
+// api/mp_create.js
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
       return res.status(405).json({ ok: false, error: "Use POST" });
     }
 
-    const token = process.env.MP_ACCESS_TOKEN;
-    if (!token) {
-      return res.status(500).json({ ok: false, error: "MP_ACCESS_TOKEN not configured" });
+    const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+    if (!MP_ACCESS_TOKEN) {
+      return res.status(500).json({ ok: false, error: "Falta MP_ACCESS_TOKEN na Vercel" });
     }
 
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    const value = Number(body?.amount || 0);
-    const title = body?.title || "Depósito ICE";
+    const { amount, email, cpf, description } = req.body || {};
+    const value = Number(amount);
 
-    if (!value || value < 1) {
-      return res.status(400).json({ ok: false, error: "amount inválido" });
-    }
+    if (!value || value < 1) return res.status(400).json({ ok: false, error: "amount inválido" });
+    if (!email) return res.status(400).json({ ok: false, error: "email obrigatório" });
 
-    // baseUrl automático do seu domínio na Vercel
-    const proto = req.headers["x-forwarded-proto"] || "https";
-    const host = req.headers["x-forwarded-host"] || req.headers.host;
-    const baseUrl = `${proto}://${host}`;
+    const baseUrl = `${req.headers["x-forwarded-proto"] || "https"}://${req.headers["x-forwarded-host"] || req.headers.host}`;
+    const external_reference = `dep_${Date.now()}`;
 
-    const preference = {
-      items: [
-        {
-          title,
-          quantity: 1,
-          unit_price: value,
-          currency_id: "BRL",
-        },
-      ],
-      back_urls: {
-        success: `${baseUrl}/?pay=success`,
-        pending: `${baseUrl}/?pay=pending`,
-        failure: `${baseUrl}/?pay=failure`,
+    const body = {
+      transaction_amount: value,
+      description: description || "Depósito ICE",
+      payment_method_id: "pix",
+      payer: {
+        email,
+        ...(cpf ? { identification: { type: "CPF", number: String(cpf).replace(/\D/g, "") } } : {})
       },
-      auto_return: "approved",
-      notification_url: `${baseUrl}/api/mp_webhook`,
+      external_reference,
+      notification_url: `${baseUrl}/api/webhook`
     };
 
-    const r = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    const r = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(preference),
+      body: JSON.stringify(body)
     });
 
     const data = await r.json();
 
     if (!r.ok) {
-      return res.status(r.status).json({ ok: false, error: data });
+      return res.status(400).json({
+        ok: false,
+        mp_http: r.status,
+        mp_error: data
+      });
     }
+
+    const tx = data?.point_of_interaction?.transaction_data || {};
 
     return res.status(200).json({
       ok: true,
-      preferenceId: data.id,
-      init_point: data.init_point,
-      sandbox_init_point: data.sandbox_init_point,
+      mpPaymentId: data.id,
+      status: data.status,
+      ticket_url: tx.ticket_url || null,
+      qr_code: tx.qr_code || null,
+      qr_code_base64: tx.qr_code_base64 || null,
+      external_reference
     });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: e.message });
+    return res.status(500).json({ ok: false, error: String(e?.message || e) });
   }
 }
