@@ -43,3 +43,52 @@ async function depositar(){
 </script>
 </body>
 </html>
+<div class="card">
+  <h2>ICE - Depósito</h2>
+
+  <input id="valor" type="number" placeholder="Valor (ex: 10)" value="1" />
+
+  <input id="email" type="email" placeholder="Seu email (obrigatório)" />
+
+  <input id="cpf" inputmode="numeric" placeholder="CPF (opcional, recomendado)" />
+
+  <button onclick="gerarPagamento()">Gerar pagamento</button>
+
+  <div id="msg" style="margin-top:10px"></div>
+</div>
+
+<script>
+async function gerarPagamento(){
+  const valor = Number(document.getElementById("valor").value || 0);
+  const email = (document.getElementById("email").value || "").trim();
+  const cpf = (document.getElementById("cpf").value || "").trim();
+
+  const msg = document.getElementById("msg");
+  msg.textContent = "";
+
+  if (!valor || valor < 1) { msg.textContent = 'Erro: "valor inválido"'; return; }
+  if (!email) { msg.textContent = 'Erro: "email obrigatório"'; return; }
+
+  const r = await fetch("/api/mp_create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount: valor, email, cpf, description: "Depósito ICE" })
+  });
+
+  const data = await r.json();
+
+  if (!data.ok) {
+    msg.textContent = "Erro: " + JSON.stringify(data.mp_error || data.error);
+    return;
+  }
+
+  // No celular, o melhor é abrir o link do Pix pronto
+  if (data.ticket_url) {
+    window.location.href = data.ticket_url;
+    return;
+  }
+
+  // Fallback: mostrar copia e cola
+  msg.innerHTML = "<b>Pix Copia e Cola:</b><br><textarea style='width:100%;height:120px'>" + (data.qr_code || "") + "</textarea>";
+}
+              </script>
