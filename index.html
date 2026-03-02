@@ -5,71 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ice BLUE - Oficial</title>
   <style>
-    :root { --ice:#00d4ff; --gold:#ffd700; --sea:#000814; --glass:rgba(255,255,255,.1); --danger:#ff4d6d; }
+    :root { --ice:#00d4ff; --gold:#ffd700; --sea:#000814; --glass:rgba(255,255,255,.1); }
 
     body{
-      margin:0; background:#000814; color:#fff; font-family:sans-serif; min-height:100vh; padding-bottom:90px;
+      margin:0; color:#fff; font-family:sans-serif; min-height:100vh; padding-bottom:90px;
       overflow-x:hidden; background-image:linear-gradient(180deg,#001219 0%,#002855 100%);
     }
 
-    /* BOLHAS FUNDO DO MAR */
+    /* BOLHAS */
     .bubble{ position:fixed; bottom:-50px; background:rgba(255,255,255,.1); border-radius:50%; animation:rise 12s infinite ease-in; z-index:0; pointer-events:none; }
     @keyframes rise{ 0%{ bottom:-50px; transform:translateX(0); } 100%{ bottom:110vh; transform:translateX(50px); opacity:0; } }
 
-    /* HEADER & ADM */
+    /* HEADER */
     .header-ice{ background:rgba(0,0,0,.8); backdrop-filter:blur(10px); padding:10px; border-bottom:2px solid var(--ice); position:sticky; top:0; z-index:1001; text-align:center; }
     .adm-star{ color:var(--gold); font-size:18px; display:none; }
     .mod-star{ color:var(--ice); font-size:18px; display:none; }
 
-    /* NOTIFICAÇÃO */
+    /* NOTIF */
     #notif{
       position:fixed; top:-100px; left:50%; transform:translateX(-50%);
       background:var(--ice); color:#000; padding:15px; border-radius:15px;
       z-index:3000; transition:.5s; font-weight:bold; width:80%; text-align:center;
     }
 
-    /* TROCA BILATERAL */
-    .trade-split{ display:flex; gap:10px; margin:15px 0; height:180px; align-items:center; }
-    .trade-side{
-      flex:1; height:100%; border:2px dashed var(--ice); border-radius:15px; background:rgba(0,0,0,.5);
-      display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden;
-    }
-    .trade-side img{ width:100%; height:100%; object-fit:cover; }
-    .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; z-index:5; font-weight:bold; }
-
     /* CARDS */
     .card{ background:var(--glass); backdrop-filter:blur(15px); border-radius:15px; margin:15px; padding:15px; border:1px solid rgba(255,255,255,.1); position:relative; }
-    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-    .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); }
-    .name-line{ display:flex; flex-direction:column; line-height:1.1; }
-    .role-badge{ font-size:11px; opacity:.9; }
+    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer; }
+    .u-pic{ width:44px; height:44px; border-radius:50%; border:1.5px solid var(--ice); object-fit:cover; background:#0b1225; }
+    .name-line{ display:flex; flex-direction:column; line-height:1.15; }
+    .role-badge{ font-size:11px; opacity:.95; }
     .role-badge .adm{ color:var(--gold); font-weight:bold; }
     .role-badge .mod{ color:var(--ice); font-weight:bold; }
     .role-badge .ia{ color:#bdefff; font-weight:bold; }
 
-    /* CHAT PV */
+    /* TROCA */
+    .trade-split{ display:flex; gap:10px; margin:15px 0; height:180px; align-items:center; }
+    .trade-side{
+      flex:1; height:100%; border:2px dashed var(--ice); border-radius:15px; background:rgba(0,0,0,.5);
+      display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+    }
+    .trade-side img{ width:100%; height:100%; object-fit:cover; }
+    .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; z-index:5; font-weight:bold; }
+
+    /* CHAT */
     #chat-window{ position:fixed; top:0; left:100%; width:100%; height:100%; background:#000814; z-index:2000; transition:.3s; display:flex; flex-direction:column; }
     .chat-header{ padding:15px; background:#001d3d; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--ice); }
     #chat-box{ flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px; }
     .m-msg{ align-self:flex-end; background:var(--ice); color:#000; padding:8px 12px; border-radius:15px; max-width:70%; }
     .h-msg{ align-self:flex-start; background:#333; padding:8px 12px; border-radius:15px; max-width:70%; }
 
-    /* MENU INFERIOR */
+    /* MENU */
     .nav{ position:fixed; bottom:0; width:100%; background:rgba(0,0,0,.95); display:flex; justify-content:space-around; padding:12px 0; border-top:1px solid var(--ice); z-index:1000; }
     .nav-item{ color:#8ef; text-align:center; font-size:10px; cursor:pointer; flex:1; position:relative; }
     .nav-item span{ font-size:22px; display:block; }
     .badge{ position:absolute; top:-5px; right:25%; background:red; color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; display:none; }
 
     .btn-blue{ background:var(--ice); color:#000; font-weight:bold; border:none; padding:12px; border-radius:10px; width:100%; cursor:pointer; margin-top:10px; }
-    .tela{ display:none; animation:fadeIn .4s; }
+    .mini-btn{ background:none; border:1px solid rgba(255,255,255,.2); color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer; }
+
+    .tela{ display:none; animation:fadeIn .35s; position:relative; z-index:2; }
     @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+
+    input, textarea{ border:none; border-radius:10px; padding:12px; outline:none; }
+    textarea{ width:100%; }
 
     /* POPUP OFERTA */
     #offer-pop{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:4000; align-items:flex-end; }
     #offer-pop .sheet{ width:100%; background:#001d3d; border-top:2px solid var(--ice); border-radius:18px 18px 0 0; padding:14px; }
-    .mini-btn{ background:none; border:1px solid rgba(255,255,255,.2); color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer; }
-
-    input, textarea{ border:none; border-radius:10px; padding:12px; outline:none; }
   </style>
 </head>
 <body>
@@ -82,14 +84,14 @@
     <h1>ICE BLUE</h1>
   </div>
 
-  <!-- LOGIN (ADM: 1533 | MOD: 2444) -->
+  <!-- LOGIN (ADM:1533 | MOD:2444) -->
   <div id="login" class="tela" style="display:block; padding:20px;">
     <div class="card" style="text-align:center;">
       <h3>Acesso ao Sistema</h3>
       <input type="password" id="pass" placeholder="Senha" style="width:100%; margin-bottom:10px;">
       <button class="btn-blue" onclick="logar()">Entrar</button>
       <div style="margin-top:10px; font-size:12px; color:#bdefff; opacity:.9;">
-        Dica: ADM 1533 | MOD 2444 | Membro (qualquer outra)
+        ADM 1533 | MOD 2444 | qualquer outra = Membro
       </div>
     </div>
   </div>
@@ -105,276 +107,8 @@
     <div id="lista-ofertas"></div>
   </div>
 
-  <!-- CHAT -->
-  <div id="chat-window">
-    <div class="chat-header">
-      <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
-      <b>Chat Privado</b>
-    </div>
-    <div id="chat-box"></div>
-    <div style="padding:10px; background:#000; display:flex; gap:10px;">
-      <input type="text" id="chat-in" placeholder="Mensagem..." style="flex:1; border-radius:20px;">
-      <button onclick="enviarMsg()" style="background:var(--ice); border:none; border-radius:50%; width:40px;">🚀</button>
-    </div>
-  </div>
-
-  <!-- PERFIL -->
+  <!-- PERFIL (SEU) -->
   <div id="perfil" class="tela">
     <div class="card" style="text-align:center;">
-      <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice);">
-      <h2 id="p-nome">Membro</h2>
-      <input type="file" id="up-p" style="display:none" onchange="previewImg(this, 'p-img')">
-      <button onclick="document.getElementById('up-p').click()" style="background:none; border:none; color:var(--ice); cursor:pointer;">Trocar Foto</button>
-    </div>
-
-    <div class="card">
-      <h4>Anunciar Troca</h4>
-      <input type="file" id="f-troca">
-      <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
-      <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
-    </div>
-  </div>
-
-  <nav class="nav" id="menu" style="display:none">
-    <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
-    <div class="nav-item" onclick="ver('ofertas')">
-      <span id="badge" class="badge">!</span>
-      <span>🔄</span>Trocas
-    </div>
-    <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
-  </nav>
-
-  <!-- POPUP OFERTA (com descrição) -->
-  <div id="offer-pop">
-    <div class="sheet">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-        <b>🔔 Chegou uma oferta!</b>
-        <button onclick="fecharOfferPop()" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
-      </div>
-      <div id="offer-pop-content" style="margin-top:12px;"></div>
-      <button class="btn-blue" onclick="ver('ofertas'); fecharOfferPop();" style="margin-top:10px;">Ver ofertas</button>
-    </div>
-  </div>
-
-  <script>
-    // ROLES: Membro | ADM | MOD
-    let role = "Membro";
-
-    // ====== BOLHAS ======
-    for(let i=0; i<15; i++) {
-      let b = document.createElement('div'); b.className = 'bubble';
-      b.style.left = Math.random() * 100 + '%';
-      b.style.width = b.style.height = (Math.random()*20+10)+'px';
-      b.style.animationDelay = Math.random()*10+'s';
-      document.body.appendChild(b);
-    }
-
-    // ====== NOTIF ======
-    function mostrarNotif(txt){
-      const n = document.getElementById('notif');
-      n.textContent = txt;
-      n.style.top = "20px";
-      setTimeout(() => n.style.top = "-100px", 4000);
-    }
-
-    // ====== LOGIN ======
-    function logar() {
-      const p = document.getElementById('pass').value;
-
-      role = "Membro";
-      document.getElementById('adm-star').style.display = 'none';
-      document.getElementById('mod-star').style.display = 'none';
-      document.getElementById('p-nome').innerText = "Membro";
-
-      if(p === '1533') {
-        role = "ADM";
-        document.getElementById('adm-star').style.display = 'block';
-        document.getElementById('p-nome').innerText = "ADMINISTRADOR";
-      } else if(p === '2444') {
-        role = "MOD";
-        document.getElementById('mod-star').style.display = 'block';
-        document.getElementById('p-nome').innerText = "MODERADOR";
-      }
-
-      document.getElementById('menu').style.display = 'flex';
-      ver('home');
-
-      // ao logar, injeta 4 perfis IA no feed (uma delas marcada como conteúdo suspeito)
-      seedIA();
-    }
-
-    function ver(id) {
-      document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
-      document.getElementById(id).style.display = 'block';
-      if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
-    }
-
-    // ====== MODERAÇÃO ======
-    function podeBloquear(alvoRole){
-      if(role !== "ADM" && role !== "MOD") return false;
-      if(alvoRole === "ADM") return false; // MOD não faz nada com ADMIN
-      return true;
-    }
-
-    function bloquearPost(btn){
-      const card = btn.closest('.card');
-      const alvoRole = card.getAttribute('data-role') || "Membro";
-      if(!podeBloquear(alvoRole)) return alert("Sem permissão (Admin não pode ser bloqueado).");
-      card.remove();
-      mostrarNotif("🛡️ Conteúdo bloqueado!");
-    }
-
-    function headHtml(nome, r){
-      let badge = "";
-      if(r === "ADM") badge = `<span class="adm">★ ADMIN</span>`;
-      else if(r === "MOD") badge = `<span class="mod">★ MOD</span>`;
-      else if(r === "IA") badge = `<span class="ia">🤖 IA</span>`;
-      return `
-        <div class="post-head">
-          <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="u-pic">
-          <div class="name-line">
-            <b>${nome}</b>
-            <span class="role-badge">${badge}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    // ====== POSTAR TROCA ======
-    function postarTroca() {
-      const txt = (document.getElementById('t-troca').value || "").trim();
-      const file = document.getElementById('f-troca').files[0];
-      if(!file) return alert("Selecione uma imagem!");
-      if(!txt) return alert("Escreva o que oferece!");
-
-      const nomeUser = (role === "ADM") ? "ADMINISTRADOR" : (role === "MOD" ? "MODERADOR" : "Usuário");
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = e.target.result;
-        const pid = 'p'+Date.now();
-        const alvoRole = role;
-
-        const modBtn = (role === "ADM" || role === "MOD")
-          ? `<button onclick="bloquearPost(this)" class="mini-btn" style="margin-top:10px; border-color:rgba(255,255,255,.12);">Bloquear</button>`
-          : ``;
-
-        const html = `
-          <div class="card" id="${pid}" data-role="${alvoRole}">
-            ${headHtml(nomeUser, role)}
-            <p>${txt}</p>
-            <img src="${img}" style="width:100%; border-radius:10px;">
-            <button class="btn-blue" onclick="fazerOferta('${img}', '${escapeHtml(txt)}')">FAZER OFERTA</button>
-            ${modBtn}
-          </div>`;
-        document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
-        ver('home');
-        mostrarNotif("✅ Troca postada!");
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // ====== OFERTA (agora com descrição do ofertante) ======
-    function fazerOferta(imgDono, descDono) {
-      const msg = prompt("Escreva a descrição da sua oferta (o dono vai ver):", "Tenho interesse! Minha oferta é...");
-      if(msg === null) return; // cancelou
-      const ofertaDesc = (msg || "").trim() || "Sem descrição";
-
-      setTimeout(() => {
-        document.getElementById('badge').style.display = "block";
-        mostrarNotif("🔔 Nova Oferta de Troca Recebida!");
-
-        const imgOferta = "https://picsum.photos/seed/" + Date.now() + "/400/300";
-
-        const htmlCard = `
-          <div class="card">
-            <div style="font-size:12px; color:#bdefff; margin-bottom:8px;">
-              <b>Descrição do dono:</b> ${escapeHtml(descDono)}
-            </div>
-
-            <div class="trade-split">
-              <div class="trade-side"><img src="${imgDono}"></div>
-              <div class="vs-badge">VS</div>
-              <div class="trade-side"><img src="${imgOferta}"></div>
-            </div>
-
-            <div style="font-size:12px; color:#bdefff; margin-top:8px;">
-              <b>Descrição da oferta:</b> ${escapeHtml(ofertaDesc)}
-            </div>
-
-            <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
-          </div>`;
-
-        document.getElementById('lista-ofertas').insertAdjacentHTML('afterbegin', htmlCard);
-        abrirOfferPop(htmlCard);
-      }, 1200);
-    }
-
-    // ====== POPUP OFERTA ======
-    function abrirOfferPop(innerHtml){
-      document.getElementById('offer-pop-content').innerHTML = innerHtml;
-      document.getElementById('offer-pop').style.display = 'flex';
-    }
-    function fecharOfferPop(){
-      document.getElementById('offer-pop').style.display = 'none';
-    }
-
-    // ====== CHAT ======
-    function abrirChat() { document.getElementById('chat-window').style.left = "0"; }
-    function fecharChat() { document.getElementById('chat-window').style.left = "100%"; }
-    function enviarMsg() {
-      const inpt = document.getElementById('chat-in');
-      if(!inpt.value) return;
-      document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${escapeHtml(inpt.value)}</div>`);
-      inpt.value = "";
-    }
-
-    // ====== FOTO PERFIL ======
-    function previewImg(input, id) {
-      const reader = new FileReader();
-      reader.onload = (e) => document.getElementById(id).src = e.target.result;
-      reader.readAsDataURL(input.files[0]);
-    }
-
-    // ====== 4 PERFIS IA INTERAGINDO (1 com conteúdo suspeito SEM xingamento real) ======
-    function seedIA(){
-      // evita duplicar toda vez
-      if(localStorage.getItem("ice_seeded_ia") === "1") return;
-      localStorage.setItem("ice_seeded_ia","1");
-
-      const posts = [
-        { nome:"IA Luna", texto:"Troco skin rara por item lendário. Manda oferta!", img:"https://picsum.photos/seed/ia1/500/300", flag:false },
-        { nome:"IA Nilo", texto:"Estou procurando troca rápida hoje. Quem tem interesse?", img:"https://picsum.photos/seed/ia2/500/300", flag:false },
-        { nome:"IA Kael", texto:"⚠️ Conteúdo suspeito detectado: post fora do tema. (exemplo de moderação)", img:"https://picsum.photos/seed/ia3/500/300", flag:true },
-        { nome:"IA Mira", texto:"Aceito negociar, mas só com descrição bem completa.", img:"https://picsum.photos/seed/ia4/500/300", flag:false },
-      ];
-
-      posts.forEach((p) => {
-        const modBtn = (role === "ADM" || role === "MOD")
-          ? `<button onclick="bloquearPost(this)" class="mini-btn" style="margin-top:10px; border-color:rgba(255,255,255,.12);">Bloquear</button>`
-          : ``;
-
-        const html = `
-          <div class="card" data-role="IA">
-            ${headHtml(p.nome, "IA")}
-            <p>${escapeHtml(p.texto)}</p>
-            <img src="${p.img}" style="width:100%; border-radius:10px;">
-            ${p.flag ? `<div style="margin-top:10px; font-size:12px; color:#ffd7a8;">(Este post é um exemplo “nada a ver” para você testar o MOD.)</div>` : ``}
-            ${modBtn}
-          </div>`;
-        document.getElementById('feed').insertAdjacentHTML('beforeend', html);
-      });
-    }
-
-    // ====== ESCAPE HTML ======
-    function escapeHtml(str){
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-  </script>
-</body>
-</html>
+      <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="p-img" class="u-pic" style="width:70px; height:70px;">
+      <h
