@@ -3,108 +3,136 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Rede de Trocas e Alerta</title>
+    <title>Ocean Network & Safety</title>
     <style>
-        /* CONFIGURAÇÕES GERAIS */
-        body { margin:0; background:#061022; color:#fff; font-family:sans-serif; padding-bottom:70px; }
-        .card { max-width:400px; margin:20px auto; background:#0b1430; border-radius:18px; padding:20px; text-align:center; }
-        input, button, textarea { width:100%; padding:12px; border-radius:10px; border:none; margin:8px 0; box-sizing:border-box; }
-        button { background:#66efff; color:#021018; font-weight:bold; cursor:pointer; }
+        :root { --ocean-dark: #0077be; --ocean-light: #00aaff; --sand: #f4d03f; --danger: #ff4d6d; }
         
-        /* TELAS */
-        .tela { display: none; padding: 15px; }
-        #tela-login { display: block; } /* Começa no login */
+        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; overflow-x: hidden; }
 
-        /* MENU RODAPÉ */
-        .nav { position:fixed; bottom:0; left:0; width:100%; background:#0b1430; display:flex; justify-content:space-around; padding:10px 0; border-top:1px solid #244; display:none; }
-        .nav-item { text-align:center; font-size:12px; cursor:pointer; color:#66efff; }
+        /* ANIMAÇÃO DE BOLHAS */
+        .bubble { position: absolute; background: rgba(255,255,255,0.1); border-radius: 50%; bottom: -100px; animation: rise 10s infinite ease-in; z-index: 0; }
+        @keyframes rise { 0% { transform: translateY(0) scale(1); opacity: 0.5; } 100% { transform: translateY(-100vh) scale(1.2); opacity: 0; } }
 
-        /* ÁREA DE TROCAS (DIVIDIDA) */
-        .grid-troca { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .lado { background: #162447; padding: 10px; border-radius: 10px; font-size: 13px; }
+        /* ALERTA PISCANTE */
+        @keyframes flashDanger { 0%, 100% { background: transparent; } 50% { background: rgba(255, 0, 0, 0.6); } }
+        .emergency-active { animation: flashDanger 0.8s infinite; }
 
-        /* BOTÃO PERIGO */
-        .btn-perigo { background: #ff4d6d; color: white; padding: 20px; border-radius: 50%; width: 80px; height: 80px; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 4px solid #fff; }
+        /* ESTILOS DE CARTÃO */
+        .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; margin: 15px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative; z-index: 2; }
+        
+        input, select, textarea, button { width: 100%; padding: 12px; border-radius: 12px; border: none; margin: 8px 0; outline: none; }
+        button { background: var(--ocean-light); color: white; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.3s; }
+        button:active { transform: scale(0.95); }
+
+        /* NAVEGAÇÃO FUNDO DO MAR */
+        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0, 18, 25, 0.9); display: flex; justify-content: space-around; padding: 10px 0; border-top: 2px solid var(--ocean-light); z-index: 100; }
+        .nav-item { color: #88eeff; text-align: center; font-size: 10px; text-decoration: none; }
+        .nav-item span { font-size: 24px; display: block; }
+
+        .tela { display: none; padding: 20px; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* GRID DE TROCAS */
+        .troca-container { display: flex; flex-direction: column; gap: 15px; }
+        .feed-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-top: 10px; border-left: 4px solid var(--ocean-light); }
+        
+        .sos-btn { width: 100px; height: 100px; border-radius: 50%; background: var(--danger); border: 5px solid white; font-size: 20px; color: white; font-weight: bold; margin: 20px auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--danger); }
     </style>
 </head>
-<body>
+<body id="main-body">
 
-    <!-- 1. TELA DE LOGIN -->
-    <div id="tela-login" class="card">
-        <h2>ENTRAR</h2>
-        <input id="u" placeholder="Usuário">
-        <input id="p" type="password" placeholder="Senha">
-        <button onclick="fazerLogin()">Entrar</button>
-    </div>
+    <!-- BOLHAS DE FUNDO -->
+    <div class="bubble" style="width:20px; height:20px; left:10%; animation-duration:8s;"></div>
+    <div class="bubble" style="width:40px; height:40px; left:30%; animation-duration:12s;"></div>
+    <div class="bubble" style="width:15px; height:15px; left:70%; animation-duration:10s;"></div>
 
-    <!-- 2. TELA HOME (POSTAGENS) -->
-    <div id="home" class="tela">
-        <h3>Feed de Fotos/Vídeos</h3>
-        <div class="card"><strong>@Usuario1:</strong> Olá pessoal!</div>
-        <div class="card">🎞️ [Espaço para Vídeo]</div>
-    </div>
-
-    <!-- 3. TELA TROCAS (DIVIDIDA) -->
-    <div id="trocas" class="tela">
-        <h3>Centro de Trocas</h3>
-        <div class="grid-troca">
-            <div class="lado">
-                <h4>Eu ofereço:</h4>
-                <input type="file" accept="image/*,video/*">
-                <textarea placeholder="Descrição..."></textarea>
-                <button style="font-size:12px">Postar Oferta</button>
-            </div>
-            <div class="lado">
-                <h4>Usuário 2 oferece:</h4>
-                <div style="border:1px dashed #66efff; height:60px; margin-bottom:5px">Foto/Vídeo</div>
-                <p>"Tenho uma furadeira, troco por martelo."</p>
-            </div>
+    <!-- TELA HOME (TIMELINE) -->
+    <div id="home" class="tela" style="display: block;">
+        <h2 style="text-align: center;">🌊 Feed do Oceano</h2>
+        <div id="timeline">
+            <div class="card">🚀 Bem-vindo! As trocas aparecerão aqui.</div>
         </div>
     </div>
 
-    <!-- 4. TELA PERIGO (GPS) -->
-    <div id="perigo" class="tela">
-        <h3>ALERTA DE SEGURANÇA</h3>
-        <div class="btn-perigo" onclick="pegarLocalizacao()">SOS</div>
-        <p id="geo-status">Clique no botão para ver sua posição</p>
-        <select id="tipo-perigo">
-            <option>Assalto</option>
-            <option>Enchente</option>
-            <option>Perigo Natural</option>
-        </select>
-        <button onclick="alert('Alerta enviado para o mapa!')">Enviar Alerta</button>
+    <!-- TELA TROCAS -->
+    <div id="trocas" class="tela">
+        <h2>🔄 Central de Trocas</h2>
+        <div class="card">
+            <h4>O que você quer trocar?</h4>
+            <input type="file" id="troca-foto" accept="image/*">
+            <textarea id="troca-desc" placeholder="Descreva seu item..."></textarea>
+            <button onclick="postarTroca()">Postar Troca</button>
+        </div>
     </div>
 
-    <!-- MENU DE NAVEGAÇÃO -->
-    <div class="nav" id="menu">
-        <div class="nav-item" onclick="ver('home')">🏠<br>Home</div>
-        <div class="nav-item" onclick="ver('trocas')">🔄<br>Trocas</div>
-        <div class="nav-item" onclick="ver('perigo')">⚠️<br>Perigo</div>
-        <div class="nav-item" onclick="location.reload()">🚪<br>Sair</div>
+    <!-- TELA PERIGO -->
+    <div id="perigo" class="tela">
+        <h2 style="text-align: center;">⚠️ ALERTA RADAR</h2>
+        <div class="card">
+            <div class="sos-btn" id="sos-trigger" onclick="ativarAlerta()">SOS</div>
+            <select id="perigo-tipo" onchange="checkOutro(this.value)">
+                <option value="Assalto">Assalto</option>
+                <option value="Enchente">Enchente</option>
+                <option value="Perigo Natural">Perigo Natural</option>
+                <option value="Outro">Outro (Descrever)</option>
+            </select>
+            <input type="text" id="perigo-outro" placeholder="Descreva o perigo..." style="display:none;">
+            <p id="geo-info" style="font-size: 12px; color: #88eeff; text-align: center;">Aguardando GPS...</p>
+            <button onclick="enviarAlerta()" style="background: var(--danger);">Emitir Alerta Geral</button>
+        </div>
     </div>
+
+    <!-- MENU RODAPÉ -->
+    <nav class="nav">
+        <a href="#" class="nav-item" onclick="ver('home')"><span>🏠</span>Home</a>
+        <a href="#" class="nav-item" onclick="ver('trocas')"><span>🐚</span>Trocas</a>
+        <a href="#" class="nav-item" onclick="ver('perigo')"><span>🚨</span>Perigo</a>
+        <a href="#" class="nav-item" onclick="location.reload()"><span>🚪</span>Sair</a>
+    </nav>
 
     <script>
-        function fazerLogin() {
-            document.getElementById('tela-login').style.display = 'none';
-            document.getElementById('menu').style.display = 'flex';
-            ver('home');
-        }
-
-        function ver(idTela) {
+        // Trocar telas
+        function ver(id) {
             document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
-            document.getElementById(idTela).style.display = 'block';
+            document.getElementById(id).style.display = 'block';
         }
 
-        function pegarLocalizacao() {
-            const status = document.getElementById('geo-status');
-            if (!navigator.geolocation) {
-                status.innerHTML = "GPS não suportado no seu celular.";
-            } else {
-                status.innerHTML = "Localizando...";
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    status.innerHTML = `📍 Localizado!<br>Lat: ${pos.coords.latitude.toFixed(4)}<br>Long: ${pos.coords.longitude.toFixed(4)}`;
+        // Lógica de Troca -> Vai para Home
+        function postarTroca() {
+            const desc = document.getElementById('troca-desc').value;
+            if(!desc) return alert("Escreva algo!");
+            
+            const item = document.createElement('div');
+            item.className = "card feed-item";
+            item.innerHTML = `<strong>📦 NOVA TROCA:</strong><br>${desc}<br><small>Postado agora</small>`;
+            
+            document.getElementById('timeline').prepend(item);
+            alert("Postado na Timeline!");
+            ver('home');
+            document.getElementById('troca-desc').value = "";
+        }
+
+        // Lógica do Alerta Piscante
+        function ativarAlerta() {
+            const body = document.getElementById('main-body');
+            body.classList.toggle('emergency-active');
+            
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(p => {
+                    document.getElementById('geo-info').innerText = `📍 Lat: ${p.coords.latitude.toFixed(4)} | Long: ${p.coords.longitude.toFixed(4)}`;
                 });
             }
+        }
+
+        function checkOutro(val) {
+            document.getElementById('perigo-outro').style.display = (val === 'Outro') ? 'block' : 'none';
+        }
+
+        function enviarAlerta() {
+            const tipo = document.getElementById('perigo-tipo').value;
+            const outro = document.getElementById('perigo-outro').value;
+            const final = tipo === 'Outro' ? outro : tipo;
+            alert("ALERTA EMITIDO: " + final + "\nTodos os usuários na área verão a tela piscar!");
         }
     </script>
 </body>
