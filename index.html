@@ -3,207 +3,172 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ocean Network Final</title>
+    <title>Ice BLUE - Network</title>
     <style>
-        :root { --ocean: #0077be; --danger: #ff4d6d; --glass: rgba(255, 255, 255, 0.15); }
-        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 80px; transition: 0.3s; }
+        :root { --ice: #00d4ff; --dark-blue: #001219; --danger: #ff4d6d; }
+        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 80px; }
         
-        /* ALERTAS */
-        @keyframes blink { 0%, 100% { background: transparent; } 50% { background: rgba(255,0,0,0.6); } }
-        .sos-active { animation: blink 0.6s infinite; }
+        /* DESIGN TOPO ICE BLUE */
+        .header-ice { background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); padding: 20px; display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 2px solid var(--ice); }
+        .header-ice h1 { font-size: 28px; color: var(--ice); text-shadow: 0 0 10px var(--ice); margin: 0; font-style: italic; }
+        .header-ice img { width: 60px; height: 60px; border-radius: 10px; border: 2px solid white; }
+
+        /* MENSAGEM FLUTUANTE */
+        #floating-msg { position: fixed; top: 80px; right: -300px; background: var(--ice); color: #000; padding: 10px 15px; border-radius: 10px; font-weight: bold; font-size: 12px; transition: 0.5s; z-index: 2000; box-shadow: 0 0 15px var(--ice); }
 
         /* CARDS E POSTS */
-        .card { background: var(--glass); backdrop-filter: blur(10px); border-radius: 15px; margin: 10px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .post-img { width: 100%; border-radius: 10px; margin: 10px 0; max-height: 300px; object-fit: cover; }
+        .card { background: rgba(255,255,255,0.1); border-radius: 15px; margin: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .post-img { width: 100%; border-radius: 10px; margin: 10px 0; }
         .acoes { display: flex; justify-content: space-around; border-top: 1px solid #444; padding-top: 10px; }
-        .btn-acao { background: none; border: none; color: #8ef; cursor: pointer; font-size: 14px; }
+        .btn-acao { background: none; border: none; color: #8ef; cursor: pointer; }
 
-        /* PERFIL */
-        .capa { width: 100%; height: 120px; background: #004466; position: relative; background-size: cover; }
-        .avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--ocean); position: absolute; bottom: -35px; left: 20px; background: #eee; background-size: cover; }
-        
-        /* CHAT WHATSAPP */
-        .lista-conversa { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; cursor: pointer; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
-        .bolinha { width: 10px; height: 10px; background: #25d366; border-radius: 50%; }
+        /* PERIGO SOS ATIVO */
+        @keyframes blink { 0%, 100% { background: transparent; } 50% { background: rgba(255,0,0,0.6); } }
+        .sos-active { animation: blink 0.6s infinite !important; }
 
-        /* NAVEGAÇÃO */
-        .nav { position: fixed; bottom: 0; width: 100%; background: #001219; display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--ocean); z-index: 999; }
+        /* NAV */
+        .nav { position: fixed; bottom: 0; width: 100%; background: #001219; display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--ice); z-index: 1000; }
         .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; }
         .nav-item span { font-size: 22px; display: block; }
-
-        .tela { display: none; animation: fadeIn 0.3s; padding: 10px; }
-        input, textarea, button { width: 100%; padding: 12px; border-radius: 10px; border: none; margin: 5px 0; box-sizing: border-box; }
-        button { background: var(--ocean); color: white; font-weight: bold; }
+        .tela { display: none; padding: 10px; }
+        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--ice); color: #000; font-weight: bold; margin: 5px 0; }
     </style>
 </head>
 <body id="main-body">
 
-    <!-- 1. HOME (TIMELINE) -->
+    <!-- CABEÇALHO DESIGN -->
+    <div class="header-ice">
+        <h1>ICE BLUE</h1>
+        <img src="https://i.imgur.com" alt="Logo Urso" onerror="this.src='https://cdn-icons-png.flaticon.com'">
+    </div>
+
+    <!-- MENSAGEM FLUTUANTE -->
+    <div id="floating-msg">❄️ Compartilhe o Ice com amigos e ganhe filhos!</div>
+
+    <!-- HOME -->
     <div id="home" class="tela" style="display: block;">
-        <h3 style="text-align: center;">🌊 Feed do Oceano</h3>
-        <div id="feed-geral">
-            <div class="card">🚀 Tudo o que você postar aparecerá aqui!</div>
-        </div>
+        <div id="feed-geral"></div>
     </div>
 
-    <!-- 2. TROCAS -->
-    <div id="trocas" class="tela">
-        <h3>🔄 Nova Troca</h3>
-        <div class="card">
-            <input type="file" id="img-troca" accept="image/*,video/*">
-            <textarea id="txt-troca" placeholder="O que você quer trocar?"></textarea>
-            <button onclick="publicar('troca')">Postar Troca</button>
-        </div>
-    </div>
-
-    <!-- 3. CHAT -->
-    <div id="chat" class="tela">
-        <h3>💬 Conversas</h3>
-        <div class="card">
-            <div class="lista-conversa" onclick="abrirPrivado('Jessica Silva')">
-                <div class="bolinha"></div> <b>Jessica Silva</b> (Online)
-            </div>
-            <div class="lista-conversa" onclick="abrirPrivado('Suporte Ocean')">
-                <div class="bolinha" style="background:orange"></div> <b>Suporte Ocean</b>
-            </div>
-        </div>
-        <div id="janela-privada" style="display:none;" class="card">
-            <h4 id="nome-chat">Conversa</h4>
-            <div id="mensagens" style="height:150px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:10px; margin-bottom:10px; border-radius:10px;"></div>
-            <div style="display:flex; gap:5px;">
-                <input id="msg-input" placeholder="Mensagem...">
-                <button onclick="enviarMsg()" style="width:50px;">✈️</button>
-            </div>
-            <button onclick="document.getElementById('janela-privada').style.display='none'" style="background:gray; font-size:10px;">Fechar</button>
-        </div>
-    </div>
-
-    <!-- 4. PERFIL -->
+    <!-- PERFIL COM SISTEMA DE FILHOS -->
     <div id="perfil" class="tela">
-        <div class="capa" id="capa-img" onclick="document.getElementById('file-capa').click()">
-            <div class="avatar" id="avatar-img" onclick="event.stopPropagation(); document.getElementById('file-avatar').click()"></div>
+        <div class="card" style="text-align: center;">
+            <h2 id="nome-perfil">Usuário Ice ✎</h2>
+            <div style="background: rgba(0,212,255,0.2); padding: 10px; border-radius: 10px;">
+                <b>👨‍👩‍👧‍👦 Árvore Genealógica:</b><br>
+                <span>Pai de: <b id="contador-filhos">0</b> filhos</span>
+            </div>
+            <p style="font-size: 10px; margin-top: 5px;">ID de indicação: #ICE99</p>
+            <button onclick="adicionarFilhoSimulado()" style="font-size: 10px; height: 30px;">(Simular indicação de amigo)</button>
         </div>
-        <input type="file" id="file-capa" style="display:none" onchange="preview(this, 'capa-img')">
-        <input type="file" id="file-avatar" style="display:none" onchange="preview(this, 'avatar-img')">
-        
-        <h3 id="meu-nome" onclick="mudarNome()" style="margin-top:45px; margin-left:20px;">Usuário Novo ✎</h3>
-        
         <div class="card">
             <input type="file" id="img-perfil" accept="image/*">
-            <textarea id="txt-perfil" placeholder="No que você está pensando?"></textarea>
-            <button onclick="publicar('perfil')">Postar no Perfil</button>
+            <button onclick="publicar()">Postar Foto</button>
         </div>
-        <div id="feed-perfil"></div>
     </div>
 
-    <!-- 5. PERIGO -->
+    <!-- PERIGO (SOS) -->
     <div id="perigo" class="tela">
-        <h3 style="text-align:center;">🚨 Centro de Alerta</h3>
         <div class="card" style="text-align:center;">
-            <div onclick="acionarSOS()" id="btn-sos" style="width:100px; height:100px; background:red; border-radius:50%; margin: 20px auto; display:flex; align-items:center; justify-content:center; border:5px solid white; font-weight:bold; cursor:pointer;">SOS</div>
-            <p id="geo-texto">Toque no botão para emitir alerta!</p>
-            <div id="mapa-info"></div>
+            <h3>🚨 BOTÃO DE ATENÇÃO</h3>
+            <div id="btn-sos" onclick="toggleSOS()" style="width:100px; height:100px; background:red; border-radius:50%; margin: 20px auto; display:flex; align-items:center; justify-content:center; border:5px solid white; font-weight:bold; cursor:pointer;">SOS</div>
+            <p id="status-sos">Toque para ativar/desativar</p>
+            <div id="local-box"></div>
         </div>
     </div>
 
-    <!-- NAV BAR -->
+    <!-- NAV -->
     <nav class="nav">
         <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
-        <div class="nav-item" onclick="ver('trocas')"><span>🔄</span>Trocas</div>
-        <div class="nav-item" onclick="ver('chat')"><span>💬</span>Chat</div>
         <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
         <div class="nav-item" onclick="ver('perigo')"><span>🚨</span>Perigo</div>
     </nav>
 
     <script>
+        let sosAtivo = false;
+        let curtidasRealizadas = []; // Lista para travar curtidas por post
+
         function ver(id) {
             document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
             document.getElementById(id).style.display = 'block';
         }
 
-        // POSTAR COM FOTO E INTERAÇÃO
-        function publicar(tipo) {
-            const txt = tipo === 'perfil' ? document.getElementById('txt-perfil').value : document.getElementById('txt-troca').value;
-            const fileInput = tipo === 'perfil' ? document.getElementById('img-perfil') : document.getElementById('img-troca');
-            const file = fileInput.files[0];
-
-            if(!txt && !file) return alert("Escreva ou escolha uma foto!");
-
+        // POSTAR
+        function publicar() {
+            const imgFile = document.getElementById('img-perfil').files[0];
+            if(!imgFile) return alert("Selecione uma foto");
             const reader = new FileReader();
+            const postId = "post_" + Date.now(); // ID único para o post
+
             reader.onload = function(e) {
                 const html = `
-                    <div class="card">
-                        <b>👤 ${document.getElementById('meu-nome').innerText.replace(' ✎','')}</b><br>
-                        <small>${tipo === 'perfil' ? 'Postagem' : '🛒 Oferta de Troca'}</small>
-                        <p>${txt}</p>
-                        ${file ? `<img src="${e.target.result}" class="post-img">` : ''}
+                    <div class="card" id="${postId}">
+                        <b>👤 Usuário Ice</b>
+                        <img src="${e.target.result}" class="post-img">
                         <div class="acoes">
-                            <button class="btn-acao" onclick="curtir(this)">❤️ <span>0</span></button>
-                            <button class="btn-acao" onclick="alert('Comentários abertos!')">💬 0</button>
-                            <button class="btn-acao" onclick="alert('Link copiado!')">🔗</button>
+                            <button class="btn-acao" onclick="curtirUmaVez('${postId}', this)">❤️ <span>0</span></button>
+                            <button class="btn-acao">🔗 Compartilhar</button>
                         </div>
                     </div>`;
                 document.getElementById('feed-geral').insertAdjacentHTML('afterbegin', html);
-                if(tipo === 'perfil') document.getElementById('feed-perfil').insertAdjacentHTML('afterbegin', html);
                 ver('home');
             };
-            if(file) reader.readAsDataURL(file);
-            else reader.onload({target:{result:''}});
+            reader.readAsDataURL(imgFile);
         }
 
-        function curtir(btn) {
+        // TRAVA DE CURTIDA
+        function curtirUmaVez(id, btn) {
+            if(curtidasRealizadas.includes(id)) {
+                alert("Você já curtiu esta foto!");
+                return;
+            }
             let span = btn.querySelector('span');
-            let num = parseInt(span.innerText);
-            span.innerText = num + 1;
+            span.innerText = parseInt(span.innerText) + 1;
             btn.style.color = "red";
+            curtidasRealizadas.push(id); // Trava o ID
         }
 
-        // CHAT
-        function abrirPrivado(nome) {
-            document.getElementById('janela-privada').style.display = 'block';
-            document.getElementById('nome-chat').innerText = "Conversando com " + nome;
-            document.getElementById('mensagens').innerHTML = `<div style="background:#262d31; padding:5px; border-radius:5px; margin:5px;">Olá! Vi seu post.</div>`;
-        }
-        function enviarMsg() {
-            const input = document.getElementById('msg-input');
-            if(!input.value) return;
-            document.getElementById('mensagens').innerHTML += `<div style="background:#056162; padding:5px; border-radius:5px; margin:5px; text-align:right;">${input.value}</div>`;
-            input.value = "";
+        // MENSAGEM FLUTUANTE
+        setInterval(() => {
+            const msg = document.getElementById('floating-msg');
+            msg.style.right = "20px";
+            setTimeout(() => { msg.style.right = "-400px"; }, 5000);
+        }, 15000);
+
+        // SISTEMA DE FILHOS
+        function adicionarFilhoSimulado() {
+            let cont = document.getElementById('contador-filhos');
+            cont.innerText = parseInt(cont.innerText) + 1;
+            alert("Novo amigo cadastrado! Você agora é pai de mais um.");
         }
 
-        // PERIGO / SOS
-        async function acionarSOS() {
+        // TOGGLE SOS (LIGA/DESLIGA)
+        function toggleSOS() {
             const body = document.getElementById('main-body');
-            const texto = document.getElementById('geo-texto');
-            body.classList.add('sos-active');
-            texto.innerText = "🚨 ALERTA ATIVO! Localizando...";
+            const btn = document.getElementById('btn-sos');
+            const status = document.getElementById('status-sos');
 
+            sosAtivo = !sosAtivo;
+
+            if(sosAtivo) {
+                body.classList.add('sos-active');
+                btn.style.boxShadow = "0 0 30px white";
+                status.innerText = "🚨 ALERTA ATIVADO! (Clique para parar)";
+                pegarLocalizacao();
+            } else {
+                body.classList.remove('sos-active');
+                btn.style.boxShadow = "none";
+                status.innerText = "Toque para ativar";
+                document.getElementById('local-box').innerHTML = "";
+            }
+        }
+
+        function pegarLocalizacao() {
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const res = await fetch(`https://nominatim.openstreetmap.org{pos.coords.latitude}&lon=${pos.coords.longitude}`);
                 const data = await res.json();
-                const rua = data.address.road || "Rua não detectada";
-                const cep = data.address.postcode || "CEP não achado";
-                
-                document.getElementById('mapa-info').innerHTML = `
-                    <div class="card" style="background:red; color:white;">
-                        <b>LOCAL DO PERIGO:</b><br>${rua}<br>CEP: ${cep}<br>
-                        <small>Visto por 12 usuários próximos!</small>
-                    </div>`;
+                document.getElementById('local-box').innerHTML = `<div class="card" style="background:red"><b>Perigo em:</b><br>${data.address.road || 'Local detectado'}</div>`;
             });
-        }
-
-        // PERFIL PREVIEW
-        function preview(input, id) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                if(id === 'avatar-img') document.getElementById(id).style.backgroundImage = `url(${e.target.result})`;
-                else document.getElementById(id).style.backgroundImage = `url(${e.target.result})`;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-        function mudarNome() {
-            const n = prompt("Seu nome:");
-            if(n) document.getElementById('meu-nome').innerText = n + " ✎";
         }
     </script>
 </body>
