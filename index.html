@@ -3,84 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ice BLUE - Oficial</title>
+  <title>ICE BLUE</title>
 
   <style>
-    :root { --ice:#00d4ff; --sea:#000814; --glass:rgba(255,255,255,.10); }
+    :root{ --ice:#00d4ff; --glass:rgba(255,255,255,.10); }
 
     body{
       margin:0; color:#fff; font-family:sans-serif;
-      min-height:100vh; padding-bottom:90px;
-      overflow-x:hidden; background:#000814;
+      min-height:100vh; padding-bottom:90px; overflow-x:hidden;
+      background: linear-gradient(180deg, #001b2e 0%, #003b66 45%, #00121f 100%); /* azul gelo */
     }
 
-    /* ===== FUNDO OCEANO (leve) ===== */
-    .ocean-bg{
-      position:fixed; inset:0; z-index:0; overflow:hidden;
-      background:
-        radial-gradient(circle at 50% 12%, rgba(0,212,255,.16) 0%, rgba(0,212,255,0) 35%),
-        radial-gradient(circle at 20% 80%, rgba(0,119,182,.18) 0%, rgba(0,119,182,0) 40%),
-        radial-gradient(circle at 80% 70%, rgba(2,62,138,.18) 0%, rgba(2,62,138,0) 45%),
-        linear-gradient(180deg, #001219 0%, #001d3d 40%, #000814 100%);
-    }
-    .ocean-grain{
-      position:absolute; inset:-40px; opacity:.10; pointer-events:none;
-      background-image:
-        radial-gradient(circle at 10% 10%, rgba(255,255,255,.18) 0 1px, transparent 2px),
-        radial-gradient(circle at 40% 30%, rgba(255,255,255,.12) 0 1px, transparent 2px),
-        radial-gradient(circle at 70% 60%, rgba(255,255,255,.14) 0 1px, transparent 2px),
-        radial-gradient(circle at 90% 80%, rgba(255,255,255,.12) 0 1px, transparent 2px);
-      background-size: 120px 120px;
-      animation: grainMove 18s linear infinite;
-    }
-    @keyframes grainMove{ from{transform:translateY(0)} to{transform:translateY(-90px)} }
-
-    .ocean-bubble{
-      position:absolute; bottom:-60px; border-radius:50%;
-      background:rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.08);
-      animation:oceanRise 14s linear infinite;
-      pointer-events:none;
-    }
-    @keyframes oceanRise{
-      0%{ transform:translateY(0) translateX(0); opacity:.7; }
-      100%{ transform:translateY(-120vh) translateX(60px); opacity:0; }
-    }
-
-    /* Cavalo-marinho (leve: emoji + glow) */
-    .seahorse{
-      position:absolute; left:-120px; bottom:18%;
-      font-size:80px; opacity:.18;
-      filter: drop-shadow(0 12px 30px rgba(0,0,0,.35));
-      animation: swim 40s linear infinite;
-      pointer-events:none;
-    }
-    @keyframes swim{
-      0%{ left:-120px; transform:translateY(0) rotate(2deg); }
-      50%{ transform:translateY(-18px) rotate(-2deg); }
-      100%{ left:110%; transform:translateY(0) rotate(2deg); }
-    }
-
-    /* HEADER */
     .header-ice{
-      background:rgba(0,0,0,.78); backdrop-filter:blur(10px);
+      background:rgba(0,0,0,.70); backdrop-filter:blur(10px);
       padding:10px; border-bottom:2px solid var(--ice);
       position:sticky; top:0; z-index:1001; text-align:center;
     }
     .mini{ font-size:12px; opacity:.85; margin-top:6px; line-height:1.3; }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
-    /* NOTIF */
     #notif{
       position:fixed; top:-100px; left:50%; transform:translateX(-50%);
-      background:var(--ice); color:#000; padding:12px 14px;
-      border-radius:14px; z-index:3000; transition:.45s;
-      font-weight:700; width:84%; text-align:center;
+      background:var(--ice); color:#000; padding:12px 14px; border-radius:14px;
+      z-index:3000; transition:.45s; font-weight:800; width:84%; text-align:center;
     }
 
-    /* CARDS */
     .card{
-      background:var(--glass); backdrop-filter:blur(14px);
+      background:var(--glass); backdrop-filter:blur(12px);
       border-radius:15px; margin:15px; padding:15px;
       border:1px solid rgba(255,255,255,.12);
       position:relative; z-index:2;
@@ -89,13 +38,11 @@
     .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); }
     .u-name{ font-weight:800; }
 
-    /* TELAS */
-    .tela{ display:none; animation:fade .35s; position:relative; z-index:2; }
+    .tela{ display:none; animation:fade .35s; }
     @keyframes fade{ from{opacity:0} to{opacity:1} }
 
-    /* BOTÕES */
     .btn-blue{
-      background:var(--ice); color:#000; font-weight:800;
+      background:var(--ice); color:#000; font-weight:900;
       border:none; padding:12px; border-radius:10px;
       width:100%; cursor:pointer; margin-top:10px;
     }
@@ -113,10 +60,9 @@
     }
     input[type="file"]{ color:#fff; width:100%; }
 
-    /* MENU */
     .nav{
       position:fixed; bottom:0; width:100%;
-      background:rgba(0,0,0,.95);
+      background:rgba(0,0,0,.92);
       display:flex; justify-content:space-around;
       padding:12px 0; border-top:1px solid var(--ice);
       z-index:1000;
@@ -148,7 +94,7 @@
     .m-msg{ align-self:flex-end; background:var(--ice); color:#000; padding:8px 12px; border-radius:15px; max-width:70%; }
     .h-msg{ align-self:flex-start; background:#333; padding:8px 12px; border-radius:15px; max-width:70%; }
 
-    /* OFERTA VS (na lista de ofertas) */
+    /* OFERTA VS */
     .trade-split{ display:flex; gap:10px; margin:15px 0; height:180px; align-items:center; }
     .trade-side{
       flex:1; height:100%;
@@ -159,7 +105,7 @@
       position:relative; overflow:hidden;
     }
     .trade-side img{ width:100%; height:100%; object-fit:cover; }
-    .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; font-weight:800; }
+    .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; font-weight:900; }
 
     /* TELA DUPLA */
     .trade-screen{ display:flex; gap:12px; padding:10px; }
@@ -221,13 +167,7 @@
 </head>
 
 <body>
-  <!-- FUNDO -->
-  <div class="ocean-bg" aria-hidden="true">
-    <div class="ocean-grain"></div>
-    <div class="seahorse">🐉</div>
-  </div>
-
-  <div id="notif">🔔</div>
+  <div id="notif">✅</div>
 
   <div class="header-ice">
     <h1 style="margin:6px 0;">ICE BLUE</h1>
@@ -304,15 +244,16 @@
       <div class="card" style="text-align:left; margin:12px 0 0 0;">
         <div class="mini"><b>Seu ID:</b> <span class="mono" id="myIdView">---</span></div>
         <div class="mini"><b>Seu Pai (ref):</b> <span class="mono" id="myParentView">nenhum</span></div>
-        <div class="mini"><b>Seus Filhos (local):</b> <span class="mono" id="myKidsCount">0</span></div>
-        <div class="mini" id="kidsListWrap" style="margin-top:10px;"></div>
 
         <button class="btn-blue" onclick="shareSystem()">📣 Compartilhar meu link</button>
         <button class="btn-ghost" onclick="copyMyLink()">📎 Copiar link</button>
       </div>
 
       <input type="file" id="up-p" style="display:none" accept="image/*" onchange="previewImg(this,'p-img')">
-      <button onclick="document.getElementById('up-p').click()" style="background:none; border:none; color:var(--ice); cursor:pointer; margin-top:10px;">Trocar Foto</button>
+      <button onclick="document.getElementById('up-p').click()"
+        style="background:none; border:none; color:var(--ice); cursor:pointer; margin-top:10px;">
+        Trocar Foto
+      </button>
     </div>
 
     <div class="card">
@@ -324,11 +265,11 @@
     </div>
   </div>
 
-  <!-- SHARE FLOAT -->
+  <!-- SHARE -->
   <div class="share-balloons" aria-label="Compartilhar">
-    <button title="Compartilhar (celular)" onclick="shareSystem()">📣</button>
+    <button title="Compartilhar" onclick="shareSystem()">📣</button>
     <button title="WhatsApp" onclick="shareWhatsApp()">🟢</button>
-    <button title="Copiar link" onclick="copyMyLink()">📎</button>
+    <button title="Copiar" onclick="copyMyLink()">📎</button>
   </div>
   <div class="share-tip" id="shareTip"></div>
 
@@ -342,29 +283,10 @@
   </nav>
 
   <script>
-    /* Polyfill simples (evita travar em celulares antigos) */
+    /* Evita travar em celular antigo */
     if (!String.prototype.replaceAll) {
-      String.prototype.replaceAll = function(search, replacement) {
-        return this.split(search).join(replacement);
-      };
+      String.prototype.replaceAll = function(a, b){ return this.split(a).join(b); };
     }
-
-    /* ===== Fundo: bolhas ===== */
-    (function createOceanBubbles(){
-      var bg = document.querySelector('.ocean-bg');
-      var count = 18;
-      for(var i=0;i<count;i++){
-        var b = document.createElement('div');
-        b.className = 'ocean-bubble';
-        var size = Math.random()*18 + 10;
-        b.style.width = b.style.height = size + 'px';
-        b.style.left = (Math.random()*100) + '%';
-        b.style.animationDuration = (Math.random()*10 + 10) + 's';
-        b.style.animationDelay = (Math.random()*10) + 's';
-        b.style.opacity = (Math.random()*0.35 + 0.35).toFixed(2);
-        bg.appendChild(b);
-      }
-    })();
 
     function escapeHtml(str){
       return String(str)
@@ -381,168 +303,276 @@
       var n = document.getElementById("notif");
       n.innerText = msg;
       n.style.top = "20px";
-      setTimeout(function(){ n.style.top = "-100px"; }, 2600);
+      setTimeout(function(){ n.style.top = "-100px"; }, 2300);
     }
 
-    /* ===== ID + Pai/Filho (local seguro) ===== */
-    var LS_MY_ID = "ice_my_id";
-    var LS_PARENT = "ice_parent_id";
-    var LS_KIDS_PREFIX = "ice_kids_";
+    /* ===== ID + REF (simples e seguro) ===== */
+    var LS_MY_ID="ice_my_id";
+    var LS_PARENT="ice_parent_id";
+
     function genId(){
       return "ICE-" + Math.random().toString(36).slice(2,6).toUpperCase() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
     }
     function getMyId(){
       var id = localStorage.getItem(LS_MY_ID);
-      if(!id){ id = genId(); localStorage.setItem(LS_MY_ID, id); }
+      if(!id){ id=genId(); localStorage.setItem(LS_MY_ID,id); }
       return id;
     }
     function getParentId(){ return localStorage.getItem(LS_PARENT); }
-    function setParentId(pid){ localStorage.setItem(LS_PARENT, pid); }
-    function getKids(myId){
-      try{ return JSON.parse(localStorage.getItem(LS_KIDS_PREFIX + myId) || "[]"); }
-      catch(e){ return []; }
-    }
-    function addKid(parentId, kidId){
-      var key = LS_KIDS_PREFIX + parentId;
-      var kids = getKids(parentId);
-      if(kids.indexOf(kidId) === -1){
-        kids.unshift(kidId);
-        localStorage.setItem(key, JSON.stringify(kids));
-      }
-    }
+    function setParentId(pid){ localStorage.setItem(LS_PARENT,pid); }
+
     function buildMyLink(){
       var base = location.origin + location.pathname;
       return base + "?ref=" + encodeURIComponent(getMyId());
     }
 
     async function copyText(txt){
-      try{
-        await navigator.clipboard.writeText(txt);
-        return true;
-      }catch(e){
+      try{ await navigator.clipboard.writeText(txt); return true; }
+      catch(e){
         try{
-          var ta = document.createElement("textarea");
-          ta.value = txt;
-          ta.style.position = "fixed";
-          ta.style.left = "-9999px";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-          return true;
-        }catch(e2){
-          return false;
-        }
+          var ta=document.createElement("textarea");
+          ta.value=txt; ta.style.position="fixed"; ta.style.left="-9999px";
+          document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+          document.body.removeChild(ta); return true;
+        }catch(e2){ return false; }
       }
     }
     function showTip(msg){
-      var tip = document.getElementById("shareTip");
-      tip.innerHTML = msg;
-      tip.style.display = "block";
+      var tip=document.getElementById("shareTip");
+      tip.innerHTML=msg; tip.style.display="block";
       clearTimeout(showTip._t);
-      showTip._t = setTimeout(function(){ tip.style.display="none"; }, 2200);
+      showTip._t=setTimeout(function(){ tip.style.display="none"; }, 2000);
     }
     async function copyMyLink(){
-      var link = buildMyLink();
-      var ok = await copyText(link);
-      if(ok){ showTip("Link copiado ✅<br><span class='mono'>"+escapeHtml(link)+"</span>"); notif("📎 Link copiado!"); }
-      else { alert("Copie manual:\n" + link); }
+      var link=buildMyLink();
+      var ok=await copyText(link);
+      if(ok){ showTip("Copiado ✅<br><span class='mono'>"+escapeHtml(link)+"</span>"); notif("📎 Link copiado!"); }
+      else alert("Copie manual:\n"+link);
     }
     async function shareSystem(){
-      var link = buildMyLink();
-      var text = "Entra no ICE BLUE pelo meu link: " + link;
+      var link=buildMyLink();
+      var text="Entra no ICE BLUE pelo meu link: " + link;
       if(navigator.share){
-        try{ await navigator.share({ title:"ICE BLUE", text:text, url:link }); notif("📣 Compartilhado!"); return; }
+        try{ await navigator.share({title:"ICE BLUE", text:text, url:link}); notif("📣 Compartilhado!"); return; }
         catch(e){}
       }
       await copyMyLink();
     }
     function shareWhatsApp(){
-      var link = buildMyLink();
-      var msg = encodeURIComponent("Entra no ICE BLUE pelo meu link: " + link);
-      window.open("https://wa.me/?text=" + msg, "_blank");
+      var link=buildMyLink();
+      var msg=encodeURIComponent("Entra no ICE BLUE pelo meu link: "+link);
+      window.open("https://wa.me/?text="+msg, "_blank");
     }
 
     function applyReferralFromUrl(){
       try{
-        var params = new URLSearchParams(location.search);
-        var ref = params.get("ref");
+        var params=new URLSearchParams(location.search);
+        var ref=params.get("ref");
         if(!ref) return;
 
-        var myId = getMyId();
-        var parent = getParentId();
-        if(!parent && ref !== myId){
+        var myId=getMyId();
+        if(!getParentId() && ref !== myId){
           setParentId(ref);
-          addKid(ref, myId);
           notif("✅ Pai definido: " + ref);
         }
-
         try{
-          var clean = location.origin + location.pathname;
+          var clean=location.origin + location.pathname;
           history.replaceState({}, "", clean);
         }catch(e2){}
       }catch(e){}
     }
 
-    function refreshProfileReferralUI(){
-      var myId = getMyId();
-      var parent = getParentId();
-      var kids = getKids(myId);
-
-      document.getElementById("myIdView").innerText = myId;
-      document.getElementById("myParentView").innerText = parent ? parent : "nenhum";
-      document.getElementById("myKidsCount").innerText = kids.length;
-
-      var wrap = document.getElementById("kidsListWrap");
-      if(kids.length === 0){
-        wrap.innerHTML = "<div class='mini'>Sem filhos por aqui ainda.</div>";
-      } else {
-        var html = "<div class='mini'><b>IDs dos filhos (local):</b></div>";
-        for(var i=0;i<Math.min(20,kids.length);i++){
-          html += "<div class='mini mono'>• " + escapeHtml(kids[i]) + "</div>";
-        }
-        wrap.innerHTML = html;
-      }
-      document.getElementById("whoami").innerText = "ID: " + myId + (parent ? (" • Pai: " + parent) : "");
+    function refreshProfile(){
+      var myId=getMyId();
+      var parent=getParentId();
+      document.getElementById("myIdView").innerText=myId;
+      document.getElementById("myParentView").innerText=parent ? parent : "nenhum";
+      document.getElementById("whoami").innerText="ID: " + myId + (parent ? (" • Pai: " + parent) : "");
     }
 
-    /* ===== APP (Trocas) ===== */
-    var targetItem = null;
+    /* ===== APP ===== */
+    var targetItem=null;
 
     function ver(id){
-      var telas = document.querySelectorAll('.tela');
-      for(var i=0;i<telas.length;i++) telas[i].style.display = 'none';
-
-      var el = document.getElementById(id);
-      if(el) el.style.display = 'block';
-
-      if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
-      if(id === 'perfil') refreshProfileReferralUI();
-      window.scrollTo({top:0, behavior:'smooth'});
+      var telas=document.querySelectorAll(".tela");
+      for(var i=0;i<telas.length;i++) telas[i].style.display="none";
+      var el=document.getElementById(id);
+      if(el) el.style.display="block";
+      if(id==="ofertas") document.getElementById("badge").style.display="none";
+      if(id==="perfil") refreshProfile();
+      window.scrollTo({top:0, behavior:"smooth"});
     }
 
     function abrirTrocas(){
       if(targetItem) abrirTelaDupla();
-      else ver('ofertas');
+      else ver("ofertas");
     }
 
     function selecionarItemEIrTrocas(img, txt){
-      targetItem = { img: img, text: txt };
+      targetItem={img:img, text:txt};
       abrirTelaDupla();
     }
 
     function abrirTelaDupla(){
-      document.getElementById('targetImg').src = targetItem.img;
-      document.getElementById('targetTxt').innerText = "Postagem escolhida: " + (targetItem.text || "");
+      document.getElementById("targetImg").src=targetItem.img;
+      document.getElementById("targetTxt").innerText="Postagem escolhida: " + (targetItem.text || "");
       limparOferta(true);
-      ver('troca-dupla');
+      ver("troca-dupla");
     }
 
     function previewOffer(){
-      var f = document.getElementById('offerFile').files[0];
+      var f=document.getElementById("offerFile").files[0];
       if(!f){
-        document.getElementById('offerPreview').style.display = "none";
-        document.getElementById('offerPlaceholder').style.display = "flex";
+        document.getElementById("offerPreview").style.display="none";
+        document.getElementById("offerPlaceholder").style.display="flex";
         return;
       }
-      var r = 
+      var r=new FileReader();
+      r.onload=function(e){
+        document.getElementById("offerPreview").src=e.target.result;
+        document.getElementById("offerPreview").style.display="block";
+        document.getElementById("offerPlaceholder").style.display="none";
+      };
+      r.readAsDataURL(f);
+    }
+
+    function limparOferta(keepTarget){
+      document.getElementById("offerFile").value="";
+      document.getElementById("offerText").value="";
+      document.getElementById("offerPreview").style.display="none";
+      document.getElementById("offerPreview").src="";
+      document.getElementById("offerPlaceholder").style.display="flex";
+      if(!keepTarget) targetItem=null;
+    }
+
+    function enviarOferta(){
+      if(!targetItem) return alert("Escolha um item na Home (FAZER OFERTA) antes.");
+      var myFile=document.getElementById("offerFile").files[0];
+      var myText=(document.getElementById("offerText").value||"").trim();
+      if(!myFile) return alert("Envie uma foto do que você tem.");
+      if(!myText) return alert("Escreva a descrição da oferta.");
+
+      var r=new FileReader();
+      r.onload=function(e){
+        var myImg=e.target.result;
+
+        var html=
+          "<div class='card'>"+
+            "<div class='trade-split'>"+
+              "<div class='trade-side'><img src='"+targetItem.img+"'></div>"+
+              "<div class='vs-badge'>VS</div>"+
+              "<div class='trade-side'><img src='"+myImg+"'></div>"+
+            "</div>"+
+            "<div class='mini'><b>Você quer:</b> "+escapeHtml(targetItem.text||"")+"</div>"+
+            "<div class='mini'><b>Sua oferta:</b> "+escapeHtml(myText)+"</div>"+
+            "<button class='btn-blue' style='background:#2ecc71;color:#fff' onclick='abrirChat()'>ACEITAR & CHAT</button>"+
+          "</div>";
+
+        document.getElementById("lista-ofertas").insertAdjacentHTML("afterbegin", html);
+        document.getElementById("badge").style.display="block";
+        notif("🔔 Oferta criada! Veja em Trocas.");
+        ver("ofertas");
+      };
+      r.readAsDataURL(myFile);
+    }
+
+    function postarTroca(){
+      var txt=(document.getElementById("t-troca").value||"").trim();
+      var file=document.getElementById("f-troca").files[0];
+      if(!file) return alert("Selecione uma imagem!");
+
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var img=e.target.result;
+        var userPic=document.getElementById("p-img").src || "https://i.pravatar.cc/120?img=12";
+
+        var html=
+          "<div class='card'>"+
+            "<div class='post-head'>"+
+              "<img src='"+userPic+"' class='u-pic'>"+
+              "<div><div class='u-name'>Usuário</div><div class='mini'>Postou uma troca agora</div></div>"+
+            "</div>"+
+            "<p style='margin-top:0'>"+escapeHtml(txt||"Troca disponível!")+"</p>"+
+            "<img src='"+img+"' style='width:100%;border-radius:10px;'>"+
+            "<button class='btn-blue' onclick=\"selecionarItemEIrTrocas('"+img+"','"+escapeAttr(txt||"Troca disponível!")+"')\">FAZER OFERTA</button>"+
+          "</div>";
+
+        document.getElementById("feed").insertAdjacentHTML("afterbegin", html);
+        document.getElementById("t-troca").value="";
+        document.getElementById("f-troca").value="";
+        ver("home");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function abrirChat(){
+      document.getElementById("chat-window").style.left="0";
+      var box=document.getElementById("chat-box");
+      if(!box.dataset.seeded){
+        box.dataset.seeded="1";
+        box.insertAdjacentHTML("beforeend","<div class='h-msg'>Olá! Curti sua oferta. O que você aceita?</div>");
+      }
+    }
+    function fecharChat(){ document.getElementById("chat-window").style.left="100%"; }
+    function enviarMsg(){
+      var inpt=document.getElementById("chat-in");
+      var v=(inpt.value||"").trim();
+      if(!v) return;
+      document.getElementById("chat-box").insertAdjacentHTML("beforeend","<div class='m-msg'>"+escapeHtml(v)+"</div>");
+      inpt.value="";
+      setTimeout(function(){
+        document.getElementById("chat-box").insertAdjacentHTML("beforeend","<div class='h-msg'>Fechado. Me manda mais detalhes 🙂</div>");
+        var cb=document.getElementById("chat-box"); cb.scrollTop=cb.scrollHeight;
+      }, 650);
+    }
+
+    function previewImg(input,id){
+      var file=input.files && input.files[0];
+      if(!file) return;
+      var reader=new FileReader();
+      reader.onload=function(e){ document.getElementById(id).src=e.target.result; };
+      reader.readAsDataURL(file);
+    }
+
+    function seedFeed(){
+      var feed=document.getElementById("feed");
+      if(feed.dataset.seeded) return;
+      feed.dataset.seeded="1";
+
+      var fake=[
+        {name:"Luna", pic:"https://i.pravatar.cc/120?img=5", text:"Troco relógio por fone bluetooth.", img:"https://picsum.photos/seed/luna/900/600"},
+        {name:"Diego", pic:"https://i.pravatar.cc/120?img=11", text:"Tenho skate, quero trocar por bicicleta aro 29.", img:"https://picsum.photos/seed/diego/900/601"},
+        {name:"Nina", pic:"https://i.pravatar.cc/120?img=32", text:"Troco headset gamer por teclado mecânico.", img:"https://picsum.photos/seed/nina/900/602"}
+      ];
+
+      for(var i=0;i<fake.length;i++){
+        var u=fake[i];
+        var html=
+          "<div class='card'>"+
+            "<div class='post-head'>"+
+              "<img src='"+u.pic+"' class='u-pic'>"+
+              "<div><div class='u-name'>"+escapeHtml(u.name)+"</div><div class='mini'>Oferta pública</div></div>"+
+            "</div>"+
+            "<p style='margin-top:0'>"+escapeHtml(u.text)+"</p>"+
+            "<img src='"+u.img+"' style='width:100%;border-radius:10px;'>"+
+            "<button class='btn-blue' onclick=\"selecionarItemEIrTrocas('"+u.img+"','"+escapeAttr(u.text)+"')\">FAZER OFERTA</button>"+
+          "</div>";
+        feed.insertAdjacentHTML("beforeend", html);
+      }
+    }
+
+    /* START */
+    (function(){
+      try{
+        applyReferralFromUrl();
+        refreshProfile();
+        seedFeed();
+        ver("home");
+        notif("✅ ICE BLUE carregado!");
+      }catch(e){
+        alert("Erro no script: " + (e && e.message ? e.message : e));
+      }
+    })();
+  </script>
+</body>
+</html>
