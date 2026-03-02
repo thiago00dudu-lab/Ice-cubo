@@ -21,7 +21,6 @@
     }
     .mini{ font-size:12px; opacity:.85; margin-top:6px; line-height:1.3; }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-
     .pill{
       display:inline-block; padding:4px 10px; border-radius:999px;
       border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.35);
@@ -43,10 +42,10 @@
       border:1px solid rgba(255,255,255,.12);
       position:relative; z-index:2;
     }
-
-    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer; }
-    .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); }
+    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer; user-select:none; }
+    .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); object-fit:cover; background:rgba(255,255,255,.06); }
     .u-name{ font-weight:800; }
+
     .tela{ display:none; animation:fade .35s; }
     @keyframes fade{ from{opacity:0} to{opacity:1} }
 
@@ -123,7 +122,7 @@
       display:flex; align-items:center; justify-content:center;
       position:relative; overflow:hidden;
     }
-    .trade-side img{ width:100%; height:100%; object-fit:cover; }
+    .trade-side img, .trade-side video{ width:100%; height:100%; object-fit:cover; }
     .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; font-weight:900; }
 
     /* TELA DUPLA */
@@ -192,7 +191,7 @@
       cursor:pointer;
     }
     .row-left{ display:flex; gap:10px; align-items:center; min-width:0; }
-    .row-left img{ width:40px; height:40px; border-radius:50%; border:1px solid rgba(0,212,255,.35); }
+    .row-left img{ width:40px; height:40px; border-radius:50%; border:1px solid rgba(0,212,255,.35); object-fit:cover; }
     .row-title{ font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
     .row-sub{ font-size:12px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
     .row-actions{ display:flex; gap:8px; align-items:center; }
@@ -218,73 +217,60 @@
       border-radius:18px; padding:18px;
     }
 
-    /* ====== PERFIL PÚBLICO (abas) ====== */
-    .tabs{
-      display:flex; gap:10px; margin-top:12px;
-    }
+    /* ===== PERFIL PÚBLICO (Trocas / Fotos / Vídeos) ===== */
+    .tabs{ display:flex; gap:10px; margin-top:12px; }
     .tab{
-      flex:1;
-      padding:10px;
-      border-radius:12px;
+      flex:1; padding:10px; border-radius:12px;
       border:1px solid rgba(255,255,255,.14);
       background:rgba(0,0,0,.25);
-      text-align:center;
-      cursor:pointer;
-      font-weight:900;
-      user-select:none;
+      text-align:center; cursor:pointer; font-weight:900; user-select:none;
     }
-    .tab.active{
-      border-color:rgba(0,212,255,.45);
-      background:rgba(0,212,255,.12);
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap:10px;
-      margin-top:12px;
-    }
+    .tab.active{ border-color:rgba(0,212,255,.45); background:rgba(0,212,255,.12); }
+
+    .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:12px; }
     .grid img{
-      width:100%;
-      height:160px;
-      object-fit:cover;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.05);
+      width:100%; height:160px; object-fit:cover; border-radius:12px;
+      border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
       cursor:pointer;
     }
     .videoCard{
       border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;
-      background:rgba(0,0,0,.25);
-      padding:10px;
-      margin-top:10px;
+      border-radius:12px; background:rgba(0,0,0,.25);
+      padding:10px; margin-top:10px;
     }
     .videoCard video{
-      width:100%;
-      border-radius:12px;
+      width:100%; border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
       background:#000;
     }
+
+    /* modal */
     .modal{
       position:fixed; inset:0; z-index:6000;
       background:rgba(0,0,0,.85);
       display:none; align-items:center; justify-content:center;
       padding:14px;
     }
-    .modal img{
-      max-width:95vw; max-height:85vh;
-      border-radius:14px;
+    .modal .box{
+      width:100%; max-width:900px;
+      background:rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:12px;
+    }
+    .modal img, .modal video{
+      width:100%;
+      max-height:80vh;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#000;
+      object-fit:contain;
     }
   </style>
 </head>
 
 <body>
   <div id="notif">✅</div>
-
-  <div class="modal" id="imgModal" onclick="closeImgModal()">
-    <img id="imgModalView" alt="Imagem">
-  </div>
 
   <!-- overlay se usuário estiver bloqueado -->
   <div class="blocked-overlay" id="blockedOverlay">
@@ -363,10 +349,10 @@
     </div>
   </div>
 
-  <!-- PERFIL (CONFIG / ADM) -->
+  <!-- PERFIL -->
   <div id="perfil" class="tela">
     <div class="card" style="text-align:center;">
-      <img src="https://i.pravatar.cc/120?img=12" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice);">
+      <img src="https://i.pravatar.cc/120?img=12" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice); object-fit:cover;">
       <h2 id="p-nome">Seu Perfil</h2>
 
       <div class="card" style="text-align:left; margin:12px 0 0 0;">
@@ -375,7 +361,6 @@
 
         <button class="btn-blue" onclick="shareSystem()">📣 Compartilhar meu link</button>
         <button class="btn-ghost" onclick="copyMyLink()">📎 Copiar link</button>
-        <button class="btn-ghost" onclick="openPublicProfile(getMyId())">👁️ Ver meu Perfil Público</button>
       </div>
 
       <input type="file" id="up-p" style="display:none" accept="image/*" onchange="previewImg(this,'p-img')">
@@ -383,23 +368,6 @@
         style="background:none; border:none; color:var(--ice); cursor:pointer; margin-top:10px;">
         Trocar Foto
       </button>
-
-      <!-- MÍDIA NO SEU PERFIL PÚBLICO -->
-      <div class="card" style="text-align:left; margin-top:12px;">
-        <b>🖼️ Suas Fotos & Vídeos</b>
-        <div class="mini">Fotos: upload • Vídeos: cole um link .mp4 (ex: link direto do vídeo)</div>
-
-        <div style="margin-top:10px;">
-          <b class="mini">Adicionar Foto</b>
-          <input type="file" id="myPhotoFile" accept="image/*" onchange="addMyPhoto()">
-        </div>
-
-        <div style="margin-top:10px;">
-          <b class="mini">Adicionar Vídeo (URL .mp4)</b>
-          <input type="text" id="myVideoUrl" placeholder="https://.../video.mp4" style="width:100%; margin-top:8px;">
-          <button class="btn-ok" onclick="addMyVideoUrl()">Adicionar Vídeo</button>
-        </div>
-      </div>
 
       <!-- LOGIN ADM/MOD -->
       <div class="card" style="text-align:left; margin-top:12px;">
@@ -409,60 +377,111 @@
         <button class="btn-ghost" onclick="logoutRole()">Sair (voltar Membro)</button>
       </div>
 
+      <!-- GALERIA DO SEU PERFIL (fotos/vídeos) -->
+      <div class="card" style="text-align:left;">
+        <b>🖼️ Sua Galeria</b>
+        <div class="mini">Aqui você adiciona <b>fotos</b> e <b>vídeos</b> pro seu perfil.</div>
+
+        <input type="file" id="galFile" accept="image/*,video/*">
+        <button class="btn-blue" onclick="addToMyGallery()">Adicionar na galeria</button>
+
+        <div class="mini" style="margin-top:10px;"><b>Fotos:</b></div>
+        <div class="grid" id="myPhotosGrid"></div>
+
+        <div class="mini" style="margin-top:12px;"><b>Vídeos:</b></div>
+        <div id="myVideosList"></div>
+      </div>
+
       <!-- LISTA DE USUÁRIOS (pra moderar) -->
       <div class="card" style="text-align:left;">
         <b>👥 Usuários (simulação)</b>
-        <div class="mini">Toque em um usuário para abrir o perfil público dele (e moderar se você for MOD/ADM).</div>
+        <div class="mini">Toque em um usuário para abrir o perfil dele e gerenciar (se você for MOD/ADM).</div>
         <div id="usersList"></div>
       </div>
     </div>
 
     <div class="card">
       <h4>Anunciar Troca</h4>
-      <input type="file" id="f-troca" accept="image/*">
+      <input type="file" id="f-troca" accept="image/*,video/*">
       <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
       <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
       <div class="mini">Dica: publique uma troca pra aparecer na Home.</div>
     </div>
   </div>
 
-  <!-- PERFIL PÚBLICO (de qualquer usuário) -->
+  <!-- PERFIL DE OUTRO USUÁRIO (MODERAÇÃO) -->
+  <div id="user-profile" class="tela">
+    <div class="card">
+      <button class="btn-ghost" style="margin-top:0" onclick="ver('perfil')">← Voltar</button>
+
+      <div style="display:flex; gap:12px; align-items:center; margin-top:12px;">
+        <img id="uViewPic" src="" style="width:58px; height:58px; border-radius:50%; border:2px solid rgba(0,212,255,.45); object-fit:cover;" />
+        <div style="min-width:0;">
+          <div style="font-weight:900; font-size:18px;" id="uViewName">Usuário</div>
+          <div class="mini mono" id="uViewId">---</div>
+          <div class="mini" id="uViewRole"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin:12px 0 0 0;">
+        <b>🛡️ Moderação</b>
+        <div class="mini">Ações disponíveis apenas para MOD/ADM.</div>
+        <div id="uActionInfo" class="mini" style="margin-top:8px;"></div>
+
+        <button class="btn-ok" id="btnPromote" onclick="promoteSelected()">⬆️ Promover para Moderador</button>
+        <button class="btn-ghost" id="btnDemote" onclick="demoteSelected()">⬇️ Rebaixar para Membro</button>
+        <button class="btn-danger" id="btnBlock" onclick="blockSelected()">⛔ Bloquear usuário</button>
+        <button class="btn-ok" id="btnUnblock" onclick="unblockSelected()">✅ Desbloquear usuário</button>
+
+        <div class="mini" style="margin-top:10px;">
+          * ADM não pode ser bloqueado.<br>
+          * MOD pode promover MOD e bloquear usuários.
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <b>👁️ Perfil público</b>
+        <div class="mini">Abrir o perfil público do usuário (trocas/fotos/vídeos).</div>
+        <button class="btn-blue" onclick="openPublicProfile(selectedUserId)">Abrir perfil público</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERFIL PÚBLICO (QUALQUER USUÁRIO) -->
   <div id="public-profile" class="tela">
     <div class="card">
       <button class="btn-ghost" style="margin-top:0" onclick="ver('home')">← Voltar</button>
 
       <div style="display:flex; gap:12px; align-items:center; margin-top:12px;">
-        <img id="ppPic" src="" style="width:66px; height:66px; border-radius:50%; border:2px solid rgba(0,212,255,.45);" />
+        <img id="ppPic" src="" style="width:72px; height:72px; border-radius:50%; border:2px solid rgba(0,212,255,.45); object-fit:cover;" />
         <div style="min-width:0;">
-          <div style="font-weight:900; font-size:20px;" id="ppName">Usuário</div>
+          <div style="font-weight:900; font-size:18px;" id="ppName">Usuário</div>
           <div class="mini mono" id="ppId">---</div>
           <div class="mini" id="ppRole"></div>
         </div>
       </div>
 
       <div class="tabs">
-        <div class="tab active" id="tabTrocas" onclick="ppTab('trocas')">🔄 Trocas</div>
-        <div class="tab" id="tabFotos" onclick="ppTab('fotos')">🖼️ Fotos</div>
-        <div class="tab" id="tabVideos" onclick="ppTab('videos')">🎥 Vídeos</div>
+        <div class="tab active" id="tabTrocas" onclick="ppSwitch('trocas')">🔄 Trocas</div>
+        <div class="tab" id="tabFotos" onclick="ppSwitch('fotos')">🖼️ Fotos</div>
+        <div class="tab" id="tabVideos" onclick="ppSwitch('videos')">🎥 Vídeos</div>
       </div>
 
-      <div id="ppContent"></div>
-
-      <!-- Moderação (aparece só pra MOD/ADM) -->
-      <div class="card" id="ppModerationBox" style="margin:12px 0 0 0; display:none;">
-        <b>🛡️ Moderação</b>
-        <div class="mini" id="ppModInfo"></div>
-
-        <button class="btn-ok" id="ppPromote" onclick="promoteSelected()">⬆️ Promover para Moderador</button>
-        <button class="btn-ghost" id="ppDemote" onclick="demoteSelected()">⬇️ Rebaixar para Membro</button>
-        <button class="btn-danger" id="ppBlock" onclick="blockSelected()">⛔ Bloquear usuário</button>
-        <button class="btn-ok" id="ppUnblock" onclick="unblockSelected()">✅ Desbloquear usuário</button>
-
-        <div class="mini" style="margin-top:10px;">
-          * ADM não pode ser bloqueado.<br>
-          * MOD pode subir MOD e bloquear usuários.
-        </div>
+      <div id="ppTrocas"></div>
+      <div id="ppFotos" style="display:none;">
+        <div class="grid" id="ppFotosGrid"></div>
       </div>
+      <div id="ppVideos" style="display:none;">
+        <div id="ppVideosList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL (imagem/vídeo) -->
+  <div class="modal" id="mediaModal" onclick="closeMediaModal()">
+    <div class="box" onclick="event.stopPropagation()">
+      <button class="btn-ghost" style="margin-top:0" onclick="closeMediaModal()">Fechar</button>
+      <div id="modalBody" style="margin-top:10px;"></div>
     </div>
   </div>
 
@@ -484,49 +503,4 @@
   </nav>
 
   <script>
-    /* Evita travar em celular antigo */
-    if (!String.prototype.replaceAll) {
-      String.prototype.replaceAll = function(a, b){ return this.split(a).join(b); };
-    }
-
-    function escapeHtml(str){
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function escapeAttr(str){ return escapeHtml(str).replaceAll("\n"," ").replaceAll("\r"," "); }
-
-    function notif(msg){
-      var n = document.getElementById("notif");
-      n.innerText = msg;
-      n.style.top = "20px";
-      setTimeout(function(){ n.style.top = "-100px"; }, 2300);
-    }
-
-    function openImgModal(src){
-      var m=document.getElementById("imgModal");
-      document.getElementById("imgModalView").src=src;
-      m.style.display="flex";
-    }
-    function closeImgModal(){
-      var m=document.getElementById("imgModal");
-      m.style.display="none";
-      document.getElementById("imgModalView").src="";
-    }
-
-    /* ===== ID + REF (simples e seguro) ===== */
-    var LS_MY_ID="ice_my_id";
-    var LS_PARENT="ice_parent_id";
-
-    function genId(){
-      return "ICE-" + Math.random().toString(36).slice(2,6).toUpperCase() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
-    }
-    function getMyId(){
-      var id = localStorage.getItem(LS_MY_ID);
-      if(!id){ id=genId(); localStorage.setItem(LS_MY_ID,id); }
-      return id;
-    }
-    function getParentId(){ return localStorage.getIt
+    /* Evita travar em celu
