@@ -34,8 +34,20 @@
       position:fixed; top:-100px; left:50%; transform:translateX(-50%);
       background:var(--ice); color:#000; padding:12px 14px; border-radius:14px;
       z-index:3000; transition:.45s; font-weight:800; width:84%; text-align:center;
-      box-shadow:0 12px 40px rgba(0,0,0,.35);
     }
+
+    #errPanel{
+      position:fixed; left:12px; right:12px; top:70px;
+      z-index:5000;
+      display:none;
+      background:rgba(255,77,109,.16);
+      border:1px solid rgba(255,77,109,.45);
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:12px;
+      backdrop-filter:blur(10px);
+    }
+    #errPanel b{ color:#ffd1da; }
 
     .card{
       background:var(--glass); backdrop-filter:blur(12px);
@@ -43,7 +55,7 @@
       border:1px solid rgba(255,255,255,.12);
       position:relative; z-index:2;
     }
-    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer; user-select:none; }
+    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
     .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); object-fit:cover; background:rgba(255,255,255,.06); }
     .u-name{ font-weight:800; }
 
@@ -123,7 +135,7 @@
       display:flex; align-items:center; justify-content:center;
       position:relative; overflow:hidden;
     }
-    .trade-side img, .trade-side video{ width:100%; height:100%; object-fit:cover; }
+    .trade-side img{ width:100%; height:100%; object-fit:cover; }
     .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; font-weight:900; }
 
     /* TELA DUPLA */
@@ -217,71 +229,6 @@
       border:1px solid rgba(255,255,255,.12);
       border-radius:18px; padding:18px;
     }
-
-    /* ===== PERFIL PÚBLICO ===== */
-    .tabs{ display:flex; gap:10px; margin-top:12px; }
-    .tab{
-      flex:1; padding:10px; border-radius:12px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(0,0,0,.25);
-      text-align:center; cursor:pointer; font-weight:900; user-select:none;
-    }
-    .tab.active{ border-color:rgba(0,212,255,.45); background:rgba(0,212,255,.12); }
-
-    .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:12px; }
-    .grid img{
-      width:100%; height:160px; object-fit:cover; border-radius:12px;
-      border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
-      cursor:pointer;
-    }
-    .videoCard{
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:12px; background:rgba(0,0,0,.25);
-      padding:10px; margin-top:10px;
-    }
-    .videoCard video{
-      width:100%; border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:#000;
-    }
-
-    /* modal */
-    .modal{
-      position:fixed; inset:0; z-index:6000;
-      background:rgba(0,0,0,.85);
-      display:none; align-items:center; justify-content:center;
-      padding:14px;
-    }
-    .modal .box{
-      width:100%; max-width:900px;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:16px;
-      padding:12px;
-    }
-    .modal img, .modal video{
-      width:100%;
-      max-height:80vh;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background:#000;
-      object-fit:contain;
-    }
-
-    /* PAINEL DE ERRO */
-    #errPanel{
-      position:fixed; left:12px; right:12px; top:74px;
-      z-index:5000;
-      display:none;
-      background:rgba(255,77,109,.16);
-      border:1px solid rgba(255,77,109,.45);
-      border-radius:14px;
-      padding:10px 12px;
-      font-size:12px;
-      backdrop-filter:blur(10px);
-      box-shadow:0 12px 40px rgba(0,0,0,.35);
-    }
-    #errPanel b{ color:#ffd1da; }
   </style>
 </head>
 
@@ -289,7 +236,6 @@
   <div id="notif">✅</div>
   <div id="errPanel"></div>
 
-  <!-- overlay se usuário estiver bloqueado -->
   <div class="blocked-overlay" id="blockedOverlay">
     <div class="box">
       <h2 style="margin:0 0 10px 0;">⛔ Acesso bloqueado</h2>
@@ -305,20 +251,17 @@
     <div class="mini" id="rolePill"></div>
   </div>
 
-  <!-- HOME -->
   <div id="home" class="tela" style="display:block;">
     <div id="feed">
-      <div class="card"><b>Carregando...</b><div class="mini">Se ficar preso aqui, aparece o erro em vermelho.</div></div>
+      <div class="card"><b>Carregando…</b><div class="mini">Se der erro, aparece em vermelho.</div></div>
     </div>
   </div>
 
-  <!-- OFERTAS -->
   <div id="ofertas" class="tela" style="padding:10px;">
     <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
     <div id="lista-ofertas"></div>
   </div>
 
-  <!-- TELA DUPLA -->
   <div id="troca-dupla" class="tela">
     <div class="trade-screen">
       <div class="trade-col">
@@ -355,11 +298,10 @@
     </div>
   </div>
 
-  <!-- CHAT -->
   <div id="chat-window">
     <div class="chat-header">
       <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
-      <b>Chat Privado</b>
+      <b id="chatTitle">Chat Privado</b>
     </div>
     <div id="chat-box"></div>
     <div style="padding:10px; background:#000; display:flex; gap:10px;">
@@ -368,7 +310,6 @@
     </div>
   </div>
 
-  <!-- PERFIL -->
   <div id="perfil" class="tela">
     <div class="card" style="text-align:center;">
       <img src="https://i.pravatar.cc/120?img=12" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice); object-fit:cover;">
@@ -396,36 +337,21 @@
       </div>
 
       <div class="card" style="text-align:left;">
-        <b>🖼️ Sua Galeria</b>
-        <div class="mini">Adicione <b>fotos</b> e <b>vídeos</b> pro seu perfil.</div>
-
-        <input type="file" id="galFile" accept="image/*,video/*">
-        <button class="btn-blue" onclick="addToMyGallery()">Adicionar na galeria</button>
-
-        <div class="mini" style="margin-top:10px;"><b>Fotos:</b></div>
-        <div class="grid" id="myPhotosGrid"></div>
-
-        <div class="mini" style="margin-top:12px;"><b>Vídeos:</b></div>
-        <div id="myVideosList"></div>
-      </div>
-
-      <div class="card" style="text-align:left;">
         <b>👥 Usuários (simulação)</b>
-        <div class="mini">Toque em um usuário para abrir o perfil dele e gerenciar (se você for MOD/ADM).</div>
+        <div class="mini">Toque em um usuário para abrir o perfil dele e gerenciar.</div>
         <div id="usersList"></div>
       </div>
     </div>
 
     <div class="card">
       <h4>Anunciar Troca</h4>
-      <input type="file" id="f-troca" accept="image/*,video/*">
+      <input type="file" id="f-troca" accept="image/*">
       <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
       <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
       <div class="mini">Dica: publique uma troca pra aparecer na Home.</div>
     </div>
   </div>
 
-  <!-- PERFIL DE OUTRO USUÁRIO -->
   <div id="user-profile" class="tela">
     <div class="card">
       <button class="btn-ghost" style="margin-top:0" onclick="ver('perfil')">← Voltar</button>
@@ -440,6 +366,13 @@
       </div>
 
       <div class="card" style="margin:12px 0 0 0;">
+        <b>🔗 Conexão via API</b>
+        <div class="mini">Isso cria um <b>roomId</b> na API ligando você + esse usuário.</div>
+        <button class="btn-blue" onclick="ligarComUsuarioAPI()">🔗 Ligar com este usuário (API)</button>
+        <div class="mini mono" id="roomInfo" style="margin-top:10px; opacity:.9;"></div>
+      </div>
+
+      <div class="card" style="margin:12px 0 0 0;">
         <b>🛡️ Moderação</b>
         <div class="mini">Ações disponíveis apenas para MOD/ADM.</div>
         <div id="uActionInfo" class="mini" style="margin-top:8px;"></div>
@@ -448,55 +381,15 @@
         <button class="btn-ghost" id="btnDemote" onclick="demoteSelected()">⬇️ Rebaixar para Membro</button>
         <button class="btn-danger" id="btnBlock" onclick="blockSelected()">⛔ Bloquear usuário</button>
         <button class="btn-ok" id="btnUnblock" onclick="unblockSelected()">✅ Desbloquear usuário</button>
-      </div>
 
-      <div class="card" style="margin-top:12px;">
-        <b>👁️ Perfil público</b>
-        <div class="mini">Abrir o perfil público do usuário (trocas/fotos/vídeos).</div>
-        <button class="btn-blue" onclick="openPublicProfile(selectedUserId)">Abrir perfil público</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PERFIL PÚBLICO -->
-  <div id="public-profile" class="tela">
-    <div class="card">
-      <button class="btn-ghost" style="margin-top:0" onclick="ver('home')">← Voltar</button>
-
-      <div style="display:flex; gap:12px; align-items:center; margin-top:12px;">
-        <img id="ppPic" src="" style="width:72px; height:72px; border-radius:50%; border:2px solid rgba(0,212,255,.45); object-fit:cover;" />
-        <div style="min-width:0;">
-          <div style="font-weight:900; font-size:18px;" id="ppName">Usuário</div>
-          <div class="mini mono" id="ppId">---</div>
-          <div class="mini" id="ppRole"></div>
+        <div class="mini" style="margin-top:10px;">
+          * ADM não pode ser bloqueado.<br>
+          * MOD pode promover MOD e bloquear usuários.
         </div>
       </div>
-
-      <div class="tabs">
-        <div class="tab active" id="tabTrocas" onclick="ppSwitch('trocas')">🔄 Trocas</div>
-        <div class="tab" id="tabFotos" onclick="ppSwitch('fotos')">🖼️ Fotos</div>
-        <div class="tab" id="tabVideos" onclick="ppSwitch('videos')">🎥 Vídeos</div>
-      </div>
-
-      <div id="ppTrocas"></div>
-      <div id="ppFotos" style="display:none;">
-        <div class="grid" id="ppFotosGrid"></div>
-      </div>
-      <div id="ppVideos" style="display:none;">
-        <div id="ppVideosList"></div>
-      </div>
     </div>
   </div>
 
-  <!-- MODAL -->
-  <div class="modal" id="mediaModal" onclick="closeMediaModal()">
-    <div class="box" onclick="event.stopPropagation()">
-      <button class="btn-ghost" style="margin-top:0" onclick="closeMediaModal()">Fechar</button>
-      <div id="modalBody" style="margin-top:10px;"></div>
-    </div>
-  </div>
-
-  <!-- SHARE -->
   <div class="share-balloons" aria-label="Compartilhar">
     <button title="Compartilhar" onclick="shareSystem()">📣</button>
     <button title="WhatsApp" onclick="shareWhatsApp()">🟢</button>
@@ -506,4 +399,118 @@
 
   <nav class="nav" id="menu">
     <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
-    <div class="nav-item
+    <div class="nav-item" onclick="abrirTrocas()">
+      <span id="badge" class="badge">!</span>
+      <span>🔄</span>Trocas
+    </div>
+    <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
+  </nav>
+
+  <script>
+    /* ===== storage seguro (não trava se localStorage falhar) ===== */
+    (function(){
+      if(!window.__memStore) window.__memStore = {};
+      window.safeStore = {
+        get: function(k){
+          try{
+            var v = localStorage.getItem(k);
+            if(v !== null && v !== undefined) return v;
+          }catch(e){}
+          return (window.__memStore.hasOwnProperty(k) ? window.__memStore[k] : null);
+        },
+        set: function(k,v){
+          try{ localStorage.setItem(k, v); }catch(e){ window.__memStore[k]=String(v); }
+        },
+        remove: function(k){
+          try{ localStorage.removeItem(k); }catch(e){ delete window.__memStore[k]; }
+        }
+      };
+    })();
+
+    if (!String.prototype.replaceAll) {
+      String.prototype.replaceAll = function(a, b){ return this.split(a).join(b); };
+    }
+
+    function showError(msg){
+      var p=document.getElementById("errPanel");
+      p.style.display="block";
+      p.innerHTML="<b>ERRO:</b> "+escapeHtml(msg);
+    }
+    window.onerror=function(message, source, lineno, colno){
+      showError(message+" (linha "+lineno+":"+colno+")");
+      return false;
+    };
+
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function escapeAttr(str){ return escapeHtml(str).replaceAll("\n"," ").replaceAll("\r"," "); }
+
+    function notif(msg){
+      var n = document.getElementById("notif");
+      n.innerText = msg;
+      n.style.top = "20px";
+      setTimeout(function(){ n.style.top = "-100px"; }, 2300);
+    }
+
+    /* ===== ID + REF ===== */
+    var LS_MY_ID="ice_my_id";
+    var LS_PARENT="ice_parent_id";
+
+    function genId(){
+      return "ICE-" + Math.random().toString(36).slice(2,6).toUpperCase() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+    }
+    function getMyId(){
+      var id = safeStore.get(LS_MY_ID);
+      if(!id){ id=genId(); safeStore.set(LS_MY_ID,id); }
+      return id;
+    }
+    function getParentId(){ return safeStore.get(LS_PARENT); }
+    function setParentId(pid){ safeStore.set(LS_PARENT,pid); }
+
+    function buildMyLink(){
+      var base = location.origin + location.pathname;
+      return base + "?ref=" + encodeURIComponent(getMyId());
+    }
+
+    function copyTextFallback(txt){
+      var ta=document.createElement("textarea");
+      ta.value=txt; ta.style.position="fixed"; ta.style.left="-9999px";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); }catch(e){}
+      document.body.removeChild(ta);
+      return true;
+    }
+
+    function showTip(msg){
+      var tip=document.getElementById("shareTip");
+      tip.innerHTML=msg; tip.style.display="block";
+      clearTimeout(showTip._t);
+      showTip._t=setTimeout(function(){ tip.style.display="none"; }, 2000);
+    }
+
+    function copyMyLink(){
+      var link=buildMyLink();
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(link).then(function(){
+            showTip("Copiado ✅<br><span class='mono'>"+escapeHtml(link)+"</span>");
+            notif("📎 Link copiado!");
+          }).catch(function(){ copyTextFallback(link); notif("📎 Link copiado!"); });
+        } else {
+          copyTextFallback(link);
+          notif("📎 Link copiado!");
+        }
+      }catch(e){
+        alert("Copie manual:\n"+link);
+      }
+    }
+
+    function shareSystem(){
+      var link=buildMyLink();
+      var text="Entra no ICE BLUE
