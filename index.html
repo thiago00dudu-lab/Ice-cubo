@@ -15,29 +15,34 @@
         .profile-pic-container { position: relative; width: 110px; height: 110px; margin: 0 auto 15px; }
         #profile-img-display { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--ice); }
         .edit-pic-btn { position: absolute; bottom: 5px; right: 5px; background: var(--ice); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--dark); }
-        #feed-perfil { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding: 20px 10px; scrollbar-width: none; }
+        
+        #feed-perfil { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding: 20px 10px; scrollbar-width: none; min-height: 100px; }
         #feed-perfil::-webkit-scrollbar { display: none; }
         #feed-perfil .card { min-width: 85%; scroll-snap-align: center; margin: 0; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); }
 
         /* TELA DE TROCA DIVIDIDA */
-        .split-trade { display: flex; gap: 5px; height: 350px; margin: 10px; }
-        .trade-side { flex: 1; background: rgba(255,255,255,0.05); border: 1px dashed var(--ice); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; }
-        .trade-side img { width: 100%; max-height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 5px; }
-        .trade-actions { display: flex; justify-content: center; gap: 20px; margin-top: 15px; }
-        .btn-trade { padding: 15px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; width: 60px; height: 60px; }
+        .split-trade { display: flex; gap: 5px; height: 250px; margin: 10px; }
+        .trade-side { flex: 1; background: rgba(255,255,255,0.05); border: 1px dashed var(--ice); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .trade-side img { width: 100%; max-height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 5px; }
+        .trade-actions { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; }
+        .btn-trade { padding: 15px; border-radius: 50%; border: none; font-size: 20px; cursor: pointer; width: 55px; height: 55px; }
         .btn-yes { background: var(--green); color: white; }
         .btn-no { background: var(--danger); color: white; }
 
-        /* GERAL */
+        /* CARDS E TIMELINE */
         .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(5px); border-radius: 15px; margin: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .post-footer { display: flex; gap: 20px; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+        .post-btn { background: none; border: none; color: #8ef; cursor: pointer; display: flex; align-items: center; gap: 5px; width: auto; padding: 5px; }
+        .tag-troca { background: var(--ice); color: #000; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 10px; margin-bottom: 5px; display: inline-block; }
+
         .nav { position: fixed; bottom: 0; width: 100%; background: #001219; display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--ice); z-index: 1000; }
-        .nav-item { color: #8ef; text-align: center; font-size: 10px; flex: 1; }
+        .nav-item { color: #8ef; text-align: center; font-size: 10px; flex: 1; cursor: pointer; }
         .nav-item span { font-size: 22px; display: block; }
         .tela { display: none; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         input, textarea, button { width: 100%; padding: 12px; border-radius: 10px; border: none; margin: 5px 0; box-sizing: border-box; }
         .btn-blue { background: var(--ice); color: #000; font-weight: bold; cursor: pointer; }
-        #floating-msg { position: fixed; bottom: 100px; right: -400px; background: white; color: #000; padding: 15px; border-radius: 12px; transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2000; width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #floating-msg { position: fixed; bottom: 100px; right: -400px; background: white; color: #000; padding: 15px; border-radius: 12px; transition: 0.8s; z-index: 2000; width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body id="page-body">
@@ -53,36 +58,35 @@
         <button class="btn-blue" onclick="compartilharReal()">COMPARTILHAR AGORA</button>
     </div>
 
-    <!-- HOME -->
+    <!-- HOME (TIMELINE) -->
     <div id="home" class="tela" style="display: block;">
         <div id="feed">
-            <div class="card">❄️ Bem-vindo à rede Ice Blue.</div>
+            <div class="card">❄️ Bem-vindo à Timeline do Ice Blue. As novidades aparecem aqui!</div>
         </div>
     </div>
 
-    <!-- TROCAS DIVIDIDAS -->
+    <!-- TROCAS -->
     <div id="trocas" class="tela">
-        <h3 style="text-align:center;">🔄 Proposta de Troca</h3>
+        <h3 style="text-align:center;">🔄 Criar Proposta de Troca</h3>
         <div class="split-trade">
             <div class="trade-side" id="my-trade-slot">
                 <span><b>VOCÊ</b></span>
-                <div id="my-item-preview"><small>Seu item aparecerá aqui</small></div>
+                <div id="my-item-preview"><small>Seu item</small></div>
             </div>
             <div class="trade-side">
                 <span><b>OFERTA</b></span>
                 <img src="https://picsum.photos">
-                <small>Item: Rare Blue Skin</small>
+                <small>Item Aleatório</small>
             </div>
         </div>
         <div class="trade-actions">
-            <button class="btn-trade btn-no" onclick="alert('Troca Recusada')">✖</button>
+            <button class="btn-trade btn-no" onclick="alert('Cancelado')">✖</button>
             <button class="btn-trade btn-yes" onclick="confirmarTroca()">✔</button>
         </div>
         <div class="card">
-            <h4>Anunciar para Troca</h4>
             <input type="file" id="f-troca" accept="image/*" onchange="previewTroca(this)">
-            <textarea id="t-troca" placeholder="O que você está oferecendo?"></textarea>
-            <button class="btn-blue" onclick="ver('home')">Postar no Mercado</button>
+            <textarea id="t-troca" placeholder="Descreva sua troca..."></textarea>
+            <button class="btn-blue" onclick="postar('troca')">Publicar Troca na Timeline</button>
         </div>
     </div>
 
@@ -97,11 +101,12 @@
             <h2>Meu Perfil Ice</h2>
             <p>👨‍👩‍👧‍👦 Filhos: <b id="n-filhos">0</b> | ID: <b id="meu-id">ICE-8960</b></p>
         </div>
-        <h4 style="margin-left: 15px;">Suas Janelas (Swipe ↔️)</h4>
-        <div id="feed-perfil"><div class="card">Nenhuma postagem ainda.</div></div>
+        <h4 style="margin-left: 15px;">Minhas Postagens (Swipe ↔️)</h4>
+        <div id="feed-perfil"><div class="card"><small>Suas postagens e trocas aparecem aqui.</small></div></div>
         <div class="card">
+            <h4>Nova Postagem Simples</h4>
             <input type="file" id="f-post" accept="image/*">
-            <textarea id="t-post" placeholder="Nova publicação..."></textarea>
+            <textarea id="t-post" placeholder="No que está pensando?"></textarea>
             <button class="btn-blue" onclick="postar('perfil')">Publicar</button>
         </div>
     </div>
@@ -113,7 +118,9 @@
     </nav>
 
     <script>
-        // PROPAGANDA A CADA 50 SEGUNDOS
+        let jaCurtiu = [];
+
+        // Propaganda a cada 50s
         setInterval(() => {
             const m = document.getElementById('floating-msg');
             m.style.right = "15px";
@@ -125,22 +132,72 @@
             document.getElementById(id).style.display = 'block';
         }
 
-        // COMPARTILHAMENTO FUNCIONAL
-        async function compartilharReal() {
-            const shareData = {
-                title: 'Ice Blue',
-                text: 'Entre na minha árvore genealógica no Ice Blue! Meu ID: ' + document.getElementById('meu-id').innerText,
-                url: window.location.href
-            };
-            try {
-                if (navigator.share) {
-                    await navigator.share(shareData);
-                    document.getElementById('n-filhos').innerText = parseInt(document.getElementById('n-filhos').innerText) + 1;
+        // Função Unificada de Postagem (Timeline + Perfil)
+        function postar(tipo) {
+            const isTroca = (tipo === 'troca');
+            const txt = isTroca ? document.getElementById('t-troca').value : document.getElementById('t-post').value;
+            const inputImg = isTroca ? document.getElementById('f-troca') : document.getElementById('f-post');
+            const file = inputImg.files[0];
+
+            if(!txt && !file) return alert("Escreva algo ou selecione uma imagem!");
+
+            const reader = new FileReader();
+            const pid = "post_" + Date.now();
+            
+            reader.onload = (e) => {
+                const imgTag = file ? `<img src="${e.target.result}" style="width:100%; border-radius:10px; margin-top:10px;">` : '';
+                const labelTroca = isTroca ? `<span class="tag-troca">🔄 TROCA DISPONÍVEL</span><br>` : '';
+                
+                const postHtml = `
+                    <div class="card" id="${pid}">
+                        ${labelTroca}
+                        <b>👤 Usuário Ice</b>
+                        <p>${txt}</p>
+                        ${imgTag}
+                        <div class="post-footer">
+                            <button class="post-btn" onclick="curtir('${pid}', this)">❤️ <span>0</span></button>
+                            <button class="post-btn" onclick="compartilharReal()">🔗 Enviar</button>
+                        </div>
+                    </div>`;
+
+                // Adiciona na Timeline (Home)
+                document.getElementById('feed').insertAdjacentHTML('afterbegin', postHtml);
+                
+                // Adiciona no Perfil (Carrossel)
+                const perfContainer = document.getElementById('feed-perfil');
+                if(perfContainer.innerText.includes("Suas postagens")) perfContainer.innerHTML = "";
+                perfContainer.insertAdjacentHTML('afterbegin', postHtml);
+
+                // Limpa campos e volta pra Home
+                if(isTroca) {
+                    document.getElementById('t-troca').value = "";
+                    document.getElementById('my-item-preview').innerHTML = "<small>Seu item</small>";
                 } else {
-                    navigator.clipboard.writeText(shareData.text + " " + shareData.url);
-                    alert("Link de convite copiado! Envie para seus amigos.");
+                    document.getElementById('t-post').value = "";
                 }
-            } catch (err) { console.log("Erro ao compartilhar"); }
+                ver('home');
+            };
+
+            if(file) reader.readAsDataURL(file); else reader.onload({target:{result:''}});
+        }
+
+        function curtir(id, btn) {
+            if(jaCurtiu.includes(id)) return;
+            let s = btn.querySelector('span');
+            s.innerText = parseInt(s.innerText) + 1;
+            btn.style.color = "red";
+            jaCurtiu.push(id);
+        }
+
+        async function compartilharReal() {
+            const id = document.getElementById('meu-id').innerText;
+            if (navigator.share) {
+                await navigator.share({ title: 'Ice Blue', text: 'Veja isso no Ice Blue! ID: ' + id, url: window.location.href });
+                document.getElementById('n-filhos').innerText = parseInt(document.getElementById('n-filhos').innerText) + 1;
+            } else {
+                navigator.clipboard.writeText("Entre no Ice Blue! Meu ID: " + id);
+                alert("Link copiado!");
+            }
         }
 
         function alterarFoto(input) {
@@ -165,25 +222,7 @@
         }
 
         function confirmarTroca() {
-            alert("✅ Troca confirmada com sucesso!");
-            document.getElementById('my-item-preview').innerHTML = "<small>Seu item aparecerá aqui</small>";
-        }
-
-        function postar(tipo) {
-            const txt = document.getElementById('t-post').value;
-            const file = document.getElementById('f-post').files[0];
-            if(!txt && !file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const html = `<div class="card"><b>👤 Usuário</b><p>${txt}</p>${file ? `<img src="${e.target.result}" style="width:100%; border-radius:10px;">` : ''}</div>`;
-                const container = document.getElementById('feed-perfil');
-                if(container.innerText.includes("Nenhuma")) container.innerHTML = "";
-                container.insertAdjacentHTML('afterbegin', html);
-                document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
-                ver('home');
-            };
-            if(file) reader.readAsDataURL(file); else reader.onload({target:{result:''}});
+            alert("✅ Proposta enviada!");
         }
 
         window.onload = () => {
