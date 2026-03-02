@@ -3,84 +3,109 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Meu Site com Login</title>
+    <title>Rede de Trocas e Alerta</title>
     <style>
-        /* Estilos da tela de login e fundo */
-        body { margin: 0; background: #061022; color: #fff; font-family: system-ui; padding: 18px; }
-        .card { max-width: 320px; margin: 0 auto; background: #0b1430; border: 1px solid #244; border-radius: 18px; padding: 16px; text-align: center; }
-        input, button { width: 100%; padding: 14px; border-radius: 14px; border: 1px solid #244; margin: 10px 0; font-size: 16px; box-sizing: border-box; }
-        button { background: #66efff; color: #021018; font-weight: 900; border: none; cursor: pointer; }
-        .ok { color: #37d67a; font-weight: 900; }
-        .bad { color: #ff4d6d; font-weight: 900; }
+        /* CONFIGURAÇÕES GERAIS */
+        body { margin:0; background:#061022; color:#fff; font-family:sans-serif; padding-bottom:70px; }
+        .card { max-width:400px; margin:20px auto; background:#0b1430; border-radius:18px; padding:20px; text-align:center; }
+        input, button, textarea { width:100%; padding:12px; border-radius:10px; border:none; margin:8px 0; box-sizing:border-box; }
+        button { background:#66efff; color:#021018; font-weight:bold; cursor:pointer; }
         
-        /* Esta parte esconde o site até você logar */
-        #conteudo-logado { display: none; } 
+        /* TELAS */
+        .tela { display: none; padding: 15px; }
+        #tela-login { display: block; } /* Começa no login */
+
+        /* MENU RODAPÉ */
+        .nav { position:fixed; bottom:0; left:0; width:100%; background:#0b1430; display:flex; justify-content:space-around; padding:10px 0; border-top:1px solid #244; display:none; }
+        .nav-item { text-align:center; font-size:12px; cursor:pointer; color:#66efff; }
+
+        /* ÁREA DE TROCAS (DIVIDIDA) */
+        .grid-troca { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .lado { background: #162447; padding: 10px; border-radius: 10px; font-size: 13px; }
+
+        /* BOTÃO PERIGO */
+        .btn-perigo { background: #ff4d6d; color: white; padding: 20px; border-radius: 50%; width: 80px; height: 80px; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 4px solid #fff; }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE LOGIN (A PORTA) -->
-    <div class="card" id="tela-login">
-        <h2>ÁREA RESTRITA</h2>
-        <div id="status" class="ok">JS OK ✅</div>
-        
+    <!-- 1. TELA DE LOGIN -->
+    <div id="tela-login" class="card">
+        <h2>ENTRAR</h2>
         <input id="u" placeholder="Usuário">
-        <input id="p" placeholder="Senha" type="password">
-        
-        <button id="btnCriar">Cadastrar Acesso</button>
-        <button id="btnEntrar">Entrar no Site</button>
-        <div id="msg" style="margin-top:10px"></div>
+        <input id="p" type="password" placeholder="Senha">
+        <button onclick="fazerLogin()">Entrar</button>
     </div>
 
-    <!-- O SEU SITE (A CASA) -->
-    <div id="conteudo-logado">
-        
-        <!-- ========================================== -->
-        <!--  COLE O CONTEÚDO DO SEU SITE AQUI EMBAIXO  -->
-        <!-- ========================================== -->
+    <!-- 2. TELA HOME (POSTAGENS) -->
+    <div id="home" class="tela">
+        <h3>Feed de Fotos/Vídeos</h3>
+        <div class="card"><strong>@Usuario1:</strong> Olá pessoal!</div>
+        <div class="card">🎞️ [Espaço para Vídeo]</div>
+    </div>
 
-        <div style="text-align: center;">
-            <h1 class="ok">LOGADO ✅</h1>
-            <p>Seu conteúdo original entra aqui!</p>
-            
-            <!-- Exemplo de conteúdo: -->
-            <div style="background: #162447; padding: 20px; border-radius: 15px;">
-                <p>Aqui você pode colocar seus botões, links e imagens.</p>
+    <!-- 3. TELA TROCAS (DIVIDIDA) -->
+    <div id="trocas" class="tela">
+        <h3>Centro de Trocas</h3>
+        <div class="grid-troca">
+            <div class="lado">
+                <h4>Eu ofereço:</h4>
+                <input type="file" accept="image/*,video/*">
+                <textarea placeholder="Descrição..."></textarea>
+                <button style="font-size:12px">Postar Oferta</button>
+            </div>
+            <div class="lado">
+                <h4>Usuário 2 oferece:</h4>
+                <div style="border:1px dashed #66efff; height:60px; margin-bottom:5px">Foto/Vídeo</div>
+                <p>"Tenho uma furadeira, troco por martelo."</p>
             </div>
         </div>
+    </div>
 
-        <!-- ========================================== -->
-        <!--  FIM DO SEU CONTEÚDO                       -->
-        <!-- ========================================== -->
+    <!-- 4. TELA PERIGO (GPS) -->
+    <div id="perigo" class="tela">
+        <h3>ALERTA DE SEGURANÇA</h3>
+        <div class="btn-perigo" onclick="pegarLocalizacao()">SOS</div>
+        <p id="geo-status">Clique no botão para ver sua posição</p>
+        <select id="tipo-perigo">
+            <option>Assalto</option>
+            <option>Enchente</option>
+            <option>Perigo Natural</option>
+        </select>
+        <button onclick="alert('Alerta enviado para o mapa!')">Enviar Alerta</button>
+    </div>
 
-        <br>
-        <button onclick="location.reload()" style="max-width: 200px; margin: 20px auto; display: block;">Sair / Deslogar</button>
+    <!-- MENU DE NAVEGAÇÃO -->
+    <div class="nav" id="menu">
+        <div class="nav-item" onclick="ver('home')">🏠<br>Home</div>
+        <div class="nav-item" onclick="ver('trocas')">🔄<br>Trocas</div>
+        <div class="nav-item" onclick="ver('perigo')">⚠️<br>Perigo</div>
+        <div class="nav-item" onclick="location.reload()">🚪<br>Sair</div>
     </div>
 
     <script>
-        const $ = (id) => document.getElementById(id);
-        const KEY_U = "site_user";
-        const KEY_P = "site_pass";
+        function fazerLogin() {
+            document.getElementById('tela-login').style.display = 'none';
+            document.getElementById('menu').style.display = 'flex';
+            ver('home');
+        }
 
-        $("btnCriar").addEventListener("click", () => {
-            const u = $("u").value.trim();
-            const p = $("p").value.trim();
-            if(u.length < 2 || p.length < 2) return $("msg").innerHTML = "<span class='bad'>Preencha os campos!</span>";
-            localStorage.setItem(KEY_U, u);
-            localStorage.setItem(KEY_P, p);
-            $("msg").innerHTML = "<span class='ok'>Acesso Criado! Clique em Entrar.</span>";
-        });
+        function ver(idTela) {
+            document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+            document.getElementById(idTela).style.display = 'block';
+        }
 
-        $("btnEntrar").addEventListener("click", () => {
-            const u = $("u").value.trim();
-            const p = $("p").value.trim();
-            if(u === localStorage.getItem(KEY_U) && p === localStorage.getItem(KEY_P)) {
-                $("tela-login").style.display = "none";
-                $("conteudo-logado").style.display = "block";
+        function pegarLocalizacao() {
+            const status = document.getElementById('geo-status');
+            if (!navigator.geolocation) {
+                status.innerHTML = "GPS não suportado no seu celular.";
             } else {
-                $("msg").innerHTML = "<span class='bad'>Acesso negado!</span>";
+                status.innerHTML = "Localizando...";
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    status.innerHTML = `📍 Localizado!<br>Lat: ${pos.coords.latitude.toFixed(4)}<br>Long: ${pos.coords.longitude.toFixed(4)}`;
+                });
             }
-        });
+        }
     </script>
 </body>
 </html>
