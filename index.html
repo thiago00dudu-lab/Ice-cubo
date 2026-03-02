@@ -18,7 +18,8 @@
 
     /* HEADER & ADM */
     .header-ice{ background:rgba(0,0,0,.8); backdrop-filter:blur(10px); padding:10px; border-bottom:2px solid var(--ice); position:sticky; top:0; z-index:1001; text-align:center; }
-    .adm-star{ color:var(--gold); font-size:20px; display:none; }
+    .adm-star{ color:var(--gold); font-size:18px; display:none; }
+    .mod-star{ color:var(--ice); font-size:18px; display:none; }
 
     /* NOTIFICAÇÃO */
     #notif{
@@ -40,6 +41,11 @@
     .card{ background:var(--glass); backdrop-filter:blur(15px); border-radius:15px; margin:15px; padding:15px; border:1px solid rgba(255,255,255,.1); position:relative; }
     .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
     .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); }
+    .name-line{ display:flex; flex-direction:column; line-height:1.1; }
+    .role-badge{ font-size:11px; opacity:.9; }
+    .role-badge .adm{ color:var(--gold); font-weight:bold; }
+    .role-badge .mod{ color:var(--ice); font-weight:bold; }
+    .role-badge .ia{ color:#bdefff; font-weight:bold; }
 
     /* CHAT PV */
     #chat-window{ position:fixed; top:0; left:100%; width:100%; height:100%; background:#000814; z-index:2000; transition:.3s; display:flex; flex-direction:column; }
@@ -58,26 +64,12 @@
     .tela{ display:none; animation:fadeIn .4s; }
     @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
 
-    /* POPUPS FLUTUANTES */
-    #offer-pop{
-      position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:4000; align-items:flex-end;
-    }
-    #offer-pop .sheet{
-      width:100%; background:#001d3d; border-top:2px solid var(--ice); border-radius:18px 18px 0 0; padding:14px;
-    }
-    #share-ad{
-      position:fixed; right:14px; bottom:90px; width:min(340px, 92vw);
-      background:rgba(0,0,0,.92); border:1px solid rgba(255,255,255,.12);
-      border-radius:16px; padding:12px; display:none; z-index:3500;
-    }
-    .mini-btn{
-      background:none; border:1px solid rgba(255,255,255,.2); color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer;
-    }
-    input, textarea{
-      border:none; border-radius:10px; padding:12px;
-      outline:none;
-    }
-    textarea{ padding:12px; }
+    /* POPUP OFERTA */
+    #offer-pop{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:4000; align-items:flex-end; }
+    #offer-pop .sheet{ width:100%; background:#001d3d; border-top:2px solid var(--ice); border-radius:18px 18px 0 0; padding:14px; }
+    .mini-btn{ background:none; border:1px solid rgba(255,255,255,.2); color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer; }
+
+    input, textarea{ border:none; border-radius:10px; padding:12px; outline:none; }
   </style>
 </head>
 <body>
@@ -86,15 +78,19 @@
 
   <div class="header-ice">
     <div id="adm-star" class="adm-star">★ ADMINISTRADOR ★</div>
+    <div id="mod-star" class="mod-star">★ MODERADOR ★</div>
     <h1>ICE BLUE</h1>
   </div>
 
-  <!-- TELA LOGIN (ADM: 1533) -->
+  <!-- LOGIN (ADM: 1533 | MOD: 2444) -->
   <div id="login" class="tela" style="display:block; padding:20px;">
     <div class="card" style="text-align:center;">
       <h3>Acesso ao Sistema</h3>
       <input type="password" id="pass" placeholder="Senha" style="width:100%; margin-bottom:10px;">
       <button class="btn-blue" onclick="logar()">Entrar</button>
+      <div style="margin-top:10px; font-size:12px; color:#bdefff; opacity:.9;">
+        Dica: ADM 1533 | MOD 2444 | Membro (qualquer outra)
+      </div>
     </div>
   </div>
 
@@ -103,13 +99,13 @@
     <div id="feed"></div>
   </div>
 
-  <!-- CENTRAL DE OFERTAS -->
+  <!-- OFERTAS -->
   <div id="ofertas" class="tela" style="padding:10px;">
     <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
     <div id="lista-ofertas"></div>
   </div>
 
-  <!-- CHAT PV -->
+  <!-- CHAT -->
   <div id="chat-window">
     <div class="chat-header">
       <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
@@ -137,28 +133,6 @@
       <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
       <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
     </div>
-
-    <!-- FAMÍLIA -->
-    <div class="card">
-      <h4>👨‍👩‍👧‍👦 Família</h4>
-
-      <div id="family-area" style="color:#bdefff; font-size:13px;">
-        Você ainda não tem família. Crie uma ou entre com um código.
-      </div>
-
-      <hr style="border:0; border-top:1px solid rgba(255,255,255,.12); margin:12px 0;">
-
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input id="family-name" placeholder="Nome da família (ex: Alves)" style="flex:1;">
-        <button class="btn-blue" style="width:auto; padding:12px 14px;" onclick="criarFamilia()">Criar</button>
-      </div>
-
-      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-        <input id="family-code" placeholder="Código convite (ex: ABC123)" style="flex:1;">
-        <input id="child-name" placeholder="Seu nome na família (ex: João)" style="flex:1;">
-        <button class="btn-blue" style="width:auto; padding:12px 14px;" onclick="entrarFamilia()">Entrar</button>
-      </div>
-    </div>
   </div>
 
   <nav class="nav" id="menu" style="display:none">
@@ -170,7 +144,7 @@
     <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
   </nav>
 
-  <!-- POPUP OFERTA -->
+  <!-- POPUP OFERTA (com descrição) -->
   <div id="offer-pop">
     <div class="sheet">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
@@ -182,19 +156,8 @@
     </div>
   </div>
 
-  <!-- POPUP SHARE -->
-  <div id="share-ad">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-      <b>🚀 Compartilha pros amigos</b>
-      <button onclick="fecharShareAd()" style="background:none; border:none; color:#fff; font-size:18px;">✕</button>
-    </div>
-    <div style="margin-top:6px; color:#bdefff; font-size:13px;">
-      Entre na sua família e chama a galera no ICE BLUE.
-    </div>
-    <button class="btn-blue" onclick="compartilharConvite()" style="margin-top:10px;">Compartilhar convite</button>
-  </div>
-
   <script>
+    // ROLES: Membro | ADM | MOD
     let role = "Membro";
 
     // ====== BOLHAS ======
@@ -206,41 +169,7 @@
       document.body.appendChild(b);
     }
 
-    // ====== UID LOCAL (sem backend) ======
-    function uid(){
-      let id = localStorage.getItem("ice_uid");
-      if(!id){
-        id = "U" + Math.random().toString(36).slice(2,9).toUpperCase();
-        localStorage.setItem("ice_uid", id);
-      }
-      return id;
-    }
-
-    // ====== LOGIN / TELAS ======
-    function logar() {
-      const p = document.getElementById('pass').value;
-      if(p === '1533') {
-        role = "ADM";
-        document.getElementById('adm-star').style.display = 'block';
-        document.getElementById('p-nome').innerText = "ADMINISTRADOR";
-      } else {
-        role = "Membro";
-        document.getElementById('adm-star').style.display = 'none';
-        document.getElementById('p-nome').innerText = "Membro";
-      }
-      document.getElementById('menu').style.display = 'flex';
-      ver('home');
-      renderFamilia();
-    }
-
-    function ver(id) {
-      document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
-      document.getElementById(id).style.display = 'block';
-      if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
-      if(id === 'perfil') renderFamilia();
-    }
-
-    // ====== NOTIF TOP ======
+    // ====== NOTIF ======
     function mostrarNotif(txt){
       const n = document.getElementById('notif');
       n.textContent = txt;
@@ -248,60 +177,137 @@
       setTimeout(() => n.style.top = "-100px", 4000);
     }
 
+    // ====== LOGIN ======
+    function logar() {
+      const p = document.getElementById('pass').value;
+
+      role = "Membro";
+      document.getElementById('adm-star').style.display = 'none';
+      document.getElementById('mod-star').style.display = 'none';
+      document.getElementById('p-nome').innerText = "Membro";
+
+      if(p === '1533') {
+        role = "ADM";
+        document.getElementById('adm-star').style.display = 'block';
+        document.getElementById('p-nome').innerText = "ADMINISTRADOR";
+      } else if(p === '2444') {
+        role = "MOD";
+        document.getElementById('mod-star').style.display = 'block';
+        document.getElementById('p-nome').innerText = "MODERADOR";
+      }
+
+      document.getElementById('menu').style.display = 'flex';
+      ver('home');
+
+      // ao logar, injeta 4 perfis IA no feed (uma delas marcada como conteúdo suspeito)
+      seedIA();
+    }
+
+    function ver(id) {
+      document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+      if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
+    }
+
+    // ====== MODERAÇÃO ======
+    function podeBloquear(alvoRole){
+      if(role !== "ADM" && role !== "MOD") return false;
+      if(alvoRole === "ADM") return false; // MOD não faz nada com ADMIN
+      return true;
+    }
+
+    function bloquearPost(btn){
+      const card = btn.closest('.card');
+      const alvoRole = card.getAttribute('data-role') || "Membro";
+      if(!podeBloquear(alvoRole)) return alert("Sem permissão (Admin não pode ser bloqueado).");
+      card.remove();
+      mostrarNotif("🛡️ Conteúdo bloqueado!");
+    }
+
+    function headHtml(nome, r){
+      let badge = "";
+      if(r === "ADM") badge = `<span class="adm">★ ADMIN</span>`;
+      else if(r === "MOD") badge = `<span class="mod">★ MOD</span>`;
+      else if(r === "IA") badge = `<span class="ia">🤖 IA</span>`;
+      return `
+        <div class="post-head">
+          <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="u-pic">
+          <div class="name-line">
+            <b>${nome}</b>
+            <span class="role-badge">${badge}</span>
+          </div>
+        </div>
+      `;
+    }
+
     // ====== POSTAR TROCA ======
     function postarTroca() {
-      const txt = document.getElementById('t-troca').value;
+      const txt = (document.getElementById('t-troca').value || "").trim();
       const file = document.getElementById('f-troca').files[0];
       if(!file) return alert("Selecione uma imagem!");
+      if(!txt) return alert("Escreva o que oferece!");
+
+      const nomeUser = (role === "ADM") ? "ADMINISTRADOR" : (role === "MOD" ? "MODERADOR" : "Usuário");
 
       const reader = new FileReader();
       reader.onload = (e) => {
         const img = e.target.result;
         const pid = 'p'+Date.now();
+        const alvoRole = role;
+
+        const modBtn = (role === "ADM" || role === "MOD")
+          ? `<button onclick="bloquearPost(this)" class="mini-btn" style="margin-top:10px; border-color:rgba(255,255,255,.12);">Bloquear</button>`
+          : ``;
+
         const html = `
-          <div class="card" id="${pid}">
-            <div class="post-head">
-              <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="u-pic">
-              <b>Usuário</b>
-            </div>
+          <div class="card" id="${pid}" data-role="${alvoRole}">
+            ${headHtml(nomeUser, role)}
             <p>${txt}</p>
             <img src="${img}" style="width:100%; border-radius:10px;">
-            <button class="btn-blue" onclick="fazerOferta('${img}')">FAZER OFERTA</button>
-            ${role === 'ADM' ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; margin-top:10px;">Bloquear (ADM)</button>` : ''}
+            <button class="btn-blue" onclick="fazerOferta('${img}', '${escapeHtml(txt)}')">FAZER OFERTA</button>
+            ${modBtn}
           </div>`;
         document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
         ver('home');
+        mostrarNotif("✅ Troca postada!");
       };
       reader.readAsDataURL(file);
     }
 
-    // ====== FAZER OFERTA (simula chegada) ======
-    function fazerOferta(imgDono) {
-      alert("Sua oferta foi enviada!");
+    // ====== OFERTA (agora com descrição do ofertante) ======
+    function fazerOferta(imgDono, descDono) {
+      const msg = prompt("Escreva a descrição da sua oferta (o dono vai ver):", "Tenho interesse! Minha oferta é...");
+      if(msg === null) return; // cancelou
+      const ofertaDesc = (msg || "").trim() || "Sem descrição";
+
       setTimeout(() => {
-        // badge e notif
         document.getElementById('badge').style.display = "block";
         mostrarNotif("🔔 Nova Oferta de Troca Recebida!");
 
-        // imagem oferta (corrigido: precisa / no picsum)
         const imgOferta = "https://picsum.photos/seed/" + Date.now() + "/400/300";
 
         const htmlCard = `
           <div class="card">
+            <div style="font-size:12px; color:#bdefff; margin-bottom:8px;">
+              <b>Descrição do dono:</b> ${escapeHtml(descDono)}
+            </div>
+
             <div class="trade-split">
               <div class="trade-side"><img src="${imgDono}"></div>
               <div class="vs-badge">VS</div>
               <div class="trade-side"><img src="${imgOferta}"></div>
             </div>
+
+            <div style="font-size:12px; color:#bdefff; margin-top:8px;">
+              <b>Descrição da oferta:</b> ${escapeHtml(ofertaDesc)}
+            </div>
+
             <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
           </div>`;
 
         document.getElementById('lista-ofertas').insertAdjacentHTML('afterbegin', htmlCard);
-
-        // popup oferta + popup compartilhar
         abrirOfferPop(htmlCard);
-        abrirShareAd();
-      }, 2000);
+      }, 1200);
     }
 
     // ====== POPUP OFERTA ======
@@ -313,24 +319,13 @@
       document.getElementById('offer-pop').style.display = 'none';
     }
 
-    // ====== POPUP SHARE ======
-    function abrirShareAd(){
-      const ad = document.getElementById('share-ad');
-      ad.style.display = 'block';
-      setTimeout(() => { if(ad.style.display === 'block') ad.style.display = 'none'; }, 12000);
-    }
-    function fecharShareAd(){
-      document.getElementById('share-ad').style.display = 'none';
-    }
-
     // ====== CHAT ======
     function abrirChat() { document.getElementById('chat-window').style.left = "0"; }
     function fecharChat() { document.getElementById('chat-window').style.left = "100%"; }
-
     function enviarMsg() {
       const inpt = document.getElementById('chat-in');
       if(!inpt.value) return;
-      document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${inpt.value}</div>`);
+      document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${escapeHtml(inpt.value)}</div>`);
       inpt.value = "";
     }
 
@@ -341,131 +336,45 @@
       reader.readAsDataURL(input.files[0]);
     }
 
-    // =========================================================
-    // ===================== SISTEMA FAMÍLIA ====================
-    // =========================================================
-    function getFamilia(){
-      try { return JSON.parse(localStorage.getItem("ice_family") || "null"); }
-      catch { return null; }
-    }
-    function setFamilia(obj){
-      localStorage.setItem("ice_family", JSON.stringify(obj));
-    }
-    function codigoConvite(){
-      return Math.random().toString(36).slice(2,8).toUpperCase();
-    }
+    // ====== 4 PERFIS IA INTERAGINDO (1 com conteúdo suspeito SEM xingamento real) ======
+    function seedIA(){
+      // evita duplicar toda vez
+      if(localStorage.getItem("ice_seeded_ia") === "1") return;
+      localStorage.setItem("ice_seeded_ia","1");
 
-    function criarFamilia(){
-      const nome = (document.getElementById("family-name").value || "").trim();
-      if(!nome) return alert("Digite o nome da família!");
-      const eu = uid();
-      const meuNome = (role === "ADM") ? "ADMINISTRADOR" : "Pai";
+      const posts = [
+        { nome:"IA Luna", texto:"Troco skin rara por item lendário. Manda oferta!", img:"https://picsum.photos/seed/ia1/500/300", flag:false },
+        { nome:"IA Nilo", texto:"Estou procurando troca rápida hoje. Quem tem interesse?", img:"https://picsum.photos/seed/ia2/500/300", flag:false },
+        { nome:"IA Kael", texto:"⚠️ Conteúdo suspeito detectado: post fora do tema. (exemplo de moderação)", img:"https://picsum.photos/seed/ia3/500/300", flag:true },
+        { nome:"IA Mira", texto:"Aceito negociar, mas só com descrição bem completa.", img:"https://picsum.photos/seed/ia4/500/300", flag:false },
+      ];
 
-      const fam = {
-        id: codigoConvite(),
-        nome,
-        pai_uid: eu,
-        membros: [{ uid: eu, nome: meuNome, role: "Pai" }]
-      };
-      setFamilia(fam);
-      renderFamilia();
-      abrirShareAd();
-      mostrarNotif("👨‍👩‍👧‍👦 Família criada!");
+      posts.forEach((p) => {
+        const modBtn = (role === "ADM" || role === "MOD")
+          ? `<button onclick="bloquearPost(this)" class="mini-btn" style="margin-top:10px; border-color:rgba(255,255,255,.12);">Bloquear</button>`
+          : ``;
+
+        const html = `
+          <div class="card" data-role="IA">
+            ${headHtml(p.nome, "IA")}
+            <p>${escapeHtml(p.texto)}</p>
+            <img src="${p.img}" style="width:100%; border-radius:10px;">
+            ${p.flag ? `<div style="margin-top:10px; font-size:12px; color:#ffd7a8;">(Este post é um exemplo “nada a ver” para você testar o MOD.)</div>` : ``}
+            ${modBtn}
+          </div>`;
+        document.getElementById('feed').insertAdjacentHTML('beforeend', html);
+      });
     }
 
-    function entrarFamilia(){
-      const code = (document.getElementById("family-code").value || "").trim().toUpperCase();
-      const meuNome = (document.getElementById("child-name").value || "").trim();
-      if(!code) return alert("Cole o código convite!");
-      if(!meuNome) return alert("Digite seu nome na família!");
-
-      // Sem backend: só funciona no mesmo navegador onde a família foi criada.
-      const fam = getFamilia();
-      if(!fam || fam.id !== code) return alert("Código inválido (sem servidor só funciona no mesmo aparelho).");
-
-      const eu = uid();
-      if(!fam.membros.some(m => m.uid === eu)){
-        fam.membros.push({ uid: eu, nome: meuNome, role: "Filho" });
-        setFamilia(fam);
-      }
-      renderFamilia();
-      mostrarNotif("✅ Entrou na família!");
+    // ====== ESCAPE HTML ======
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
-
-    function sairFamilia(){
-      localStorage.removeItem("ice_family");
-      renderFamilia();
-      mostrarNotif("🚪 Saiu da família");
-    }
-
-    function renderFamilia(){
-      const box = document.getElementById("family-area");
-      if(!box) return;
-      const fam = getFamilia();
-
-      if(!fam){
-        box.innerHTML = `Você ainda não tem família. Crie uma ou entre com um código.`;
-        return;
-      }
-
-      const membrosHtml = fam.membros.map(m => `
-        <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; margin-top:8px;">
-          <span>👤 <b>${m.nome}</b></span>
-          <span style="color:${m.role==="Pai" ? "var(--gold)" : "var(--ice)"};">${m.role}</span>
-        </div>
-      `).join("");
-
-      box.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-          <div>
-            <div style="font-size:12px; color:#bdefff;">Família</div>
-            <div style="font-size:18px;"><b>${fam.nome}</b></div>
-            <div style="font-size:12px; color:#bdefff; margin-top:4px;">Código: <b style="color:var(--ice)">${fam.id}</b></div>
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button class="mini-btn" onclick="compartilharConvite()">Compartilhar</button>
-            <button class="mini-btn" onclick="sairFamilia()">Sair</button>
-          </div>
-        </div>
-        <div style="margin-top:10px; font-size:13px; color:#bdefff;">Membros:</div>
-        ${membrosHtml}
-      `;
-    }
-
-    async function compartilharConvite(){
-      const fam = getFamilia();
-      if(!fam) return alert("Crie uma família primeiro.");
-
-      const texto = `👨‍👩‍👧‍👦 Entra na minha família no ICE BLUE!\nFamília: ${fam.nome}\nCódigo: ${fam.id}`;
-
-      try{
-        if(navigator.share){
-          await navigator.share({ title:"Convite ICE BLUE", text:texto });
-        } else if(navigator.clipboard){
-          await navigator.clipboard.writeText(texto);
-          alert("Convite copiado! Cole no WhatsApp.");
-        } else {
-          alert(texto);
-        }
-      }catch(e){
-        try{
-          if(navigator.clipboard){
-            await navigator.clipboard.writeText(texto);
-            alert("Convite copiado! Cole no WhatsApp.");
-          } else {
-            alert(texto);
-          }
-        }catch{
-          alert(texto);
-        }
-      }
-    }
-
-    // init
-    window.addEventListener("load", () => {
-      uid();
-      renderFamilia();
-    });
   </script>
 </body>
 </html>
