@@ -1,209 +1,471 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ice BLUE - Oficial</title>
-    <style>
-        :root { --ice: #00d4ff; --gold: #ffd700; --sea: #000814; --glass: rgba(255, 255, 255, 0.1); --danger: #ff4d6d; }
-        
-        body { 
-            margin:0; background: #000814; color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 90px;
-            overflow-x: hidden; background-image: linear-gradient(180deg, #001219 0%, #002855 100%);
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ice BLUE - Oficial</title>
+  <style>
+    :root { --ice:#00d4ff; --gold:#ffd700; --sea:#000814; --glass:rgba(255,255,255,.1); --danger:#ff4d6d; }
 
-        /* BOLHAS FUNDO DO MAR */
-        .bubble { position: fixed; bottom: -50px; background: rgba(255,255,255,0.1); border-radius: 50%; animation: rise 12s infinite ease-in; z-index: 0; pointer-events: none; }
-        @keyframes rise { 0% { bottom: -50px; transform: translateX(0); } 100% { bottom: 110vh; transform: translateX(50px); opacity: 0; } }
+    body{
+      margin:0; background:#000814; color:#fff; font-family:sans-serif; min-height:100vh; padding-bottom:90px;
+      overflow-x:hidden; background-image:linear-gradient(180deg,#001219 0%,#002855 100%);
+    }
 
-        /* HEADER & ADM */
-        .header-ice { background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); padding: 10px; border-bottom: 2px solid var(--ice); position: sticky; top:0; z-index: 1001; text-align: center; }
-        .adm-star { color: var(--gold); font-size: 20px; display: none; }
+    /* BOLHAS FUNDO DO MAR */
+    .bubble{ position:fixed; bottom:-50px; background:rgba(255,255,255,.1); border-radius:50%; animation:rise 12s infinite ease-in; z-index:0; pointer-events:none; }
+    @keyframes rise{ 0%{ bottom:-50px; transform:translateX(0); } 100%{ bottom:110vh; transform:translateX(50px); opacity:0; } }
 
-        /* NOTIFICAÇÃO */
-        #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--ice); color: #000; padding: 15px; border-radius: 15px; z-index: 3000; transition: 0.5s; font-weight: bold; width: 80%; text-align: center; }
+    /* HEADER & ADM */
+    .header-ice{ background:rgba(0,0,0,.8); backdrop-filter:blur(10px); padding:10px; border-bottom:2px solid var(--ice); position:sticky; top:0; z-index:1001; text-align:center; }
+    .adm-star{ color:var(--gold); font-size:20px; display:none; }
 
-        /* TROCA BILATERAL */
-        .trade-split { display: flex; gap: 10px; margin: 15px 0; height: 180px; align-items: center; }
-        .trade-side { flex: 1; height: 100%; border: 2px dashed var(--ice); border-radius: 15px; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-        .trade-side img { width: 100%; height: 100%; object-fit: cover; }
-        .vs-badge { background: var(--ice); color: #000; border-radius: 50%; padding: 5px; font-size: 10px; z-index: 5; font-weight: bold; }
+    /* NOTIFICAÇÃO */
+    #notif{
+      position:fixed; top:-100px; left:50%; transform:translateX(-50%);
+      background:var(--ice); color:#000; padding:15px; border-radius:15px;
+      z-index:3000; transition:.5s; font-weight:bold; width:80%; text-align:center;
+    }
 
-        /* CARDS ESTILO REDE SOCIAL */
-        .card { background: var(--glass); backdrop-filter: blur(15px); border-radius: 15px; margin: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; }
-        .post-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .u-pic { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--ice); }
+    /* TROCA BILATERAL */
+    .trade-split{ display:flex; gap:10px; margin:15px 0; height:180px; align-items:center; }
+    .trade-side{
+      flex:1; height:100%; border:2px dashed var(--ice); border-radius:15px; background:rgba(0,0,0,.5);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden;
+    }
+    .trade-side img{ width:100%; height:100%; object-fit:cover; }
+    .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; z-index:5; font-weight:bold; }
 
-        /* CHAT PV */
-        #chat-window { position: fixed; top: 0; left: 100%; width: 100%; height: 100%; background: #000814; z-index: 2000; transition: 0.3s; display: flex; flex-direction: column; }
-        .chat-header { padding: 15px; background: #001d3d; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--ice); }
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .m-msg { align-self: flex-end; background: var(--ice); color: #000; padding: 8px 12px; border-radius: 15px; max-width: 70%; }
-        .h-msg { align-self: flex-start; background: #333; padding: 8px 12px; border-radius: 15px; max-width: 70%; }
+    /* CARDS */
+    .card{ background:var(--glass); backdrop-filter:blur(15px); border-radius:15px; margin:15px; padding:15px; border:1px solid rgba(255,255,255,.1); position:relative; }
+    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); }
 
-        /* MENU INFERIOR */
-        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--ice); z-index: 1000; }
-        .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; flex: 1; position: relative; }
-        .nav-item span { font-size: 22px; display: block; }
-        .badge { position: absolute; top: -5px; right: 25%; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; }
+    /* CHAT PV */
+    #chat-window{ position:fixed; top:0; left:100%; width:100%; height:100%; background:#000814; z-index:2000; transition:.3s; display:flex; flex-direction:column; }
+    .chat-header{ padding:15px; background:#001d3d; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--ice); }
+    #chat-box{ flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px; }
+    .m-msg{ align-self:flex-end; background:var(--ice); color:#000; padding:8px 12px; border-radius:15px; max-width:70%; }
+    .h-msg{ align-self:flex-start; background:#333; padding:8px 12px; border-radius:15px; max-width:70%; }
 
-        .btn-blue { background: var(--ice); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; margin-top: 10px; }
-        .tela { display: none; animation: fadeIn 0.4s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
+    /* MENU INFERIOR */
+    .nav{ position:fixed; bottom:0; width:100%; background:rgba(0,0,0,.95); display:flex; justify-content:space-around; padding:12px 0; border-top:1px solid var(--ice); z-index:1000; }
+    .nav-item{ color:#8ef; text-align:center; font-size:10px; cursor:pointer; flex:1; position:relative; }
+    .nav-item span{ font-size:22px; display:block; }
+    .badge{ position:absolute; top:-5px; right:25%; background:red; color:#fff; border-radius:50%; padding:2px 6px; font-size:10px; display:none; }
+
+    .btn-blue{ background:var(--ice); color:#000; font-weight:bold; border:none; padding:12px; border-radius:10px; width:100%; cursor:pointer; margin-top:10px; }
+    .tela{ display:none; animation:fadeIn .4s; }
+    @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+
+    /* POPUPS FLUTUANTES */
+    #offer-pop{
+      position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:4000; align-items:flex-end;
+    }
+    #offer-pop .sheet{
+      width:100%; background:#001d3d; border-top:2px solid var(--ice); border-radius:18px 18px 0 0; padding:14px;
+    }
+    #share-ad{
+      position:fixed; right:14px; bottom:90px; width:min(340px, 92vw);
+      background:rgba(0,0,0,.92); border:1px solid rgba(255,255,255,.12);
+      border-radius:16px; padding:12px; display:none; z-index:3500;
+    }
+    .mini-btn{
+      background:none; border:1px solid rgba(255,255,255,.2); color:#fff; padding:10px 12px; border-radius:10px; cursor:pointer;
+    }
+    input, textarea{
+      border:none; border-radius:10px; padding:12px;
+      outline:none;
+    }
+    textarea{ padding:12px; }
+  </style>
 </head>
 <body>
 
-    <div id="notif">🔔 Nova Oferta de Troca Recebida!</div>
-    
-    <div class="header-ice">
-        <div id="adm-star" class="adm-star">★ ADMINISTRADOR ★</div>
-        <h1>ICE BLUE</h1>
+  <div id="notif">🔔 Nova Oferta de Troca Recebida!</div>
+
+  <div class="header-ice">
+    <div id="adm-star" class="adm-star">★ ADMINISTRADOR ★</div>
+    <h1>ICE BLUE</h1>
+  </div>
+
+  <!-- TELA LOGIN (ADM: 1533) -->
+  <div id="login" class="tela" style="display:block; padding:20px;">
+    <div class="card" style="text-align:center;">
+      <h3>Acesso ao Sistema</h3>
+      <input type="password" id="pass" placeholder="Senha" style="width:100%; margin-bottom:10px;">
+      <button class="btn-blue" onclick="logar()">Entrar</button>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="home" class="tela">
+    <div id="feed"></div>
+  </div>
+
+  <!-- CENTRAL DE OFERTAS -->
+  <div id="ofertas" class="tela" style="padding:10px;">
+    <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
+    <div id="lista-ofertas"></div>
+  </div>
+
+  <!-- CHAT PV -->
+  <div id="chat-window">
+    <div class="chat-header">
+      <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
+      <b>Chat Privado</b>
+    </div>
+    <div id="chat-box"></div>
+    <div style="padding:10px; background:#000; display:flex; gap:10px;">
+      <input type="text" id="chat-in" placeholder="Mensagem..." style="flex:1; border-radius:20px;">
+      <button onclick="enviarMsg()" style="background:var(--ice); border:none; border-radius:50%; width:40px;">🚀</button>
+    </div>
+  </div>
+
+  <!-- PERFIL -->
+  <div id="perfil" class="tela">
+    <div class="card" style="text-align:center;">
+      <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice);">
+      <h2 id="p-nome">Membro</h2>
+      <input type="file" id="up-p" style="display:none" onchange="previewImg(this, 'p-img')">
+      <button onclick="document.getElementById('up-p').click()" style="background:none; border:none; color:var(--ice); cursor:pointer;">Trocar Foto</button>
     </div>
 
-    <!-- TELA LOGIN (ADM: 1533) -->
-    <div id="login" class="tela" style="display: block; padding: 20px;">
-        <div class="card" style="text-align: center;">
-            <h3>Acesso ao Sistema</h3>
-            <input type="password" id="pass" placeholder="Senha" style="width:100%; padding:12px; border-radius:8px; border:none; margin-bottom:10px;">
-            <button class="btn-blue" onclick="logar()">Entrar</button>
-        </div>
+    <div class="card">
+      <h4>Anunciar Troca</h4>
+      <input type="file" id="f-troca">
+      <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
+      <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
     </div>
 
-    <!-- HOME -->
-    <div id="home" class="tela">
-        <div id="feed"></div>
+    <!-- FAMÍLIA -->
+    <div class="card">
+      <h4>👨‍👩‍👧‍👦 Família</h4>
+
+      <div id="family-area" style="color:#bdefff; font-size:13px;">
+        Você ainda não tem família. Crie uma ou entre com um código.
+      </div>
+
+      <hr style="border:0; border-top:1px solid rgba(255,255,255,.12); margin:12px 0;">
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="family-name" placeholder="Nome da família (ex: Alves)" style="flex:1;">
+        <button class="btn-blue" style="width:auto; padding:12px 14px;" onclick="criarFamilia()">Criar</button>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <input id="family-code" placeholder="Código convite (ex: ABC123)" style="flex:1;">
+        <input id="child-name" placeholder="Seu nome na família (ex: João)" style="flex:1;">
+        <button class="btn-blue" style="width:auto; padding:12px 14px;" onclick="entrarFamilia()">Entrar</button>
+      </div>
     </div>
+  </div>
 
-    <!-- CENTRAL DE OFERTAS -->
-    <div id="ofertas" class="tela" style="padding: 10px;">
-        <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
-        <div id="lista-ofertas"></div>
+  <nav class="nav" id="menu" style="display:none">
+    <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
+    <div class="nav-item" onclick="ver('ofertas')">
+      <span id="badge" class="badge">!</span>
+      <span>🔄</span>Trocas
     </div>
+    <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
+  </nav>
 
-    <!-- CHAT PV -->
-    <div id="chat-window">
-        <div class="chat-header">
-            <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
-            <b>Chat Privado</b>
-        </div>
-        <div id="chat-box"></div>
-        <div style="padding: 10px; background: #000; display: flex; gap: 10px;">
-            <input type="text" id="chat-in" placeholder="Mensagem..." style="flex:1; padding:10px; border-radius:20px; border:none;">
-            <button onclick="enviarMsg()" style="background:var(--ice); border:none; border-radius:50%; width:40px;">🚀</button>
-        </div>
+  <!-- POPUP OFERTA -->
+  <div id="offer-pop">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <b>🔔 Chegou uma oferta!</b>
+        <button onclick="fecharOfferPop()" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
+      </div>
+      <div id="offer-pop-content" style="margin-top:12px;"></div>
+      <button class="btn-blue" onclick="ver('ofertas'); fecharOfferPop();" style="margin-top:10px;">Ver ofertas</button>
     </div>
+  </div>
 
-    <!-- PERFIL -->
-    <div id="perfil" class="tela">
-        <div class="card" style="text-align: center;">
-            <img src="https://cdn-icons-png.flaticon.com" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice);">
-            <h2 id="p-nome">Membro</h2>
-            <input type="file" id="up-p" style="display:none" onchange="previewImg(this, 'p-img')">
-            <button onclick="document.getElementById('up-p').click()" style="background:none; border:none; color:var(--ice); cursor:pointer;">Trocar Foto</button>
-        </div>
-        <div class="card">
-            <h4>Anunciar Troca</h4>
-            <input type="file" id="f-troca">
-            <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
-            <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
-        </div>
+  <!-- POPUP SHARE -->
+  <div id="share-ad">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+      <b>🚀 Compartilha pros amigos</b>
+      <button onclick="fecharShareAd()" style="background:none; border:none; color:#fff; font-size:18px;">✕</button>
     </div>
+    <div style="margin-top:6px; color:#bdefff; font-size:13px;">
+      Entre na sua família e chama a galera no ICE BLUE.
+    </div>
+    <button class="btn-blue" onclick="compartilharConvite()" style="margin-top:10px;">Compartilhar convite</button>
+  </div>
 
-    <nav class="nav" id="menu" style="display:none">
-        <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
-        <div class="nav-item" onclick="ver('ofertas')">
-            <span id="badge" class="badge">!</span>
-            <span>🔄</span>Trocas
+  <script>
+    let role = "Membro";
+
+    // ====== BOLHAS ======
+    for(let i=0; i<15; i++) {
+      let b = document.createElement('div'); b.className = 'bubble';
+      b.style.left = Math.random() * 100 + '%';
+      b.style.width = b.style.height = (Math.random()*20+10)+'px';
+      b.style.animationDelay = Math.random()*10+'s';
+      document.body.appendChild(b);
+    }
+
+    // ====== UID LOCAL (sem backend) ======
+    function uid(){
+      let id = localStorage.getItem("ice_uid");
+      if(!id){
+        id = "U" + Math.random().toString(36).slice(2,9).toUpperCase();
+        localStorage.setItem("ice_uid", id);
+      }
+      return id;
+    }
+
+    // ====== LOGIN / TELAS ======
+    function logar() {
+      const p = document.getElementById('pass').value;
+      if(p === '1533') {
+        role = "ADM";
+        document.getElementById('adm-star').style.display = 'block';
+        document.getElementById('p-nome').innerText = "ADMINISTRADOR";
+      } else {
+        role = "Membro";
+        document.getElementById('adm-star').style.display = 'none';
+        document.getElementById('p-nome').innerText = "Membro";
+      }
+      document.getElementById('menu').style.display = 'flex';
+      ver('home');
+      renderFamilia();
+    }
+
+    function ver(id) {
+      document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+      if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
+      if(id === 'perfil') renderFamilia();
+    }
+
+    // ====== NOTIF TOP ======
+    function mostrarNotif(txt){
+      const n = document.getElementById('notif');
+      n.textContent = txt;
+      n.style.top = "20px";
+      setTimeout(() => n.style.top = "-100px", 4000);
+    }
+
+    // ====== POSTAR TROCA ======
+    function postarTroca() {
+      const txt = document.getElementById('t-troca').value;
+      const file = document.getElementById('f-troca').files[0];
+      if(!file) return alert("Selecione uma imagem!");
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = e.target.result;
+        const pid = 'p'+Date.now();
+        const html = `
+          <div class="card" id="${pid}">
+            <div class="post-head">
+              <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="u-pic">
+              <b>Usuário</b>
+            </div>
+            <p>${txt}</p>
+            <img src="${img}" style="width:100%; border-radius:10px;">
+            <button class="btn-blue" onclick="fazerOferta('${img}')">FAZER OFERTA</button>
+            ${role === 'ADM' ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; margin-top:10px;">Bloquear (ADM)</button>` : ''}
+          </div>`;
+        document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
+        ver('home');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ====== FAZER OFERTA (simula chegada) ======
+    function fazerOferta(imgDono) {
+      alert("Sua oferta foi enviada!");
+      setTimeout(() => {
+        // badge e notif
+        document.getElementById('badge').style.display = "block";
+        mostrarNotif("🔔 Nova Oferta de Troca Recebida!");
+
+        // imagem oferta (corrigido: precisa / no picsum)
+        const imgOferta = "https://picsum.photos/seed/" + Date.now() + "/400/300";
+
+        const htmlCard = `
+          <div class="card">
+            <div class="trade-split">
+              <div class="trade-side"><img src="${imgDono}"></div>
+              <div class="vs-badge">VS</div>
+              <div class="trade-side"><img src="${imgOferta}"></div>
+            </div>
+            <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
+          </div>`;
+
+        document.getElementById('lista-ofertas').insertAdjacentHTML('afterbegin', htmlCard);
+
+        // popup oferta + popup compartilhar
+        abrirOfferPop(htmlCard);
+        abrirShareAd();
+      }, 2000);
+    }
+
+    // ====== POPUP OFERTA ======
+    function abrirOfferPop(innerHtml){
+      document.getElementById('offer-pop-content').innerHTML = innerHtml;
+      document.getElementById('offer-pop').style.display = 'flex';
+    }
+    function fecharOfferPop(){
+      document.getElementById('offer-pop').style.display = 'none';
+    }
+
+    // ====== POPUP SHARE ======
+    function abrirShareAd(){
+      const ad = document.getElementById('share-ad');
+      ad.style.display = 'block';
+      setTimeout(() => { if(ad.style.display === 'block') ad.style.display = 'none'; }, 12000);
+    }
+    function fecharShareAd(){
+      document.getElementById('share-ad').style.display = 'none';
+    }
+
+    // ====== CHAT ======
+    function abrirChat() { document.getElementById('chat-window').style.left = "0"; }
+    function fecharChat() { document.getElementById('chat-window').style.left = "100%"; }
+
+    function enviarMsg() {
+      const inpt = document.getElementById('chat-in');
+      if(!inpt.value) return;
+      document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${inpt.value}</div>`);
+      inpt.value = "";
+    }
+
+    // ====== FOTO PERFIL ======
+    function previewImg(input, id) {
+      const reader = new FileReader();
+      reader.onload = (e) => document.getElementById(id).src = e.target.result;
+      reader.readAsDataURL(input.files[0]);
+    }
+
+    // =========================================================
+    // ===================== SISTEMA FAMÍLIA ====================
+    // =========================================================
+    function getFamilia(){
+      try { return JSON.parse(localStorage.getItem("ice_family") || "null"); }
+      catch { return null; }
+    }
+    function setFamilia(obj){
+      localStorage.setItem("ice_family", JSON.stringify(obj));
+    }
+    function codigoConvite(){
+      return Math.random().toString(36).slice(2,8).toUpperCase();
+    }
+
+    function criarFamilia(){
+      const nome = (document.getElementById("family-name").value || "").trim();
+      if(!nome) return alert("Digite o nome da família!");
+      const eu = uid();
+      const meuNome = (role === "ADM") ? "ADMINISTRADOR" : "Pai";
+
+      const fam = {
+        id: codigoConvite(),
+        nome,
+        pai_uid: eu,
+        membros: [{ uid: eu, nome: meuNome, role: "Pai" }]
+      };
+      setFamilia(fam);
+      renderFamilia();
+      abrirShareAd();
+      mostrarNotif("👨‍👩‍👧‍👦 Família criada!");
+    }
+
+    function entrarFamilia(){
+      const code = (document.getElementById("family-code").value || "").trim().toUpperCase();
+      const meuNome = (document.getElementById("child-name").value || "").trim();
+      if(!code) return alert("Cole o código convite!");
+      if(!meuNome) return alert("Digite seu nome na família!");
+
+      // Sem backend: só funciona no mesmo navegador onde a família foi criada.
+      const fam = getFamilia();
+      if(!fam || fam.id !== code) return alert("Código inválido (sem servidor só funciona no mesmo aparelho).");
+
+      const eu = uid();
+      if(!fam.membros.some(m => m.uid === eu)){
+        fam.membros.push({ uid: eu, nome: meuNome, role: "Filho" });
+        setFamilia(fam);
+      }
+      renderFamilia();
+      mostrarNotif("✅ Entrou na família!");
+    }
+
+    function sairFamilia(){
+      localStorage.removeItem("ice_family");
+      renderFamilia();
+      mostrarNotif("🚪 Saiu da família");
+    }
+
+    function renderFamilia(){
+      const box = document.getElementById("family-area");
+      if(!box) return;
+      const fam = getFamilia();
+
+      if(!fam){
+        box.innerHTML = `Você ainda não tem família. Crie uma ou entre com um código.`;
+        return;
+      }
+
+      const membrosHtml = fam.membros.map(m => `
+        <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; margin-top:8px;">
+          <span>👤 <b>${m.nome}</b></span>
+          <span style="color:${m.role==="Pai" ? "var(--gold)" : "var(--ice)"};">${m.role}</span>
         </div>
-        <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
-    </nav>
+      `).join("");
 
-    <script>
-        let role = "Membro";
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:12px; color:#bdefff;">Família</div>
+            <div style="font-size:18px;"><b>${fam.nome}</b></div>
+            <div style="font-size:12px; color:#bdefff; margin-top:4px;">Código: <b style="color:var(--ice)">${fam.id}</b></div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="mini-btn" onclick="compartilharConvite()">Compartilhar</button>
+            <button class="mini-btn" onclick="sairFamilia()">Sair</button>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:13px; color:#bdefff;">Membros:</div>
+        ${membrosHtml}
+      `;
+    }
 
-        // Gerar bolhas
-        for(let i=0; i<15; i++) {
-            let b = document.createElement('div'); b.className = 'bubble';
-            b.style.left = Math.random() * 100 + '%'; b.style.width = b.style.height = (Math.random()*20+10)+'px';
-            b.style.animationDelay = Math.random()*10+'s'; document.body.appendChild(b);
+    async function compartilharConvite(){
+      const fam = getFamilia();
+      if(!fam) return alert("Crie uma família primeiro.");
+
+      const texto = `👨‍👩‍👧‍👦 Entra na minha família no ICE BLUE!\nFamília: ${fam.nome}\nCódigo: ${fam.id}`;
+
+      try{
+        if(navigator.share){
+          await navigator.share({ title:"Convite ICE BLUE", text:texto });
+        } else if(navigator.clipboard){
+          await navigator.clipboard.writeText(texto);
+          alert("Convite copiado! Cole no WhatsApp.");
+        } else {
+          alert(texto);
         }
-
-        function logar() {
-            const p = document.getElementById('pass').value;
-            if(p === '1533') {
-                role = "ADM";
-                document.getElementById('adm-star').style.display = 'block';
-                document.getElementById('p-nome').innerText = "ADMINISTRADOR";
-            }
-            document.getElementById('menu').style.display = 'flex';
-            ver('home');
+      }catch(e){
+        try{
+          if(navigator.clipboard){
+            await navigator.clipboard.writeText(texto);
+            alert("Convite copiado! Cole no WhatsApp.");
+          } else {
+            alert(texto);
+          }
+        }catch{
+          alert(texto);
         }
+      }
+    }
 
-        function ver(id) {
-            document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
-            document.getElementById(id).style.display = 'block';
-            if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
-        }
-
-        function postarTroca() {
-            const txt = document.getElementById('t-troca').value;
-            const file = document.getElementById('f-troca').files[0];
-            if(!file) return alert("Selecione uma imagem!");
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = e.target.result;
-                const pid = 'p'+Date.now();
-                const html = `
-                    <div class="card" id="${pid}">
-                        <div class="post-head"><img src="https://cdn-icons-png.flaticon.com" class="u-pic"><b>Usuário</b></div>
-                        <p>${txt}</p>
-                        <img src="${img}" style="width:100%; border-radius:10px;">
-                        <button class="btn-blue" onclick="fazerOferta('${img}')">FAZER OFERTA</button>
-                        ${role === 'ADM' ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; margin-top:10px;">Bloquear (ADM)</button>` : ''}
-                    </div>`;
-                document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
-                ver('home');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function fazerOferta(imgDono) {
-            alert("Sua oferta foi enviada!");
-            setTimeout(() => {
-                document.getElementById('notif').style.top = "20px";
-                document.getElementById('badge').style.display = "block";
-                const imgOferta = "https://picsum.photos"+Date.now();
-                const html = `
-                    <div class="card">
-                        <div class="trade-split">
-                            <div class="trade-side"><img src="${imgDono}"></div>
-                            <div class="vs-badge">VS</div>
-                            <div class="trade-side"><img src="${imgOferta}"></div>
-                        </div>
-                        <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
-                    </div>`;
-                document.getElementById('lista-ofertas').insertAdjacentHTML('afterbegin', html);
-                setTimeout(() => document.getElementById('notif').style.top = "-100px", 4000);
-            }, 2000);
-        }
-
-        function abrirChat() { document.getElementById('chat-window').style.left = "0"; }
-        function fecharChat() { document.getElementById('chat-window').style.left = "100%"; }
-
-        function enviarMsg() {
-            const inpt = document.getElementById('chat-in');
-            if(!inpt.value) return;
-            document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${inpt.value}</div>`);
-            inpt.value = "";
-        }
-
-        function previewImg(input, id) {
-            const reader = new FileReader();
-            reader.onload = (e) => document.getElementById(id).src = e.target.result;
-            reader.readAsDataURL(input.files[0]);
-        }
-    </script>
+    // init
+    window.addEventListener("load", () => {
+      uid();
+      renderFamilia();
+    });
+  </script>
 </body>
 </html>
