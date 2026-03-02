@@ -3,92 +3,113 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ocean Network Premium</title>
+    <title>Ocean Network Final</title>
     <style>
-        :root { --ocean: #0077be; --danger: #ff4d6d; --whatsapp: #25d366; --glass: rgba(255, 255, 255, 0.15); }
-        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 80px; }
+        :root { --ocean: #0077be; --danger: #ff4d6d; --glass: rgba(255, 255, 255, 0.15); }
+        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 80px; transition: 0.3s; }
         
-        /* INTERFACE DE POSTAGEM */
-        .card { background: var(--glass); backdrop-filter: blur(12px); border-radius: 15px; margin: 10px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .post-img { width: 100%; border-radius: 10px; margin: 10px 0; }
-        .acoes { display: flex; justify-content: space-around; border-top: 1px solid #444; padding-top: 10px; margin-top: 10px; }
-        .btn-acao { background: none; border: none; color: #8ef; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        /* ALERTAS */
+        @keyframes blink { 0%, 100% { background: transparent; } 50% { background: rgba(255,0,0,0.6); } }
+        .sos-active { animation: blink 0.6s infinite; }
 
-        /* PERFIL COM CAPA */
-        .capa { width: 100%; height: 150px; background: #004466; background-size: cover; position: relative; border-bottom: 3px solid var(--ocean); }
-        .foto-perfil { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--ocean); position: absolute; bottom: -40px; left: 20px; background: #eee; }
-        .nome-user { margin: 45px 0 10px 20px; font-weight: bold; font-size: 20px; }
+        /* CARDS E POSTS */
+        .card { background: var(--glass); backdrop-filter: blur(10px); border-radius: 15px; margin: 10px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .post-img { width: 100%; border-radius: 10px; margin: 10px 0; max-height: 300px; object-fit: cover; }
+        .acoes { display: flex; justify-content: space-around; border-top: 1px solid #444; padding-top: 10px; }
+        .btn-acao { background: none; border: none; color: #8ef; cursor: pointer; font-size: 14px; }
 
-        /* CHAT ESTILO WHATSAPP */
-        .chat-box { height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; }
-        .msg { padding: 8px 12px; border-radius: 15px; margin: 5px; max-width: 80%; font-size: 14px; }
-        .sent { background: #056162; align-self: flex-end; margin-left: auto; }
-        .received { background: #262d31; }
+        /* PERFIL */
+        .capa { width: 100%; height: 120px; background: #004466; position: relative; background-size: cover; }
+        .avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--ocean); position: absolute; bottom: -35px; left: 20px; background: #eee; background-size: cover; }
+        
+        /* CHAT WHATSAPP */
+        .lista-conversa { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; cursor: pointer; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+        .bolinha { width: 10px; height: 10px; background: #25d366; border-radius: 50%; }
 
         /* NAVEGAÇÃO */
-        .nav { position: fixed; bottom: 0; width: 100%; background: #001219; display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--ocean); z-index: 1000; }
+        .nav { position: fixed; bottom: 0; width: 100%; background: #001219; display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--ocean); z-index: 999; }
         .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; }
         .nav-item span { font-size: 22px; display: block; }
 
-        .tela { display: none; animation: fadeIn 0.3s; }
+        .tela { display: none; animation: fadeIn 0.3s; padding: 10px; }
         input, textarea, button { width: 100%; padding: 12px; border-radius: 10px; border: none; margin: 5px 0; box-sizing: border-box; }
-        button { background: var(--ocean); color: white; font-weight: bold; cursor: pointer; }
+        button { background: var(--ocean); color: white; font-weight: bold; }
     </style>
 </head>
-<body>
+<body id="main-body">
 
-    <!-- HOME -->
+    <!-- 1. HOME (TIMELINE) -->
     <div id="home" class="tela" style="display: block;">
-        <h3 style="text-align: center;">🌊 Feed Principal</h3>
-        <div id="feed-geral"></div>
+        <h3 style="text-align: center;">🌊 Feed do Oceano</h3>
+        <div id="feed-geral">
+            <div class="card">🚀 Tudo o que você postar aparecerá aqui!</div>
+        </div>
     </div>
 
-    <!-- CHAT (WHATSAPP) -->
-    <div id="chat" class="tela">
-        <h3 style="text-align: center;">💬 Mensagens</h3>
+    <!-- 2. TROCAS -->
+    <div id="trocas" class="tela">
+        <h3>🔄 Nova Troca</h3>
         <div class="card">
-            <div class="chat-box" id="janela-chat">
-                <div class="msg received">Olá! Como posso ajudar na troca?</div>
-            </div>
-            <div style="display:flex; gap:5px;">
-                <input id="input-chat" placeholder="Digite uma mensagem...">
-                <button onclick="enviarMsg()" style="width:60px;">✈️</button>
-            </div>
+            <input type="file" id="img-troca" accept="image/*,video/*">
+            <textarea id="txt-troca" placeholder="O que você quer trocar?"></textarea>
+            <button onclick="publicar('troca')">Postar Troca</button>
         </div>
     </div>
 
-    <!-- PERFIL -->
-    <div id="perfil" class="tela">
-        <div class="capa" id="bg-capa">
-            <input type="file" id="change-capa" style="opacity:0; position:absolute; width:100%; height:100%;" onchange="trocarCapa(this)">
-            <div class="foto-perfil" id="avatar">
-                <input type="file" style="opacity:0; width:100%; height:100%;" onchange="trocarAvatar(this)">
+    <!-- 3. CHAT -->
+    <div id="chat" class="tela">
+        <h3>💬 Conversas</h3>
+        <div class="card">
+            <div class="lista-conversa" onclick="abrirPrivado('Jessica Silva')">
+                <div class="bolinha"></div> <b>Jessica Silva</b> (Online)
+            </div>
+            <div class="lista-conversa" onclick="abrirPrivado('Suporte Ocean')">
+                <div class="bolinha" style="background:orange"></div> <b>Suporte Ocean</b>
             </div>
         </div>
-        <div class="nome-user" id="display-nome" onclick="mudarNome()">Usuário Novo ✎</div>
+        <div id="janela-privada" style="display:none;" class="card">
+            <h4 id="nome-chat">Conversa</h4>
+            <div id="mensagens" style="height:150px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:10px; margin-bottom:10px; border-radius:10px;"></div>
+            <div style="display:flex; gap:5px;">
+                <input id="msg-input" placeholder="Mensagem...">
+                <button onclick="enviarMsg()" style="width:50px;">✈️</button>
+            </div>
+            <button onclick="document.getElementById('janela-privada').style.display='none'" style="background:gray; font-size:10px;">Fechar</button>
+        </div>
+    </div>
+
+    <!-- 4. PERFIL -->
+    <div id="perfil" class="tela">
+        <div class="capa" id="capa-img" onclick="document.getElementById('file-capa').click()">
+            <div class="avatar" id="avatar-img" onclick="event.stopPropagation(); document.getElementById('file-avatar').click()"></div>
+        </div>
+        <input type="file" id="file-capa" style="display:none" onchange="preview(this, 'capa-img')">
+        <input type="file" id="file-avatar" style="display:none" onchange="preview(this, 'avatar-img')">
+        
+        <h3 id="meu-nome" onclick="mudarNome()" style="margin-top:45px; margin-left:20px;">Usuário Novo ✎</h3>
         
         <div class="card">
-            <h4>Postar Foto/Vídeo</h4>
-            <input type="file" id="img-post" accept="image/*,video/*">
-            <textarea id="txt-post" placeholder="Legenda da postagem..."></textarea>
-            <button onclick="postar('perfil')">Publicar no Perfil</button>
+            <input type="file" id="img-perfil" accept="image/*">
+            <textarea id="txt-perfil" placeholder="No que você está pensando?"></textarea>
+            <button onclick="publicar('perfil')">Postar no Perfil</button>
         </div>
-        <div id="meus-posts"></div>
+        <div id="feed-perfil"></div>
     </div>
 
-    <!-- PERIGO -->
+    <!-- 5. PERIGO -->
     <div id="perigo" class="tela">
-        <h3 style="text-align:center;">🚨 Mapa de Risco</h3>
+        <h3 style="text-align:center;">🚨 Centro de Alerta</h3>
         <div class="card" style="text-align:center;">
-            <button onclick="gerarAlerta()" style="background:var(--danger); height:80px; border-radius:50%; width:80px;">SOS</button>
-            <p id="txt-geo">Toque para cravar sua localização</p>
-            <div id="alertas-proximos"></div>
+            <div onclick="acionarSOS()" id="btn-sos" style="width:100px; height:100px; background:red; border-radius:50%; margin: 20px auto; display:flex; align-items:center; justify-content:center; border:5px solid white; font-weight:bold; cursor:pointer;">SOS</div>
+            <p id="geo-texto">Toque no botão para emitir alerta!</p>
+            <div id="mapa-info"></div>
         </div>
     </div>
 
-    <!-- MENU -->
+    <!-- NAV BAR -->
     <nav class="nav">
         <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
+        <div class="nav-item" onclick="ver('trocas')"><span>🔄</span>Trocas</div>
         <div class="nav-item" onclick="ver('chat')"><span>💬</span>Chat</div>
         <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
         <div class="nav-item" onclick="ver('perigo')"><span>🚨</span>Perigo</div>
@@ -100,76 +121,89 @@
             document.getElementById(id).style.display = 'block';
         }
 
-        // Lógica de Postagem com Interações
-        function postar(onde) {
-            const txt = document.getElementById('txt-post').value;
-            const imgFile = document.getElementById('img-post').files[0];
-            if(!txt && !imgFile) return;
+        // POSTAR COM FOTO E INTERAÇÃO
+        function publicar(tipo) {
+            const txt = tipo === 'perfil' ? document.getElementById('txt-perfil').value : document.getElementById('txt-troca').value;
+            const fileInput = tipo === 'perfil' ? document.getElementById('img-perfil') : document.getElementById('img-troca');
+            const file = fileInput.files[0];
+
+            if(!txt && !file) return alert("Escreva ou escolha uma foto!");
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const html = `
                     <div class="card">
-                        <b>👤 ${document.getElementById('display-nome').innerText}</b>
+                        <b>👤 ${document.getElementById('meu-nome').innerText.replace(' ✎','')}</b><br>
+                        <small>${tipo === 'perfil' ? 'Postagem' : '🛒 Oferta de Troca'}</small>
                         <p>${txt}</p>
-                        ${imgFile ? `<img src="${e.target.result}" class="post-img">` : ''}
+                        ${file ? `<img src="${e.target.result}" class="post-img">` : ''}
                         <div class="acoes">
-                            <button class="btn-acao" onclick="this.style.color='red'">❤️ 0</button>
-                            <button class="btn-acao" onclick="alert('Abriu comentários')">💬 0</button>
-                            <button class="btn-acao" onclick="alert('Compartilhado!')">🔗</button>
+                            <button class="btn-acao" onclick="curtir(this)">❤️ <span>0</span></button>
+                            <button class="btn-acao" onclick="alert('Comentários abertos!')">💬 0</button>
+                            <button class="btn-acao" onclick="alert('Link copiado!')">🔗</button>
                         </div>
                     </div>`;
                 document.getElementById('feed-geral').insertAdjacentHTML('afterbegin', html);
-                document.getElementById('meus-posts').insertAdjacentHTML('afterbegin', html);
+                if(tipo === 'perfil') document.getElementById('feed-perfil').insertAdjacentHTML('afterbegin', html);
                 ver('home');
             };
-            if(imgFile) reader.readAsDataURL(imgFile);
+            if(file) reader.readAsDataURL(file);
             else reader.onload({target:{result:''}});
         }
 
-        // Chat WhatsApp
+        function curtir(btn) {
+            let span = btn.querySelector('span');
+            let num = parseInt(span.innerText);
+            span.innerText = num + 1;
+            btn.style.color = "red";
+        }
+
+        // CHAT
+        function abrirPrivado(nome) {
+            document.getElementById('janela-privada').style.display = 'block';
+            document.getElementById('nome-chat').innerText = "Conversando com " + nome;
+            document.getElementById('mensagens').innerHTML = `<div style="background:#262d31; padding:5px; border-radius:5px; margin:5px;">Olá! Vi seu post.</div>`;
+        }
         function enviarMsg() {
-            const input = document.getElementById('input-chat');
+            const input = document.getElementById('msg-input');
             if(!input.value) return;
-            const msg = `<div class="msg sent">${input.value}</div>`;
-            document.getElementById('janela-chat').innerHTML += msg;
+            document.getElementById('mensagens').innerHTML += `<div style="background:#056162; padding:5px; border-radius:5px; margin:5px; text-align:right;">${input.value}</div>`;
             input.value = "";
         }
 
-        // Localização e Perigo "Cravado"
-        async function gerarAlerta() {
-            const status = document.getElementById('txt-geo');
-            status.innerText = "Cravando local...";
+        // PERIGO / SOS
+        async function acionarSOS() {
+            const body = document.getElementById('main-body');
+            const texto = document.getElementById('geo-texto');
+            body.classList.add('sos-active');
+            texto.innerText = "🚨 ALERTA ATIVO! Localizando...";
+
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const res = await fetch(`https://nominatim.openstreetmap.org{pos.coords.latitude}&lon=${pos.coords.longitude}`);
                 const data = await res.json();
-                const local = `${data.address.road || 'Rua Desconhecida'}, ${data.address.suburb || ''}`;
+                const rua = data.address.road || "Rua não detectada";
+                const cep = data.address.postcode || "CEP não achado";
                 
-                const alerta = `
-                    <div class="card" style="border-left: 5px solid red;">
-                        <small>📍 LOCAL CRAVADO:</small><br>
-                        <b>${local}</b><br>
-                        <span style="color:red">⚠️ 4 pessoas avisaram perigo aqui recentemente!</span>
+                document.getElementById('mapa-info').innerHTML = `
+                    <div class="card" style="background:red; color:white;">
+                        <b>LOCAL DO PERIGO:</b><br>${rua}<br>CEP: ${cep}<br>
+                        <small>Visto por 12 usuários próximos!</small>
                     </div>`;
-                document.getElementById('alertas-proximos').innerHTML = alerta;
-                status.innerText = "Localização Registrada!";
             });
         }
 
-        // Funções de Perfil
+        // PERFIL PREVIEW
+        function preview(input, id) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if(id === 'avatar-img') document.getElementById(id).style.backgroundImage = `url(${e.target.result})`;
+                else document.getElementById(id).style.backgroundImage = `url(${e.target.result})`;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
         function mudarNome() {
-            const novo = prompt("Seu nome:");
-            if(novo) document.getElementById('display-nome').innerText = novo + " ✎";
-        }
-        function trocarAvatar(el) {
-            const reader = new FileReader();
-            reader.onload = (e) => document.getElementById('avatar').style.backgroundImage = `url(${e.target.result})`;
-            reader.readAsDataURL(el.files[0]);
-        }
-        function trocarCapa(el) {
-            const reader = new FileReader();
-            reader.onload = (e) => document.getElementById('bg-capa').style.backgroundImage = `url(${e.target.result})`;
-            reader.readAsDataURL(el.files[0]);
+            const n = prompt("Seu nome:");
+            if(n) document.getElementById('meu-nome').innerText = n + " ✎";
         }
     </script>
 </body>
