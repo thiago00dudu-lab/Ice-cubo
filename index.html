@@ -3,69 +3,70 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ice BLUE - Deep Sea ADM</title>
+    <title>Ice BLUE - Oficial</title>
     <style>
-        :root { --ice: #00d4ff; --gold: #ffd700; --sea: #000814; --glass: rgba(255, 255, 255, 0.1); }
+        :root { --ice: #00d4ff; --gold: #ffd700; --sea: #000814; --glass: rgba(255, 255, 255, 0.1); --danger: #ff4d6d; }
         
-        /* FUNDO DO MAR REAL */
         body { 
             margin:0; background: #000814; color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 90px;
-            overflow-x: hidden; position: relative;
-            background-image: linear-gradient(180deg, #001219 0%, #002855 100%);
+            overflow-x: hidden; background-image: linear-gradient(180deg, #001219 0%, #002855 100%);
         }
-        /* ANIMAÇÃO DE BOLHAS */
+
+        /* BOLHAS FUNDO DO MAR */
         .bubble { position: fixed; bottom: -50px; background: rgba(255,255,255,0.1); border-radius: 50%; animation: rise 12s infinite ease-in; z-index: 0; pointer-events: none; }
         @keyframes rise { 0% { bottom: -50px; transform: translateX(0); } 100% { bottom: 110vh; transform: translateX(50px); opacity: 0; } }
 
-        /* HEADER */
-        .header-ice { background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); padding: 10px; border-bottom: 2px solid var(--ice); position: sticky; top:0; z-index: 1001; text-align: center; }
-        .adm-star { color: var(--gold); font-size: 18px; display: block; margin-bottom: -5px; }
+        /* HEADER & ADM */
+        .header-ice { background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); padding: 10px; border-bottom: 2px solid var(--ice); position: sticky; top:0; z-index: 1001; text-align: center; }
+        .adm-star { color: var(--gold); font-size: 20px; display: none; }
 
-        /* SISTEMA DE TROCA - DOIS LADOS */
-        .trade-container { display: flex; gap: 10px; margin: 10px 0; height: 180px; align-items: center; }
-        .trade-box { flex: 1; height: 100%; border: 2px dashed var(--ice); border-radius: 15px; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-        .trade-box img { width: 100%; height: 100%; object-fit: cover; }
-        .vs-circle { background: var(--ice); color: #000; font-weight: bold; padding: 5px; border-radius: 50%; font-size: 10px; z-index: 5; }
+        /* NOTIFICAÇÃO */
+        #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--ice); color: #000; padding: 15px; border-radius: 15px; z-index: 3000; transition: 0.5s; font-weight: bold; width: 80%; text-align: center; }
 
-        /* CARDS ESTILO FACEBOOK */
-        .card { background: var(--glass); backdrop-filter: blur(15px); border-radius: 15px; margin: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 1; }
-        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .p-pic { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--ice); }
-        .p-info b { display: block; font-size: 14px; }
-        .p-info small { color: #aaa; font-size: 11px; }
+        /* TROCA BILATERAL */
+        .trade-split { display: flex; gap: 10px; margin: 15px 0; height: 180px; align-items: center; }
+        .trade-side { flex: 1; height: 100%; border: 2px dashed var(--ice); border-radius: 15px; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .trade-side img { width: 100%; height: 100%; object-fit: cover; }
+        .vs-badge { background: var(--ice); color: #000; border-radius: 50%; padding: 5px; font-size: 10px; z-index: 5; font-weight: bold; }
 
-        /* PERFIL COMPACTO */
-        .profile-top { padding: 15px; text-align: center; border-bottom: 1px solid var(--glass); }
-        #profile-img-display { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--ice); }
+        /* CARDS ESTILO REDE SOCIAL */
+        .card { background: var(--glass); backdrop-filter: blur(15px); border-radius: 15px; margin: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; }
+        .post-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .u-pic { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--ice); }
 
-        /* BOTÕES */
-        .btn-blue { background: var(--ice); color: #000; font-weight: bold; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; }
-        .btn-mod { background: var(--gold); color: #000; font-size: 10px; padding: 4px; border-radius: 4px; border: none; margin-top: 5px; }
+        /* CHAT PV */
+        #chat-window { position: fixed; top: 0; left: 100%; width: 100%; height: 100%; background: #000814; z-index: 2000; transition: 0.3s; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px; background: #001d3d; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--ice); }
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .m-msg { align-self: flex-end; background: var(--ice); color: #000; padding: 8px 12px; border-radius: 15px; max-width: 70%; }
+        .h-msg { align-self: flex-start; background: #333; padding: 8px 12px; border-radius: 15px; max-width: 70%; }
 
-        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--ice); z-index: 1000; }
-        .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; }
+        /* MENU INFERIOR */
+        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--ice); z-index: 1000; }
+        .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; flex: 1; position: relative; }
         .nav-item span { font-size: 22px; display: block; }
+        .badge { position: absolute; top: -5px; right: 25%; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; }
 
+        .btn-blue { background: var(--ice); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; margin-top: 10px; }
         .tela { display: none; animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- ELEMENTOS FUNDO DO MAR -->
-    <div id="bubbles-container"></div>
-
+    <div id="notif">🔔 Nova Oferta de Troca Recebida!</div>
+    
     <div class="header-ice">
-        <span id="adm-badge" style="display:none" class="adm-star">★</span>
-        <h1 id="user-display-name">ICE BLUE</h1>
+        <div id="adm-star" class="adm-star">★ ADMINISTRADOR ★</div>
+        <h1>ICE BLUE</h1>
     </div>
 
-    <!-- LOGIN ADM -->
-    <div id="login-screen" class="tela" style="display: block; padding: 20px;">
+    <!-- TELA LOGIN (ADM: 1533) -->
+    <div id="login" class="tela" style="display: block; padding: 20px;">
         <div class="card" style="text-align: center;">
             <h3>Acesso ao Sistema</h3>
-            <input type="password" id="pass-in" placeholder="Senha do Sistema">
-            <button class="btn-blue" onclick="checkLogin()">Entrar</button>
+            <input type="password" id="pass" placeholder="Senha" style="width:100%; padding:12px; border-radius:8px; border:none; margin-bottom:10px;">
+            <button class="btn-blue" onclick="logar()">Entrar</button>
         </div>
     </div>
 
@@ -74,90 +75,78 @@
         <div id="feed"></div>
     </div>
 
-    <!-- TELA DE TROCA REAL (DOIS LADOS) -->
-    <div id="troca-ativa" class="tela" style="padding: 10px;">
-        <div class="card">
-            <h3>🤝 Negociação de Troca</h3>
-            <div class="trade-container">
-                <div class="trade-box" id="box-dono"></div>
-                <div class="vs-circle">VS</div>
-                <div class="trade-box" id="box-interessado">
-                    <input type="file" id="f-interessado" style="display:none" onchange="previewTrade(this)">
-                    <label for="f-interessado" style="cursor:pointer; font-size:10px; text-align:center;">Sua parte:<br><b>+ ADICIONAR</b></label>
-                </div>
-            </div>
-            <button class="btn-blue" onclick="confirmarTroca()">Enviar Proposta</button>
-            <button class="btn-blue" style="background:#444; margin-top:5px;" onclick="ver('home')">Voltar</button>
+    <!-- CENTRAL DE OFERTAS -->
+    <div id="ofertas" class="tela" style="padding: 10px;">
+        <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
+        <div id="lista-ofertas"></div>
+    </div>
+
+    <!-- CHAT PV -->
+    <div id="chat-window">
+        <div class="chat-header">
+            <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
+            <b>Chat Privado</b>
+        </div>
+        <div id="chat-box"></div>
+        <div style="padding: 10px; background: #000; display: flex; gap: 10px;">
+            <input type="text" id="chat-in" placeholder="Mensagem..." style="flex:1; padding:10px; border-radius:20px; border:none;">
+            <button onclick="enviarMsg()" style="background:var(--ice); border:none; border-radius:50%; width:40px;">🚀</button>
         </div>
     </div>
 
     <!-- PERFIL -->
     <div id="perfil" class="tela">
-        <div class="profile-top">
-            <img src="https://cdn-icons-png.flaticon.com" id="profile-img-display">
-            <h2 id="p-nome">Usuário</h2>
-            <p id="p-cargo">Membro</p>
+        <div class="card" style="text-align: center;">
+            <img src="https://cdn-icons-png.flaticon.com" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice);">
+            <h2 id="p-nome">Membro</h2>
+            <input type="file" id="up-p" style="display:none" onchange="previewImg(this, 'p-img')">
+            <button onclick="document.getElementById('up-p').click()" style="background:none; border:none; color:var(--ice); cursor:pointer;">Trocar Foto</button>
         </div>
         <div class="card">
             <h4>Anunciar Troca</h4>
-            <input type="file" id="f-troca" accept="image/*">
-            <textarea id="t-troca" placeholder="O que quer trocar?"></textarea>
-            <button class="btn-blue" onclick="postar('troca')">Postar Troca</button>
+            <input type="file" id="f-troca">
+            <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
+            <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
         </div>
     </div>
 
-    <nav class="nav" id="main-nav" style="display:none">
+    <nav class="nav" id="menu" style="display:none">
         <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
+        <div class="nav-item" onclick="ver('ofertas')">
+            <span id="badge" class="badge">!</span>
+            <span>🔄</span>Trocas
+        </div>
         <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
     </nav>
 
     <script>
-        let userRole = 'Membro'; // Membro, MOD, ADM
+        let role = "Membro";
 
-        // Gerador de Bolhas (Fundo do Mar)
-        const bContainer = document.getElementById('bubbles-container');
-        for(let i=0; i<20; i++) {
-            let b = document.createElement('div');
-            b.className = 'bubble';
-            b.style.left = Math.random() * 100 + '%';
-            b.style.width = b.style.height = (Math.random() * 20 + 10) + 'px';
-            b.style.animationDelay = (Math.random() * 10) + 's';
-            bContainer.appendChild(b);
+        // Gerar bolhas
+        for(let i=0; i<15; i++) {
+            let b = document.createElement('div'); b.className = 'bubble';
+            b.style.left = Math.random() * 100 + '%'; b.style.width = b.style.height = (Math.random()*20+10)+'px';
+            b.style.animationDelay = Math.random()*10+'s'; document.body.appendChild(b);
+        }
+
+        function logar() {
+            const p = document.getElementById('pass').value;
+            if(p === '1533') {
+                role = "ADM";
+                document.getElementById('adm-star').style.display = 'block';
+                document.getElementById('p-nome').innerText = "ADMINISTRADOR";
+            }
+            document.getElementById('menu').style.display = 'flex';
+            ver('home');
         }
 
         function ver(id) {
             document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
             document.getElementById(id).style.display = 'block';
+            if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
         }
 
-        function checkLogin() {
-            const pass = document.getElementById('pass-in').value;
-            if(pass === '1533') {
-                userRole = 'ADM';
-                document.getElementById('adm-badge').style.display = 'block';
-                document.getElementById('user-display-name').innerText = 'ADMINISTRADOR';
-                document.getElementById('p-cargo').innerHTML = '👑 <b>Administrador</b>';
-            }
-            document.getElementById('main-nav').style.display = 'flex';
-            ver('home');
-        }
-
-        function previewTrade(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('box-interessado').innerHTML = `<img src="${e.target.result}">`;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function abrirNegocio(imgDono) {
-            document.getElementById('box-dono').innerHTML = `<img src="${imgDono}">`;
-            ver('troca-ativa');
-        }
-
-        function postar(tipo) {
+        function postarTroca() {
             const txt = document.getElementById('t-troca').value;
             const file = document.getElementById('f-troca').files[0];
             if(!file) return alert("Selecione uma imagem!");
@@ -166,25 +155,13 @@
             reader.onload = (e) => {
                 const img = e.target.result;
                 const pid = 'p'+Date.now();
-                const modBtn = (userRole === 'ADM' || userRole === 'MOD') ? `<button class="btn-mod" onclick="removerPost('${pid}')">Bloquear Post</button>` : '';
-                const promoBtn = (userRole === 'ADM') ? `<button class="btn-mod" onclick="promover()">Promover a MOD</button>` : '';
-
                 const html = `
                     <div class="card" id="${pid}">
-                        <div class="post-header">
-                            <img src="https://cdn-icons-png.flaticon.com" class="p-pic">
-                            <div class="p-info">
-                                <b>Usuário</b>
-                                <small>Agora mesmo</small>
-                            </div>
-                        </div>
+                        <div class="post-head"><img src="https://cdn-icons-png.flaticon.com" class="u-pic"><b>Usuário</b></div>
                         <p>${txt}</p>
                         <img src="${img}" style="width:100%; border-radius:10px;">
-                        <div style="display:flex; justify-content:space-between; margin-top:10px;">
-                            <button onclick="curtir(this)" style="background:none; border:none; color:#ff4d6d; cursor:pointer;">❤️ <span>0</span></button>
-                            <button class="btn-blue" style="width:auto; padding:5px 15px;" onclick="abrirNegocio('${img}')">Negociar</button>
-                        </div>
-                        ${modBtn} ${promoBtn}
+                        <button class="btn-blue" onclick="fazerOferta('${img}')">FAZER OFERTA</button>
+                        ${role === 'ADM' ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; margin-top:10px;">Bloquear (ADM)</button>` : ''}
                     </div>`;
                 document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
                 ver('home');
@@ -192,24 +169,40 @@
             reader.readAsDataURL(file);
         }
 
-        function curtir(btn) {
-            let s = btn.querySelector('span');
-            s.innerText = parseInt(s.innerText) + 1;
-            btn.style.transform = "scale(1.2)";
-            setTimeout(() => btn.style.transform = "scale(1)", 200);
+        function fazerOferta(imgDono) {
+            alert("Sua oferta foi enviada!");
+            setTimeout(() => {
+                document.getElementById('notif').style.top = "20px";
+                document.getElementById('badge').style.display = "block";
+                const imgOferta = "https://picsum.photos"+Date.now();
+                const html = `
+                    <div class="card">
+                        <div class="trade-split">
+                            <div class="trade-side"><img src="${imgDono}"></div>
+                            <div class="vs-badge">VS</div>
+                            <div class="trade-side"><img src="${imgOferta}"></div>
+                        </div>
+                        <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
+                    </div>`;
+                document.getElementById('lista-ofertas').insertAdjacentHTML('afterbegin', html);
+                setTimeout(() => document.getElementById('notif').style.top = "-100px", 4000);
+            }, 2000);
         }
 
-        function removerPost(id) {
-            if(confirm("Deseja bloquear este conteúdo?")) document.getElementById(id).remove();
+        function abrirChat() { document.getElementById('chat-window').style.left = "0"; }
+        function fecharChat() { document.getElementById('chat-window').style.left = "100%"; }
+
+        function enviarMsg() {
+            const inpt = document.getElementById('chat-in');
+            if(!inpt.value) return;
+            document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${inpt.value}</div>`);
+            inpt.value = "";
         }
 
-        function promover() {
-            alert("Usuário promovido a MODERADOR com sucesso!");
-        }
-
-        function confirmarTroca() {
-            alert("✅ Proposta enviada ao fundo do mar! Aguarde confirmação.");
-            ver('home');
+        function previewImg(input, id) {
+            const reader = new FileReader();
+            reader.onload = (e) => document.getElementById(id).src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
         }
     </script>
 </body>
