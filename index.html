@@ -1,94 +1,554 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
   <title>ICE</title>
+  <style>
+    :root{
+      --bg:#060b16; --card:#0b1430; --card2:#0a122a; --stroke:#1a2a55;
+      --text:#eaf0ff; --muted:#a9b7e6; --brand:#66e1ff; --brand2:#7c5cff;
+      --good:#37d67a; --bad:#ff4d6d;
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: radial-gradient(1000px 600px at 20% 10%, rgba(102,225,255,.18), transparent 60%),
+                  radial-gradient(900px 700px at 90% 30%, rgba(124,92,255,.18), transparent 60%),
+                  radial-gradient(1000px 700px at 50% 120%, rgba(55,214,122,.10), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .topbar{
+      position:sticky; top:0; z-index:30;
+      backdrop-filter: blur(10px);
+      background: rgba(6,11,22,.65);
+      border-bottom:1px solid rgba(26,42,85,.55);
+    }
+    .topbar-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; max-width:980px; margin:0 auto; gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.6px;
+      user-select:none;
+    }
+    .logo{
+      width:34px; height:34px; border-radius:12px;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      box-shadow: 0 12px 26px rgba(102,225,255,.15);
+      display:grid; place-items:center;
+      font-size:18px;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(26,42,85,.75);
+      background: rgba(11,20,48,.55);
+      color:var(--muted);
+      font-size:13px;
+      overflow:hidden;
+      max-width:54vw;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .btc{
+      width:20px;height:20px;border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #ffe9a6, #caa24a 55%, #6fb8ff 110%);
+      border:1px solid rgba(255,255,255,.15);
+      display:grid;place-items:center;
+      color:#0b1430;font-weight:900;
+      font-size:12px;
+    }
+    .layout{max-width:980px; margin:0 auto; padding:14px; display:grid; gap:14px}
+    .grid{
+      display:grid; gap:14px;
+      grid-template-columns: 1fr;
+    }
+    @media(min-width:860px){
+      .grid{grid-template-columns: 340px 1fr}
+    }
+    .card{
+      border:1px solid rgba(26,42,85,.65);
+      background: linear-gradient(180deg, rgba(11,20,48,.75), rgba(10,18,42,.75));
+      border-radius: var(--radius);
+      box-shadow: 0 16px 38px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .card-h{
+      padding:14px 14px 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(26,42,85,.5);
+    }
+    .card-h h3{margin:0; font-size:14px; letter-spacing:.4px}
+    .muted{color:var(--muted)}
+    .pad{padding:14px}
+    .row{display:flex; gap:10px; align-items:center}
+    .col{display:flex; flex-direction:column; gap:10px}
+    input, button, textarea{font: inherit;}
+    input, textarea{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid rgba(26,42,85,.75);
+      background: rgba(5,10,22,.55);
+      color:var(--text);
+      outline:none;
+    }
+    textarea{min-height:88px; resize:none}
+    input::placeholder, textarea::placeholder{color:rgba(169,183,230,.65)}
+    .btn{
+      border:none; border-radius:14px;
+      padding:12px 14px;
+      cursor:pointer;
+      font-weight:800;
+      color:#0b1430;
+      background: linear-gradient(135deg, var(--brand), rgba(124,92,255,.95));
+      box-shadow: 0 14px 28px rgba(102,225,255,.15);
+      transition: transform .08s ease;
+    }
+    .btn:active{transform: scale(.98)}
+    .btn2{
+      border:1px solid rgba(26,42,85,.75);
+      background: rgba(11,20,48,.55);
+      color: var(--text);
+      box-shadow:none;
+      font-weight:800;
+    }
+    .btn3{
+      border:1px solid rgba(26,42,85,.75);
+      background: rgba(5,10,22,.35);
+      color: var(--muted);
+      box-shadow:none;
+      font-weight:700;
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+    }
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 10px; border-radius:999px;
+      border:1px solid rgba(26,42,85,.75);
+      background: rgba(5,10,22,.35);
+      color: var(--muted);
+      font-size:12px;
+    }
+    .divider{height:1px; background: rgba(26,42,85,.55); margin:10px 0}
+    .hidden{display:none !important}
+
+    /* timeline */
+    .post{padding:14px; border-bottom:1px solid rgba(26,42,85,.45)}
+    .post:last-child{border-bottom:none}
+    .avatar{
+      width:38px;height:38px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(102,225,255,.75), rgba(124,92,255,.65));
+      border:1px solid rgba(255,255,255,.12);
+      display:grid;place-items:center;
+      font-weight:900;
+      color:#061022;
+      user-select:none;
+    }
+    .name{font-weight:900}
+    .time{font-size:12px; color:rgba(169,183,230,.8)}
+    .video{
+      margin-top:10px;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid rgba(26,42,85,.6);
+      background: rgba(0,0,0,.25);
+      position:relative;
+      aspect-ratio: 16/10;
+      display:grid; place-items:center;
+      user-select:none;
+    }
+    .video .hint{
+      position:absolute; bottom:10px; left:10px;
+      background: rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.88);
+      padding:6px 10px; border-radius:999px;
+      font-size:12px;
+    }
+    .video .play{
+      width:64px;height:64px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.2);
+      background: rgba(102,225,255,.18);
+      display:grid;place-items:center;
+      font-size:26px;
+    }
+    .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .iconBtn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px; border-radius:999px;
+      border:1px solid rgba(26,42,85,.75);
+      background: rgba(5,10,22,.35);
+      color: var(--text);
+      cursor:pointer;
+      user-select:none;
+    }
+    .iconBtn small{color:var(--muted)}
+    .badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:20px;height:20px;border-radius:999px;
+      background: rgba(102,225,255,.20);
+      border:1px solid rgba(102,225,255,.28);
+      color:#dff8ff;font-size:12px;font-weight:900;
+    }
+
+    /* modal */
+    .modal{
+      position:fixed; inset:0; z-index:80;
+      background: rgba(0,0,0,.65);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+    }
+    .modal.on{display:flex}
+    .modalBox{
+      width:min(920px, 98vw);
+      border-radius:22px;
+      border:1px solid rgba(26,42,85,.65);
+      background: linear-gradient(180deg, rgba(11,20,48,.95), rgba(10,18,42,.95));
+      box-shadow: 0 30px 70px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .modalTop{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:12px 12px;
+      border-bottom:1px solid rgba(26,42,85,.55);
+    }
+    .modalTop .left{display:flex; gap:10px; align-items:center}
+    .close{font-weight:900}
+    .big{
+      display:grid; place-items:center;
+      aspect-ratio: 16/9;
+      background:
+        radial-gradient(700px 350px at 20% 20%, rgba(102,225,255,.18), transparent 60%),
+        radial-gradient(700px 400px at 80% 30%, rgba(124,92,255,.16), transparent 60%),
+        rgba(0,0,0,.22);
+      border-top:1px solid rgba(26,42,85,.45);
+    }
+    .big .play{transform: scale(1.15)}
+    .kpis{display:flex; gap:10px; flex-wrap:wrap}
+    .kpi{padding:9px 12px;border-radius:14px;border:1px solid rgba(26,42,85,.75);background: rgba(5,10,22,.35);color:var(--muted);font-size:12px}
+  </style>
 </head>
-<body style="font-family:sans-serif;background:#0b1220;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0">
-  <div style="background:#111a2e;border:1px solid #223;padding:18px;border-radius:16px;width:min(420px,92vw)">
-    <h2>ICE - Depósito</h2>
-    <input id="amt" type="number" min="1" placeholder="Valor (ex: 10)" style="width:100%;padding:12px;border-radius:12px;border:none;margin-top:10px">
-    <button onclick="depositar()" style="width:100%;padding:12px;border-radius:12px;border:none;margin-top:10px;font-weight:700;cursor:pointer">
-      Gerar pagamento
-    </button>
-    <div id="msg" style="margin-top:10px;opacity:.85"></div>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo">❄️</div>
+        <div>ICE</div>
+      </div>
+      <div class="pill" id="who">
+        <span class="btc">B</span>
+        <span id="whoText">Entrar / Criar conta</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <div class="grid">
+
+      <!-- ESQUERDA -->
+      <section class="card" id="authCard">
+        <div class="card-h">
+          <h3>Conta</h3>
+          <span class="tag" id="authTag">offline</span>
+        </div>
+        <div class="pad col" id="authBox">
+          <div class="muted" style="font-size:13px;line-height:1.4">
+            Site 100% estático (sem pagamento). Login local pra testar layout.
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="col" id="loginForm">
+            <input id="inUser" placeholder="Usuário (ex: jessica)" maxlength="18">
+            <input id="inPass" placeholder="Senha" type="password" maxlength="30">
+            <button class="btn" onclick="login()">Entrar</button>
+            <button class="btn btn2" onclick="criarConta()">Criar conta</button>
+            <div class="muted" style="font-size:12px">* Salva só no seu celular (localStorage).</div>
+          </div>
+
+          <div class="col hidden" id="panelForm">
+            <div class="row">
+              <div class="avatar" id="meAvatar">I</div>
+              <div class="col" style="gap:2px">
+                <div class="name" id="meName">Você</div>
+                <div class="time">Online</div>
+              </div>
+            </div>
+
+            <div class="kpis">
+              <div class="kpi">Likes: <b id="kLikes">0</b></div>
+              <div class="kpi">Posts: <b id="kPosts">0</b></div>
+              <div class="kpi">Perfil: <b id="kLevel">Base</b></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <textarea id="newText" placeholder="Escreva algo pro seu timeline..."></textarea>
+            <button class="btn" onclick="postar()">Postar</button>
+            <button class="btn3" onclick="logout()">Sair</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DIREITA -->
+      <section class="card">
+        <div class="card-h">
+          <h3>Timeline</h3>
+          <span class="tag">duplo toque no vídeo</span>
+        </div>
+
+        <div id="feed"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- MODAL VÍDEO -->
+  <div class="modal" id="modal" onclick="fecharModal(event)">
+    <div class="modalBox" onclick="event.stopPropagation()">
+      <div class="modalTop">
+        <div class="left">
+          <div class="avatar" id="mAvatar">A</div>
+          <div class="col" style="gap:2px">
+            <div class="name" id="mName">Usuário</div>
+            <div class="time" id="mTime">agora</div>
+          </div>
+        </div>
+        <button class="btn3 close" onclick="closeModal()">Fechar</button>
+      </div>
+      <div class="big" id="bigVideo">
+        <div class="play">▶</div>
+      </div>
+      <div class="pad">
+        <div class="muted" id="mText"></div>
+      </div>
+    </div>
   </div>
 
 <script>
-async function depositar(){
-  const msg = document.getElementById("msg");
-  const amount = Number(document.getElementById("amt").value || 0);
-  msg.textContent = "Gerando...";
+  // ------- Estado -------
+  const LS_USER = "ice_user";
+  const LS_PASS = "ice_pass";
+  const LS_LIKES = "ice_likes";
+  const LS_POSTS = "ice_posts";
 
-  try{
-    const r = await fetch("/api/mp_create", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ amount, title:"Depósito ICE" })
+  let state = {
+    logged: false,
+    user: null,
+    likes: Number(localStorage.getItem(LS_LIKES) || 0),
+    posts: Number(localStorage.getItem(LS_POSTS) || 0),
+  };
+
+  const seed = [
+    {u:"Blue", t:"Testando o ICE... 🧊", time:"há 2 min", id:"p1"},
+    {u:"Mar", t:"Duplo toque no vídeo pra abrir grande.", time:"há 6 min", id:"p2"},
+    {u:"Neon", t:"Layout clean, sem pagamento por enquanto ✅", time:"há 12 min", id:"p3"},
+  ];
+
+  const feedEl = document.getElementById("feed");
+
+  // ------- UI Helpers -------
+  function setWho(){
+    const who = document.getElementById("whoText");
+    const tag = document.getElementById("authTag");
+    if(state.logged){
+      who.textContent = "@" + state.user;
+      tag.textContent = "online";
+      tag.style.borderColor = "rgba(55,214,122,.45)";
+      tag.style.color = "rgba(55,214,122,.95)";
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("panelForm").classList.remove("hidden");
+      document.getElementById("meName").textContent = "@" + state.user;
+      document.getElementById("meAvatar").textContent = (state.user[0]||"I").toUpperCase();
+      document.getElementById("kLikes").textContent = state.likes;
+      document.getElementById("kPosts").textContent = state.posts;
+      document.getElementById("kLevel").textContent = "Base";
+    }else{
+      who.textContent = "Entrar / Criar conta";
+      tag.textContent = "offline";
+      tag.style.borderColor = "rgba(26,42,85,.75)";
+      tag.style.color = "var(--muted)";
+      document.getElementById("loginForm").classList.remove("hidden");
+      document.getElementById("panelForm").classList.add("hidden");
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function postTemplate(p){
+    const initials = (p.u[0]||"I").toUpperCase();
+    return `
+      <div class="post" data-id="${p.id}">
+        <div class="row">
+          <div class="avatar">${initials}</div>
+          <div class="col" style="gap:2px">
+            <div class="name">@${escapeHtml(p.u)}</div>
+            <div class="time">${escapeHtml(p.time || "agora")}</div>
+          </div>
+        </div>
+
+        <div class="video" data-open="1" data-user="${escapeHtml(p.u)}" data-text="${escapeHtml(p.t)}" data-time="${escapeHtml(p.time||"agora")}">
+          <div class="play">▶</div>
+          <div class="hint">2 toques pra abrir</div>
+        </div>
+
+        <div class="muted" style="margin-top:10px; line-height:1.35">
+          ${escapeHtml(p.t)}
+        </div>
+
+        <div class="actions">
+          <div class="iconBtn" onclick="like('${p.id}')">❤️ <small>Love</small> <span class="badge" id="l_${p.id}">0</span></div>
+          <div class="iconBtn" onclick="share('${p.id}')">🔗 <small>Compartilhar</small></div>
+          <div class="iconBtn" onclick="reportar()">⚠️ <small>Reportar</small></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderFeed(){
+    feedEl.innerHTML = seed.map(postTemplate).join("");
+    bindDoubleTap();
+  }
+
+  // ------- Double tap -------
+  function bindDoubleTap(){
+    const videos = document.querySelectorAll(".video[data-open='1']");
+    videos.forEach(v => {
+      let last = 0;
+      v.addEventListener("touchend", (e) => {
+        const now = Date.now();
+        if(now - last < 320){
+          openModal(v.dataset.user, v.dataset.text, v.dataset.time);
+        }
+        last = now;
+      }, {passive:true});
+
+      v.addEventListener("dblclick", () => {
+        openModal(v.dataset.user, v.dataset.text, v.dataset.time);
+      });
     });
+  }
 
-    const data = await r.json().catch(()=> ({}));
+  // ------- Modal -------
+  const modal = document.getElementById("modal");
+  function openModal(user, text, time){
+    document.getElementById("mAvatar").textContent = (user[0]||"I").toUpperCase();
+    document.getElementById("mName").textContent = "@" + user;
+    document.getElementById("mTime").textContent = time || "agora";
+    document.getElementById("mText").textContent = text || "";
+    modal.classList.add("on");
+  }
+  function closeModal(){ modal.classList.remove("on"); }
+  function fecharModal(e){ closeModal(); }
 
-    if(!r.ok || !data.ok || !data.init_point){
-      msg.textContent = "Erro: " + JSON.stringify(data.error || data || "sem resposta");
+  // ------- Actions -------
+  function like(id){
+    if(!state.logged){
+      alert("Entre pra curtir ❤️");
       return;
     }
+    const el = document.getElementById("l_"+id);
+    const v = Number(el.textContent||0) + 1;
+    el.textContent = v;
 
-    window.location.href = data.init_point;
-  }catch(e){
-    msg.textContent = "Erro JS: " + e.message;
+    state.likes += 1;
+    localStorage.setItem(LS_LIKES, String(state.likes));
+    document.getElementById("kLikes").textContent = state.likes;
   }
-}
+
+  async function share(id){
+    const url = location.href.split("#")[0] + "#" + id;
+    const text = "ICE - veja isso: " + url;
+    try{
+      if(navigator.share){
+        await navigator.share({title:"ICE", text, url});
+      }else{
+        await navigator.clipboard.writeText(url);
+        alert("Link copiado!");
+      }
+    }catch(e){
+      // se usuário cancelar, ok
+    }
+  }
+
+  function reportar(){
+    alert("Report enviado. (demo)");
+  }
+
+  // ------- Auth local -------
+  function criarConta(){
+    const u = document.getElementById("inUser").value.trim();
+    const p = document.getElementById("inPass").value.trim();
+    if(u.length < 3) return alert("Usuário mínimo 3 letras.");
+    if(p.length < 3) return alert("Senha mínimo 3 letras.");
+    localStorage.setItem(LS_USER, u);
+    localStorage.setItem(LS_PASS, p);
+    alert("Conta criada! Agora entre.");
+  }
+
+  function login(){
+    const u = document.getElementById("inUser").value.trim();
+    const p = document.getElementById("inPass").value.trim();
+    const su = localStorage.getItem(LS_USER);
+    const sp = localStorage.getItem(LS_PASS);
+
+    if(!su || !sp) return alert("Crie a conta primeiro.");
+    if(u !== su || p !== sp) return alert("Usuário/senha incorretos.");
+    state.logged = true;
+    state.user = u;
+    setWho();
+  }
+
+  function logout(){
+    state.logged = false;
+    state.user = null;
+    setWho();
+  }
+
+  function postar(){
+    if(!state.logged) return alert("Entre pra postar.");
+    const t = document.getElementById("newText").value.trim();
+    if(t.length < 1) return alert("Escreva algo.");
+    const id = "p" + Math.random().toString(16).slice(2);
+    seed.unshift({u: state.user, t, time:"agora", id});
+    document.getElementById("newText").value = "";
+    state.posts += 1;
+    localStorage.setItem(LS_POSTS, String(state.posts));
+    document.getElementById("kPosts").textContent = state.posts;
+    renderFeed();
+    location.hash = id;
+  }
+
+  // init
+  setWho();
+  renderFeed();
+
+  // foco no post quando abrir com hash
+  window.addEventListener("load", () => {
+    if(location.hash){
+      const id = location.hash.slice(1);
+      const el = document.querySelector(`.post[data-id="${id}"]`);
+      if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+  });
 </script>
 </body>
 </html>
-<div class="card">
-  <h2>ICE - Depósito</h2>
-
-  <input id="valor" type="number" placeholder="Valor (ex: 10)" value="1" />
-
-  <input id="email" type="email" placeholder="Seu email (obrigatório)" />
-
-  <input id="cpf" inputmode="numeric" placeholder="CPF (opcional, recomendado)" />
-
-  <button onclick="gerarPagamento()">Gerar pagamento</button>
-
-  <div id="msg" style="margin-top:10px"></div>
-</div>
-
-<script>
-async function gerarPagamento(){
-  const valor = Number(document.getElementById("valor").value || 0);
-  const email = (document.getElementById("email").value || "").trim();
-  const cpf = (document.getElementById("cpf").value || "").trim();
-
-  const msg = document.getElementById("msg");
-  msg.textContent = "";
-
-  if (!valor || valor < 1) { msg.textContent = 'Erro: "valor inválido"'; return; }
-  if (!email) { msg.textContent = 'Erro: "email obrigatório"'; return; }
-
-  const r = await fetch("/api/mp_create", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ amount: valor, email, cpf, description: "Depósito ICE" })
-  });
-
-  const data = await r.json();
-
-  if (!data.ok) {
-    msg.textContent = "Erro: " + JSON.stringify(data.mp_error || data.error);
-    return;
-  }
-
-  // No celular, o melhor é abrir o link do Pix pronto
-  if (data.ticket_url) {
-    window.location.href = data.ticket_url;
-    return;
-  }
-
-  // Fallback: mostrar copia e cola
-  msg.innerHTML = "<b>Pix Copia e Cola:</b><br><textarea style='width:100%;height:120px'>" + (data.qr_code || "") + "</textarea>";
-}
-              </script>
