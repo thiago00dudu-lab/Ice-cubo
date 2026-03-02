@@ -23,7 +23,7 @@
     /* NOTIFICAÇÃO */
     #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--ice); color: #000; padding: 15px; border-radius: 15px; z-index: 3000; transition: 0.5s; font-weight: bold; width: 80%; text-align: center; }
 
-    /* TROCA BILATERAL */
+    /* TROCA BILATERAL (cards em ofertas) */
     .trade-split { display: flex; gap: 10px; margin: 15px 0; height: 180px; align-items: center; }
     .trade-side { flex: 1; height: 100%; border: 2px dashed var(--ice); border-radius: 15px; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
     .trade-side img { width: 100%; height: 100%; object-fit: cover; }
@@ -49,6 +49,8 @@
     .badge { position: absolute; top: -5px; right: 25%; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; }
 
     .btn-blue { background: var(--ice); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; margin-top: 10px; }
+    .btn-ghost { background: rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.2); padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; margin-top: 10px; }
+
     .tela { display: none; animation: fadeIn 0.4s; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
@@ -62,6 +64,53 @@
     }
     input[type="file"]{ color:#fff; width:100%; }
     .mini { font-size: 12px; opacity: .8; margin-top: 6px; }
+
+    /* ===== TELA DUPLA DA TROCA ===== */
+    .trade-screen {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+    }
+    .trade-col {
+      flex: 1;
+      min-width: 0;
+    }
+    .trade-box {
+      border: 2px dashed var(--ice);
+      border-radius: 15px;
+      background: rgba(0,0,0,0.45);
+      overflow: hidden;
+      position: relative;
+    }
+    .trade-box .hdr{
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px;
+    }
+    .trade-box .body{
+      padding: 10px;
+    }
+    .trade-preview {
+      width:100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+    .trade-placeholder{
+      height: 220px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      display:flex; align-items:center; justify-content:center;
+      text-align:center;
+      padding: 12px;
+      opacity:.85;
+    }
+    @media (max-width: 760px){
+      .trade-screen{ flex-direction: column; }
+    }
   </style>
 </head>
 <body>
@@ -82,7 +131,53 @@
   <!-- CENTRAL DE OFERTAS -->
   <div id="ofertas" class="tela" style="padding: 10px;">
     <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
+    <div class="card" id="hint-ofertas" style="display:none">
+      <b>Dica:</b> Vá na Home, toque em <b>FAZER OFERTA</b> em algum post e a tela dupla vai abrir pra você enviar sua oferta.
+    </div>
     <div id="lista-ofertas"></div>
+  </div>
+
+  <!-- TELA DUPLA (ITEM ESCOLHIDO VS SUA OFERTA) -->
+  <div id="trade" class="tela">
+    <div class="trade-screen">
+
+      <!-- COLUNA ESQUERDA: item que você tocou -->
+      <div class="trade-col">
+        <div class="trade-box">
+          <div class="hdr">
+            <b>🎯 Você quer</b>
+            <button class="btn-ghost" style="width:auto; padding:8px 10px; margin:0" onclick="ver('home')">← Voltar</button>
+          </div>
+          <div class="body">
+            <div class="mini" id="tradeTargetMeta"></div>
+            <div id="tradeTargetWrap"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUNA DIREITA: sua oferta -->
+      <div class="trade-col">
+        <div class="trade-box">
+          <div class="hdr">
+            <b>🧊 Sua oferta</b>
+            <span class="mini">Envie foto + descrição</span>
+          </div>
+          <div class="body">
+            <img id="myOfferPreview" class="trade-preview" alt="Prévia da sua oferta" style="display:none">
+            <div id="myOfferPlaceholder" class="trade-placeholder">
+              Selecione uma foto do que você tem pra trocar 👇
+            </div>
+
+            <input type="file" id="myOfferFile" accept="image/*" onchange="previewOfferFile()">
+            <textarea id="myOfferText" placeholder="Descreva sua oferta (estado, detalhes, o que você aceita...)" style="width:100%; height:90px; margin-top:10px;"></textarea>
+
+            <button class="btn-blue" onclick="enviarOfertaFinal()">ENVIAR OFERTA</button>
+            <button class="btn-ghost" onclick="limparOferta()">Limpar</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- CHAT PV -->
@@ -106,7 +201,7 @@
 
       <div style="display:flex; gap:10px; margin-top:10px;">
         <button class="btn-blue" style="flex:1;" onclick="virarAdm()">Entrar como ADM (1533)</button>
-        <button class="btn-blue" style="flex:1; background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.2);" onclick="virarMembro()">Modo Membro</button>
+        <button class="btn-ghost" style="flex:1;" onclick="virarMembro()">Modo Membro</button>
       </div>
 
       <input type="file" id="up-p" style="display:none" accept="image/*" onchange="previewImg(this, 'p-img')">
@@ -124,7 +219,7 @@
 
   <nav class="nav" id="menu">
     <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
-    <div class="nav-item" onclick="ver('ofertas')">
+    <div class="nav-item" onclick="abrirTrocas()">
       <span id="badge" class="badge">!</span>
       <span>🔄</span>Trocas
     </div>
@@ -133,6 +228,9 @@
 
   <script>
     let role = "Membro";
+
+    // alvo da troca (o item que você tocou)
+    let tradeTarget = null; // { img, text, user, userPic }
 
     // Bolhas
     for(let i=0; i<15; i++) {
@@ -143,16 +241,14 @@
       document.body.appendChild(b);
     }
 
-    // ===== LOGIN REMOVIDO: entra direto no app =====
+    // Entra direto
     document.addEventListener("DOMContentLoaded", () => {
-      // garante estado inicial
       document.getElementById('adm-star').style.display = 'none';
       document.getElementById('p-nome').innerText = "Membro";
       document.getElementById('whoami').innerText = "Você está como: Membro";
-
-      // mostra home direto
       ver('home');
-      seedFeed(); // coloca posts fake
+      seedFeed();
+      atualizarHintOfertas();
     });
 
     function ver(id) {
@@ -161,6 +257,16 @@
       if (el) el.style.display = 'block';
       if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
       window.scrollTo({top:0, behavior:'smooth'});
+      atualizarHintOfertas();
+    }
+
+    // Trocas: se tiver alvo selecionado, abre tela dupla. Senão, abre ofertas.
+    function abrirTrocas(){
+      if(tradeTarget){
+        abrirTelaDupla(tradeTarget);
+      } else {
+        ver('ofertas');
+      }
     }
 
     function virarAdm(){
@@ -206,12 +312,11 @@
             </div>
             <p style="margin-top:0;">${escapeHtml(txt || "Troca disponível!")}</p>
             <img src="${img}" style="width:100%; border-radius:10px;">
-            <button class="btn-blue" onclick="fazerOferta('${img}')">FAZER OFERTA</button>
+            <button class="btn-blue" onclick="iniciarOferta(${encodeURIComponent(JSON.stringify({img: img, text: txt || 'Troca disponível!', user: userName, userPic: userPic}))})">FAZER OFERTA</button>
             ${role === 'ADM' ? `<button onclick="this.parentElement.remove()" style="color:#ff4d6d; background:none; border:none; margin-top:10px; font-weight:bold;">Bloquear (ADM)</button>` : ''}
           </div>`;
         document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
 
-        // limpa campos
         document.getElementById('t-troca').value = "";
         document.getElementById('f-troca').value = "";
 
@@ -220,36 +325,125 @@
       reader.readAsDataURL(file);
     }
 
-    function fazerOferta(imgDono) {
-      alert("Sua oferta foi enviada!");
-      setTimeout(() => {
-        document.getElementById('notif').style.top = "20px";
-        document.getElementById('badge').style.display = "block";
+    // === NOVO: iniciar oferta -> abre tela dupla ===
+    function iniciarOferta(encodedJson){
+      let data = null;
+      try{
+        data = JSON.parse(decodeURIComponent(encodedJson));
+      } catch(e){
+        alert("Erro ao abrir oferta.");
+        return;
+      }
+      tradeTarget = data;
+      abrirTelaDupla(tradeTarget);
+    }
 
-        // imagem fake da oferta (não travar)
-        const imgOferta = "https://picsum.photos/seed/" + Date.now() + "/600/600";
+    function abrirTelaDupla(target){
+      // limpa o lado direito
+      limparOferta(true);
 
+      // monta lado esquerdo
+      document.getElementById('tradeTargetMeta').innerText =
+        `Post de: ${target.user || 'Usuário'} • Item selecionado`;
+
+      const wrap = document.getElementById('tradeTargetWrap');
+      wrap.innerHTML = `
+        <img class="trade-preview" src="${target.img}" alt="Item selecionado">
+        <p style="margin:10px 0 0 0;">${escapeHtml(target.text || '')}</p>
+      `;
+
+      ver('trade');
+    }
+
+    function previewOfferFile(){
+      const f = document.getElementById('myOfferFile').files[0];
+      if(!f){
+        document.getElementById('myOfferPreview').style.display = "none";
+        document.getElementById('myOfferPlaceholder').style.display = "flex";
+        return;
+      }
+      const r = new FileReader();
+      r.onload = (e) => {
+        document.getElementById('myOfferPreview').src = e.target.result;
+        document.getElementById('myOfferPreview').style.display = "block";
+        document.getElementById('myOfferPlaceholder').style.display = "none";
+      };
+      r.readAsDataURL(f);
+    }
+
+    function limparOferta(keepTarget=false){
+      document.getElementById('myOfferFile').value = "";
+      document.getElementById('myOfferText').value = "";
+      document.getElementById('myOfferPreview').style.display = "none";
+      document.getElementById('myOfferPreview').src = "";
+      document.getElementById('myOfferPlaceholder').style.display = "flex";
+      if(!keepTarget){
+        tradeTarget = null;
+      }
+      atualizarHintOfertas();
+    }
+
+    // === NOVO: enviar oferta final -> cria oferta pendente em "ofertas" ===
+    function enviarOfertaFinal(){
+      if(!tradeTarget) return alert("Selecione um item na Home (FAZER OFERTA) antes.");
+
+      const myFile = document.getElementById('myOfferFile').files[0];
+      const myText = (document.getElementById('myOfferText').value || "").trim();
+
+      if(!myFile) return alert("Envie uma foto do que você tem pra trocar.");
+      if(!myText) return alert("Escreva uma descrição da sua oferta.");
+
+      const r = new FileReader();
+      r.onload = (e) => {
+        const myImg = e.target.result;
+
+        // cria card na lista de ofertas
         const html = `
           <div class="card">
-            <div class="trade-split">
-              <div class="trade-side"><img src="${imgDono}"></div>
-              <div class="vs-badge">VS</div>
-              <div class="trade-side"><img src="${imgOferta}"></div>
+            <div class="mini" style="margin-bottom:8px;">
+              Oferta enviada para: <b>${escapeHtml(tradeTarget.user || 'Usuário')}</b>
             </div>
+
+            <div class="trade-split">
+              <div class="trade-side"><img src="${tradeTarget.img}"></div>
+              <div class="vs-badge">VS</div>
+              <div class="trade-side"><img src="${myImg}"></div>
+            </div>
+
+            <div class="mini"><b>Você quer:</b> ${escapeHtml(tradeTarget.text || '')}</div>
+            <div class="mini"><b>Sua oferta:</b> ${escapeHtml(myText)}</div>
+
             <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
-          </div>`;
+          </div>
+        `;
         document.getElementById('lista-ofertas').insertAdjacentHTML('afterbegin', html);
 
-        setTimeout(() => document.getElementById('notif').style.top = "-100px", 4000);
-      }, 1200);
+        // notif + badge
+        document.getElementById('notif').innerText = "🔔 Oferta criada! Vá em Trocas para acompanhar.";
+        document.getElementById('notif').style.top = "20px";
+        document.getElementById('badge').style.display = "block";
+        setTimeout(() => document.getElementById('notif').style.top = "-100px", 3500);
+
+        // depois que enviou: limpa lado direito e vai pra Trocas
+        document.getElementById('myOfferText').value = "";
+        document.getElementById('myOfferFile').value = "";
+        document.getElementById('myOfferPreview').style.display = "none";
+        document.getElementById('myOfferPlaceholder').style.display = "flex";
+
+        // mantém o alvo (pra você poder fazer outra oferta rápido),
+        // mas se quiser limpar o alvo, descomenta a linha abaixo:
+        // tradeTarget = null;
+
+        ver('ofertas');
+      };
+      r.readAsDataURL(myFile);
     }
 
     function abrirChat() {
       document.getElementById('chat-window').style.left = "0";
-      // mensagem automática
       if(!document.getElementById('chat-box').dataset.seeded){
         document.getElementById('chat-box').dataset.seeded = "1";
-        document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="h-msg">Olá! Curti sua troca. O que você aceita?</div>`);
+        document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="h-msg">Olá! Curti sua oferta. Vamos combinar?</div>`);
       }
     }
     function fecharChat() { document.getElementById('chat-window').style.left = "100%"; }
@@ -260,7 +454,6 @@
       if(!v) return;
       document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${escapeHtml(v)}</div>`);
       inpt.value = "";
-      // resposta fake
       setTimeout(() => {
         document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="h-msg">Fechado. Me manda mais detalhes e fotos 🙂</div>`);
         document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
@@ -275,45 +468,8 @@
       reader.readAsDataURL(file);
     }
 
-    // Feed fake pra não ficar vazio
+    // Feed fake
     function seedFeed(){
       const feed = document.getElementById('feed');
       if(feed.dataset.seeded) return;
-      feed.dataset.seeded = "1";
-
-      const fakeUsers = [
-        {name:"Luna", pic:"https://i.pravatar.cc/120?img=5", text:"Troco relógio por fone bluetooth.", img:"https://picsum.photos/seed/luna/900/600"},
-        {name:"Diego", pic:"https://i.pravatar.cc/120?img=11", text:"Tenho skate, quero trocar por bicicleta aro 29.", img:"https://picsum.photos/seed/diego/900/601"},
-        {name:"Nina", pic:"https://i.pravatar.cc/120?img=32", text:"Troco headset gamer por teclado mecânico.", img:"https://picsum.photos/seed/nina/900/602"}
-      ];
-
-      fakeUsers.forEach(u => {
-        const html = `
-          <div class="card">
-            <div class="post-head">
-              <img src="${u.pic}" class="u-pic">
-              <div>
-                <div class="u-name">${u.name}</div>
-                <div class="mini">Oferta pública</div>
-              </div>
-            </div>
-            <p style="margin-top:0;">${escapeHtml(u.text)}</p>
-            <img src="${u.img}" style="width:100%; border-radius:10px;">
-            <button class="btn-blue" onclick="fazerOferta('${u.img}')">FAZER OFERTA</button>
-          </div>`;
-        feed.insertAdjacentHTML('beforeend', html);
-      });
-    }
-
-    // segurança básica pra não quebrar HTML
-    function escapeHtml(str){
-      return String(str)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-  </script>
-</body>
-</html>
+      feed.dataset.seede
