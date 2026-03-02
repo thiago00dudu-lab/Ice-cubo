@@ -3,74 +3,59 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ice BLUE - Deep Sea</title>
+    <title>Ice BLUE - Oceano Profundo</title>
     <style>
-        :root { --ice: #00d4ff; --dark: #000814; --sea: #001d3d; --danger: #ff4d6d; --green: #2ecc71; }
+        :root { --ice: #00d4ff; --sea-dark: #000814; --sea-light: #001d3d; --glass: rgba(255, 255, 255, 0.1); }
         
-        /* FUNDO DO MAR ANIMADO */
+        /* DECORAÇÃO FUNDO DO MAR */
         body { 
-            margin:0; 
-            background: linear-gradient(180deg, #001219 0%, #002855 50%, #001219 100%); 
-            color:#fff; 
-            font-family: 'Segoe UI', sans-serif; 
-            min-height: 100vh; 
-            padding-bottom: 85px; 
-            overflow-x: hidden;
-            position: relative;
+            margin:0; background: linear-gradient(180deg, #000814 0%, #001d3d 50%, #003566 100%); 
+            color:#fff; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding-bottom: 90px;
+            overflow-x: hidden; position: relative;
         }
-
-        /* BOLHAS DE FUNDO */
-        body::before {
-            content: "○"; font-size: 20px; position: fixed; color: rgba(255,255,255,0.1);
-            animation: bubbles 10s linear infinite; bottom: -50px; left: 10%; z-index: -1;
-        }
-        @keyframes bubbles {
-            0% { transform: translateY(0) scale(1); opacity: 0; }
+        /* BOLHAS ANIMADAS */
+        .bubble { position: fixed; bottom: -50px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: rise 10s infinite ease-in; z-index: -1; }
+        @keyframes rise { 
+            0% { transform: translateY(0) scale(1); opacity: 0; } 
             50% { opacity: 0.5; }
-            100% { transform: translateY(-100vh) scale(1.5); opacity: 0; }
+            100% { transform: translateY(-110vh) scale(1.5); opacity: 0; } 
         }
 
-        .header-ice { background: rgba(0, 212, 255, 0.1); backdrop-filter: blur(20px); padding: 15px; text-align: center; border-bottom: 2px solid var(--ice); position: sticky; top:0; z-index: 1001; }
-        .header-ice h1 { font-size: 24px; color: var(--ice); text-shadow: 0 0 15px var(--ice); margin: 0; letter-spacing: 2px; }
-        
-        /* PERFIL IPHONE SWIPE */
-        #feed-perfil { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding: 20px; scrollbar-width: none; }
+        /* HEADER FIXO */
+        .header-ice { background: rgba(0,0,0,0.5); backdrop-filter: blur(15px); padding: 12px; border-bottom: 1px solid var(--ice); position: sticky; top:0; z-index: 1001; text-align: center; }
+        .header-ice h1 { font-size: 18px; color: var(--ice); text-shadow: 0 0 10px var(--ice); margin: 0; letter-spacing: 2px; }
+
+        /* PERFIL COMPACTO (CORRIGIDO) */
+        .profile-top { display: flex; align-items: center; padding: 15px; background: var(--glass); margin: 10px; border-radius: 15px; border: 1px solid rgba(0,212,255,0.2); gap: 15px; }
+        .profile-pic-container { position: relative; width: 60px; height: 60px; flex-shrink: 0; }
+        #profile-img-display { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--ice); }
+        .edit-pic-btn { position: absolute; bottom: -2px; right: -2px; background: var(--ice); border-radius: 50%; width: 22px; height: 22px; font-size: 10px; display: flex; align-items: center; justify-content: center; color: #000; cursor: pointer; }
+        .profile-info { text-align: left; line-height: 1.2; }
+
+        /* CARROSSEL IPHONE (SWIPE LATERAL) */
+        #feed-perfil { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding: 10px; scrollbar-width: none; }
         #feed-perfil::-webkit-scrollbar { display: none; }
-        #feed-perfil .card { min-width: 80%; scroll-snap-align: center; margin: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(0, 212, 255, 0.3); }
+        #feed-perfil .card { min-width: 80%; scroll-snap-align: center; margin: 0; background: rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
 
-        /* TELA DIVIDIDA DE TROCA ATIVA */
-        .split-trade { display: flex; gap: 10px; height: 280px; margin: 15px 0; perspective: 1000px; }
-        .trade-side { 
-            flex: 1; 
-            background: rgba(0, 20, 40, 0.6); 
-            border: 2px solid var(--ice); 
-            border-radius: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,212,255,0.2);
-        }
-        .trade-side img { width: 100%; height: 100%; object-fit: cover; }
-        .vs-circle { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--ice); color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 5; border: 3px solid var(--dark); }
+        /* LOGÍSTICA DE TROCA DIVIDIDA */
+        .trade-wrapper { display: flex; gap: 8px; margin: 10px 0; height: 160px; }
+        .trade-slot { flex: 1; border: 2px dashed var(--ice); border-radius: 12px; background: rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .trade-slot img { width: 100%; height: 100%; object-fit: cover; }
+        .vs-text { position: absolute; background: var(--ice); color: #000; font-weight: bold; padding: 2px 8px; border-radius: 8px; z-index: 5; font-size: 10px; }
 
-        /* CARDS */
-        .card { background: rgba(255,255,255,0.07); backdrop-filter: blur(12px); border-radius: 20px; margin: 15px; padding: 18px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-        .tag-troca { background: var(--ice); color: #000; font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; display: inline-block; }
+        /* CARDS E BOTÕES */
+        .card { background: var(--glass); backdrop-filter: blur(10px); border-radius: 18px; margin: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .tag-troca { background: var(--ice); color: #000; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; display: inline-block; }
+        .btn-blue { background: var(--ice); color: #000; font-weight: bold; padding: 10px; border-radius: 10px; border: none; cursor: pointer; width: 100%; }
         
-        .btn-blue { background: var(--ice); color: #000; font-weight: bold; border-radius: 12px; cursor: pointer; transition: 0.3s; border: none; padding: 12px; }
-        .btn-blue:active { transform: scale(0.95); }
-
-        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0, 8, 20, 0.95); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid var(--ice); backdrop-filter: blur(10px); }
-        .nav-item { color: #8ef; text-align: center; font-size: 11px; flex: 1; cursor: pointer; transition: 0.3s; }
-        .nav-item span { font-size: 24px; display: block; }
+        /* MENU INFERIOR */
+        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0, 8, 20, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--ice); }
+        .nav-item { color: #8ef; text-align: center; font-size: 10px; flex: 1; }
+        .nav-item span { font-size: 20px; display: block; }
         
-        .tela { display: none; animation: fadeIn 0.4s; }
+        .tela { display: none; animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        #floating-msg { position: fixed; bottom: 100px; right: -400px; background: #fff; color: #000; padding: 15px; border-radius: 20px; transition: 0.6s; z-index: 2000; width: 240px; }
+        #floating-msg { position: fixed; bottom: 100px; right: -400px; background: white; color: #000; padding: 15px; border-radius: 15px; transition: 0.6s; z-index: 2000; width: 220px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body id="page-body">
@@ -81,65 +66,70 @@
 
     <!-- PROPAGANDA 50s -->
     <div id="floating-msg">
-        🐙 <b>EXPANDIR FAMÍLIA</b><br>
-        <small>Convide amigos para o fundo do mar e ganhe filhos!</small>
-        <button class="btn-blue" style="width:100%; margin-top:10px;" onclick="compartilharReal()">INDICAR AGORA</button>
+        💎 <b>ÁRVORE GENEALÓGICA</b><br>
+        Indique o Ice Blue e ganhe filhos!<br>
+        <button class="btn-blue" onclick="compartilharReal()" style="margin-top:5px;">COMPARTILHAR</button>
     </div>
 
-    <!-- HOME -->
+    <!-- TELA HOME -->
     <div id="home" class="tela" style="display: block;">
         <div id="feed">
-            <div class="card">🐚 Mergulhe nas trocas! Novos itens encontrados no recife.</div>
+            <div class="card">🐚 Bem-vindo ao Oceano Ice Blue. Novas trocas em breve!</div>
         </div>
     </div>
 
-    <!-- TELA DE NEGOCIAÇÃO ATIVA (Onde a mágica acontece) -->
-    <div id="negociar" class="tela">
-        <h3 style="text-align:center;">🤝 Proposta de Troca</h3>
-        <div class="split-trade">
-            <div class="trade-side" id="item-dono">
-                <!-- Foto de quem postou -->
+    <!-- TELA DE NEGOCIAÇÃO (Onde a outra pessoa põe o item) -->
+    <div id="negocio" class="tela">
+        <h3 style="text-align:center;">🤝 Fazer Oferta de Troca</h3>
+        <div class="card">
+            <div class="trade-wrapper">
+                <div class="trade-slot" id="slot-dono"></div>
+                <div class="vs-text" style="align-self: center;">VS</div>
+                <div class="trade-slot" id="slot-oferta">
+                    <input type="file" id="f-oferta" style="display:none" onchange="previewOferta(this)">
+                    <label for="f-oferta" style="cursor:pointer; font-size:11px; text-align:center;">Clique para<br><b>OFERECER ITEM</b></label>
+                </div>
             </div>
-            <div class="vs-circle">VS</div>
-            <div class="trade-side" id="item-visitante" style="border-style: dashed; opacity: 0.8;">
-                <input type="file" id="f-oferta" style="display:none" onchange="previewOferta(this)">
-                <label for="f-oferta" id="label-oferta" style="cursor:pointer; text-align:center; padding: 10px;">
-                    Clique para<br><b>OFERECER ITEM</b>
-                </label>
+            <p id="txt-negocio" style="font-size:14px; color: #8ef;"></p>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-blue" style="background:#ff4d6d; color:#fff;" onclick="ver('home')">CANCELAR</button>
+                <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="alert('Oferta Enviada!')">CONFIRMAR</button>
             </div>
-        </div>
-        <div style="display:flex; gap:10px; padding: 0 15px;">
-            <button class="btn-blue" style="background:var(--danger); color:white; flex:1;" onclick="ver('home')">RECUSAR</button>
-            <button class="btn-blue" style="background:var(--green); color:white; flex:1;" onclick="confirmarTroca()">ACEITAR</button>
         </div>
     </div>
 
     <!-- CRIAR TROCA -->
     <div id="trocas" class="tela">
         <div class="card">
-            <h3>🧊 O que você quer trocar?</h3>
-            <input type="file" id="f-troca" accept="image/*" onchange="previewMinhaTroca(this)">
-            <div id="minha-preview-div" style="width:100px; height:100px; margin:10px auto; border:1px solid var(--ice); border-radius:10px; display:none; overflow:hidden;"></div>
-            <textarea id="t-troca" placeholder="Ex: Troco Skin Lendária por 500 gemas..."></textarea>
-            <button class="btn-blue" style="width:100%" onclick="postar('troca')">LANÇAR NO MAR</button>
+            <h3>🔄 O que você quer trocar?</h3>
+            <input type="file" id="f-troca" accept="image/*" onchange="previewImg(this, 'p-minha')">
+            <img id="p-minha" style="width:80px; height:80px; display:none; margin:10px auto; border-radius:10px; border:1px solid var(--ice);">
+            <textarea id="t-troca" placeholder="Descreva sua proposta..."></textarea>
+            <button class="btn-blue" onclick="postar('troca')">LANÇAR TROCA NO MAR</button>
         </div>
     </div>
 
     <!-- PERFIL -->
     <div id="perfil" class="tela">
-        <div class="card" style="text-align:center;">
+        <div class="profile-top">
             <div class="profile-pic-container">
                 <img src="https://cdn-icons-png.flaticon.com" id="profile-img-display">
                 <label for="upload-perfil" class="edit-pic-btn">📷</label>
                 <input type="file" id="upload-perfil" accept="image/*" style="display:none" onchange="alterarFoto(this)">
             </div>
-            <h2>Meu Perfil</h2>
-            <p>👨‍👩‍👧‍👦 Filhos: <b id="n-filhos">0</b> | ID: <b id="meu-id">ICE-8960</b></p>
+            <div class="profile-info">
+                <b style="font-size: 18px;">Meu Perfil</b><br>
+                <small style="color:var(--ice)">ID: ICE-8960</small><br>
+                <small>👨‍👩‍👧‍👦 Filhos: <span id="n-filhos">0</span></small>
+            </div>
         </div>
+        
+        <h4 style="margin-left:20px; margin-bottom: 5px;">Minhas Janelas ↔️</h4>
         <div id="feed-perfil"></div>
+
         <div class="card">
-            <textarea id="t-post" placeholder="Postagem rápida..."></textarea>
-            <button class="btn-blue" style="width:100%" onclick="postar('perfil')">PUBLICAR</button>
+            <textarea id="t-post" placeholder="No que está pensando?"></textarea>
+            <button class="btn-blue" onclick="postar('perfil')">POSTAR AGORA</button>
         </div>
     </div>
 
@@ -150,9 +140,17 @@
     </nav>
 
     <script>
-        let imgTemp = "";
+        // Criar bolhas aleatórias
+        for(let i=0; i<15; i++) {
+            let b = document.createElement('div');
+            b.className = 'bubble';
+            b.style.left = Math.random() * 100 + '%';
+            b.style.width = b.style.height = Math.random() * 20 + 5 + 'px';
+            b.style.animationDelay = Math.random() * 10 + 's';
+            document.body.appendChild(b);
+        }
 
-        // Propaganda 50s
+        // Propaganda a cada 50s
         setInterval(() => {
             const m = document.getElementById('floating-msg');
             m.style.right = "15px";
@@ -164,75 +162,56 @@
             document.getElementById(id).style.display = 'block';
         }
 
-        // Abrir tela de oferta quando clicar no card da Timeline
-        function abrirNegocio(imgUrl) {
-            document.getElementById('item-dono').innerHTML = `<img src="${imgUrl}">`;
-            document.getElementById('item-visitante').innerHTML = `
-                <input type="file" id="f-oferta" style="display:none" onchange="previewOferta(this)">
-                <label for="f-oferta" id="label-oferta" style="cursor:pointer; text-align:center; padding: 10px;">Clique para<br><b>OFERECER ITEM</b></label>`;
-            ver('negociar');
+        function previewImg(input, id) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const el = document.getElementById(id);
+                    el.src = e.target.result;
+                    el.style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
         function previewOferta(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('item-visitante').innerHTML = `<img src="${e.target.result}">`;
-                };
+                reader.onload = (e) => document.getElementById('slot-oferta').innerHTML = `<img src="${e.target.result}">`;
                 reader.readAsDataURL(input.files[0]);
             }
+        }
+
+        function abrirTroca(imgUrl, texto) {
+            document.getElementById('slot-dono').innerHTML = `<img src="${imgUrl}">`;
+            document.getElementById('txt-negocio').innerText = texto;
+            document.getElementById('slot-oferta').innerHTML = `<input type="file" id="f-oferta" style="display:none" onchange="previewOferta(this)"><label for="f-oferta" style="cursor:pointer; font-size:11px; text-align:center;">Clique para<br><b>OFERECER ITEM</b></label>`;
+            ver('negocio');
         }
 
         function postar(tipo) {
             const isTroca = (tipo === 'troca');
             const txt = isTroca ? document.getElementById('t-troca').value : document.getElementById('t-post').value;
-            const inputImg = isTroca ? document.getElementById('f-troca') : {files:[]};
-            
-            if(!txt) return alert("Escreva uma descrição!");
+            const fileInput = isTroca ? document.getElementById('f-troca') : null;
 
             const reader = new FileReader();
             reader.onload = (e) => {
-                const imgSource = e.target.result || 'https://picsum.photos';
-                const postHtml = `
+                const img = e.target.result || 'https://picsum.photos' + Date.now();
+                const html = `
                     <div class="card">
-                        ${isTroca ? '<span class="tag-troca">🔄 TROCA ABERTA</span>' : ''}
+                        ${isTroca ? '<span class="tag-troca">🔄 TROCA DISPONÍVEL</span>' : ''}
                         <p>${txt}</p>
-                        <img src="${imgSource}" style="width:100%; border-radius:15px;">
-                        <div style="display:flex; justify-content:space-between; margin-top:10px;">
-                            <button class="post-btn" style="background:none; border:none; color:#8ef;">❤️ 0</button>
-                            ${isTroca ? `<button class="btn-blue" onclick="abrirNegocio('${imgSource}')" style="padding:5px 15px; font-size:12px;">FAZER OFERTA</button>` : ''}
+                        <img src="${img}" style="width:100%; border-radius:15px; margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <button style="background:none; border:none; color:#8ef;">💙 0</button>
+                            ${isTroca ? `<button class="btn-blue" onclick="abrirTroca('${img}', '${txt}')" style="width:auto; padding:5px 15px; font-size:12px;">OFERTAR</button>` : ''}
                         </div>
                     </div>`;
-
-                document.getElementById('feed').insertAdjacentHTML('afterbegin', postHtml);
-                if(tipo === 'perfil' || isTroca) document.getElementById('feed-perfil').insertAdjacentHTML('afterbegin', postHtml);
+                document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
+                document.getElementById('feed-perfil').insertAdjacentHTML('afterbegin', html);
                 ver('home');
             };
-            if(inputImg.files[0]) reader.readAsDataURL(inputImg.files[0]); else reader.onload({target:{result:''}});
-        }
-
-        function previewMinhaTroca(input) {
-            const div = document.getElementById('minha-preview-div');
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    div.style.display = "block";
-                    div.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function confirmarTroca() {
-            alert("🌊 Proposta enviada para o dono do item! Aguarde a resposta.");
-            ver('home');
-        }
-
-        async function compartilharReal() {
-            if (navigator.share) {
-                await navigator.share({ title: 'Ice Blue', text: 'Mergulhe comigo! ID: ICE-8960', url: window.location.href });
-                document.getElementById('n-filhos').innerText = parseInt(document.getElementById('n-filhos').innerText) + 1;
-            }
+            if(fileInput && fileInput.files[0]) reader.readAsDataURL(fileInput.files[0]); else reader.onload({target:{result:''}});
         }
 
         function alterarFoto(input) {
@@ -243,6 +222,13 @@
                     localStorage.setItem('icePic', e.target.result);
                 };
                 reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function compartilharReal() {
+            if (navigator.share) {
+                await navigator.share({ title: 'Ice Blue', text: 'Vem pro oceano! ID: ICE-8960', url: window.location.href });
+                document.getElementById('n-filhos').innerText = parseInt(document.getElementById('n-filhos').innerText) + 1;
             }
         }
 
