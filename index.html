@@ -3,172 +3,192 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ice BLUE - Network</title>
+    <title>Ice BLUE - Oficial</title>
     <style>
-        :root { --ice: #00d4ff; --dark-blue: #001219; --danger: #ff4d6d; }
-        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 80px; }
+        :root { --ice: #00d4ff; --dark: #001219; --danger: #ff4d6d; }
+        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 85px; overflow-x: hidden; }
         
-        /* DESIGN TOPO ICE BLUE */
-        .header-ice { background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); padding: 20px; display: flex; align-items: center; justify-content: center; gap: 15px; border-bottom: 2px solid var(--ice); }
-        .header-ice h1 { font-size: 28px; color: var(--ice); text-shadow: 0 0 10px var(--ice); margin: 0; font-style: italic; }
-        .header-ice img { width: 60px; height: 60px; border-radius: 10px; border: 2px solid white; }
+        /* HEADER ICE BLUE */
+        .header-ice { background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); padding: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; border-bottom: 2px solid var(--ice); position: sticky; top:0; z-index: 1001; }
+        .header-ice h1 { font-size: 24px; color: var(--ice); text-shadow: 0 0 12px var(--ice); margin: 0; }
+        .header-ice img { width: 50px; height: 50px; border-radius: 8px; border: 1px solid white; object-fit: cover; }
 
-        /* MENSAGEM FLUTUANTE */
-        #floating-msg { position: fixed; top: 80px; right: -300px; background: var(--ice); color: #000; padding: 10px 15px; border-radius: 10px; font-weight: bold; font-size: 12px; transition: 0.5s; z-index: 2000; box-shadow: 0 0 15px var(--ice); }
+        /* PROPAGANDA FLUTUANTE FUNCIONAL */
+        #floating-msg { position: fixed; top: 80px; right: -400px; background: white; color: #000; padding: 12px; border-radius: 12px; font-size: 12px; transition: 0.6s; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); width: 220px; }
+        #floating-msg button { background: var(--ice); color: #000; border: none; padding: 5px; border-radius: 5px; margin-top: 5px; font-weight: bold; cursor: pointer; width: 100%; }
 
-        /* CARDS E POSTS */
-        .card { background: rgba(255,255,255,0.1); border-radius: 15px; margin: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .post-img { width: 100%; border-radius: 10px; margin: 10px 0; }
-        .acoes { display: flex; justify-content: space-around; border-top: 1px solid #444; padding-top: 10px; }
-        .btn-acao { background: none; border: none; color: #8ef; cursor: pointer; }
+        /* CARDS */
+        .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(5px); border-radius: 15px; margin: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .post-img { width: 100%; border-radius: 10px; margin-top: 10px; }
+        
+        /* SOS PISCANDO */
+        @keyframes alert-red { 0%, 100% { background: transparent; } 50% { background: rgba(255,0,0,0.6); } }
+        .sos-on { animation: alert-red 0.5s infinite !important; }
 
-        /* PERIGO SOS ATIVO */
-        @keyframes blink { 0%, 100% { background: transparent; } 50% { background: rgba(255,0,0,0.6); } }
-        .sos-active { animation: blink 0.6s infinite !important; }
-
-        /* NAV */
+        /* MENU INFERIOR (TODOS OS ÍCONES) */
         .nav { position: fixed; bottom: 0; width: 100%; background: #001219; display: flex; justify-content: space-around; padding: 12px 0; border-top: 2px solid var(--ice); z-index: 1000; }
-        .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; }
-        .nav-item span { font-size: 22px; display: block; }
-        .tela { display: none; padding: 10px; }
-        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--ice); color: #000; font-weight: bold; margin: 5px 0; }
+        .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; flex: 1; }
+        .nav-item span { font-size: 22px; display: block; margin-bottom: 2px; }
+
+        .tela { display: none; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        input, textarea, button { width: 100%; padding: 12px; border-radius: 10px; border: none; margin: 5px 0; box-sizing: border-box; }
+        .btn-blue { background: var(--ice); color: #000; font-weight: bold; }
     </style>
 </head>
-<body id="main-body">
+<body id="page-body">
 
-    <!-- CABEÇALHO DESIGN -->
     <div class="header-ice">
         <h1>ICE BLUE</h1>
-        <img src="https://i.imgur.com" alt="Logo Urso" onerror="this.src='https://cdn-icons-png.flaticon.com'">
+        <!-- Link da imagem do urso enviada -->
+        <img src="https://i.ibb.co" onerror="this.src='https://cdn-icons-png.flaticon.com'">
     </div>
 
-    <!-- MENSAGEM FLUTUANTE -->
-    <div id="floating-msg">❄️ Compartilhe o Ice com amigos e ganhe filhos!</div>
+    <!-- PROPAGANDA -->
+    <div id="floating-msg">
+        ❄️ <b>Ganhe Filhos!</b><br>
+        Compartilhe o Ice BLUE e cresça sua árvore genealógica.
+        <button onclick="compartilharID()">COMPARTILHAR AGORA</button>
+    </div>
 
-    <!-- HOME -->
+    <!-- TELA HOME -->
     <div id="home" class="tela" style="display: block;">
-        <div id="feed-geral"></div>
+        <div id="feed">
+            <div class="card">🚀 Bem-vindo ao Ice BLUE! Explore o menu abaixo.</div>
+        </div>
     </div>
 
-    <!-- PERFIL COM SISTEMA DE FILHOS -->
+    <!-- TELA TROCAS (VOLTOU!) -->
+    <div id="trocas" class="tela">
+        <h3 style="text-align:center;">🔄 Central de Trocas</h3>
+        <div class="card">
+            <input type="file" id="f-troca" accept="image/*">
+            <textarea id="t-troca" placeholder="O que você quer trocar hoje?"></textarea>
+            <button class="btn-blue" onclick="postar('troca')">Postar Troca</button>
+        </div>
+    </div>
+
+    <!-- TELA PERFIL -->
     <div id="perfil" class="tela">
-        <div class="card" style="text-align: center;">
-            <h2 id="nome-perfil">Usuário Ice ✎</h2>
-            <div style="background: rgba(0,212,255,0.2); padding: 10px; border-radius: 10px;">
-                <b>👨‍👩‍👧‍👦 Árvore Genealógica:</b><br>
-                <span>Pai de: <b id="contador-filhos">0</b> filhos</span>
+        <div class="card" style="text-align:center;">
+            <h2>Meu Perfil Ice ✎</h2>
+            <div style="background:rgba(0,212,255,0.1); padding:10px; border-radius:10px;">
+                <p>👨‍👩‍👧‍👦 Filhos: <b id="n-filhos">0</b></p>
+                <small>Seu ID: <b id="meu-id">ICE-8960</b></small>
             </div>
-            <p style="font-size: 10px; margin-top: 5px;">ID de indicação: #ICE99</p>
-            <button onclick="adicionarFilhoSimulado()" style="font-size: 10px; height: 30px;">(Simular indicação de amigo)</button>
         </div>
         <div class="card">
-            <input type="file" id="img-perfil" accept="image/*">
-            <button onclick="publicar()">Postar Foto</button>
+            <h4>Nova Postagem</h4>
+            <input type="file" id="f-post" accept="image/*">
+            <textarea id="t-post" placeholder="No que você está pensando?"></textarea>
+            <button class="btn-blue" onclick="postar('perfil')">Publicar</button>
         </div>
+        <div id="feed-perfil"></div>
     </div>
 
-    <!-- PERIGO (SOS) -->
+    <!-- TELA PERIGO -->
     <div id="perigo" class="tela">
         <div class="card" style="text-align:center;">
             <h3>🚨 BOTÃO DE ATENÇÃO</h3>
-            <div id="btn-sos" onclick="toggleSOS()" style="width:100px; height:100px; background:red; border-radius:50%; margin: 20px auto; display:flex; align-items:center; justify-content:center; border:5px solid white; font-weight:bold; cursor:pointer;">SOS</div>
-            <p id="status-sos">Toque para ativar/desativar</p>
-            <div id="local-box"></div>
+            <div id="sos-btn" onclick="toggleSOS()" style="width:90px; height:90px; background:red; border-radius:50%; margin:20px auto; display:flex; align-items:center; justify-content:center; border:4px solid white; font-weight:bold; cursor:pointer;">SOS</div>
+            <p id="sos-status">Clique para ativar</p>
+            <div id="sos-info"></div>
         </div>
     </div>
 
-    <!-- NAV -->
+    <!-- MENU INFERIOR -->
     <nav class="nav">
         <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
+        <div class="nav-item" onclick="ver('trocas')"><span>🔄</span>Trocas</div>
         <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
         <div class="nav-item" onclick="ver('perigo')"><span>🚨</span>Perigo</div>
     </nav>
 
     <script>
-        let sosAtivo = false;
-        let curtidasRealizadas = []; // Lista para travar curtidas por post
+        let sosStatus = false;
+        let jaCurtiu = [];
 
         function ver(id) {
             document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
             document.getElementById(id).style.display = 'block';
         }
 
-        // POSTAR
-        function publicar() {
-            const imgFile = document.getElementById('img-perfil').files[0];
-            if(!imgFile) return alert("Selecione uma foto");
-            const reader = new FileReader();
-            const postId = "post_" + Date.now(); // ID único para o post
+        // POSTAGEM E TROCA
+        function postar(tipo) {
+            const txt = tipo === 'troca' ? document.getElementById('t-troca').value : document.getElementById('t-post').value;
+            const file = tipo === 'troca' ? document.getElementById('f-troca').files[0] : document.getElementById('f-post').files[0];
+            if(!txt && !file) return;
 
-            reader.onload = function(e) {
+            const reader = new FileReader();
+            const pid = "p_" + Date.now();
+            reader.onload = (e) => {
                 const html = `
-                    <div class="card" id="${postId}">
-                        <b>👤 Usuário Ice</b>
-                        <img src="${e.target.result}" class="post-img">
-                        <div class="acoes">
-                            <button class="btn-acao" onclick="curtirUmaVez('${postId}', this)">❤️ <span>0</span></button>
-                            <button class="btn-acao">🔗 Compartilhar</button>
+                    <div class="card" id="${pid}">
+                        <b>👤 Usuário Ice</b><br><small>${tipo.toUpperCase()}</small>
+                        <p>${txt}</p>
+                        ${file ? `<img src="${e.target.result}" class="post-img">` : ''}
+                        <div style="display:flex; gap:20px; margin-top:10px; border-top:1px solid #333; padding-top:10px;">
+                            <button onclick="curtirUmaVez('${pid}', this)" style="background:none; color:#8ef; width:auto;">❤️ <span>0</span></button>
+                            <button onclick="compartilharID()" style="background:none; color:#8ef; width:auto;">🔗 Enviar</button>
                         </div>
                     </div>`;
-                document.getElementById('feed-geral').insertAdjacentHTML('afterbegin', html);
+                document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
+                if(tipo === 'perfil') document.getElementById('feed-perfil').insertAdjacentHTML('afterbegin', html);
                 ver('home');
             };
-            reader.readAsDataURL(imgFile);
+            if(file) reader.readAsDataURL(file); else reader.onload({target:{result:''}});
         }
 
         // TRAVA DE CURTIDA
         function curtirUmaVez(id, btn) {
-            if(curtidasRealizadas.includes(id)) {
-                alert("Você já curtiu esta foto!");
-                return;
-            }
-            let span = btn.querySelector('span');
-            span.innerText = parseInt(span.innerText) + 1;
+            if(jaCurtiu.includes(id)) return alert("Limite: 1 curtida por usuário!");
+            let s = btn.querySelector('span');
+            s.innerText = parseInt(s.innerText) + 1;
             btn.style.color = "red";
-            curtidasRealizadas.push(id); // Trava o ID
+            jaCurtiu.push(id);
         }
 
-        // MENSAGEM FLUTUANTE
-        setInterval(() => {
-            const msg = document.getElementById('floating-msg');
-            msg.style.right = "20px";
-            setTimeout(() => { msg.style.right = "-400px"; }, 5000);
-        }, 15000);
-
-        // SISTEMA DE FILHOS
-        function adicionarFilhoSimulado() {
-            let cont = document.getElementById('contador-filhos');
-            cont.innerText = parseInt(cont.innerText) + 1;
-            alert("Novo amigo cadastrado! Você agora é pai de mais um.");
-        }
-
-        // TOGGLE SOS (LIGA/DESLIGA)
-        function toggleSOS() {
-            const body = document.getElementById('main-body');
-            const btn = document.getElementById('btn-sos');
-            const status = document.getElementById('status-sos');
-
-            sosAtivo = !sosAtivo;
-
-            if(sosAtivo) {
-                body.classList.add('sos-active');
-                btn.style.boxShadow = "0 0 30px white";
-                status.innerText = "🚨 ALERTA ATIVADO! (Clique para parar)";
-                pegarLocalizacao();
+        // COMPARTILHAMENTO E FILHOS
+        function compartilharID() {
+            const id = document.getElementById('meu-id').innerText;
+            const link = window.location.href + "?ref=" + id;
+            
+            // Tenta usar a função nativa do celular, se não, copia o link
+            if (navigator.share) {
+                navigator.share({ title: 'Ice BLUE', text: 'Cadastre-se pelo meu ID: ' + id, url: link });
             } else {
-                body.classList.remove('sos-active');
-                btn.style.boxShadow = "none";
-                status.innerText = "Toque para ativar";
-                document.getElementById('local-box').innerHTML = "";
+                navigator.clipboard.writeText(link);
+                alert("Link de indicação copiado! Envie para um amigo. Quando ele entrar, você ganha 1 filho.");
+                // Simulação:
+                setTimeout(() => {
+                    document.getElementById('n-filhos').innerText = parseInt(document.getElementById('n-filhos').innerText) + 1;
+                }, 3000);
             }
         }
 
-        function pegarLocalizacao() {
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const res = await fetch(`https://nominatim.openstreetmap.org{pos.coords.latitude}&lon=${pos.coords.longitude}`);
-                const data = await res.json();
-                document.getElementById('local-box').innerHTML = `<div class="card" style="background:red"><b>Perigo em:</b><br>${data.address.road || 'Local detectado'}</div>`;
-            });
+        // PROPAGANDA
+        setInterval(() => {
+            const m = document.getElementById('floating-msg');
+            m.style.right = "15px";
+            setTimeout(() => { m.style.right = "-400px"; }, 6000);
+        }, 18000);
+
+        // SOS LIGA/DESLIGA
+        function toggleSOS() {
+            sosStatus = !sosStatus;
+            const b = document.getElementById('page-body');
+            const s = document.getElementById('sos-status');
+            if(sosStatus) {
+                b.classList.add('sos-on');
+                s.innerText = "🚨 ATENÇÃO ATIVADA (Toque p/ parar)";
+                navigator.geolocation.getCurrentPosition(p => {
+                    document.getElementById('sos-info').innerHTML = `<div class="card" style="background:red">Perigo em: Lat ${p.coords.latitude.toFixed(2)}</div>`;
+                });
+            } else {
+                b.classList.remove('sos-on');
+                s.innerText = "Clique para ativar";
+                document.getElementById('sos-info').innerHTML = "";
+            }
         }
     </script>
 </body>
