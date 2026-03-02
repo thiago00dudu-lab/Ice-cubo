@@ -34,6 +34,7 @@
       position:fixed; top:-100px; left:50%; transform:translateX(-50%);
       background:var(--ice); color:#000; padding:12px 14px; border-radius:14px;
       z-index:3000; transition:.45s; font-weight:800; width:84%; text-align:center;
+      box-shadow:0 12px 40px rgba(0,0,0,.35);
     }
 
     .card{
@@ -217,7 +218,7 @@
       border-radius:18px; padding:18px;
     }
 
-    /* ===== PERFIL PÚBLICO (Trocas / Fotos / Vídeos) ===== */
+    /* ===== PERFIL PÚBLICO ===== */
     .tabs{ display:flex; gap:10px; margin-top:12px; }
     .tab{
       flex:1; padding:10px; border-radius:12px;
@@ -266,11 +267,27 @@
       background:#000;
       object-fit:contain;
     }
+
+    /* PAINEL DE ERRO */
+    #errPanel{
+      position:fixed; left:12px; right:12px; top:74px;
+      z-index:5000;
+      display:none;
+      background:rgba(255,77,109,.16);
+      border:1px solid rgba(255,77,109,.45);
+      border-radius:14px;
+      padding:10px 12px;
+      font-size:12px;
+      backdrop-filter:blur(10px);
+      box-shadow:0 12px 40px rgba(0,0,0,.35);
+    }
+    #errPanel b{ color:#ffd1da; }
   </style>
 </head>
 
 <body>
   <div id="notif">✅</div>
+  <div id="errPanel"></div>
 
   <!-- overlay se usuário estiver bloqueado -->
   <div class="blocked-overlay" id="blockedOverlay">
@@ -290,7 +307,9 @@
 
   <!-- HOME -->
   <div id="home" class="tela" style="display:block;">
-    <div id="feed"></div>
+    <div id="feed">
+      <div class="card"><b>Carregando...</b><div class="mini">Se ficar preso aqui, aparece o erro em vermelho.</div></div>
+    </div>
   </div>
 
   <!-- OFERTAS -->
@@ -369,7 +388,6 @@
         Trocar Foto
       </button>
 
-      <!-- LOGIN ADM/MOD -->
       <div class="card" style="text-align:left; margin-top:12px;">
         <b>🔐 Área ADM/MOD</b>
         <div class="mini">ADM: senha <b>1533</b>. ADM é intocável.</div>
@@ -377,10 +395,9 @@
         <button class="btn-ghost" onclick="logoutRole()">Sair (voltar Membro)</button>
       </div>
 
-      <!-- GALERIA DO SEU PERFIL (fotos/vídeos) -->
       <div class="card" style="text-align:left;">
         <b>🖼️ Sua Galeria</b>
-        <div class="mini">Aqui você adiciona <b>fotos</b> e <b>vídeos</b> pro seu perfil.</div>
+        <div class="mini">Adicione <b>fotos</b> e <b>vídeos</b> pro seu perfil.</div>
 
         <input type="file" id="galFile" accept="image/*,video/*">
         <button class="btn-blue" onclick="addToMyGallery()">Adicionar na galeria</button>
@@ -392,7 +409,6 @@
         <div id="myVideosList"></div>
       </div>
 
-      <!-- LISTA DE USUÁRIOS (pra moderar) -->
       <div class="card" style="text-align:left;">
         <b>👥 Usuários (simulação)</b>
         <div class="mini">Toque em um usuário para abrir o perfil dele e gerenciar (se você for MOD/ADM).</div>
@@ -409,7 +425,7 @@
     </div>
   </div>
 
-  <!-- PERFIL DE OUTRO USUÁRIO (MODERAÇÃO) -->
+  <!-- PERFIL DE OUTRO USUÁRIO -->
   <div id="user-profile" class="tela">
     <div class="card">
       <button class="btn-ghost" style="margin-top:0" onclick="ver('perfil')">← Voltar</button>
@@ -432,11 +448,6 @@
         <button class="btn-ghost" id="btnDemote" onclick="demoteSelected()">⬇️ Rebaixar para Membro</button>
         <button class="btn-danger" id="btnBlock" onclick="blockSelected()">⛔ Bloquear usuário</button>
         <button class="btn-ok" id="btnUnblock" onclick="unblockSelected()">✅ Desbloquear usuário</button>
-
-        <div class="mini" style="margin-top:10px;">
-          * ADM não pode ser bloqueado.<br>
-          * MOD pode promover MOD e bloquear usuários.
-        </div>
       </div>
 
       <div class="card" style="margin-top:12px;">
@@ -447,7 +458,7 @@
     </div>
   </div>
 
-  <!-- PERFIL PÚBLICO (QUALQUER USUÁRIO) -->
+  <!-- PERFIL PÚBLICO -->
   <div id="public-profile" class="tela">
     <div class="card">
       <button class="btn-ghost" style="margin-top:0" onclick="ver('home')">← Voltar</button>
@@ -477,7 +488,7 @@
     </div>
   </div>
 
-  <!-- MODAL (imagem/vídeo) -->
+  <!-- MODAL -->
   <div class="modal" id="mediaModal" onclick="closeMediaModal()">
     <div class="box" onclick="event.stopPropagation()">
       <button class="btn-ghost" style="margin-top:0" onclick="closeMediaModal()">Fechar</button>
@@ -495,12 +506,4 @@
 
   <nav class="nav" id="menu">
     <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
-    <div class="nav-item" onclick="abrirTrocas()">
-      <span id="badge" class="badge">!</span>
-      <span>🔄</span>Trocas
-    </div>
-    <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
-  </nav>
-
-  <script>
-    /* Evita travar em celu
+    <div class="nav-item
