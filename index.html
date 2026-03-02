@@ -6,7 +6,7 @@
   <title>ICE</title>
   <style>
     :root{
-      --bg:#060b16; --card:#0b1430; --card2:#0a122a; --stroke:#1a2a55;
+      --bg:#060b16; --card:#0b1430; --stroke:#1a2a55;
       --text:#eaf0ff; --muted:#a9b7e6; --brand:#66e1ff; --brand2:#7c5cff;
       --good:#37d67a; --bad:#ff4d6d; --warn:#ffb020;
       --radius:18px;
@@ -20,9 +20,8 @@
                   var(--bg);
       color:var(--text);
       min-height:100vh;
-      padding-bottom: 84px; /* espaço pro rodapé */
+      padding-bottom: 84px;
     }
-    a{color:inherit}
     .topbar{
       position:sticky; top:0; z-index:30;
       backdrop-filter: blur(10px);
@@ -143,20 +142,26 @@
     .divider{height:1px; background: rgba(26,42,85,.55); margin:10px 0}
     .hidden{display:none !important}
 
-    /* timeline */
-    .post{padding:14px; border-bottom:1px solid rgba(26,42,85,.45)}
-    .post:last-child{border-bottom:none}
+    /* avatar / profile photo */
     .avatar{
-      width:38px;height:38px;border-radius:14px;
+      width:42px;height:42px;border-radius:16px;
       background: linear-gradient(135deg, rgba(102,225,255,.75), rgba(124,92,255,.65));
       border:1px solid rgba(255,255,255,.12);
       display:grid;place-items:center;
       font-weight:900;
       color:#061022;
       user-select:none;
+      overflow:hidden;
     }
+    .avatar img{width:100%;height:100%;object-fit:cover}
     .name{font-weight:900}
     .time{font-size:12px; color:rgba(169,183,230,.8)}
+    .kpis{display:flex; gap:10px; flex-wrap:wrap}
+    .kpi{padding:9px 12px;border-radius:14px;border:1px solid rgba(26,42,85,.75);background: rgba(5,10,22,.35);color:var(--muted);font-size:12px}
+
+    /* timeline */
+    .post{padding:14px; border-bottom:1px solid rgba(26,42,85,.45)}
+    .post:last-child{border-bottom:none}
     .video{
       margin-top:10px;
       border-radius:16px;
@@ -183,6 +188,14 @@
       display:grid;place-items:center;
       font-size:26px;
     }
+    .mediaBox{
+      margin-top:10px;
+      border-radius:16px;
+      overflow:hidden;
+      border:1px solid rgba(26,42,85,.6);
+      background: rgba(0,0,0,.25);
+    }
+    .mediaBox img,.mediaBox video{width:100%;display:block;max-height:420px;object-fit:cover}
     .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
     .iconBtn{
       display:inline-flex; align-items:center; gap:8px;
@@ -225,17 +238,10 @@
         rgba(0,0,0,.22);
       border-top:1px solid rgba(26,42,85,.45);
     }
-    .kpis{display:flex; gap:10px; flex-wrap:wrap}
-    .kpi{padding:9px 12px;border-radius:14px;border:1px solid rgba(26,42,85,.75);background: rgba(5,10,22,.35);color:var(--muted);font-size:12px}
 
     /* swap */
-    .split{
-      display:grid; gap:14px;
-      grid-template-columns: 1fr;
-    }
-    @media(min-width:860px){
-      .split{grid-template-columns: 1fr 1fr}
-    }
+    .split{display:grid; gap:14px; grid-template-columns:1fr;}
+    @media(min-width:860px){ .split{grid-template-columns: 1fr 1fr} }
     .mediaPrev{
       border-radius:16px;
       border:1px solid rgba(26,42,85,.6);
@@ -245,13 +251,9 @@
       display:grid; place-items:center;
     }
     .mediaPrev img, .mediaPrev video{width:100%; height:100%; object-fit:cover}
-    .item{
-      padding:14px; border-bottom:1px solid rgba(26,42,85,.45)
-    }
+    .item{padding:14px; border-bottom:1px solid rgba(26,42,85,.45)}
     .item:last-child{border-bottom:none}
-    .mini{
-      display:grid; grid-template-columns: 84px 1fr; gap:10px; align-items:center;
-    }
+    .mini{display:grid; grid-template-columns: 84px 1fr; gap:10px; align-items:center;}
     .thumb{
       width:84px; height:64px; border-radius:14px;
       border:1px solid rgba(26,42,85,.6);
@@ -300,6 +302,45 @@
       background: rgba(102,225,255,.10);
     }
     .navBtn.active .lbl{color: rgba(223,248,255,.95)}
+
+    /* danger mode (piscando vermelho no perfil) */
+    @keyframes dangerPulse {
+      0% { background: rgba(255,77,109,.10); border-color: rgba(255,77,109,.35); }
+      50%{ background: rgba(255,77,109,.35); border-color: rgba(255,77,109,.75); }
+      100%{ background: rgba(255,77,109,.10); border-color: rgba(255,77,109,.35); }
+    }
+    .dangerBlink{
+      animation: dangerPulse .9s infinite;
+    }
+    .dangerBanner{
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(980px, 92vw);
+      z-index: 95;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border:1px solid rgba(255,77,109,.65);
+      background: rgba(255,77,109,.15);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      display:none;
+    }
+    .dangerBanner.show{display:block}
+    .dangerBanner .t{font-weight:900}
+    .dangerBanner .s{color:rgba(255,210,220,.92); font-size:13px; margin-top:4px; line-height:1.25}
+    .dangerBanner .r{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+    .dangerBanner button{padding:10px 12px;border-radius:14px}
+
+    /* live preview */
+    .liveBox{
+      border-radius:16px;
+      border:1px solid rgba(26,42,85,.6);
+      background: rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .liveBox video{width:100%; display:block; max-height:420px; object-fit:cover}
   </style>
 </head>
 
@@ -317,25 +358,36 @@
     </div>
   </header>
 
+  <!-- banner automático de perigo -->
+  <div class="dangerBanner" id="dangerBanner">
+    <div class="t">🚨 PERIGO PRÓXIMO</div>
+    <div class="s" id="dangerText">Alerta próximo detectado.</div>
+    <div class="r">
+      <button class="btnBad" onclick="go('panico')">Ver alertas</button>
+      <button class="btn3" onclick="hideDanger()">Fechar</button>
+    </div>
+  </div>
+
   <main class="layout">
 
-    <!-- HOME (Timeline) -->
+    <!-- HOME -->
     <section id="viewHome">
       <div class="grid">
 
         <!-- ESQUERDA -->
-        <section class="card" id="authCard">
+        <section class="card">
           <div class="card-h">
             <h3>Conta</h3>
             <span class="tag" id="authTag">offline</span>
           </div>
-          <div class="pad col" id="authBox">
+          <div class="pad col">
             <div class="muted" style="font-size:13px;line-height:1.4">
-              Site estático (sem pagamento). Login local pra testar layout.
+              ICE offline: tudo fica no seu celular. Com localização ligada você recebe alerta automático.
             </div>
 
             <div class="divider"></div>
 
+            <!-- LOGIN -->
             <div class="col" id="loginForm">
               <input id="inUser" placeholder="Usuário (ex: jessica)" maxlength="18">
               <input id="inPass" placeholder="Senha" type="password" maxlength="30">
@@ -344,6 +396,7 @@
               <div class="muted" style="font-size:12px">* Salva só no seu celular (localStorage).</div>
             </div>
 
+            <!-- PAINEL -->
             <div class="col hidden" id="panelForm">
               <div class="row">
                 <div class="avatar" id="meAvatar">I</div>
@@ -362,7 +415,8 @@
               <div class="divider"></div>
 
               <textarea id="newText" placeholder="Escreva algo pro seu timeline..."></textarea>
-              <button class="btn" onclick="postar()">Postar</button>
+              <input type="file" id="postFile" accept="image/*,video/*">
+              <button class="btn" onclick="postar()">Postar (texto + foto/vídeo)</button>
               <button class="btn3" onclick="logout()">Sair</button>
             </div>
           </div>
@@ -372,7 +426,7 @@
         <section class="card">
           <div class="card-h">
             <h3>Timeline</h3>
-            <span class="tag">2 toques no vídeo</span>
+            <span class="tag">2 toques abre grande</span>
           </div>
           <div id="feed"></div>
         </section>
@@ -385,13 +439,12 @@
       <section class="card">
         <div class="card-h">
           <h3>Troca</h3>
-          <span class="tag">Tela dividida</span>
+          <span class="tag">tela dividida</span>
         </div>
 
         <div class="pad">
           <div class="muted" style="font-size:13px;line-height:1.4">
-            Aqui é um “sistema de troca” funcional sem servidor (demo). Você cria uma oferta do seu lado e vê ofertas do “outro lado”.
-            Quando os dois aceitam, aparece <b>MATCH</b>.
+            Demo funcional: oferta + proposta + match (local). Pra virar “real” precisa backend depois.
           </div>
         </div>
 
@@ -408,15 +461,12 @@
 
               <input type="file" id="myFile" accept="image/*,video/*">
               <input id="myTitle" placeholder="Título (ex: iPhone 11)">
-              <textarea id="myDesc" placeholder="Descrição: estado, detalhes, o que você quer em troca..."></textarea>
+              <textarea id="myDesc" placeholder="Descrição + o que você quer em troca..."></textarea>
               <button class="btn" onclick="criarOferta()">Publicar oferta</button>
               <button class="btn3" onclick="limparMinhaOferta()">Apagar minha oferta</button>
 
               <div class="divider"></div>
-
-              <div class="muted" style="font-size:12px">
-                * Mídia é local do seu celular (não sobe pra internet).
-              </div>
+              <div class="muted" style="font-size:12px">* mídia local do seu celular.</div>
             </div>
           </div>
 
@@ -449,13 +499,13 @@
       <section class="card">
         <div class="card-h">
           <h3>Botão do Pânico</h3>
-          <span class="tag">Geolocalização</span>
+          <span class="tag">localização + endereço</span>
         </div>
 
         <div class="pad">
           <div class="muted" style="font-size:13px;line-height:1.4">
-            Ao apertar, o ICE pega sua localização (se você permitir), cria um alerta e mostra alertas próximos.
-            <b>Isso é demo local</b> (fica no seu celular).
+            Ao ativar, o ICE pega sua localização e tenta buscar o <b>endereço aproximado</b>.  
+            Você pode anexar foto/vídeo. “Ao vivo” é preview local (sem transmissão real).
           </div>
           <div class="divider"></div>
 
@@ -469,7 +519,22 @@
               <option value="Outro">Outro</option>
             </select>
 
-            <textarea id="panicDesc" placeholder="Descreva o que está acontecendo (ex: dois homens armados na esquina...)"></textarea>
+            <textarea id="panicDesc" placeholder="Descreva o que está acontecendo..."></textarea>
+
+            <div class="row">
+              <input type="file" id="panicFile" accept="image/*,video/*" style="flex:1">
+              <button class="btn2" onclick="toggleLive()" style="white-space:nowrap">📹 Ao vivo (demo)</button>
+            </div>
+
+            <div id="liveWrap" class="liveBox hidden">
+              <video id="liveVideo" playsinline muted></video>
+              <div class="pad">
+                <div class="muted" style="font-size:12px">
+                  Preview local. Para transmitir para outros usuários, precisa servidor/WebRTC.
+                </div>
+                <button class="btn3" onclick="toggleLive()">Parar câmera</button>
+              </div>
+            </div>
 
             <button class="btnBad" onclick="enviarPanico()">🚨 ATIVAR ALERTA</button>
 
@@ -491,681 +556,4 @@
     <section id="viewPerfil" class="hidden">
       <section class="card">
         <div class="card-h">
-          <h3>Perfil</h3>
-          <span class="tag">Local</span>
-        </div>
-        <div class="pad col">
-          <div class="row">
-            <div class="avatar" id="pAvatar">I</div>
-            <div class="col" style="gap:2px">
-              <div class="name" id="pName">@visitante</div>
-              <div class="time">demo</div>
-            </div>
-          </div>
-
-          <div class="kpis">
-            <div class="kpi">Likes: <b id="pLikes">0</b></div>
-            <div class="kpi">Posts: <b id="pPosts">0</b></div>
-            <div class="kpi">Trocas: <b id="pSwaps">0</b></div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="muted" style="font-size:13px;line-height:1.4">
-            Aqui depois a gente coloca: foto real, bio, seguidores, etc.  
-            Por enquanto fica tudo 100% estático pra não quebrar.
-          </div>
-
-          <button class="btn2" onclick="exportarDados()">Exportar dados (JSON)</button>
-        </div>
-      </section>
-    </section>
-
-  </main>
-
-  <!-- MODAL VÍDEO (HOME) -->
-  <div class="modal" id="modal" onclick="closeModal()">
-    <div class="modalBox" onclick="event.stopPropagation()">
-      <div class="modalTop">
-        <div class="left">
-          <div class="avatar" id="mAvatar">A</div>
-          <div class="col" style="gap:2px">
-            <div class="name" id="mName">Usuário</div>
-            <div class="time" id="mTime">agora</div>
-          </div>
-        </div>
-        <button class="btn3" onclick="closeModal()">Fechar</button>
-      </div>
-      <div class="big">
-        <div class="play">▶</div>
-      </div>
-      <div class="pad">
-        <div class="muted" id="mText"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- RODAPÉ -->
-  <nav class="footerNav">
-    <div class="footerInner">
-      <button class="navBtn active" id="tabHome" onclick="go('home')">
-        <div class="ico">🏠</div><div class="lbl">Casa</div>
-      </button>
-      <button class="navBtn" id="tabTroca" onclick="go('troca')">
-        <div class="ico">🔁</div><div class="lbl">Troca</div>
-      </button>
-      <button class="navBtn" id="tabPanico" onclick="go('panico')">
-        <div class="ico">🚨</div><div class="lbl">Pânico</div>
-      </button>
-      <button class="navBtn" id="tabPerfil" onclick="go('perfil')">
-        <div class="ico">👤</div><div class="lbl">Perfil</div>
-      </button>
-    </div>
-  </nav>
-
-<script>
-  // ========== Storage keys ==========
-  const LS_USER  = "ice_user";
-  const LS_PASS  = "ice_pass";
-  const LS_LIKES = "ice_likes";
-  const LS_POSTS = "ice_posts";
-
-  const LS_MY_OFFER = "ice_my_offer";
-  const LS_OTHERS   = "ice_others_offers";
-  const LS_MATCHES  = "ice_matches";
-  const LS_ALERTS   = "ice_alerts";
-  const LS_SWAPS    = "ice_swaps";
-
-  // ========== State ==========
-  let state = {
-    logged: false,
-    user: null,
-    likes: Number(localStorage.getItem(LS_LIKES) || 0),
-    posts: Number(localStorage.getItem(LS_POSTS) || 0),
-    swaps: Number(localStorage.getItem(LS_SWAPS) || 0),
-  };
-
-  // ========== Home seed ==========
-  const seed = [
-    {u:"Blue", t:"ICE no ar ✅ (sem pagamento por enquanto)", time:"há 2 min", id:"p1"},
-    {u:"Mar",  t:"2 toques no vídeo abre em tela grande.", time:"há 6 min", id:"p2"},
-    {u:"Neon", t:"Agora tem Troca e Botão do Pânico no rodapé.", time:"há 12 min", id:"p3"},
-  ];
-
-  // ========== Helpers ==========
-  function escapeHtml(s){
-    return String(s ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-  function uid(){
-    return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now();
-  }
-
-  // ========== Navigation ==========
-  const views = {
-    home:  document.getElementById("viewHome"),
-    troca: document.getElementById("viewTroca"),
-    panico:document.getElementById("viewPanico"),
-    perfil:document.getElementById("viewPerfil"),
-  };
-  const tabs = {
-    home:  document.getElementById("tabHome"),
-    troca: document.getElementById("tabTroca"),
-    panico:document.getElementById("tabPanico"),
-    perfil:document.getElementById("tabPerfil"),
-  };
-
-  function go(name){
-    Object.keys(views).forEach(k => views[k].classList.add("hidden"));
-    Object.keys(tabs).forEach(k => tabs[k].classList.remove("active"));
-    views[name].classList.remove("hidden");
-    tabs[name].classList.add("active");
-
-    if(name === "troca") renderTroca();
-    if(name === "panico") renderAlertas();
-    if(name === "perfil") renderPerfil();
-  }
-
-  // ========== Auth UI ==========
-  function setWho(){
-    const whoText = document.getElementById("whoText");
-    const tag = document.getElementById("authTag");
-
-    if(state.logged){
-      whoText.textContent = "@" + state.user;
-      tag.textContent = "online";
-      tag.style.borderColor = "rgba(55,214,122,.45)";
-      tag.style.color = "rgba(55,214,122,.95)";
-      document.getElementById("loginForm").classList.add("hidden");
-      document.getElementById("panelForm").classList.remove("hidden");
-      document.getElementById("meName").textContent = "@" + state.user;
-      document.getElementById("meAvatar").textContent = (state.user[0]||"I").toUpperCase();
-    }else{
-      whoText.textContent = "Entrar / Criar conta";
-      tag.textContent = "offline";
-      tag.style.borderColor = "rgba(26,42,85,.75)";
-      tag.style.color = "var(--muted)";
-      document.getElementById("loginForm").classList.remove("hidden");
-      document.getElementById("panelForm").classList.add("hidden");
-    }
-
-    document.getElementById("kLikes").textContent = state.likes;
-    document.getElementById("kPosts").textContent = state.posts;
-    document.getElementById("kSwaps").textContent = state.swaps;
-  }
-
-  function criarConta(){
-    const u = document.getElementById("inUser").value.trim();
-    const p = document.getElementById("inPass").value.trim();
-    if(u.length < 3) return alert("Usuário mínimo 3 letras.");
-    if(p.length < 3) return alert("Senha mínimo 3 letras.");
-    localStorage.setItem(LS_USER, u);
-    localStorage.setItem(LS_PASS, p);
-    alert("Conta criada! Agora entre.");
-  }
-
-  function login(){
-    const u = document.getElementById("inUser").value.trim();
-    const p = document.getElementById("inPass").value.trim();
-    const su = localStorage.getItem(LS_USER);
-    const sp = localStorage.getItem(LS_PASS);
-    if(!su || !sp) return alert("Crie a conta primeiro.");
-    if(u !== su || p !== sp) return alert("Usuário/senha incorretos.");
-    state.logged = true;
-    state.user = u;
-    setWho();
-  }
-
-  function logout(){
-    state.logged = false;
-    state.user = null;
-    setWho();
-  }
-
-  // ========== Home render ==========
-  const feedEl = document.getElementById("feed");
-
-  function postTemplate(p){
-    const initials = (p.u[0]||"I").toUpperCase();
-    return `
-      <div class="post" data-id="${p.id}">
-        <div class="row">
-          <div class="avatar">${initials}</div>
-          <div class="col" style="gap:2px">
-            <div class="name">@${escapeHtml(p.u)}</div>
-            <div class="time">${escapeHtml(p.time || "agora")}</div>
-          </div>
-        </div>
-
-        <div class="video" data-open="1" data-user="${escapeHtml(p.u)}" data-text="${escapeHtml(p.t)}" data-time="${escapeHtml(p.time||"agora")}">
-          <div class="play">▶</div>
-          <div class="hint">2 toques pra abrir</div>
-        </div>
-
-        <div class="muted" style="margin-top:10px; line-height:1.35">
-          ${escapeHtml(p.t)}
-        </div>
-
-        <div class="actions">
-          <div class="iconBtn" onclick="like('${p.id}')">❤️ <small>Love</small> <span class="badge" id="l_${p.id}">0</span></div>
-          <div class="iconBtn" onclick="share('${p.id}')">🔗 <small>Compartilhar</small></div>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderFeed(){
-    feedEl.innerHTML = seed.map(postTemplate).join("");
-    bindDoubleTap();
-  }
-
-  function bindDoubleTap(){
-    const videos = document.querySelectorAll(".video[data-open='1']");
-    videos.forEach(v => {
-      let last = 0;
-      v.addEventListener("touchend", () => {
-        const now = Date.now();
-        if(now - last < 320) openModal(v.dataset.user, v.dataset.text, v.dataset.time);
-        last = now;
-      }, {passive:true});
-      v.addEventListener("dblclick", () => openModal(v.dataset.user, v.dataset.text, v.dataset.time));
-    });
-  }
-
-  // modal
-  const modal = document.getElementById("modal");
-  function openModal(user, text, time){
-    document.getElementById("mAvatar").textContent = (user[0]||"I").toUpperCase();
-    document.getElementById("mName").textContent = "@" + user;
-    document.getElementById("mTime").textContent = time || "agora";
-    document.getElementById("mText").textContent = text || "";
-    modal.classList.add("on");
-  }
-  function closeModal(){ modal.classList.remove("on"); }
-
-  // actions
-  function like(id){
-    if(!state.logged) return alert("Entre pra curtir ❤️");
-    const el = document.getElementById("l_"+id);
-    const v = Number(el.textContent||0) + 1;
-    el.textContent = v;
-    state.likes += 1;
-    localStorage.setItem(LS_LIKES, String(state.likes));
-    document.getElementById("kLikes").textContent = state.likes;
-  }
-
-  async function share(id){
-    const url = location.href.split("#")[0] + "#" + id;
-    try{
-      if(navigator.share){
-        await navigator.share({title:"ICE", text:"ICE: "+url, url});
-      }else{
-        await navigator.clipboard.writeText(url);
-        alert("Link copiado!");
-      }
-    }catch(e){}
-  }
-
-  function postar(){
-    if(!state.logged) return alert("Entre pra postar.");
-    const t = document.getElementById("newText").value.trim();
-    if(!t) return alert("Escreva algo.");
-    const id = uid();
-    seed.unshift({u: state.user, t, time:"agora", id});
-    document.getElementById("newText").value = "";
-    state.posts += 1;
-    localStorage.setItem(LS_POSTS, String(state.posts));
-    document.getElementById("kPosts").textContent = state.posts;
-    renderFeed();
-  }
-
-  // ========== Troca ==========
-  function loadMyOffer(){
-    try{ return JSON.parse(localStorage.getItem(LS_MY_OFFER) || "null"); }catch{ return null; }
-  }
-  function saveMyOffer(o){
-    localStorage.setItem(LS_MY_OFFER, JSON.stringify(o));
-  }
-  function loadOthers(){
-    try{ return JSON.parse(localStorage.getItem(LS_OTHERS) || "[]"); }catch{ return []; }
-  }
-  function saveOthers(arr){
-    localStorage.setItem(LS_OTHERS, JSON.stringify(arr));
-  }
-  function loadMatches(){
-    try{ return JSON.parse(localStorage.getItem(LS_MATCHES) || "[]"); }catch{ return []; }
-  }
-  function saveMatches(arr){
-    localStorage.setItem(LS_MATCHES, JSON.stringify(arr));
-  }
-
-  async function fileToDataUrl(file){
-    return new Promise((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve(fr.result);
-      fr.onerror = () => reject(new Error("Falha ao ler arquivo"));
-      fr.readAsDataURL(file);
-    });
-  }
-
-  async function criarOferta(){
-    if(!state.logged) return alert("Entre para publicar sua oferta.");
-    const file = document.getElementById("myFile").files?.[0];
-    const title = document.getElementById("myTitle").value.trim();
-    const desc  = document.getElementById("myDesc").value.trim();
-    if(!title) return alert("Coloque um título.");
-    if(!desc) return alert("Descreva seu item.");
-
-    let media = null;
-    let mediaType = null;
-    if(file){
-      media = await fileToDataUrl(file);
-      mediaType = file.type.startsWith("video") ? "video" : "image";
-    }
-
-    const offer = {
-      id: uid(),
-      user: state.user,
-      title, desc,
-      media, mediaType,
-      createdAt: Date.now(),
-      acceptedBy: [] // quem aceitou
-    };
-
-    saveMyOffer(offer);
-    renderTroca();
-    alert("Oferta publicada!");
-  }
-
-  function limparMinhaOferta(){
-    localStorage.removeItem(LS_MY_OFFER);
-    document.getElementById("myFile").value = "";
-    document.getElementById("myTitle").value = "";
-    document.getElementById("myDesc").value = "";
-    renderTroca();
-  }
-
-  function renderTroca(){
-    // Meu preview
-    const my = loadMyOffer();
-    const myTag = document.getElementById("myOfferTag");
-    const myPrev = document.getElementById("myPrev");
-
-    if(!my){
-      myTag.textContent = "nenhum";
-      myPrev.innerHTML = `<div class="muted">Sem mídia</div>`;
-    }else{
-      myTag.textContent = "publicado";
-      if(my.media){
-        myPrev.innerHTML = my.mediaType === "video"
-          ? `<video src="${my.media}" controls muted playsinline></video>`
-          : `<img src="${my.media}" alt="preview">`;
-      }else{
-        myPrev.innerHTML = `<div class="muted">Sem mídia</div>`;
-      }
-      document.getElementById("myTitle").value = my.title;
-      document.getElementById("myDesc").value  = my.desc;
-    }
-
-    // Outros
-    const others = loadOthers();
-    document.getElementById("oCount").textContent = others.length;
-    const list = document.getElementById("othersList");
-
-    if(others.length === 0){
-      list.innerHTML = `<div class="pad muted">Nenhuma oferta ainda. Clique “Gerar oferta fake”.</div>`;
-    }else{
-      list.innerHTML = others.map(o => {
-        const thumb = o.media
-          ? (o.mediaType === "video"
-             ? `<video src="${o.media}" muted playsinline></video>`
-             : `<img src="${o.media}" alt="thumb">`)
-          : `<div class="muted" style="font-size:12px">Sem mídia</div>`;
-
-        const canPropose = !!my;
-        return `
-          <div class="item">
-            <div class="mini">
-              <div class="thumb">${thumb}</div>
-              <div class="col" style="gap:6px">
-                <div class="name">@${escapeHtml(o.user)} — ${escapeHtml(o.title)}</div>
-                <div class="muted" style="font-size:13px;line-height:1.25">${escapeHtml(o.desc)}</div>
-                <div class="row" style="flex-wrap:wrap; gap:8px">
-                  <button class="btn3" onclick="curtirOferta('${o.id}')">⭐ Gostei</button>
-                  <button class="btn ${canPropose ? "" : "btn2"}" onclick="proporTroca('${o.id}')" ${canPropose ? "" : "disabled"}>
-                    Propor troca
-                  </button>
-                </div>
-                ${canPropose ? `<div class="muted" style="font-size:12px">* Usa sua oferta publicada.</div>` : `<div class="muted" style="font-size:12px">Publique seu item para propor.</div>`}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    renderMatches();
-    updateSwapCounters();
-  }
-
-  function updateSwapCounters(){
-    document.getElementById("kSwaps").textContent = state.swaps;
-    document.getElementById("pSwaps").textContent = state.swaps;
-  }
-
-  function curtirOferta(id){
-    alert("Você gostou dessa oferta ⭐ (demo)");
-  }
-
-  function proporTroca(otherId){
-    if(!state.logged) return alert("Entre para propor troca.");
-    const my = loadMyOffer();
-    if(!my) return alert("Publique seu item primeiro.");
-
-    const others = loadOthers();
-    const o = others.find(x => x.id === otherId);
-    if(!o) return alert("Oferta não encontrada.");
-
-    // Marca que EU aceitei trocar com essa oferta
-    if(!o.acceptedBy.includes(state.user)) o.acceptedBy.push(state.user);
-
-    // Simula que o outro usuário aceitou de volta quando você propõe 2x
-    // (pra demo parecer real). Na segunda proposta vira match.
-    const proposeKey = "ice_propose_" + otherId;
-    const c = Number(localStorage.getItem(proposeKey) || 0) + 1;
-    localStorage.setItem(proposeKey, String(c));
-    if(c >= 2){
-      if(!o.acceptedBy.includes(o.user)) o.acceptedBy.push(o.user);
-    }
-
-    saveOthers(others);
-    checkMatch(my, o);
-    renderTroca();
-  }
-
-  function checkMatch(my, other){
-    const bothAccepted = other.acceptedBy.includes(state.user) && other.acceptedBy.includes(other.user);
-    if(!bothAccepted) return;
-
-    const matches = loadMatches();
-    const exists = matches.some(m => m.otherId === other.id && m.myId === my.id);
-    if(!exists){
-      matches.unshift({
-        id: uid(),
-        when: Date.now(),
-        myId: my.id,
-        otherId: other.id,
-        myTitle: my.title,
-        otherTitle: other.title,
-        otherUser: other.user
-      });
-      saveMatches(matches);
-      state.swaps += 1;
-      localStorage.setItem(LS_SWAPS, String(state.swaps));
-    }
-  }
-
-  function renderMatches(){
-    const matches = loadMatches();
-    const box = document.getElementById("matchBox");
-    const txt = document.getElementById("matchText");
-    if(matches.length === 0){
-      box.classList.add("hidden");
-      return;
-    }
-    const m = matches[0];
-    box.classList.remove("hidden");
-    txt.innerHTML = `Você trocou <b>${escapeHtml(m.myTitle)}</b> com <b>@${escapeHtml(m.otherUser)}</b> por <b>${escapeHtml(m.otherTitle)}</b>.`;
-  }
-
-  function gerarOfertaFake(){
-    const names = ["Luna","Rafa","Duda","Caio","Bia","Sofi","Nando","Kauã"];
-    const items = [
-      {t:"Bicicleta", d:"Boa, só precisa calibrar pneu. Quero trocar por celular simples."},
-      {t:"Tênis novo", d:"Tamanho 38, quase sem uso. Troco por fone bluetooth."},
-      {t:"Console antigo", d:"Funciona, vai com 2 controles. Troco por smartwatch."},
-      {t:"Jaqueta", d:"M, bem conservada. Troco por mochila ou algo útil."},
-      {t:"Caixa de som", d:"Potente. Troco por teclado mecânico."},
-    ];
-    const pickN = names[Math.floor(Math.random()*names.length)];
-    const pickI = items[Math.floor(Math.random()*items.length)];
-    const o = {
-      id: uid(),
-      user: pickN,
-      title: pickI.t,
-      desc: pickI.d,
-      media: null,
-      mediaType: null,
-      createdAt: Date.now(),
-      acceptedBy: []
-    };
-    const arr = loadOthers();
-    arr.unshift(o);
-    saveOthers(arr);
-    renderTroca();
-  }
-
-  function resetTrocas(){
-    localStorage.removeItem(LS_MY_OFFER);
-    localStorage.removeItem(LS_OTHERS);
-    localStorage.removeItem(LS_MATCHES);
-    alert("Trocas resetadas.");
-    renderTroca();
-  }
-
-  // ========== Pânico ==========
-  function loadAlerts(){
-    try{ return JSON.parse(localStorage.getItem(LS_ALERTS) || "[]"); }catch{ return []; }
-  }
-  function saveAlerts(arr){
-    localStorage.setItem(LS_ALERTS, JSON.stringify(arr));
-  }
-
-  function getLocation(){
-    return new Promise((resolve, reject) => {
-      if(!navigator.geolocation) return reject(new Error("Geolocalização não disponível."));
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy}),
-        (err) => reject(new Error("Permissão negada ou erro ao obter localização.")),
-        { enableHighAccuracy:true, timeout: 10000, maximumAge: 10000 }
-      );
-    });
-  }
-
-  function haversineKm(lat1, lon1, lat2, lon2){
-    const R = 6371;
-    const toRad = (x)=> x*Math.PI/180;
-    const dLat = toRad(lat2-lat1);
-    const dLon = toRad(lon2-lon1);
-    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
-    return 2*R*Math.asin(Math.sqrt(a));
-  }
-
-  async function enviarPanico(){
-    if(!state.logged) return alert("Entre para usar o botão do pânico.");
-    const type = document.getElementById("panicType").value;
-    const desc = document.getElementById("panicDesc").value.trim();
-    const status = document.getElementById("panicStatus");
-    status.textContent = "Obtendo localização...";
-
-    try{
-      const loc = await getLocation();
-      const alertObj = {
-        id: uid(),
-        user: state.user,
-        type,
-        desc: desc || "(sem descrição)",
-        lat: loc.lat,
-        lon: loc.lon,
-        acc: Math.round(loc.acc || 0),
-        when: Date.now(),
-      };
-      const arr = loadAlerts();
-      arr.unshift(alertObj);
-      saveAlerts(arr);
-      document.getElementById("panicDesc").value = "";
-      status.textContent = `Alerta enviado ✅ (precisão ~${alertObj.acc}m)`;
-      renderAlertas();
-      alert("ALERTA ATIVADO. Se for emergência real, ligue para 190/193.");
-    }catch(e){
-      status.textContent = "Erro: " + e.message;
-      alert(e.message);
-    }
-  }
-
-  async function renderAlertas(){
-    const status = document.getElementById("panicStatus");
-    const list = document.getElementById("alertsList");
-    list.innerHTML = "";
-
-    let me = null;
-    try{
-      me = await getLocation();
-      status.textContent = "Mostrando alertas próximos de você.";
-    }catch(e){
-      status.textContent = "Ative localização para ver proximidade. (Você ainda pode ver a lista.)";
-    }
-
-    const alerts = loadAlerts();
-    if(alerts.length === 0){
-      list.innerHTML = `<div class="pad muted">Nenhum alerta ainda.</div>`;
-      return;
-    }
-
-    list.innerHTML = alerts.slice(0, 20).map(a => {
-      let dist = null;
-      if(me) dist = haversineKm(me.lat, me.lon, a.lat, a.lon);
-      const distTxt = dist == null ? "distância: ?"
-        : (dist < 1 ? `distância: ${Math.round(dist*1000)}m` : `distância: ${dist.toFixed(1)}km`);
-      const whenTxt = new Date(a.when).toLocaleString();
-      return `
-        <div class="item">
-          <div class="row" style="justify-content:space-between; align-items:flex-start">
-            <div class="col" style="gap:4px">
-              <div class="name">🚨 ${escapeHtml(a.type)} — @${escapeHtml(a.user)}</div>
-              <div class="muted" style="font-size:13px;line-height:1.25">${escapeHtml(a.desc)}</div>
-              <div class="muted" style="font-size:12px">${escapeHtml(distTxt)} • ${escapeHtml(whenTxt)}</div>
-            </div>
-            <span class="tag" style="border-color:rgba(255,176,32,.35);color:rgba(255,176,32,.95)">ALERTA</span>
-          </div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  function limparAlertas(){
-    localStorage.removeItem(LS_ALERTS);
-    document.getElementById("alertsList").innerHTML = `<div class="pad muted">Alertas apagados.</div>`;
-    document.getElementById("panicStatus").textContent = "";
-  }
-
-  // ========== Perfil ==========
-  function renderPerfil(){
-    const u = state.logged ? state.user : "visitante";
-    document.getElementById("pName").textContent = "@" + u;
-    document.getElementById("pAvatar").textContent = (u[0]||"I").toUpperCase();
-    document.getElementById("pLikes").textContent = state.likes;
-    document.getElementById("pPosts").textContent = state.posts;
-    document.getElementById("pSwaps").textContent = state.swaps;
-  }
-
-  function exportarDados(){
-    const data = {
-      user: localStorage.getItem(LS_USER),
-      likes: localStorage.getItem(LS_LIKES),
-      posts: localStorage.getItem(LS_POSTS),
-      swaps: localStorage.getItem(LS_SWAPS),
-      myOffer: localStorage.getItem(LS_MY_OFFER),
-      others: localStorage.getItem(LS_OTHERS),
-      matches: localStorage.getItem(LS_MATCHES),
-      alerts: localStorage.getItem(LS_ALERTS),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ice-dados.json";
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(url), 1000);
-  }
-
-  // ========== Init ==========
-  setWho();
-  renderFeed();
-  renderPerfil();
-
-  // hash -> home post focus
-  window.addEventListener("load", () => {
-    if(location.hash){
-      const id = location.hash.slice(1);
-      const el = document.querySelector(`.post[data-id="${id}"]`);
-      if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
-    }
-  });
-</script>
-</body>
-</html>
+    
