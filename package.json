@@ -1,11 +1,7 @@
 {
-  "name": "ice-cubo",
-  "version": "1.0.0",
+  "name": "ice-blue",
   "private": true,
   "dependencies": {
-    "mercadopago": "^2.0.11",
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest"
+    "@vercel/kv": "^1.0.1"
   }
 }
