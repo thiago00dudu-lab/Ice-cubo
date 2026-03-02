@@ -1,558 +1,209 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ICE BLUE - Oficial</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ice BLUE - Oficial</title>
+    <style>
+        :root { --ice: #00d4ff; --gold: #ffd700; --sea: #000814; --glass: rgba(255, 255, 255, 0.1); --danger: #ff4d6d; }
+        
+        body { 
+            margin:0; background: #000814; color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 90px;
+            overflow-x: hidden; background-image: linear-gradient(180deg, #001219 0%, #002855 100%);
+        }
 
-<style>
-  :root{--ice:#00d4ff;--gold:#ffd700;--glass:rgba(255,255,255,.10);}
-  body{margin:0;font-family:sans-serif;color:#fff;min-height:100vh;padding-bottom:90px;
-    background:linear-gradient(180deg,#001219,#002855);overflow-x:hidden;}
-  .header{background:rgba(0,0,0,.8);padding:12px;text-align:center;border-bottom:2px solid var(--ice);
-    position:sticky;top:0;z-index:10}
-  .adm-star{color:var(--gold);display:none;font-size:14px;margin-bottom:4px}
-  .card{background:var(--glass);margin:15px;padding:15px;border-radius:15px;border:1px solid rgba(255,255,255,.15)}
-  input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
-    background:rgba(255,255,255,.06);color:#fff;margin-top:8px;outline:none}
-  textarea{resize:none;height:70px}
-  .btn{background:var(--ice);border:none;padding:10px;border-radius:10px;margin-top:10px;cursor:pointer;font-weight:bold;color:#000;width:100%}
-  .btn-red{background:#ff4d6d;color:#fff}
-  .btn-dark{background:#111;color:#fff;border:1px solid rgba(255,255,255,.2)}
-  .muted{color:rgba(255,255,255,.75);font-size:12px}
-  .post-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-  .avatar{width:42px;height:42px;border-radius:50%;border:2px solid var(--ice);object-fit:cover;cursor:pointer}
-  .uname{font-weight:bold;cursor:pointer}
-  .role{font-size:12px;color:rgba(255,255,255,.75)}
-  .post-img{width:100%;border-radius:12px;margin-top:10px;border:1px solid rgba(255,255,255,.12)}
-  .nav{position:fixed;bottom:0;width:100%;background:#000;display:none;justify-content:space-around;
-    padding:10px 0;border-top:1px solid var(--ice);z-index:20}
-  .nav .item{cursor:pointer;text-align:center;font-size:12px;position:relative;flex:1}
-  .nav .item span{display:block;font-size:20px}
-  .badge{position:absolute;top:-4px;right:28%;background:red;color:#fff;border-radius:50%;padding:2px 6px;font-size:10px;display:none}
+        /* BOLHAS FUNDO DO MAR */
+        .bubble { position: fixed; bottom: -50px; background: rgba(255,255,255,0.1); border-radius: 50%; animation: rise 12s infinite ease-in; z-index: 0; pointer-events: none; }
+        @keyframes rise { 0% { bottom: -50px; transform: translateX(0); } 100% { bottom: 110vh; transform: translateX(50px); opacity: 0; } }
 
-  .screen{display:none}
-  #login{display:block}
+        /* HEADER & ADM */
+        .header-ice { background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); padding: 10px; border-bottom: 2px solid var(--ice); position: sticky; top:0; z-index: 1001; text-align: center; }
+        .adm-star { color: var(--gold); font-size: 20px; display: none; }
 
-  #chat{position:fixed;top:0;left:100%;width:100%;height:100%;background:#000814;display:flex;flex-direction:column;
-    transition:.25s;z-index:30}
-  .chat-top{padding:10px;border-bottom:1px solid var(--ice);display:flex;align-items:center;gap:10px}
-  .chat-box{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
-  .me{background:var(--ice);color:#000;padding:8px 10px;border-radius:12px;align-self:flex-end;max-width:75%;word-break:break-word}
-  .them{background:#333;color:#fff;padding:8px 10px;border-radius:12px;align-self:flex-start;max-width:75%;word-break:break-word}
+        /* NOTIFICAÇÃO */
+        #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--ice); color: #000; padding: 15px; border-radius: 15px; z-index: 3000; transition: 0.5s; font-weight: bold; width: 80%; text-align: center; }
 
-  .prof-head{display:flex;align-items:center;gap:12px}
-  .prof-avatar{width:74px;height:74px;border-radius:50%;border:2px solid var(--ice);object-fit:cover}
-  .row{display:flex;gap:10px}
-  .row>*{flex:1}
-  .small-btn{background:#111;color:#fff;border:1px solid rgba(255,255,255,.2);padding:8px 10px;border-radius:10px;cursor:pointer}
-</style>
+        /* TROCA BILATERAL */
+        .trade-split { display: flex; gap: 10px; margin: 15px 0; height: 180px; align-items: center; }
+        .trade-side { flex: 1; height: 100%; border: 2px dashed var(--ice); border-radius: 15px; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .trade-side img { width: 100%; height: 100%; object-fit: cover; }
+        .vs-badge { background: var(--ice); color: #000; border-radius: 50%; padding: 5px; font-size: 10px; z-index: 5; font-weight: bold; }
+
+        /* CARDS ESTILO REDE SOCIAL */
+        .card { background: var(--glass); backdrop-filter: blur(15px); border-radius: 15px; margin: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); position: relative; }
+        .post-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .u-pic { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--ice); }
+
+        /* CHAT PV */
+        #chat-window { position: fixed; top: 0; left: 100%; width: 100%; height: 100%; background: #000814; z-index: 2000; transition: 0.3s; display: flex; flex-direction: column; }
+        .chat-header { padding: 15px; background: #001d3d; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--ice); }
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .m-msg { align-self: flex-end; background: var(--ice); color: #000; padding: 8px 12px; border-radius: 15px; max-width: 70%; }
+        .h-msg { align-self: flex-start; background: #333; padding: 8px 12px; border-radius: 15px; max-width: 70%; }
+
+        /* MENU INFERIOR */
+        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--ice); z-index: 1000; }
+        .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; flex: 1; position: relative; }
+        .nav-item span { font-size: 22px; display: block; }
+        .badge { position: absolute; top: -5px; right: 25%; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; }
+
+        .btn-blue { background: var(--ice); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 10px; width: 100%; cursor: pointer; margin-top: 10px; }
+        .tela { display: none; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
-
 <body>
-<div class="header">
-  <div class="adm-star" id="admStar">★ ADMINISTRADOR ★</div>
-  <h2 style="margin:0">ICE BLUE</h2>
-</div>
 
-<!-- LOGIN -->
-<div id="login" class="screen">
-  <div class="card" style="text-align:center">
-    <h3 style="margin:0 0 8px">Acesso ao Sistema</h3>
-    <div class="muted">ADM: senha <b>1533</b> | outra senha entra como Membro</div>
+    <div id="notif">🔔 Nova Oferta de Troca Recebida!</div>
+    
+    <div class="header-ice">
+        <div id="adm-star" class="adm-star">★ ADMINISTRADOR ★</div>
+        <h1>ICE BLUE</h1>
+    </div>
 
-    <!-- IMPORTANTE: password (teclado normal) -->
-    <input type="password" id="senha" placeholder="Senha" autocomplete="off" inputmode="text">
-
-    <button class="btn" onclick="doLogin()">Entrar</button>
-  </div>
-</div>
-
-<!-- HOME -->
-<div id="home" class="screen">
-  <div class="card">
-    <h3 style="margin:0 0 6px">Feed</h3>
-    <div class="muted">Clique no nome/foto para ver o perfil completo.</div>
-  </div>
-  <div id="feed"></div>
-</div>
-
-<!-- TROCAS (DIVIDIDO) -->
-<div id="trocas" class="screen">
-  <div class="card">
-    <h3 style="margin:0 0 6px">🔄 Trocas</h3>
-    <div class="muted">Esquerda: item desejado | Direita: sua oferta (foto + descrição)</div>
-  </div>
-
-  <div class="card" style="padding:12px;">
-    <div style="display:flex; gap:10px; min-height:240px;">
-      <div style="flex:1; border:1px dashed rgba(255,255,255,.25); border-radius:12px; padding:10px;">
-        <div class="muted" style="margin-bottom:8px;">📌 Postagem alvo</div>
-        <div id="tradeLeftEmpty" class="muted">Nenhuma postagem selecionada. Vá no Home e clique em “FAZER OFERTA”.</div>
-        <div id="tradeLeft"></div>
-      </div>
-
-      <div style="flex:1; border:1px dashed rgba(255,255,255,.25); border-radius:12px; padding:10px;">
-        <div class="muted" style="margin-bottom:8px;">🎁 Sua oferta</div>
-        <div id="tradeRightEmpty" class="muted">Selecione uma postagem para liberar o envio.</div>
-
-        <div id="tradeRightForm" style="display:none;">
-          <input type="file" id="offerImg" accept="image/*">
-          <textarea id="offerTxt" placeholder="Descreva sua oferta"></textarea>
-          <button class="btn" onclick="enviarOfertaTroca()">ENVIAR OFERTA</button>
-          <div class="muted" style="margin-top:8px;">(Teste) Quem oferta?</div>
-          <select id="offerFrom">
-            <option value="me">Eu (usuário logado)</option>
-            <option value="fake">Usuário fake aleatório</option>
-          </select>
+    <!-- TELA LOGIN (ADM: 1533) -->
+    <div id="login" class="tela" style="display: block; padding: 20px;">
+        <div class="card" style="text-align: center;">
+            <h3>Acesso ao Sistema</h3>
+            <input type="password" id="pass" placeholder="Senha" style="width:100%; padding:12px; border-radius:8px; border:none; margin-bottom:10px;">
+            <button class="btn-blue" onclick="logar()">Entrar</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="trocasList"></div>
-</div>
-
-<!-- PERFIL (SEU) -->
-<div id="perfil" class="screen">
-  <div class="card">
-    <h3 style="margin:0 0 6px">Seu Perfil</h3>
-    <div id="meRole" class="muted"></div>
-
-    <textarea id="postText" placeholder="O que você oferece / descrição"></textarea>
-    <input type="file" id="postImg" accept="image/*">
-    <button class="btn" onclick="postar()">Postar Troca</button>
-
-    <div class="row" style="margin-top:10px">
-      <button class="btn btn-dark" onclick="seedPosts(true)">Gerar posts fakes</button>
-      <button class="btn btn-dark" onclick="logout()">Sair</button>
-    </div>
-  </div>
-</div>
-
-<!-- PERFIL DO USER -->
-<div id="perfilUser" class="screen">
-  <div class="card">
-    <div class="prof-head">
-      <img id="puAvatar" class="prof-avatar" alt="avatar">
-      <div>
-        <div id="puName" style="font-size:20px;font-weight:bold"></div>
-        <div id="puRole" class="muted"></div>
-        <div class="muted">ID: <span id="puId"></span></div>
-        <div class="muted" id="puBio"></div>
-      </div>
     </div>
 
-    <div id="puActions" style="margin-top:12px;display:none">
-      <div class="muted">Ações ADM:</div>
-      <div class="row" style="margin-top:8px">
-        <button id="btnPromote" class="btn">Promover</button>
-        <button id="btnDemote" class="btn btn-dark">Rebaixar</button>
-      </div>
+    <!-- HOME -->
+    <div id="home" class="tela">
+        <div id="feed"></div>
     </div>
 
-    <button class="btn btn-dark" onclick="show('home')" style="margin-top:12px">Voltar pro Feed</button>
-  </div>
+    <!-- CENTRAL DE OFERTAS -->
+    <div id="ofertas" class="tela" style="padding: 10px;">
+        <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
+        <div id="lista-ofertas"></div>
+    </div>
 
-  <div class="card">
-    <h4 style="margin:0 0 6px">Posts deste perfil</h4>
-    <div id="puPosts"></div>
-  </div>
-</div>
+    <!-- CHAT PV -->
+    <div id="chat-window">
+        <div class="chat-header">
+            <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
+            <b>Chat Privado</b>
+        </div>
+        <div id="chat-box"></div>
+        <div style="padding: 10px; background: #000; display: flex; gap: 10px;">
+            <input type="text" id="chat-in" placeholder="Mensagem..." style="flex:1; padding:10px; border-radius:20px; border:none;">
+            <button onclick="enviarMsg()" style="background:var(--ice); border:none; border-radius:50%; width:40px;">🚀</button>
+        </div>
+    </div>
 
-<!-- CHAT -->
-<div id="chat">
-  <div class="chat-top">
-    <button class="btn btn-dark" style="width:auto;padding:8px 10px" onclick="fecharChat()">←</button>
-    <b>Chat Privado</b>
-  </div>
-  <div class="chat-box" id="chatBox"></div>
-  <div class="card" style="margin:0;border-radius:0">
-    <input id="chatInput" placeholder="Mensagem...">
-    <button class="btn" onclick="enviarMsg()">Enviar</button>
-  </div>
-</div>
+    <!-- PERFIL -->
+    <div id="perfil" class="tela">
+        <div class="card" style="text-align: center;">
+            <img src="https://cdn-icons-png.flaticon.com" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice);">
+            <h2 id="p-nome">Membro</h2>
+            <input type="file" id="up-p" style="display:none" onchange="previewImg(this, 'p-img')">
+            <button onclick="document.getElementById('up-p').click()" style="background:none; border:none; color:var(--ice); cursor:pointer;">Trocar Foto</button>
+        </div>
+        <div class="card">
+            <h4>Anunciar Troca</h4>
+            <input type="file" id="f-troca">
+            <textarea id="t-troca" placeholder="O que oferece?" style="width:100%; margin-top:10px; height:60px;"></textarea>
+            <button class="btn-blue" onclick="postarTroca()">Postar Troca</button>
+        </div>
+    </div>
 
-<!-- NAV -->
-<div class="nav" id="nav">
-  <div class="item" onclick="show('home')"><span>🏠</span>Home</div>
-  <div class="item" onclick="show('trocas')">
-    <span class="badge" id="trocaBadge">!</span>
-    <span>🔄</span>Trocas
-  </div>
-  <div class="item" onclick="show('perfil')"><span>👤</span>Perfil</div>
-</div>
+    <nav class="nav" id="menu" style="display:none">
+        <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
+        <div class="nav-item" onclick="ver('ofertas')">
+            <span id="badge" class="badge">!</span>
+            <span>🔄</span>Trocas
+        </div>
+        <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
+    </nav>
 
-<script>
-/* DEBUG: se quebrar, mostra o erro e linha */
-window.onerror = function(msg, url, line, col){
-  alert("ERRO: " + msg + "\nLinha: " + line + ":" + col);
-};
+    <script>
+        let role = "Membro";
 
-function esc(s){
-  return String(s||"")
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
-}
-function pic(seed,w,h){
-  return "https://picsum.photos/seed/" + encodeURIComponent(seed) + "/" + (w||700) + "/" + (h||500);
-}
+        // Gerar bolhas
+        for(let i=0; i<15; i++) {
+            let b = document.createElement('div'); b.className = 'bubble';
+            b.style.left = Math.random() * 100 + '%'; b.style.width = b.style.height = (Math.random()*20+10)+'px';
+            b.style.animationDelay = Math.random()*10+'s'; document.body.appendChild(b);
+        }
 
-var state = {
-  role: "Membro",
-  meName: "Voce",
-  feed: [],
-  trocas: [],
-  chat: [],
-  users: [
-    {id:"u1", nome:"Luna Santos",  role:"Membro",    avatar: pic("LunaAvatar",200,200), bio:"Troco itens e faço negócios rápidos."},
-    {id:"u2", nome:"Kaio Lima",    role:"Membro",    avatar: pic("KaioAvatar",200,200), bio:"Curto eletrônicos e trocas justas."},
-    {id:"u3", nome:"Bia Rocha",    role:"Membro",    avatar: pic("BiaAvatar",200,200),  bio:"Moda, acessórios e muita troca."},
-    {id:"u4", nome:"Rafa Souza",   role:"Membro",    avatar: pic("RafaAvatar",200,200), bio:"Ferramentas, casa e utilidades."},
-    {id:"u5", nome:"Thi Nogueira", role:"Membro",    avatar: pic("ThiAvatar",200,200),  bio:"Games e itens colecionáveis."}
-  ],
-  selectedUserId: null,
-  tradePostId: null
-};
+        function logar() {
+            const p = document.getElementById('pass').value;
+            if(p === '1533') {
+                role = "ADM";
+                document.getElementById('adm-star').style.display = 'block';
+                document.getElementById('p-nome').innerText = "ADMINISTRADOR";
+            }
+            document.getElementById('menu').style.display = 'flex';
+            ver('home');
+        }
 
-function show(id){
-  var screens = ["login","home","trocas","perfil","perfilUser"];
-  for(var i=0;i<screens.length;i++){
-    var el = document.getElementById(screens[i]);
-    if(el) el.style.display = "none";
-  }
-  var target = document.getElementById(id);
-  if(target) target.style.display = "block";
+        function ver(id) {
+            document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
+        }
 
-  if(id === "trocas"){
-    document.getElementById("trocaBadge").style.display = "none";
-    renderTradePanel();
-    renderTrocas();
-  }
-  if(id === "home") renderFeed();
-  if(id === "perfil") renderMe();
-}
+        function postarTroca() {
+            const txt = document.getElementById('t-troca').value;
+            const file = document.getElementById('f-troca').files[0];
+            if(!file) return alert("Selecione uma imagem!");
 
-function doLogin(){
-  try{
-    var s = (document.getElementById("senha").value || "").trim();
-    state.role = (s === "1533") ? "ADM" : "Membro";
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = e.target.result;
+                const pid = 'p'+Date.now();
+                const html = `
+                    <div class="card" id="${pid}">
+                        <div class="post-head"><img src="https://cdn-icons-png.flaticon.com" class="u-pic"><b>Usuário</b></div>
+                        <p>${txt}</p>
+                        <img src="${img}" style="width:100%; border-radius:10px;">
+                        <button class="btn-blue" onclick="fazerOferta('${img}')">FAZER OFERTA</button>
+                        ${role === 'ADM' ? `<button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; margin-top:10px;">Bloquear (ADM)</button>` : ''}
+                    </div>`;
+                document.getElementById('feed').insertAdjacentHTML('afterbegin', html);
+                ver('home');
+            };
+            reader.readAsDataURL(file);
+        }
 
-    document.getElementById("nav").style.display = "flex";
-    document.getElementById("admStar").style.display = (state.role === "ADM") ? "block" : "none";
+        function fazerOferta(imgDono) {
+            alert("Sua oferta foi enviada!");
+            setTimeout(() => {
+                document.getElementById('notif').style.top = "20px";
+                document.getElementById('badge').style.display = "block";
+                const imgOferta = "https://picsum.photos"+Date.now();
+                const html = `
+                    <div class="card">
+                        <div class="trade-split">
+                            <div class="trade-side"><img src="${imgDono}"></div>
+                            <div class="vs-badge">VS</div>
+                            <div class="trade-side"><img src="${imgOferta}"></div>
+                        </div>
+                        <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
+                    </div>`;
+                document.getElementById('lista-ofertas').insertAdjacentHTML('afterbegin', html);
+                setTimeout(() => document.getElementById('notif').style.top = "-100px", 4000);
+            }, 2000);
+        }
 
-    renderMe();
-    if(state.feed.length === 0) seedPosts(false);
+        function abrirChat() { document.getElementById('chat-window').style.left = "0"; }
+        function fecharChat() { document.getElementById('chat-window').style.left = "100%"; }
 
-    show("home");
-  }catch(e){
-    alert("Falha no login: " + (e && e.message ? e.message : e));
-  }
-}
+        function enviarMsg() {
+            const inpt = document.getElementById('chat-in');
+            if(!inpt.value) return;
+            document.getElementById('chat-box').insertAdjacentHTML('beforeend', `<div class="m-msg">${inpt.value}</div>`);
+            inpt.value = "";
+        }
 
-function logout(){
-  document.getElementById("senha").value = "";
-  document.getElementById("nav").style.display = "none";
-  document.getElementById("admStar").style.display = "none";
-  state.role = "Membro";
-  fecharChat();
-  show("login");
-}
-
-function renderMe(){
-  document.getElementById("meRole").innerText = "Role atual: " + state.role + " | (ADM: 1533)";
-}
-
-function seedPosts(forceAdd){
-  if(!forceAdd && state.feed.length > 0) return;
-
-  var textos = [
-    "Troco celular por outro de valor parecido. Chama no chat.",
-    "Tenho tenis quase novo, quero trocar por mochila ou algo util.",
-    "Troco fone bluetooth por powerbank bom.",
-    "Tenho camiseta original, quero trocar por perfume ou acessorio.",
-    "Troco item colecionavel por game/controle."
-  ];
-
-  for(var u=0; u<state.users.length; u++){
-    for(var k=0; k<2; k++){
-      var user = state.users[u];
-      var t = textos[(u+k) % textos.length];
-      state.feed.unshift({
-        id: "p_" + Date.now() + "_" + u + "_" + k,
-        userId: user.id,
-        userName: user.nome,
-        userRole: user.role,
-        avatar: user.avatar,
-        text: t + " #" + (Math.floor(Math.random()*90)+10),
-        img: pic(user.nome + "_post_" + k + "_" + Date.now(), 800, 520),
-        ts: Date.now()
-      });
-    }
-  }
-  renderFeed();
-}
-
-function postar(){
-  var txt = (document.getElementById("postText").value || "").trim();
-  var file = document.getElementById("postImg").files[0];
-  if(!file) return alert("Selecione uma imagem!");
-
-  var reader = new FileReader();
-  reader.onload = function(e){
-    state.feed.unshift({
-      id: "p_me_" + Date.now(),
-      userId: "me",
-      userName: state.meName,
-      userRole: state.role,
-      avatar: pic("ME_AVATAR",200,200),
-      text: txt || "Sem descricao",
-      img: e.target.result,
-      ts: Date.now()
-    });
-    document.getElementById("postText").value = "";
-    document.getElementById("postImg").value = "";
-    show("home");
-  };
-  reader.readAsDataURL(file);
-}
-
-function canModerate(){ return state.role === "ADM" || state.role === "Moderador"; }
-
-function renderFeed(){
-  var feed = document.getElementById("feed");
-  feed.innerHTML = "";
-
-  if(state.feed.length === 0){
-    feed.innerHTML = "<div class='card'><div class='muted'>Sem posts ainda.</div></div>";
-    return;
-  }
-
-  for(var i=0;i<state.feed.length;i++){
-    var p = state.feed[i];
-    var card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML =
-      "<div class='post-head'>" +
-        "<img class='avatar' src='"+esc(p.avatar)+"' onclick=\"openUser('"+esc(p.userId)+"')\" alt='avatar'>" +
-        "<div>" +
-          "<div class='uname' onclick=\"openUser('"+esc(p.userId)+"')\">"+esc(p.userName)+"</div>" +
-          "<div class='role'>Role: "+esc(p.userRole)+"</div>" +
-        "</div>" +
-      "</div>" +
-      "<div>"+esc(p.text)+"</div>" +
-      "<img class='post-img' src='"+esc(p.img)+"' alt='post'>" +
-      "<button class='btn' onclick=\"fazerOferta('"+esc(p.id)+"')\">FAZER OFERTA</button>";
-
-    if(canModerate()){
-      card.innerHTML += "<button class='btn btn-red' onclick=\"removerPost('"+esc(p.id)+"')\">Remover (Mod/ADM)</button>";
-    }
-    feed.appendChild(card);
-  }
-}
-
-function removerPost(postId){
-  if(!canModerate()) return alert("Sem permissao.");
-  state.feed = state.feed.filter(function(x){ return x.id !== postId; });
-  if(state.tradePostId === postId) state.tradePostId = null;
-  renderFeed();
-}
-
-function getUserById(uid){
-  if(uid === "me"){
-    return {id:"me", nome: state.meName, role: state.role, avatar: pic("ME_AVATAR",200,200), bio:"Meu perfil (teste)."};
-  }
-  for(var i=0;i<state.users.length;i++){
-    if(state.users[i].id === uid) return state.users[i];
-  }
-  return null;
-}
-
-function openUser(uid){
-  var u = getUserById(uid);
-  if(!u) return;
-
-  state.selectedUserId = uid;
-  document.getElementById("puAvatar").src = u.avatar;
-  document.getElementById("puName").innerText = u.nome;
-  document.getElementById("puRole").innerText = "Role: " + u.role;
-  document.getElementById("puId").innerText = u.id;
-  document.getElementById("puBio").innerText = u.bio || "";
-
-  var actions = document.getElementById("puActions");
-  if(state.role === "ADM" && uid !== "me"){
-    actions.style.display = "block";
-    document.getElementById("btnPromote").onclick = function(){ setRole(uid, "Moderador"); };
-    document.getElementById("btnDemote").onclick = function(){ setRole(uid, "Membro"); };
-  } else {
-    actions.style.display = "none";
-  }
-
-  renderUserPosts(uid);
-  show("perfilUser");
-}
-
-function setRole(uid, role){
-  if(state.role !== "ADM") return alert("So ADM pode mudar role.");
-  for(var i=0;i<state.users.length;i++){
-    if(state.users[i].id === uid){
-      state.users[i].role = role;
-      for(var j=0;j<state.feed.length;j++){
-        if(state.feed[j].userId === uid) state.feed[j].userRole = role;
-      }
-      openUser(uid);
-      renderFeed();
-      return;
-    }
-  }
-}
-
-function renderUserPosts(uid){
-  var box = document.getElementById("puPosts");
-  box.innerHTML = "";
-  var posts = state.feed.filter(function(p){ return p.userId === uid; });
-
-  if(posts.length === 0){
-    box.innerHTML = "<div class='muted'>Sem posts deste perfil.</div>";
-    return;
-  }
-
-  for(var i=0;i<posts.length;i++){
-    var p = posts[i];
-    var div = document.createElement("div");
-    div.className = "card";
-    div.style.margin = "10px 0";
-    div.innerHTML =
-      "<div class='muted'>Post</div>" +
-      "<div style='margin-top:6px'>"+esc(p.text)+"</div>" +
-      "<img class='post-img' src='"+esc(p.img)+"' alt='post'>";
-    if(canModerate()){
-      div.innerHTML += "<button class='btn btn-red' onclick=\"removerPost('"+esc(p.id)+"')\">Remover (Mod/ADM)</button>";
-    }
-    box.appendChild(div);
-  }
-}
-
-/* ===== Trocas dividido ===== */
-function fazerOferta(postId){
-  state.tradePostId = postId;
-  document.getElementById("trocaBadge").style.display = "block";
-  show("trocas");
-}
-
-function renderTradePanel(){
-  var left = document.getElementById("tradeLeft");
-  var leftEmpty = document.getElementById("tradeLeftEmpty");
-  var rightEmpty = document.getElementById("tradeRightEmpty");
-  var rightForm = document.getElementById("tradeRightForm");
-
-  left.innerHTML = "";
-
-  if(!state.tradePostId){
-    leftEmpty.style.display = "block";
-    rightEmpty.style.display = "block";
-    rightForm.style.display = "none";
-    return;
-  }
-
-  var post = null;
-  for(var i=0;i<state.feed.length;i++){
-    if(state.feed[i].id === state.tradePostId){ post = state.feed[i]; break; }
-  }
-
-  if(!post){
-    state.tradePostId = null;
-    leftEmpty.style.display = "block";
-    rightEmpty.style.display = "block";
-    rightForm.style.display = "none";
-    return;
-  }
-
-  leftEmpty.style.display = "none";
-  rightEmpty.style.display = "none";
-  rightForm.style.display = "block";
-
-  left.innerHTML =
-    "<div class='post-head'>" +
-      "<img class='avatar' src='"+esc(post.avatar)+"' alt='avatar' onclick=\"openUser('"+esc(post.userId)+"')\">" +
-      "<div>" +
-        "<div class='uname' onclick=\"openUser('"+esc(post.userId)+"')\">"+esc(post.userName)+"</div>" +
-        "<div class='role'>Role: "+esc(post.userRole)+"</div>" +
-      "</div>" +
-    "</div>" +
-    "<div>"+esc(post.text)+"</div>" +
-    "<img class='post-img' src='"+esc(post.img)+"' alt='post'>" +
-    "<button class='small-btn' style='width:100%; margin-top:10px' onclick=\"state.tradePostId=null; renderTradePanel();\">Limpar selecao</button>";
-}
-
-function enviarOfertaTroca(){
-  if(!state.tradePostId) return alert("Selecione uma postagem primeiro.");
-
-  var file = document.getElementById("offerImg").files[0];
-  var txt = (document.getElementById("offerTxt").value || "").trim();
-  if(!file) return alert("Selecione a imagem da oferta!");
-
-  var fromMode = document.getElementById("offerFrom").value;
-  var fromUser = null;
-
-  if(fromMode === "fake"){
-    fromUser = state.users[Math.floor(Math.random()*state.users.length)];
-  } else {
-    fromUser = { id:"me", nome: state.meName, role: state.role, avatar: pic("ME_AVATAR",200,200) };
-  }
-
-  var reader = new FileReader();
-  reader.onload = function(e){
-    state.trocas.unshift({
-      id: "t_" + Date.now(),
-      postId: state.tradePostId,
-      fromUserId: fromUser.id,
-      fromName: fromUser.nome,
-      fromAvatar: fromUser.avatar,
-      fromRole: fromUser.role,
-      offerImg: e.target.result,
-      offerTxt: txt || "Sem descricao",
-      ts: Date.now()
-    });
-
-    document.getElementById("offerImg").value = "";
-    document.getElementById("offerTxt").value = "";
-
-    renderTrocas();
-    alert("✅ Oferta enviada!");
-  };
-  reader.readAsDataURL(file);
-}
-
-function renderTrocas(){
-  var box = document.getElementById("trocasList");
-  box.innerHTML = "";
-
-  if(state.trocas.length === 0){
-    box.innerHTML = "<div class='card'><div class='muted'>Nenhuma oferta ainda.</div></div>";
-    return;
-  }
-
-  for(var i=0;i<state.trocas.length;i++){
-    var t = state.trocas[i];
-    var post = null;
-    for(var j=0;j<state.feed.length;j++){
-      if(state.feed[j].id === t.postId){ post = state.feed[j]; break; }
-    }
-
-    var alvoHtml = post
-      ? ("<div class='muted'>🎯 Alvo: "+esc(post.userName)+"</div><img class='post-img' src='"+esc(post.img)+"'>")
-      : ("<div class='muted'>🎯 Alvo removido</div>");
-
-    var div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML =
-      "<div class='muted'>📩 Oferta recebida</div>" +
-      "<div style='display:flex; gap:10px; margin-top:10px;'>" +
-        "<div style='flex:1; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;'>" +
-          alvoHtml +
-        "</div>" +
-        "<div style='flex:1; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;'>" +
-          "<div class='post-head'>" +
-            "<img class='avatar' src='"+esc(t.fromAvatar)+"' onclick=\"openUser('"+esc(t.fromUserId)+"')\">" +
-            "<
+        function previewImg(input, id) {
+            const reader = new FileReader();
+            reader.onload = (e) => document.getElementById(id).src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
+        }
+    </script>
+</body>
+</html>
