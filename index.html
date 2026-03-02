@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>ICE - TESTE</title>
+  <title>ICE TESTE</title>
   <style>
     body{margin:0;background:#061022;color:#fff;font-family:system-ui;padding:18px}
     input,button{width:100%;padding:14px;border-radius:14px;border:1px solid #244; margin:10px 0; font-size:16px}
@@ -16,21 +16,20 @@
 <body>
   <div class="card">
     <h2>ICE (teste de clique)</h2>
-    <div id="status" class="bad">JS ainda não confirmou…</div>
+    <div id="status" class="bad">JS ainda não rodou…</div>
 
     <input id="u" placeholder="usuário (ex: jessica)">
     <input id="p" placeholder="senha (ex: 123)" type="password">
 
-    <button id="btnCriar">Criar conta</button>
-    <button id="btnEntrar">Entrar</button>
+    <button id="btnCriar" type="button">Criar conta</button>
+    <button id="btnEntrar" type="button">Entrar</button>
 
     <div id="msg" style="margin-top:10px"></div>
   </div>
 
   <script>
-    // Se você ver "JS OK" na tela, então o JS está rodando.
     const $ = (id)=>document.getElementById(id);
-    $("status").textContent = "JS OK ✅ (cliques devem funcionar)";
+    $("status").textContent = "JS OK ✅ (cliques funcionando)";
     $("status").className = "ok";
 
     const KEY_U = "ice_user";
