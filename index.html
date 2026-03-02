@@ -3,136 +3,146 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ocean Network & Safety</title>
+    <title>Ocean Network Pro</title>
     <style>
-        :root { --ocean-dark: #0077be; --ocean-light: #00aaff; --sand: #f4d03f; --danger: #ff4d6d; }
+        :root { --ocean: #0077be; --danger: #ff4d6d; --glass: rgba(255, 255, 255, 0.1); }
+        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: sans-serif; min-height: 100vh; padding-bottom: 80px; }
         
-        body { margin:0; background: linear-gradient(180deg, #001219 0%, #005f73 100%); color:#fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; overflow-x: hidden; }
-
-        /* ANIMAÇÃO DE BOLHAS */
-        .bubble { position: absolute; background: rgba(255,255,255,0.1); border-radius: 50%; bottom: -100px; animation: rise 10s infinite ease-in; z-index: 0; }
-        @keyframes rise { 0% { transform: translateY(0) scale(1); opacity: 0.5; } 100% { transform: translateY(-100vh) scale(1.2); opacity: 0; } }
-
-        /* ALERTA PISCANTE */
-        @keyframes flashDanger { 0%, 100% { background: transparent; } 50% { background: rgba(255, 0, 0, 0.6); } }
-        .emergency-active { animation: flashDanger 0.8s infinite; }
-
-        /* ESTILOS DE CARTÃO */
-        .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; margin: 15px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative; z-index: 2; }
+        .card { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; margin: 15px; padding: 15px; }
+        img, video { max-width: 100%; border-radius: 10px; margin-top: 10px; display: block; }
         
-        input, select, textarea, button { width: 100%; padding: 12px; border-radius: 12px; border: none; margin: 8px 0; outline: none; }
-        button { background: var(--ocean-light); color: white; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.3s; }
-        button:active { transform: scale(0.95); }
+        input, textarea, button, select { width: 100%; padding: 12px; border-radius: 12px; border: none; margin: 8px 0; box-sizing: border-box; }
+        button { background: #00aaff; color: white; font-weight: bold; cursor: pointer; }
+        
+        /* NAVEGAÇÃO */
+        .nav { position: fixed; bottom: 0; width: 100%; background: #001219; display: flex; justify-content: space-around; padding: 10px 0; border-top: 2px solid #00aaff; z-index: 1000; }
+        .nav-item { color: #8ef; text-align: center; font-size: 10px; cursor: pointer; }
+        .nav-item span { font-size: 22px; display: block; }
 
-        /* NAVEGAÇÃO FUNDO DO MAR */
-        .nav { position: fixed; bottom: 0; width: 100%; background: rgba(0, 18, 25, 0.9); display: flex; justify-content: space-around; padding: 10px 0; border-top: 2px solid var(--ocean-light); z-index: 100; }
-        .nav-item { color: #88eeff; text-align: center; font-size: 10px; text-decoration: none; }
-        .nav-item span { font-size: 24px; display: block; }
-
-        .tela { display: none; padding: 20px; animation: fadeIn 0.5s; }
+        .tela { display: none; animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* GRID DE TROCAS */
-        .troca-container { display: flex; flex-direction: column; gap: 15px; }
-        .feed-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-top: 10px; border-left: 4px solid var(--ocean-light); }
-        
-        .sos-btn { width: 100px; height: 100px; border-radius: 50%; background: var(--danger); border: 5px solid white; font-size: 20px; color: white; font-weight: bold; margin: 20px auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--danger); }
+        @keyframes blink { 0%, 100% { background: transparent; } 50% { background: rgba(255,0,0,0.5); } }
+        .sos-active { animation: blink 0.5s infinite; }
     </style>
 </head>
-<body id="main-body">
+<body id="corpo">
 
-    <!-- BOLHAS DE FUNDO -->
-    <div class="bubble" style="width:20px; height:20px; left:10%; animation-duration:8s;"></div>
-    <div class="bubble" style="width:40px; height:40px; left:30%; animation-duration:12s;"></div>
-    <div class="bubble" style="width:15px; height:15px; left:70%; animation-duration:10s;"></div>
-
-    <!-- TELA HOME (TIMELINE) -->
+    <!-- HOME (FEED GERAL) -->
     <div id="home" class="tela" style="display: block;">
         <h2 style="text-align: center;">🌊 Feed do Oceano</h2>
-        <div id="timeline">
-            <div class="card">🚀 Bem-vindo! As trocas aparecerão aqui.</div>
+        <div id="feed-geral">
+            <div class="card">🚀 As novidades aparecerão aqui!</div>
         </div>
     </div>
 
-    <!-- TELA TROCAS -->
+    <!-- TROCAS -->
     <div id="trocas" class="tela">
-        <h2>🔄 Central de Trocas</h2>
+        <h2>🔄 Nova Troca</h2>
         <div class="card">
-            <h4>O que você quer trocar?</h4>
-            <input type="file" id="troca-foto" accept="image/*">
-            <textarea id="troca-desc" placeholder="Descreva seu item..."></textarea>
-            <button onclick="postarTroca()">Postar Troca</button>
+            <input type="file" id="img-troca" accept="image/*,video/*">
+            <textarea id="txt-troca" placeholder="O que você quer trocar?"></textarea>
+            <button onclick="publicar('troca')">Postar Troca</button>
         </div>
     </div>
 
-    <!-- TELA PERIGO -->
+    <!-- PERFIL -->
+    <div id="perfil" class="tela">
+        <h2>👤 Meu Perfil</h2>
+        <div class="card">
+            <h4>Nova Postagem</h4>
+            <input type="file" id="img-perfil" accept="image/*,video/*">
+            <textarea id="txt-perfil" placeholder="No que está pensando?"></textarea>
+            <button onclick="publicar('perfil')">Publicar no Perfil</button>
+        </div>
+        <hr>
+        <div id="meu-arquivo-perfil">
+            <h4 style="margin-left: 15px;">Minhas Fotos e Vídeos:</h4>
+        </div>
+    </div>
+
+    <!-- PERIGO -->
     <div id="perigo" class="tela">
-        <h2 style="text-align: center;">⚠️ ALERTA RADAR</h2>
-        <div class="card">
-            <div class="sos-btn" id="sos-trigger" onclick="ativarAlerta()">SOS</div>
-            <select id="perigo-tipo" onchange="checkOutro(this.value)">
-                <option value="Assalto">Assalto</option>
-                <option value="Enchente">Enchente</option>
-                <option value="Perigo Natural">Perigo Natural</option>
-                <option value="Outro">Outro (Descrever)</option>
+        <h2 style="text-align: center;">⚠️ RADAR DE RISCO</h2>
+        <div class="card" style="text-align: center;">
+            <div onclick="acionarSOS()" style="width:80px;height:80px;background:red;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-weight:bold;border:4px solid white;">SOS</div>
+            <p id="info-local">Clique no botão para ler sua localização</p>
+            <select id="tipo-risco">
+                <option>Assalto</option><option>Enchente</option><option>Perigo Natural</option>
             </select>
-            <input type="text" id="perigo-outro" placeholder="Descreva o perigo..." style="display:none;">
-            <p id="geo-info" style="font-size: 12px; color: #88eeff; text-align: center;">Aguardando GPS...</p>
-            <button onclick="enviarAlerta()" style="background: var(--danger);">Emitir Alerta Geral</button>
+            <button onclick="alert('Alerta enviado!')" style="background:red">Emitir Chamado</button>
         </div>
     </div>
 
-    <!-- MENU RODAPÉ -->
+    <!-- MENU -->
     <nav class="nav">
-        <a href="#" class="nav-item" onclick="ver('home')"><span>🏠</span>Home</a>
-        <a href="#" class="nav-item" onclick="ver('trocas')"><span>🐚</span>Trocas</a>
-        <a href="#" class="nav-item" onclick="ver('perigo')"><span>🚨</span>Perigo</a>
-        <a href="#" class="nav-item" onclick="location.reload()"><span>🚪</span>Sair</a>
+        <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
+        <div class="nav-item" onclick="ver('trocas')"><span>🐚</span>Trocas</div>
+        <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
+        <div class="nav-item" onclick="ver('perigo')"><span>🚨</span>Perigo</div>
+        <div class="nav-item" onclick="location.reload()"><span>🚪</span>Sair</div>
     </nav>
 
     <script>
-        // Trocar telas
         function ver(id) {
             document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
             document.getElementById(id).style.display = 'block';
         }
 
-        // Lógica de Troca -> Vai para Home
-        function postarTroca() {
-            const desc = document.getElementById('troca-desc').value;
-            if(!desc) return alert("Escreva algo!");
+        function publicar(tipo) {
+            const inputImg = tipo === 'perfil' ? document.getElementById('img-perfil') : document.getElementById('img-troca');
+            const texto = tipo === 'perfil' ? document.getElementById('txt-perfil').value : document.getElementById('txt-troca').value;
+            const file = inputImg.files[0];
+
+            if (!file && !texto) return alert("Adicione algo!");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const midiaTag = file && file.type.includes('video') 
+                    ? `<video controls src="${e.target.result}"></video>` 
+                    : file ? `<img src="${e.target.result}">` : "";
+
+                const postHtml = `
+                    <div class="card">
+                        <strong>${tipo === 'perfil' ? '👤 Post' : '📦 TROCA'}:</strong>
+                        <p>${texto}</p>
+                        ${midiaTag}
+                    </div>`;
+
+                // Adiciona na Home
+                document.getElementById('feed-geral').insertAdjacentHTML('afterbegin', postHtml);
+                
+                // Se for perfil, salva na parte de baixo do perfil
+                if(tipo === 'perfil') {
+                    document.getElementById('meu-arquivo-perfil').insertAdjacentHTML('beforeend', postHtml);
+                }
+                
+                alert("Publicado com sucesso!");
+                ver('home');
+            };
             
-            const item = document.createElement('div');
-            item.className = "card feed-item";
-            item.innerHTML = `<strong>📦 NOVA TROCA:</strong><br>${desc}<br><small>Postado agora</small>`;
-            
-            document.getElementById('timeline').prepend(item);
-            alert("Postado na Timeline!");
-            ver('home');
-            document.getElementById('troca-desc').value = "";
+            if(file) reader.readAsDataURL(file);
+            else reader.onload({target:{result:""}});
         }
 
-        // Lógica do Alerta Piscante
-        function ativarAlerta() {
-            const body = document.getElementById('main-body');
-            body.classList.toggle('emergency-active');
-            
-            if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(p => {
-                    document.getElementById('geo-info').innerText = `📍 Lat: ${p.coords.latitude.toFixed(4)} | Long: ${p.coords.longitude.toFixed(4)}`;
-                });
-            }
-        }
+        async function acionarSOS() {
+            document.getElementById('corpo').classList.toggle('sos-active');
+            const info = document.getElementById('info-local');
+            info.innerText = "Buscando endereço exato...";
 
-        function checkOutro(val) {
-            document.getElementById('perigo-outro').style.display = (val === 'Outro') ? 'block' : 'none';
-        }
-
-        function enviarAlerta() {
-            const tipo = document.getElementById('perigo-tipo').value;
-            const outro = document.getElementById('perigo-outro').value;
-            const final = tipo === 'Outro' ? outro : tipo;
-            alert("ALERTA EMITIDO: " + final + "\nTodos os usuários na área verão a tela piscar!");
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                try {
+                    // Busca nome da rua e CEP usando API gratuita
+                    const res = await fetch(`https://nominatim.openstreetmap.org{lat}&lon=${lon}`);
+                    const data = await res.json();
+                    const rua = data.address.road || "Rua não identificada";
+                    const cep = data.address.postcode || "CEP não achado";
+                    info.innerHTML = `📍 <b>Rua:</b> ${rua}<br><b>CEP:</b> ${cep}<br><small>${lat}, ${lon}</small>`;
+                } catch {
+                    info.innerText = `Lat: ${lat}, Lon: ${lon}`;
+                }
+            });
         }
     </script>
 </body>
