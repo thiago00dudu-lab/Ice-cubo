@@ -1,267 +1,233 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ice BLUE - Oficial</title>
 
   <style>
-    :root { --ice:#00d4ff; --gold:#ffd700; --sea:#000814; --glass:rgba(255,255,255,0.10); --danger:#ff4d6d; }
+    :root { --ice:#00d4ff; --sea:#000814; --glass:rgba(255,255,255,.10); }
 
     body{
-      margin:0; color:#fff; font-family:sans-serif; min-height:100vh; padding-bottom:90px;
+      margin:0; color:#fff; font-family:sans-serif;
+      min-height:100vh; padding-bottom:90px;
       overflow-x:hidden; background:#000814;
     }
 
-    /* ===== FUNDO OCEANO (não trava) ===== */
+    /* ===== FUNDO OCEANO (leve) ===== */
     .ocean-bg{
       position:fixed; inset:0; z-index:0; overflow:hidden;
       background:
-        radial-gradient(circle at 50% 10%, rgba(0,212,255,0.18) 0%, rgba(0,212,255,0.0) 35%),
-        radial-gradient(circle at 20% 80%, rgba(0,119,182,0.18) 0%, rgba(0,119,182,0.0) 40%),
-        radial-gradient(circle at 80% 70%, rgba(2,62,138,0.20) 0%, rgba(2,62,138,0.0) 45%),
+        radial-gradient(circle at 50% 12%, rgba(0,212,255,.16) 0%, rgba(0,212,255,0) 35%),
+        radial-gradient(circle at 20% 80%, rgba(0,119,182,.18) 0%, rgba(0,119,182,0) 40%),
+        radial-gradient(circle at 80% 70%, rgba(2,62,138,.18) 0%, rgba(2,62,138,0) 45%),
         linear-gradient(180deg, #001219 0%, #001d3d 40%, #000814 100%);
     }
     .ocean-grain{
       position:absolute; inset:-40px; opacity:.10; pointer-events:none;
       background-image:
-        radial-gradient(circle at 10% 10%, rgba(255,255,255,0.15) 0 1px, transparent 2px),
-        radial-gradient(circle at 40% 30%, rgba(255,255,255,0.10) 0 1px, transparent 2px),
-        radial-gradient(circle at 70% 60%, rgba(255,255,255,0.12) 0 1px, transparent 2px),
-        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.10) 0 1px, transparent 2px);
+        radial-gradient(circle at 10% 10%, rgba(255,255,255,.18) 0 1px, transparent 2px),
+        radial-gradient(circle at 40% 30%, rgba(255,255,255,.12) 0 1px, transparent 2px),
+        radial-gradient(circle at 70% 60%, rgba(255,255,255,.14) 0 1px, transparent 2px),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,.12) 0 1px, transparent 2px);
       background-size: 120px 120px;
-      filter: blur(0.2px);
       animation: grainMove 18s linear infinite;
     }
-    @keyframes grainMove{
-      from{ transform: translateY(0); }
-      to{ transform: translateY(-90px); }
-    }
+    @keyframes grainMove{ from{transform:translateY(0)} to{transform:translateY(-90px)} }
 
-    /* Bolhas do oceano (camada) */
     .ocean-bubble{
       position:absolute; bottom:-60px; border-radius:50%;
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.08);
-      filter: blur(.2px);
-      animation: oceanRise 14s linear infinite;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.08);
+      animation:oceanRise 14s linear infinite;
       pointer-events:none;
-      opacity:.9;
     }
     @keyframes oceanRise{
-      0%   { transform: translateY(0) translateX(0) scale(1); opacity:.9; }
-      70%  { opacity:.6; }
-      100% { transform: translateY(-120vh) translateX(60px) scale(1.08); opacity:0; }
+      0%{ transform:translateY(0) translateX(0); opacity:.7; }
+      100%{ transform:translateY(-120vh) translateX(60px); opacity:0; }
     }
 
-    /* Cavalo-marinho (SVG inline via mask) */
+    /* Cavalo-marinho (leve: emoji + glow) */
     .seahorse{
-      position:absolute; bottom:18%; left:-140px;
-      width:140px; height:140px; opacity:.20;
+      position:absolute; left:-120px; bottom:18%;
+      font-size:80px; opacity:.18;
       filter: drop-shadow(0 12px 30px rgba(0,0,0,.35));
-      animation: seahorseSwim 42s linear infinite;
+      animation: swim 40s linear infinite;
       pointer-events:none;
-      background: radial-gradient(circle at 30% 30%, rgba(255,215,0,0.35), rgba(0,212,255,0.18), rgba(255,255,255,0.05));
-      -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M151 14c-17 9-26 22-28 38-2 12 2 23 9 33 7 9 16 16 20 26 4 10 3 20-4 29-7 10-18 16-26 25-8 9-12 19-10 31 2 10 8 19 16 26 8 7 9 16 3 24-9 12-26 9-35-1-8-9-13-22-10-35 2-10 8-19 9-30 2-16-6-31-19-40-12-8-29-8-41 1-12 9-17 26-11 40 6 14 20 21 34 21 6 0 10-5 10-10s-4-10-10-10c-8 0-14-4-17-10-3-7-1-15 5-19 6-5 14-5 20-1 7 5 10 13 9 21-1 9-6 17-9 26-5 18 1 38 14 52 18 20 52 25 70 2 13-16 9-37-4-50-8-8-11-19-5-29 6-10 19-15 28-24 13-13 18-31 11-49-6-16-20-26-27-40-4-7-6-14-5-22 1-10 7-18 17-24 5-3 7-9 4-14-3-5-9-7-14-4z"/></svg>') no-repeat center / contain;
-              mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M151 14c-17 9-26 22-28 38-2 12 2 23 9 33 7 9 16 16 20 26 4 10 3 20-4 29-7 10-18 16-26 25-8 9-12 19-10 31 2 10 8 19 16 26 8 7 9 16 3 24-9 12-26 9-35-1-8-9-13-22-10-35 2-10 8-19 9-30 2-16-6-31-19-40-12-8-29-8-41 1-12 9-17 26-11 40 6 14 20 21 34 21 6 0 10-5 10-10s-4-10-10-10c-8 0-14-4-17-10-3-7-1-15 5-19 6-5 14-5 20-1 7 5 10 13 9 21-1 9-6 17-9 26-5 18 1 38 14 52 18 20 52 25 70 2 13-16 9-37-4-50-8-8-11-19-5-29 6-10 19-15 28-24 13-13 18-31 11-49-6-16-20-26-27-40-4-7-6-14-5-22 1-10 7-18 17-24 5-3 7-9 4-14-3-5-9-7-14-4z"/></svg>') no-repeat center / contain;
     }
-    @keyframes seahorseSwim{
-      0%{ left:-160px; transform: translateY(0) rotate(2deg); }
-      50%{ transform: translateY(-18px) rotate(-2deg); }
-      100%{ left:110%; transform: translateY(0) rotate(2deg); }
+    @keyframes swim{
+      0%{ left:-120px; transform:translateY(0) rotate(2deg); }
+      50%{ transform:translateY(-18px) rotate(-2deg); }
+      100%{ left:110%; transform:translateY(0) rotate(2deg); }
     }
 
-    /* ===== HEADER ===== */
+    /* HEADER */
     .header-ice{
-      background: rgba(0,0,0,0.78);
-      backdrop-filter: blur(10px);
-      padding: 10px;
-      border-bottom: 2px solid var(--ice);
-      position: sticky; top:0; z-index:1001;
-      text-align:center;
+      background:rgba(0,0,0,.78); backdrop-filter:blur(10px);
+      padding:10px; border-bottom:2px solid var(--ice);
+      position:sticky; top:0; z-index:1001; text-align:center;
     }
     .mini{ font-size:12px; opacity:.85; margin-top:6px; line-height:1.3; }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
-    /* ===== NOTIF ===== */
+    /* NOTIF */
     #notif{
-      position: fixed; top:-100px; left:50%; transform:translateX(-50%);
-      background: var(--ice); color:#000; padding: 15px;
-      border-radius: 15px; z-index: 3000; transition: .5s;
-      font-weight:bold; width: 80%; text-align:center;
+      position:fixed; top:-100px; left:50%; transform:translateX(-50%);
+      background:var(--ice); color:#000; padding:12px 14px;
+      border-radius:14px; z-index:3000; transition:.45s;
+      font-weight:700; width:84%; text-align:center;
     }
 
-    /* ===== CARDS ===== */
+    /* CARDS */
     .card{
-      background: var(--glass);
-      backdrop-filter: blur(15px);
-      border-radius: 15px;
-      margin: 15px;
-      padding: 15px;
-      border: 1px solid rgba(255,255,255,0.1);
-      position: relative;
-      z-index: 2; /* importante: acima do fundo */
+      background:var(--glass); backdrop-filter:blur(14px);
+      border-radius:15px; margin:15px; padding:15px;
+      border:1px solid rgba(255,255,255,.12);
+      position:relative; z-index:2;
     }
     .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
     .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); }
-    .u-name{ font-weight: 700; }
+    .u-name{ font-weight:800; }
 
-    /* ===== TELAS ===== */
-    .tela{ display:none; animation: fadeIn .35s; position:relative; z-index:2; }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    /* TELAS */
+    .tela{ display:none; animation:fade .35s; position:relative; z-index:2; }
+    @keyframes fade{ from{opacity:0} to{opacity:1} }
 
-    /* ===== BOTÕES ===== */
+    /* BOTÕES */
     .btn-blue{
-      background: var(--ice); color:#000; font-weight:bold;
+      background:var(--ice); color:#000; font-weight:800;
       border:none; padding:12px; border-radius:10px;
       width:100%; cursor:pointer; margin-top:10px;
     }
     .btn-ghost{
-      background: rgba(255,255,255,0.12); color:#fff;
-      border:1px solid rgba(255,255,255,0.2);
+      background:rgba(255,255,255,.12); color:#fff;
+      border:1px solid rgba(255,255,255,.20);
       padding:12px; border-radius:10px;
       width:100%; cursor:pointer; margin-top:10px;
     }
 
     textarea, input[type="text"]{
-      background: rgba(0,0,0,0.35);
-      color:#fff;
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 10px;
-      padding: 10px;
-      outline: none;
+      background:rgba(0,0,0,.35); color:#fff;
+      border:1px solid rgba(255,255,255,.15);
+      border-radius:10px; padding:10px; outline:none;
     }
     input[type="file"]{ color:#fff; width:100%; }
 
-    /* ===== MENU ===== */
+    /* MENU */
     .nav{
-      position: fixed; bottom:0; width:100%;
-      background: rgba(0,0,0,0.95);
+      position:fixed; bottom:0; width:100%;
+      background:rgba(0,0,0,.95);
       display:flex; justify-content:space-around;
-      padding:12px 0;
-      border-top: 1px solid var(--ice);
-      z-index: 1000;
+      padding:12px 0; border-top:1px solid var(--ice);
+      z-index:1000;
     }
-    .nav-item{
-      color:#8ef; text-align:center; font-size:10px;
-      cursor:pointer; flex:1; position:relative; user-select:none;
-    }
+    .nav-item{ color:#8ef; text-align:center; font-size:10px; cursor:pointer; flex:1; position:relative; user-select:none; }
     .nav-item span{ font-size:22px; display:block; }
     .badge{
       position:absolute; top:-5px; right:25%;
-      background:red; color:white; border-radius:50%;
+      background:red; color:#fff; border-radius:50%;
       padding:2px 6px; font-size:10px; display:none;
     }
 
-    /* ===== CHAT ===== */
+    /* CHAT */
     #chat-window{
-      position: fixed; top:0; left:100%;
+      position:fixed; top:0; left:100%;
       width:100%; height:100%;
       background:#000814; z-index:2000;
-      transition:.3s;
-      display:flex; flex-direction:column;
+      transition:.3s; display:flex; flex-direction:column;
     }
     .chat-header{
-      padding: 15px; background: #001d3d;
+      padding:15px; background:#001d3d;
       display:flex; align-items:center; gap:10px;
-      border-bottom: 1px solid var(--ice);
+      border-bottom:1px solid var(--ice);
     }
     #chat-box{
       flex:1; overflow-y:auto; padding:15px;
       display:flex; flex-direction:column; gap:10px;
     }
-    .m-msg{ align-self:flex-end; background: var(--ice); color:#000; padding:8px 12px; border-radius:15px; max-width:70%; }
+    .m-msg{ align-self:flex-end; background:var(--ice); color:#000; padding:8px 12px; border-radius:15px; max-width:70%; }
     .h-msg{ align-self:flex-start; background:#333; padding:8px 12px; border-radius:15px; max-width:70%; }
 
-    /* ===== OFERTA VS ===== */
+    /* OFERTA VS (na lista de ofertas) */
     .trade-split{ display:flex; gap:10px; margin:15px 0; height:180px; align-items:center; }
     .trade-side{
       flex:1; height:100%;
       border:2px dashed var(--ice);
       border-radius:15px;
-      background: rgba(0,0,0,0.5);
+      background:rgba(0,0,0,.5);
       display:flex; align-items:center; justify-content:center;
       position:relative; overflow:hidden;
     }
     .trade-side img{ width:100%; height:100%; object-fit:cover; }
-    .vs-badge{
-      background: var(--ice); color:#000; border-radius:50%;
-      padding:5px; font-size:10px; z-index:5; font-weight:bold;
-    }
+    .vs-badge{ background:var(--ice); color:#000; border-radius:50%; padding:5px; font-size:10px; font-weight:800; }
 
-    /* ===== TELA DUPLA ===== */
+    /* TELA DUPLA */
     .trade-screen{ display:flex; gap:12px; padding:10px; }
     .trade-col{ flex:1; min-width:0; }
     .trade-box{
       border:2px dashed var(--ice);
       border-radius:15px;
-      background: rgba(0,0,0,0.45);
+      background:rgba(0,0,0,.45);
       overflow:hidden;
     }
     .trade-box .hdr{
-      padding:10px;
-      border-bottom:1px solid rgba(255,255,255,0.12);
+      padding:10px; border-bottom:1px solid rgba(255,255,255,.12);
       display:flex; align-items:center; justify-content:space-between; gap:10px;
     }
     .trade-box .body{ padding:10px; }
     .trade-preview{
       width:100%; height:220px; object-fit:cover;
-      border-radius:12px; border:1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
+      border-radius:12px; border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
     }
     .trade-placeholder{
-      height:220px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,0.12);
+      height:220px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
       display:flex; align-items:center; justify-content:center;
       text-align:center; padding:12px; opacity:.85;
     }
-    @media (max-width:760px){ .trade-screen{ flex-direction:column; } }
+    @media(max-width:760px){ .trade-screen{ flex-direction:column; } }
 
-    /* ===== BALÕES FLUTUANTES SHARE ===== */
+    /* SHARE FLOAT */
     .share-balloons{
-      position: fixed; right: 14px; bottom: 110px;
-      z-index: 2500;
-      display:flex; flex-direction:column; gap:10px;
+      position:fixed; right:14px; bottom:110px;
+      z-index:2500; display:flex; flex-direction:column; gap:10px;
       pointer-events:none;
     }
     .share-balloons button{
       pointer-events:auto;
       width:52px; height:52px; border-radius:999px;
-      border:1px solid rgba(255,255,255,0.18);
-      background: rgba(0,0,0,0.45);
-      backdrop-filter: blur(10px);
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.45);
+      backdrop-filter:blur(10px);
       color:#fff; font-size:22px; cursor:pointer;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      transition: transform .15s ease;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
     }
-    .share-balloons button:active{ transform: scale(.95); }
-
     .share-tip{
-      position: fixed; right: 76px; bottom: 128px;
-      z-index: 2500;
-      background: rgba(0,0,0,0.65);
-      border:1px solid rgba(255,255,255,0.14);
+      position:fixed; right:76px; bottom:128px;
+      z-index:2500;
+      background:rgba(0,0,0,.65);
+      border:1px solid rgba(255,255,255,.14);
       border-radius:14px;
       padding:10px 12px;
-      max-width: 270px;
+      max-width:270px;
       display:none;
-      backdrop-filter: blur(10px);
-      font-size: 12px;
-      opacity: .92;
+      backdrop-filter:blur(10px);
+      font-size:12px;
+      opacity:.92;
     }
-    .share-tip b{ color: var(--ice); }
+    .share-tip b{ color:var(--ice); }
   </style>
 </head>
 
 <body>
-  <!-- FUNDO OCEANO -->
+  <!-- FUNDO -->
   <div class="ocean-bg" aria-hidden="true">
     <div class="ocean-grain"></div>
-    <div class="seahorse"></div>
+    <div class="seahorse">🐉</div>
   </div>
 
-  <div id="notif">🔔 Nova Oferta de Troca Recebida!</div>
+  <div id="notif">🔔</div>
 
   <div class="header-ice">
     <h1 style="margin:6px 0;">ICE BLUE</h1>
@@ -269,7 +235,7 @@
   </div>
 
   <!-- HOME -->
-  <div id="home" class="tela">
+  <div id="home" class="tela" style="display:block;">
     <div id="feed"></div>
   </div>
 
@@ -376,14 +342,21 @@
   </nav>
 
   <script>
-    /* ========= FUNDO: gerar bolhas sem travar ========= */
+    /* Polyfill simples (evita travar em celulares antigos) */
+    if (!String.prototype.replaceAll) {
+      String.prototype.replaceAll = function(search, replacement) {
+        return this.split(search).join(replacement);
+      };
+    }
+
+    /* ===== Fundo: bolhas ===== */
     (function createOceanBubbles(){
-      const bg = document.querySelector('.ocean-bg');
-      const count = 18;
-      for(let i=0;i<count;i++){
-        const b = document.createElement('div');
+      var bg = document.querySelector('.ocean-bg');
+      var count = 18;
+      for(var i=0;i<count;i++){
+        var b = document.createElement('div');
         b.className = 'ocean-bubble';
-        const size = Math.random()*18 + 10;
+        var size = Math.random()*18 + 10;
         b.style.width = b.style.height = size + 'px';
         b.style.left = (Math.random()*100) + '%';
         b.style.animationDuration = (Math.random()*10 + 10) + 's';
@@ -393,7 +366,6 @@
       }
     })();
 
-    /* ========= UTIL ========= */
     function escapeHtml(str){
       return String(str)
         .replaceAll("&","&amp;")
@@ -406,46 +378,40 @@
       return escapeHtml(str).replaceAll("\n"," ").replaceAll("\r"," ");
     }
     function notif(msg){
-      const n = document.getElementById("notif");
+      var n = document.getElementById("notif");
       n.innerText = msg;
       n.style.top = "20px";
-      setTimeout(() => n.style.top = "-100px", 2800);
+      setTimeout(function(){ n.style.top = "-100px"; }, 2600);
     }
 
-    /* ========= ID + PAI/FILHO ========= */
-    const LS_MY_ID = "ice_my_id";
-    const LS_PARENT = "ice_parent_id";
-    const LS_KIDS_PREFIX = "ice_kids_";
-
+    /* ===== ID + Pai/Filho (local seguro) ===== */
+    var LS_MY_ID = "ice_my_id";
+    var LS_PARENT = "ice_parent_id";
+    var LS_KIDS_PREFIX = "ice_kids_";
     function genId(){
       return "ICE-" + Math.random().toString(36).slice(2,6).toUpperCase() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
     }
     function getMyId(){
-      let id = localStorage.getItem(LS_MY_ID);
-      if(!id){
-        id = genId();
-        localStorage.setItem(LS_MY_ID, id);
-      }
+      var id = localStorage.getItem(LS_MY_ID);
+      if(!id){ id = genId(); localStorage.setItem(LS_MY_ID, id); }
       return id;
     }
     function getParentId(){ return localStorage.getItem(LS_PARENT); }
     function setParentId(pid){ localStorage.setItem(LS_PARENT, pid); }
-
     function getKids(myId){
       try{ return JSON.parse(localStorage.getItem(LS_KIDS_PREFIX + myId) || "[]"); }
       catch(e){ return []; }
     }
     function addKid(parentId, kidId){
-      const key = LS_KIDS_PREFIX + parentId;
-      const kids = getKids(parentId);
-      if(!kids.includes(kidId)){
+      var key = LS_KIDS_PREFIX + parentId;
+      var kids = getKids(parentId);
+      if(kids.indexOf(kidId) === -1){
         kids.unshift(kidId);
         localStorage.setItem(key, JSON.stringify(kids));
       }
     }
-
     function buildMyLink(){
-      const base = location.origin + location.pathname;
+      var base = location.origin + location.pathname;
       return base + "?ref=" + encodeURIComponent(getMyId());
     }
 
@@ -455,7 +421,7 @@
         return true;
       }catch(e){
         try{
-          const ta = document.createElement("textarea");
+          var ta = document.createElement("textarea");
           ta.value = txt;
           ta.style.position = "fixed";
           ta.style.left = "-9999px";
@@ -469,61 +435,114 @@
         }
       }
     }
-
     function showTip(msg){
-      const tip = document.getElementById("shareTip");
+      var tip = document.getElementById("shareTip");
       tip.innerHTML = msg;
       tip.style.display = "block";
       clearTimeout(showTip._t);
-      showTip._t = setTimeout(()=> tip.style.display="none", 2300);
+      showTip._t = setTimeout(function(){ tip.style.display="none"; }, 2200);
     }
-
     async function copyMyLink(){
-      const link = buildMyLink();
-      const ok = await copyText(link);
-      if(ok){
-        showTip(`Link copiado ✅<br><span class="mono">${escapeHtml(link)}</span>`);
-        notif("📎 Link copiado!");
-      } else {
-        alert("Não consegui copiar. Copie manual:\n" + link);
-      }
+      var link = buildMyLink();
+      var ok = await copyText(link);
+      if(ok){ showTip("Link copiado ✅<br><span class='mono'>"+escapeHtml(link)+"</span>"); notif("📎 Link copiado!"); }
+      else { alert("Copie manual:\n" + link); }
     }
-
     async function shareSystem(){
-      const link = buildMyLink();
-      const text = "Entra no ICE BLUE pelo meu link: " + link;
-
+      var link = buildMyLink();
+      var text = "Entra no ICE BLUE pelo meu link: " + link;
       if(navigator.share){
-        try{
-          await navigator.share({ title:"ICE BLUE", text, url: link });
-          notif("📣 Compartilhado!");
-          return;
-        }catch(e){}
+        try{ await navigator.share({ title:"ICE BLUE", text:text, url:link }); notif("📣 Compartilhado!"); return; }
+        catch(e){}
       }
       await copyMyLink();
     }
-
     function shareWhatsApp(){
-      const link = buildMyLink();
-      const msg = encodeURIComponent("Entra no ICE BLUE pelo meu link: " + link);
+      var link = buildMyLink();
+      var msg = encodeURIComponent("Entra no ICE BLUE pelo meu link: " + link);
       window.open("https://wa.me/?text=" + msg, "_blank");
     }
 
-    // Se você criar API depois, ele usa. Se não existir, não trava.
-    async function apiRegister(userId, parentId){
+    function applyReferralFromUrl(){
       try{
-        const r = await fetch("/api/register", {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ userId, parentId })
-        });
-        // se não existir a rota, Vercel pode retornar 404 — ok
-        if(!r.ok) return false;
-        return true;
-      }catch(e){
-        return false;
-      }
+        var params = new URLSearchParams(location.search);
+        var ref = params.get("ref");
+        if(!ref) return;
+
+        var myId = getMyId();
+        var parent = getParentId();
+        if(!parent && ref !== myId){
+          setParentId(ref);
+          addKid(ref, myId);
+          notif("✅ Pai definido: " + ref);
+        }
+
+        try{
+          var clean = location.origin + location.pathname;
+          history.replaceState({}, "", clean);
+        }catch(e2){}
+      }catch(e){}
     }
 
-    async function applyReferralFromUrl(){
-      const params = new URLSearchParams(
+    function refreshProfileReferralUI(){
+      var myId = getMyId();
+      var parent = getParentId();
+      var kids = getKids(myId);
+
+      document.getElementById("myIdView").innerText = myId;
+      document.getElementById("myParentView").innerText = parent ? parent : "nenhum";
+      document.getElementById("myKidsCount").innerText = kids.length;
+
+      var wrap = document.getElementById("kidsListWrap");
+      if(kids.length === 0){
+        wrap.innerHTML = "<div class='mini'>Sem filhos por aqui ainda.</div>";
+      } else {
+        var html = "<div class='mini'><b>IDs dos filhos (local):</b></div>";
+        for(var i=0;i<Math.min(20,kids.length);i++){
+          html += "<div class='mini mono'>• " + escapeHtml(kids[i]) + "</div>";
+        }
+        wrap.innerHTML = html;
+      }
+      document.getElementById("whoami").innerText = "ID: " + myId + (parent ? (" • Pai: " + parent) : "");
+    }
+
+    /* ===== APP (Trocas) ===== */
+    var targetItem = null;
+
+    function ver(id){
+      var telas = document.querySelectorAll('.tela');
+      for(var i=0;i<telas.length;i++) telas[i].style.display = 'none';
+
+      var el = document.getElementById(id);
+      if(el) el.style.display = 'block';
+
+      if(id === 'ofertas') document.getElementById('badge').style.display = 'none';
+      if(id === 'perfil') refreshProfileReferralUI();
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+
+    function abrirTrocas(){
+      if(targetItem) abrirTelaDupla();
+      else ver('ofertas');
+    }
+
+    function selecionarItemEIrTrocas(img, txt){
+      targetItem = { img: img, text: txt };
+      abrirTelaDupla();
+    }
+
+    function abrirTelaDupla(){
+      document.getElementById('targetImg').src = targetItem.img;
+      document.getElementById('targetTxt').innerText = "Postagem escolhida: " + (targetItem.text || "");
+      limparOferta(true);
+      ver('troca-dupla');
+    }
+
+    function previewOffer(){
+      var f = document.getElementById('offerFile').files[0];
+      if(!f){
+        document.getElementById('offerPreview').style.display = "none";
+        document.getElementById('offerPlaceholder').style.display = "flex";
+        return;
+      }
+      var r = 
