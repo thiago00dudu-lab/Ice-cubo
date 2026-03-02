@@ -1,61 +1,74 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>ICE TESTE</title>
-  <style>
-    body{margin:0;background:#061022;color:#fff;font-family:system-ui;padding:18px}
-    input,button{width:100%;padding:14px;border-radius:14px;border:1px solid #244; margin:10px 0; font-size:16px}
-    button{background:#66e1ff;color:#021018;font-weight:900;border:none}
-    .card{max-width:520px;margin:0 auto;background:#0b1430;border:1px solid #244;border-radius:18px;padding:16px}
-    .ok{color:#37d67a;font-weight:900}
-    .bad{color:#ff4d6d;font-weight:900}
-  </style>
+    <meta charset="utf-8""")/>>
+    <meta name="viewport" content="width=device-width, initial-scale=1""")/>>
+    <title>ICE TESTE</title>
+    <style>
+        body{margin:0;background:#061022;color:#fff;font-family:system-ui;padding:18px}
+        .card{max-width:320px;margin:0 auto;background:#0b1430;border:1px solid #244;border-radius:18px;padding:16px;text-align:center}
+        input,button{width:100%;padding:14px;border-radius:14px;border:1px solid #244;margin:10px 0;font-size:16px;box-sizing:border-box}
+        button{background:#66efff;color:#021018;font-weight:900;border:none;cursor:pointer}
+        .ok{color:#37d67a;font-weight:900}
+        .bad{color:#ff4d6d;font-weight:900}
+        #conteudo-logado { display: none; } /* Esconde o conteúdo principal no início */
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h2>ICE (teste de clique)</h2>
-    <div id="status" class="bad">JS ainda não rodou…</div>
 
-    <input id="u" placeholder="usuário (ex: jessica)">
-    <input id="p" placeholder="senha (ex: 123)" type="password">
+    <div class="card" id="tela-login">
+        <h2>ICE (teste de clique)</h2>
+        <div id="status" class="bad">JS ainda não rodou...</div>
+        
+        <input id="u" placeholder="usuário (ex: jessica)">
+        <input id="p" placeholder="senha (ex: 123)" type="password">
+        
+        <button id="btnCriar">Criar conta</button>
+        <button id="btnEntrar">Entrar</button>
+        <div id="msg" style="margin-top:10px"></div>
+    </div>
 
-    <button id="btnCriar" type="button">Criar conta</button>
-    <button id="btnEntrar" type="button">Entrar</button>
+    <!-- Nova seção que aparece após o login -->
+    <div class="card" id="conteudo-logado">
+        <h2 class="ok">LOGADO ✅</h2>
+        <p>Bem-vindo ao seu site!</p>
+        <button onclick="location.reload()">Sair / Deslogar</button>
+    </div>
 
-    <div id="msg" style="margin-top:10px"></div>
-  </div>
+    <script>
+        const $ = (id)=>document.getElementById(id);
+        $("status").textContent = "JS OK ✅ (cliques funcionando)";
+        $("status").className = "ok";
 
-  <script>
-    const $ = (id)=>document.getElementById(id);
-    $("status").textContent = "JS OK ✅ (cliques funcionando)";
-    $("status").className = "ok";
+        const KEY_U = "ice_user";
+        const KEY_P = "ice_pass";
 
-    const KEY_U = "ice_user";
-    const KEY_P = "ice_pass";
+        // Lógica para Criar Conta
+        $("btnCriar").addEventListener("click", () => {
+            const u = $("u").value.trim();
+            const p = $("p").value.trim();
+            if(u.length < 3) return $("msg").innerHTML = "<span class='bad'>Usuário mínimo 3 letras</span>";
+            if(p.length < 3) return $("msg").innerHTML = "<span class='bad'>Senha mínima 3 letras</span>";
+            
+            localStorage.setItem(KEY_U, u);
+            localStorage.setItem(KEY_P, p);
+            $("msg").innerHTML = "<span class='ok'>Conta criada! Agora clique em Entrar</span>";
+        });
 
-    $("btnCriar").addEventListener("click", () => {
-      const u = $("u").value.trim();
-      const p = $("p").value.trim();
-      if(u.length < 3) return $("msg").innerHTML = "<span class='bad'>Usuário mínimo 3 letras</span>";
-      if(p.length < 3) return $("msg").innerHTML = "<span class='bad'>Senha mínimo 3 letras</span>";
-      localStorage.setItem(KEY_U, u);
-      localStorage.setItem(KEY_P, p);
-      $("msg").innerHTML = "<span class='ok'>Conta criada ✅ agora clique Entrar</span>";
-      alert("Conta criada ✅");
-    });
+        // Lógica para Entrar
+        $("btnEntrar").addEventListener("click", () => {
+            const u = $("u").value.trim();
+            const p = $("p").value.trim();
+            const su = localStorage.getItem(KEY_U);
+            const sp = localStorage.getItem(KEY_P);
 
-    $("btnEntrar").addEventListener("click", () => {
-      const u = $("u").value.trim();
-      const p = $("p").value.trim();
-      const su = localStorage.getItem(KEY_U);
-      const sp = localStorage.getItem(KEY_P);
-      if(!su || !sp) return $("msg").innerHTML = "<span class='bad'>Crie a conta primeiro</span>";
-      if(u !== su || p !== sp) return $("msg").innerHTML = "<span class='bad'>Usuário/senha incorretos</span>";
-      $("msg").innerHTML = "<span class='ok'>LOGADO ✅</span>";
-      alert("LOGADO ✅");
-    });
-  </script>
+            if(!su || !sp) return $("msg").innerHTML = "<span class='bad'>Crie a conta primeiro!</span>";
+            if(u !== su || p !== sp) return $("msg").innerHTML = "<span class='bad'>Usuário ou senha incorretos</span>";
+
+            // A MÁGICA ACONTECE AQUI:
+            $("tela-login").style.display = "none"; // Esconde o login
+            $("conteudo-logado").style.display = "block"; // Mostra o conteúdo
+        });
+    </script>
 </body>
 </html>
