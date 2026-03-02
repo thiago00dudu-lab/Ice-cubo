@@ -111,4 +111,364 @@
   <div id="perfil" class="tela">
     <div class="card" style="text-align:center;">
       <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" id="p-img" class="u-pic" style="width:70px; height:70px;">
-      <h
+      <h2 id="p-nome">Membro</h2>
+      <input type="file" id="up-p" style="display:none" onchange="previewImg(this, 'p-img')">
+      <button onclick="document.getElementById('up-p').click()" style="background:none; border:none; color:var(--ice); cursor:pointer;">Trocar Foto</button>
+    </div>
+
+    <div class="card">
+      <h4>Anunciar Troca</h4>
+      <input type="file" id="f-troca">
+      <textarea id="t-troca" placeholder="O que oferece?" style="margin-top:10px; height:70px;"></textarea>
+      <button class="btn-blue" onclick="postarTroca()">Publicar</button>
+    </div>
+
+    <!-- FAMÍLIA (VOLTOU) -->
+    <div class="card">
+      <h4>👨‍👩‍👧‍👦 Família</h4>
+
+      <div id="family-area" style="color:#bdefff; font-size:13px;">
+        Você ainda não tem família. Crie uma ou entre com um código.
+      </div>
+
+      <hr style="border:0; border-top:1px solid rgba(255,255,255,.12); margin:12px 0;">
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input id="family-name" placeholder="Nome da família (ex: Alves)" style="flex:1;">
+        <button class="btn-blue" style="width:auto; padding:12px 14px;" onclick="criarFamilia()">Criar</button>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <input id="family-code" placeholder="Código convite" style="flex:1;">
+        <input id="child-name" placeholder="Seu nome na família" style="flex:1;">
+        <button class="btn-blue" style="width:auto; padding:12px 14px;" onclick="entrarFamilia()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERFIL DO OUTRO USUÁRIO (ABRE AO TOCAR NA FOTO/NOME) -->
+  <div id="userperfil" class="tela">
+    <div class="card" style="display:flex; align-items:center; gap:12px;">
+      <button class="mini-btn" onclick="voltarDoPerfil()">←</button>
+      <img id="uprof-img" class="u-pic" src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
+      <div>
+        <div id="uprof-nome" style="font-size:18px; font-weight:bold;">Usuário</div>
+        <div id="uprof-role" class="role-badge"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn-blue" onclick="abrirChat()">💬 Abrir Chat</button>
+    </div>
+
+    <div class="card">
+      <h4 style="margin:0 0 10px 0;">Postagens desse perfil</h4>
+      <div id="uprof-posts"></div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div id="chat-window">
+    <div class="chat-header">
+      <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
+      <b>Chat Privado</b>
+    </div>
+    <div id="chat-box"></div>
+    <div style="padding:10px; background:#000; display:flex; gap:10px;">
+      <input type="text" id="chat-in" placeholder="Mensagem..." style="flex:1; border-radius:20px;">
+      <button onclick="enviarMsg()" style="background:var(--ice); border:none; border-radius:50%; width:40px;">🚀</button>
+    </div>
+  </div>
+
+  <nav class="nav" id="menu" style="display:none">
+    <div class="nav-item" onclick="ver('home')"><span>🏠</span>Home</div>
+    <div class="nav-item" onclick="ver('ofertas')">
+      <span id="badge" class="badge">!</span>
+      <span>🔄</span>Trocas
+    </div>
+    <div class="nav-item" onclick="ver('perfil')"><span>👤</span>Perfil</div>
+  </nav>
+
+  <!-- POPUP OFERTA -->
+  <div id="offer-pop">
+    <div class="sheet">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <b>🔔 Chegou uma oferta!</b>
+        <button onclick="fecharOfferPop()" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
+      </div>
+      <div id="offer-pop-content" style="margin-top:12px;"></div>
+      <button class="btn-blue" onclick="ver('ofertas'); fecharOfferPop();" style="margin-top:10px;">Ver ofertas</button>
+    </div>
+  </div>
+
+  <script>
+    // ====== BASE ======
+    let role = "Membro";              // Membro | ADM | MOD
+    let lastScreen = "home";
+    let viewingUserId = null;
+
+    // usuário local (sem backend)
+    function uid(){
+      let id = localStorage.getItem("ice_uid");
+      if(!id){
+        id = "U" + Math.random().toString(36).slice(2,9).toUpperCase();
+        localStorage.setItem("ice_uid", id);
+      }
+      return id;
+    }
+
+    // ====== BOLHAS ======
+    for(let i=0; i<15; i++) {
+      let b = document.createElement('div'); b.className = 'bubble';
+      b.style.left = Math.random() * 100 + '%';
+      b.style.width = b.style.height = (Math.random()*20+10)+'px';
+      b.style.animationDelay = Math.random()*10+'s';
+      document.body.appendChild(b);
+    }
+
+    // ====== HELPERS ======
+    function esc(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function mostrarNotif(txt){
+      const n = document.getElementById('notif');
+      n.textContent = txt;
+      n.style.top = "20px";
+      setTimeout(() => n.style.top = "-100px", 4000);
+    }
+
+    function setStars(){
+      document.getElementById('adm-star').style.display = (role === "ADM") ? "block" : "none";
+      document.getElementById('mod-star').style.display = (role === "MOD") ? "block" : "none";
+      document.getElementById('p-nome').innerText = (role === "ADM") ? "ADMINISTRADOR" : (role === "MOD" ? "MODERADOR" : "Membro");
+    }
+
+    function ver(id){
+      document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+      if(id === "ofertas") document.getElementById('badge').style.display = 'none';
+      if(id !== "userperfil") lastScreen = id;
+      if(id === "perfil") renderFamilia();
+    }
+
+    // ====== MODERAÇÃO ======
+    function podeBloquear(alvoRole){
+      if(role !== "ADM" && role !== "MOD") return false;
+      if(alvoRole === "ADM") return false; // MOD não bloqueia ADM
+      return true;
+    }
+    function bloquearPost(postId){
+      const p = posts.find(x => x.id === postId);
+      if(!p) return;
+      if(!podeBloquear(p.role)) return alert("Sem permissão (Admin não pode ser bloqueado).");
+      posts = posts.filter(x => x.id !== postId);
+      renderFeed();
+      if(viewingUserId) renderUserProfile(viewingUserId);
+      mostrarNotif("🛡️ Post bloqueado!");
+    }
+
+    // ====== DADOS (FEED) ======
+    // cada post: {id, userId, nome, role, texto, img}
+    let posts = [];
+
+    function headHtml(post){
+      let badge = "";
+      if(post.role === "ADM") badge = `<span class="adm">★ ADMIN</span>`;
+      else if(post.role === "MOD") badge = `<span class="mod">★ MOD</span>`;
+      else if(post.role === "IA") badge = `<span class="ia">🤖 IA</span>`;
+
+      return `
+        <div class="post-head" onclick="abrirPerfilUsuario('${esc(post.userId)}')">
+          <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="u-pic">
+          <div class="name-line">
+            <b>${esc(post.nome)}</b>
+            <span class="role-badge">${badge}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function cardHtml(post){
+      const modBtn = (role === "ADM" || role === "MOD")
+        ? `<button class="mini-btn" style="margin-top:10px;" onclick="bloquearPost('${esc(post.id)}')">Bloquear</button>`
+        : ``;
+
+      return `
+        <div class="card" data-role="${esc(post.role)}">
+          ${headHtml(post)}
+          <p>${esc(post.texto)}</p>
+          ${post.img ? `<img src="${esc(post.img)}" style="width:100%; border-radius:10px;">` : ``}
+          <button class="btn-blue" onclick="fazerOferta('${esc(post.id)}')">FAZER OFERTA</button>
+          ${modBtn}
+        </div>
+      `;
+    }
+
+    function renderFeed(){
+      const feed = document.getElementById("feed");
+      feed.innerHTML = posts.map(cardHtml).join("") || `<div class="card">Sem postagens ainda.</div>`;
+    }
+
+    function seedIA(){
+      // evita duplicar
+      if(localStorage.getItem("ice_seeded_ia") === "1") return;
+      localStorage.setItem("ice_seeded_ia","1");
+
+      const ia = [
+        { userId:"IA_LUNA", nome:"IA Luna", role:"IA", texto:"Troco skin rara por item lendário. Manda oferta!", img:"https://picsum.photos/seed/ia1/900/520" },
+        { userId:"IA_NILO", nome:"IA Nilo", role:"IA", texto:"Estou procurando troca rápida hoje. Quem tem interesse?", img:"https://picsum.photos/seed/ia2/900/520" },
+        { userId:"IA_KAEL", nome:"IA Kael", role:"IA", texto:"⚠️ Post fora do tema (exemplo para MOD bloquear).", img:"https://picsum.photos/seed/ia3/900/520" },
+        { userId:"IA_MIRA", nome:"IA Mira", role:"IA", texto:"Aceito negociar, mas descreve bem a oferta.", img:"https://picsum.photos/seed/ia4/900/520" },
+      ];
+
+      ia.forEach(p => posts.unshift({ id:"P"+Date.now()+Math.random(), ...p }));
+      renderFeed();
+    }
+
+    // ====== LOGIN ======
+    function logar(){
+      const p = document.getElementById("pass").value;
+
+      role = "Membro";
+      if(p === "1533") role = "ADM";
+      else if(p === "2444") role = "MOD";
+
+      setStars();
+
+      document.getElementById("menu").style.display = "flex";
+      ver("home");
+
+      uid();        // cria id local
+      seedIA();     // 4 perfis IA
+      renderFeed(); // mostra feed
+      renderFamilia(); // garante família aparecendo no perfil
+    }
+
+    // ====== POSTAR ======
+    function postarTroca(){
+      const txt = (document.getElementById("t-troca").value || "").trim();
+      const file = document.getElementById("f-troca").files[0];
+      if(!file) return alert("Selecione uma imagem!");
+      if(!txt) return alert("Escreva a descrição da troca!");
+
+      const nome = (role === "ADM") ? "ADMINISTRADOR" : (role === "MOD" ? "MODERADOR" : "Usuário");
+      const userId = uid();
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = e.target.result;
+
+        posts.unshift({
+          id: "P" + Date.now(),
+          userId,
+          nome,
+          role,
+          texto: txt,
+          img
+        });
+
+        document.getElementById("t-troca").value = "";
+        document.getElementById("f-troca").value = "";
+
+        renderFeed();
+        ver("home");
+        mostrarNotif("✅ Publicado!");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ====== OFERTAS (funciona pra QUALQUER post: IA e usuários) ======
+    function fazerOferta(postId){
+      const post = posts.find(p => p.id === postId);
+      if(!post) return alert("Post não encontrado.");
+
+      const ofertaDesc = prompt("Escreva a descrição da sua oferta (o dono vai ver):", "Tenho interesse! Minha oferta é...");
+      if(ofertaDesc === null) return;
+
+      setTimeout(() => {
+        document.getElementById('badge').style.display = "block";
+        mostrarNotif("🔔 Nova Oferta de Troca Recebida!");
+
+        const imgOferta = "https://picsum.photos/seed/" + Date.now() + "/900/520";
+
+        const htmlCard = `
+          <div class="card">
+            <div style="font-size:12px; color:#bdefff; margin-bottom:8px;">
+              <b>Dono:</b> ${esc(post.nome)} &nbsp; • &nbsp; <b>Descrição:</b> ${esc(post.texto)}
+            </div>
+
+            <div class="trade-split">
+              <div class="trade-side"><img src="${esc(post.img)}"></div>
+              <div class="vs-badge">VS</div>
+              <div class="trade-side"><img src="${esc(imgOferta)}"></div>
+            </div>
+
+            <div style="font-size:12px; color:#bdefff; margin-top:8px;">
+              <b>Descrição da oferta:</b> ${esc(ofertaDesc.trim() || "Sem descrição")}
+            </div>
+
+            <button class="btn-blue" style="background:#2ecc71; color:#fff;" onclick="abrirChat()">ACEITAR & CHAT</button>
+          </div>`;
+
+        document.getElementById("lista-ofertas").insertAdjacentHTML("afterbegin", htmlCard);
+        abrirOfferPop(htmlCard);
+      }, 700);
+    }
+
+    function abrirOfferPop(innerHtml){
+      document.getElementById('offer-pop-content').innerHTML = innerHtml;
+      document.getElementById('offer-pop').style.display = 'flex';
+    }
+    function fecharOfferPop(){
+      document.getElementById('offer-pop').style.display = 'none';
+    }
+
+    // ====== PERFIL DO OUTRO USUÁRIO (TOQUE NA FOTO/NOME) ======
+    function abrirPerfilUsuario(userId){
+      viewingUserId = userId;
+      renderUserProfile(userId);
+      ver("userperfil");
+    }
+
+    function voltarDoPerfil(){
+      viewingUserId = null;
+      ver(lastScreen || "home");
+    }
+
+    function renderUserProfile(userId){
+      const anyPost = posts.find(p => p.userId === userId);
+      if(!anyPost){
+        document.getElementById("uprof-nome").innerText = "Usuário";
+        document.getElementById("uprof-role").innerHTML = "";
+        document.getElementById("uprof-posts").innerHTML = `<div style="color:#bdefff;">Sem postagens.</div>`;
+        return;
+      }
+
+      document.getElementById("uprof-nome").innerText = anyPost.nome;
+
+      let badge = "";
+      if(anyPost.role === "ADM") badge = `<span class="adm">★ ADMIN</span>`;
+      else if(anyPost.role === "MOD") badge = `<span class="mod">★ MOD</span>`;
+      else if(anyPost.role === "IA") badge = `<span class="ia">🤖 IA</span>`;
+      document.getElementById("uprof-role").innerHTML = badge;
+
+      const userPosts = posts.filter(p => p.userId === userId);
+      document.getElementById("uprof-posts").innerHTML = userPosts.map(p => `
+        <div style="border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px; margin-bottom:10px;">
+          <div style="font-size:13px; color:#bdefff; margin-bottom:6px;">${esc(p.texto)}</div>
+          ${p.img ? `<img src="${esc(p.img)}" style="width:100%; border-radius:10px;">` : ``}
+          <button class="btn-blue" onclick="fazerOferta('${esc(p.id)}')">FAZER OFERTA</button>
+          ${(role==="ADM"||role==="MOD") ? `<button class="mini-btn" style="margin-top:10px;" onclick="bloquearPost('${esc(p.id)}')">Bloquear</button>` : ``}
+        </div>
+      `).join("");
+    }
+
+    // ====== CHAT ======
+    function abrirChat(){ document.getElementById('chat-window').style.left = "0"; }
+    function fecharChat(){ document.g
