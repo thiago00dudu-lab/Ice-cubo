@@ -3,12 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ice BLUE - Oficial</title>
+<title>ICE BLUE - Oficial</title>
+
 <style>
   :root{--ice:#00d4ff;--gold:#ffd700;--glass:rgba(255,255,255,.10);}
   body{margin:0;font-family:sans-serif;color:#fff;min-height:100vh;padding-bottom:90px;
     background:linear-gradient(180deg,#001219,#002855);overflow-x:hidden;}
-  .header{background:rgba(0,0,0,.8);padding:12px;text-align:center;border-bottom:2px solid var(--ice);position:sticky;top:0;z-index:10}
+  .header{background:rgba(0,0,0,.8);padding:12px;text-align:center;border-bottom:2px solid var(--ice);
+    position:sticky;top:0;z-index:10}
   .adm-star{color:var(--gold);display:none;font-size:14px;margin-bottom:4px}
   .card{background:var(--glass);margin:15px;padding:15px;border-radius:15px;border:1px solid rgba(255,255,255,.15)}
   input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);
@@ -28,13 +30,17 @@
   .nav .item{cursor:pointer;text-align:center;font-size:12px;position:relative;flex:1}
   .nav .item span{display:block;font-size:20px}
   .badge{position:absolute;top:-4px;right:28%;background:red;color:#fff;border-radius:50%;padding:2px 6px;font-size:10px;display:none}
+
   .screen{display:none}
   #login{display:block}
-  #chat{position:fixed;top:0;left:100%;width:100%;height:100%;background:#000814;display:flex;flex-direction:column;transition:.25s;z-index:30}
+
+  #chat{position:fixed;top:0;left:100%;width:100%;height:100%;background:#000814;display:flex;flex-direction:column;
+    transition:.25s;z-index:30}
   .chat-top{padding:10px;border-bottom:1px solid var(--ice);display:flex;align-items:center;gap:10px}
   .chat-box{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
   .me{background:var(--ice);color:#000;padding:8px 10px;border-radius:12px;align-self:flex-end;max-width:75%;word-break:break-word}
   .them{background:#333;color:#fff;padding:8px 10px;border-radius:12px;align-self:flex-start;max-width:75%;word-break:break-word}
+
   .prof-head{display:flex;align-items:center;gap:12px}
   .prof-avatar{width:74px;height:74px;border-radius:50%;border:2px solid var(--ice);object-fit:cover}
   .row{display:flex;gap:10px}
@@ -42,8 +48,8 @@
   .small-btn{background:#111;color:#fff;border:1px solid rgba(255,255,255,.2);padding:8px 10px;border-radius:10px;cursor:pointer}
 </style>
 </head>
-<body>
 
+<body>
 <div class="header">
   <div class="adm-star" id="admStar">★ ADMINISTRADOR ★</div>
   <h2 style="margin:0">ICE BLUE</h2>
@@ -54,7 +60,10 @@
   <div class="card" style="text-align:center">
     <h3 style="margin:0 0 8px">Acesso ao Sistema</h3>
     <div class="muted">ADM: senha <b>1533</b> | outra senha entra como Membro</div>
-    <input type="password" id="senha" placeholder="Senha">
+
+    <!-- IMPORTANTE: password (teclado normal) -->
+    <input type="password" id="senha" placeholder="Senha" autocomplete="off" inputmode="text">
+
     <button class="btn" onclick="doLogin()">Entrar</button>
   </div>
 </div>
@@ -63,7 +72,7 @@
 <div id="home" class="screen">
   <div class="card">
     <h3 style="margin:0 0 6px">Feed</h3>
-    <div class="muted">Clique no nome/foto do perfil para ver o perfil completo.</div>
+    <div class="muted">Clique no nome/foto para ver o perfil completo.</div>
   </div>
   <div id="feed"></div>
 </div>
@@ -77,37 +86,30 @@
 
   <div class="card" style="padding:12px;">
     <div style="display:flex; gap:10px; min-height:240px;">
-
-      <!-- ESQUERDA -->
       <div style="flex:1; border:1px dashed rgba(255,255,255,.25); border-radius:12px; padding:10px;">
         <div class="muted" style="margin-bottom:8px;">📌 Postagem alvo</div>
         <div id="tradeLeftEmpty" class="muted">Nenhuma postagem selecionada. Vá no Home e clique em “FAZER OFERTA”.</div>
         <div id="tradeLeft"></div>
       </div>
 
-      <!-- DIREITA -->
       <div style="flex:1; border:1px dashed rgba(255,255,255,.25); border-radius:12px; padding:10px;">
         <div class="muted" style="margin-bottom:8px;">🎁 Sua oferta</div>
-
-        <div id="tradeRightEmpty" class="muted">Selecione uma postagem no lado esquerdo para liberar o envio da oferta.</div>
+        <div id="tradeRightEmpty" class="muted">Selecione uma postagem para liberar o envio.</div>
 
         <div id="tradeRightForm" style="display:none;">
           <input type="file" id="offerImg" accept="image/*">
-          <textarea id="offerTxt" placeholder="Descreva sua oferta (ex: 'Troco por fone bluetooth + volta em dinheiro')"></textarea>
+          <textarea id="offerTxt" placeholder="Descreva sua oferta"></textarea>
           <button class="btn" onclick="enviarOfertaTroca()">ENVIAR OFERTA</button>
-
-          <div class="muted" style="margin-top:8px;">(Simulação) Quem está ofertando?</div>
+          <div class="muted" style="margin-top:8px;">(Teste) Quem oferta?</div>
           <select id="offerFrom">
             <option value="me">Eu (usuário logado)</option>
             <option value="fake">Usuário fake aleatório</option>
           </select>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- LISTA -->
   <div id="trocasList"></div>
 </div>
 
@@ -182,368 +184,375 @@
 </div>
 
 <script>
-  // ===== Helpers =====
-  function esc(s){
-    return String(s||"")
-      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-      .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+/* DEBUG: se quebrar, mostra o erro e linha */
+window.onerror = function(msg, url, line, col){
+  alert("ERRO: " + msg + "\nLinha: " + line + ":" + col);
+};
+
+function esc(s){
+  return String(s||"")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
+function pic(seed,w,h){
+  return "https://picsum.photos/seed/" + encodeURIComponent(seed) + "/" + (w||700) + "/" + (h||500);
+}
+
+var state = {
+  role: "Membro",
+  meName: "Voce",
+  feed: [],
+  trocas: [],
+  chat: [],
+  users: [
+    {id:"u1", nome:"Luna Santos",  role:"Membro",    avatar: pic("LunaAvatar",200,200), bio:"Troco itens e faço negócios rápidos."},
+    {id:"u2", nome:"Kaio Lima",    role:"Membro",    avatar: pic("KaioAvatar",200,200), bio:"Curto eletrônicos e trocas justas."},
+    {id:"u3", nome:"Bia Rocha",    role:"Membro",    avatar: pic("BiaAvatar",200,200),  bio:"Moda, acessórios e muita troca."},
+    {id:"u4", nome:"Rafa Souza",   role:"Membro",    avatar: pic("RafaAvatar",200,200), bio:"Ferramentas, casa e utilidades."},
+    {id:"u5", nome:"Thi Nogueira", role:"Membro",    avatar: pic("ThiAvatar",200,200),  bio:"Games e itens colecionáveis."}
+  ],
+  selectedUserId: null,
+  tradePostId: null
+};
+
+function show(id){
+  var screens = ["login","home","trocas","perfil","perfilUser"];
+  for(var i=0;i<screens.length;i++){
+    var el = document.getElementById(screens[i]);
+    if(el) el.style.display = "none";
   }
-  function pic(seed,w,h){ return "https://picsum.photos/seed/" + encodeURIComponent(seed) + "/" + (w||700) + "/" + (h||500); }
+  var target = document.getElementById(id);
+  if(target) target.style.display = "block";
 
-  // ===== State =====
-  var state = {
-    role: "Membro",
-    meName: "Voce",
-    feed: [],
-    trocas: [],       // ofertas
-    chat: [],
-    users: [
-      {id:"u1", nome:"Luna Santos",  role:"Membro",    avatar: pic("LunaAvatar",200,200), bio:"Troco itens e faço negócios rápidos."},
-      {id:"u2", nome:"Kaio Lima",    role:"Membro",    avatar: pic("KaioAvatar",200,200), bio:"Curto eletrônicos e trocas justas."},
-      {id:"u3", nome:"Bia Rocha",    role:"Membro",    avatar: pic("BiaAvatar",200,200),  bio:"Moda, acessórios e muita troca."},
-      {id:"u4", nome:"Rafa Souza",   role:"Membro",    avatar: pic("RafaAvatar",200,200), bio:"Ferramentas, casa e utilidades."},
-      {id:"u5", nome:"Thi Nogueira", role:"Membro",    avatar: pic("ThiAvatar",200,200),  bio:"Games e itens colecionáveis."}
-    ],
-    selectedUserId: null,
-    tradePostId: null
-  };
-
-  // ===== Screens =====
-  function show(id){
-    var screens = ["login","home","trocas","perfil","perfilUser"];
-    for(var i=0;i<screens.length;i++){
-      var el = document.getElementById(screens[i]);
-      if(el) el.style.display = "none";
-    }
-    document.getElementById(id).style.display = "block";
-
-    if(id === "trocas"){
-      document.getElementById("trocaBadge").style.display = "none";
-      renderTradePanel();
-      renderTrocas();
-    }
-    if(id === "home") renderFeed();
-    if(id === "perfil") renderMe();
+  if(id === "trocas"){
+    document.getElementById("trocaBadge").style.display = "none";
+    renderTradePanel();
+    renderTrocas();
   }
+  if(id === "home") renderFeed();
+  if(id === "perfil") renderMe();
+}
 
-  // ===== Login/Logout =====
-  function doLogin(){
+function doLogin(){
+  try{
     var s = (document.getElementById("senha").value || "").trim();
     state.role = (s === "1533") ? "ADM" : "Membro";
 
     document.getElementById("nav").style.display = "flex";
     document.getElementById("admStar").style.display = (state.role === "ADM") ? "block" : "none";
-    renderMe();
 
+    renderMe();
     if(state.feed.length === 0) seedPosts(false);
 
     show("home");
+  }catch(e){
+    alert("Falha no login: " + (e && e.message ? e.message : e));
   }
-  function logout(){
-    document.getElementById("senha").value = "";
-    document.getElementById("nav").style.display = "none";
-    document.getElementById("admStar").style.display = "none";
-    state.role = "Membro";
-    fecharChat();
-    show("login");
-  }
+}
 
-  // ===== Me =====
-  function renderMe(){
-    document.getElementById("meRole").innerText = "Role atual: " + state.role + " | (ADM: 1533)";
-  }
+function logout(){
+  document.getElementById("senha").value = "";
+  document.getElementById("nav").style.display = "none";
+  document.getElementById("admStar").style.display = "none";
+  state.role = "Membro";
+  fecharChat();
+  show("login");
+}
 
-  // ===== Generator =====
-  function seedPosts(forceAdd){
-    if(!forceAdd && state.feed.length > 0) return;
+function renderMe(){
+  document.getElementById("meRole").innerText = "Role atual: " + state.role + " | (ADM: 1533)";
+}
 
-    var textos = [
-      "Troco celular por outro de valor parecido. Chama no chat.",
-      "Tenho tênis quase novo, quero trocar por mochila ou algo útil.",
-      "Troco fone bluetooth por powerbank bom.",
-      "Tenho camiseta original, quero trocar por perfume ou acessório.",
-      "Troco item colecionável por game/controle."
-    ];
+function seedPosts(forceAdd){
+  if(!forceAdd && state.feed.length > 0) return;
 
-    for(var u=0; u<state.users.length; u++){
-      for(var k=0; k<2; k++){
-        var t = textos[(u+k) % textos.length];
-        var user = state.users[u];
-        state.feed.unshift({
-          id: "p_" + Date.now() + "_" + u + "_" + k,
-          userId: user.id,
-          userName: user.nome,
-          userRole: user.role,
-          avatar: user.avatar,
-          text: t + " #" + (Math.floor(Math.random()*90)+10),
-          img: pic(user.nome + "_post_" + k + "_" + Date.now(), 800, 520),
-          ts: Date.now()
-        });
-      }
-    }
-    renderFeed();
-    alert("✅ Posts fakes gerados!");
-  }
+  var textos = [
+    "Troco celular por outro de valor parecido. Chama no chat.",
+    "Tenho tenis quase novo, quero trocar por mochila ou algo util.",
+    "Troco fone bluetooth por powerbank bom.",
+    "Tenho camiseta original, quero trocar por perfume ou acessorio.",
+    "Troco item colecionavel por game/controle."
+  ];
 
-  // ===== Postar (seu) =====
-  function postar(){
-    var txt = (document.getElementById("postText").value || "").trim();
-    var file = document.getElementById("postImg").files[0];
-    if(!file) return alert("Selecione uma imagem!");
-
-    var reader = new FileReader();
-    reader.onload = function(e){
+  for(var u=0; u<state.users.length; u++){
+    for(var k=0; k<2; k++){
+      var user = state.users[u];
+      var t = textos[(u+k) % textos.length];
       state.feed.unshift({
-        id: "p_me_" + Date.now(),
-        userId: "me",
-        userName: state.meName,
-        userRole: state.role,
-        avatar: pic("ME_AVATAR",200,200),
-        text: txt || "Sem descrição",
-        img: e.target.result,
+        id: "p_" + Date.now() + "_" + u + "_" + k,
+        userId: user.id,
+        userName: user.nome,
+        userRole: user.role,
+        avatar: user.avatar,
+        text: t + " #" + (Math.floor(Math.random()*90)+10),
+        img: pic(user.nome + "_post_" + k + "_" + Date.now(), 800, 520),
         ts: Date.now()
       });
-      document.getElementById("postText").value = "";
-      document.getElementById("postImg").value = "";
-      renderFeed();
-      show("home");
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // ===== Feed =====
-  function canModerate(){ return state.role === "ADM" || state.role === "Moderador"; }
-
-  function renderFeed(){
-    var feed = document.getElementById("feed");
-    feed.innerHTML = "";
-
-    if(state.feed.length === 0){
-      feed.innerHTML = "<div class='card'><div class='muted'>Sem posts ainda.</div></div>";
-      return;
-    }
-
-    for(var i=0;i<state.feed.length;i++){
-      var p = state.feed[i];
-
-      var card = document.createElement("div");
-      card.className = "card";
-
-      card.innerHTML =
-        "<div class='post-head'>" +
-          "<img class='avatar' src='"+esc(p.avatar)+"' onclick=\"openUser('"+esc(p.userId)+"')\" alt='avatar'>" +
-          "<div>" +
-            "<div class='uname' onclick=\"openUser('"+esc(p.userId)+"')\">"+esc(p.userName)+"</div>" +
-            "<div class='role'>Role: "+esc(p.userRole)+"</div>" +
-          "</div>" +
-        "</div>" +
-        "<div>"+esc(p.text)+"</div>" +
-        "<img class='post-img' src='"+esc(p.img)+"' alt='post'>" +
-        "<button class='btn' onclick=\"fazerOferta('"+esc(p.id)+"')\">FAZER OFERTA</button>";
-
-      if(canModerate()){
-        card.innerHTML += "<button class='btn btn-red' onclick=\"removerPost('"+esc(p.id)+"')\">Remover (Mod/ADM)</button>";
-      }
-
-      feed.appendChild(card);
     }
   }
+  renderFeed();
+}
 
-  function removerPost(postId){
-    if(!canModerate()) return alert("Sem permissão.");
-    state.feed = state.feed.filter(function(x){ return x.id !== postId; });
-    if(state.tradePostId === postId){ state.tradePostId = null; }
-    renderFeed();
+function postar(){
+  var txt = (document.getElementById("postText").value || "").trim();
+  var file = document.getElementById("postImg").files[0];
+  if(!file) return alert("Selecione uma imagem!");
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    state.feed.unshift({
+      id: "p_me_" + Date.now(),
+      userId: "me",
+      userName: state.meName,
+      userRole: state.role,
+      avatar: pic("ME_AVATAR",200,200),
+      text: txt || "Sem descricao",
+      img: e.target.result,
+      ts: Date.now()
+    });
+    document.getElementById("postText").value = "";
+    document.getElementById("postImg").value = "";
+    show("home");
+  };
+  reader.readAsDataURL(file);
+}
+
+function canModerate(){ return state.role === "ADM" || state.role === "Moderador"; }
+
+function renderFeed(){
+  var feed = document.getElementById("feed");
+  feed.innerHTML = "";
+
+  if(state.feed.length === 0){
+    feed.innerHTML = "<div class='card'><div class='muted'>Sem posts ainda.</div></div>";
+    return;
   }
 
-  // ===== User profiles =====
-  function getUserById(uid){
-    if(uid === "me"){
-      return {id:"me", nome: state.meName, role: state.role, avatar: pic("ME_AVATAR",200,200), bio:"Meu perfil (teste)."};
-    }
-    for(var i=0;i<state.users.length;i++){
-      if(state.users[i].id === uid) return state.users[i];
-    }
-    return null;
-  }
-
-  function openUser(uid){
-    var u = getUserById(uid);
-    if(!u) return;
-
-    state.selectedUserId = uid;
-
-    document.getElementById("puAvatar").src = u.avatar;
-    document.getElementById("puName").innerText = u.nome;
-    document.getElementById("puRole").innerText = "Role: " + u.role;
-    document.getElementById("puId").innerText = u.id;
-    document.getElementById("puBio").innerText = u.bio || "";
-
-    var actions = document.getElementById("puActions");
-    if(state.role === "ADM" && uid !== "me"){
-      actions.style.display = "block";
-      document.getElementById("btnPromote").onclick = function(){ setRole(uid, "Moderador"); };
-      document.getElementById("btnDemote").onclick = function(){ setRole(uid, "Membro"); };
-    } else {
-      actions.style.display = "none";
-    }
-
-    renderUserPosts(uid);
-    show("perfilUser");
-  }
-
-  function setRole(uid, role){
-    if(state.role !== "ADM") return alert("Só ADM pode mudar role.");
-    for(var i=0;i<state.users.length;i++){
-      if(state.users[i].id === uid){
-        state.users[i].role = role;
-
-        for(var j=0;j<state.feed.length;j++){
-          if(state.feed[j].userId === uid){
-            state.feed[j].userRole = role;
-          }
-        }
-        alert("✅ " + state.users[i].nome + " agora é " + role);
-        openUser(uid);
-        renderFeed();
-        return;
-      }
-    }
-  }
-
-  function renderUserPosts(uid){
-    var box = document.getElementById("puPosts");
-    box.innerHTML = "";
-    var posts = state.feed.filter(function(p){ return p.userId === uid; });
-
-    if(posts.length === 0){
-      box.innerHTML = "<div class='muted'>Sem posts deste perfil.</div>";
-      return;
-    }
-
-    for(var i=0;i<posts.length;i++){
-      var p = posts[i];
-      var div = document.createElement("div");
-      div.className = "card";
-      div.style.margin = "10px 0";
-      div.innerHTML =
-        "<div class='muted'>Post</div>" +
-        "<div style='margin-top:6px'>"+esc(p.text)+"</div>" +
-        "<img class='post-img' src='"+esc(p.img)+"' alt='post'>";
-      if(canModerate()){
-        div.innerHTML += "<button class='btn btn-red' onclick=\"removerPost('"+esc(p.id)+"')\">Remover (Mod/ADM)</button>";
-      }
-      box.appendChild(div);
-    }
-  }
-
-  // ===== TROCAS DIVIDIDO =====
-  function fazerOferta(postId){
-    state.tradePostId = postId;
-    document.getElementById("trocaBadge").style.display = "block";
-    show("trocas");
-  }
-
-  function renderTradePanel(){
-    var left = document.getElementById("tradeLeft");
-    var leftEmpty = document.getElementById("tradeLeftEmpty");
-    var rightEmpty = document.getElementById("tradeRightEmpty");
-    var rightForm = document.getElementById("tradeRightForm");
-
-    left.innerHTML = "";
-
-    if(!state.tradePostId){
-      leftEmpty.style.display = "block";
-      rightEmpty.style.display = "block";
-      rightForm.style.display = "none";
-      return;
-    }
-
-    var post = null;
-    for(var i=0;i<state.feed.length;i++){
-      if(state.feed[i].id === state.tradePostId){ post = state.feed[i]; break; }
-    }
-
-    if(!post){
-      state.tradePostId = null;
-      leftEmpty.style.display = "block";
-      rightEmpty.style.display = "block";
-      rightForm.style.display = "none";
-      return;
-    }
-
-    leftEmpty.style.display = "none";
-    rightEmpty.style.display = "none";
-    rightForm.style.display = "block";
-
-    left.innerHTML =
+  for(var i=0;i<state.feed.length;i++){
+    var p = state.feed[i];
+    var card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
       "<div class='post-head'>" +
-        "<img class='avatar' src='"+esc(post.avatar)+"' alt='avatar' onclick=\"openUser('"+esc(post.userId)+"')\">" +
+        "<img class='avatar' src='"+esc(p.avatar)+"' onclick=\"openUser('"+esc(p.userId)+"')\" alt='avatar'>" +
         "<div>" +
-          "<div class='uname' onclick=\"openUser('"+esc(post.userId)+"')\">"+esc(post.userName)+"</div>" +
-          "<div class='role'>Role: "+esc(post.userRole)+"</div>" +
+          "<div class='uname' onclick=\"openUser('"+esc(p.userId)+"')\">"+esc(p.userName)+"</div>" +
+          "<div class='role'>Role: "+esc(p.userRole)+"</div>" +
         "</div>" +
       "</div>" +
-      "<div>"+esc(post.text)+"</div>" +
-      "<img class='post-img' src='"+esc(post.img)+"' alt='post'>" +
-      "<button class='small-btn' style='width:100%; margin-top:10px' onclick=\"state.tradePostId=null; renderTradePanel();\">Limpar seleção</button>";
-  }
+      "<div>"+esc(p.text)+"</div>" +
+      "<img class='post-img' src='"+esc(p.img)+"' alt='post'>" +
+      "<button class='btn' onclick=\"fazerOferta('"+esc(p.id)+"')\">FAZER OFERTA</button>";
 
-  function enviarOfertaTroca(){
-    if(!state.tradePostId) return alert("Selecione uma postagem primeiro.");
-
-    var file = document.getElementById("offerImg").files[0];
-    var txt = (document.getElementById("offerTxt").value || "").trim();
-    if(!file) return alert("Selecione a imagem da oferta!");
-
-    var fromMode = document.getElementById("offerFrom").value;
-    var fromUser = null;
-
-    if(fromMode === "fake"){
-      fromUser = state.users[Math.floor(Math.random()*state.users.length)];
-    } else {
-      fromUser = { id:"me", nome: state.meName, role: state.role, avatar: pic("ME_AVATAR",200,200) };
+    if(canModerate()){
+      card.innerHTML += "<button class='btn btn-red' onclick=\"removerPost('"+esc(p.id)+"')\">Remover (Mod/ADM)</button>";
     }
+    feed.appendChild(card);
+  }
+}
 
-    var reader = new FileReader();
-    reader.onload = function(e){
-      state.trocas.unshift({
-        id: "t_" + Date.now(),
-        postId: state.tradePostId,
-        fromUserId: fromUser.id,
-        fromName: fromUser.nome,
-        fromAvatar: fromUser.avatar,
-        fromRole: fromUser.role,
-        offerImg: e.target.result,
-        offerTxt: txt || "Sem descrição",
-        ts: Date.now()
-      });
+function removerPost(postId){
+  if(!canModerate()) return alert("Sem permissao.");
+  state.feed = state.feed.filter(function(x){ return x.id !== postId; });
+  if(state.tradePostId === postId) state.tradePostId = null;
+  renderFeed();
+}
 
-      document.getElementById("offerImg").value = "";
-      document.getElementById("offerTxt").value = "";
+function getUserById(uid){
+  if(uid === "me"){
+    return {id:"me", nome: state.meName, role: state.role, avatar: pic("ME_AVATAR",200,200), bio:"Meu perfil (teste)."};
+  }
+  for(var i=0;i<state.users.length;i++){
+    if(state.users[i].id === uid) return state.users[i];
+  }
+  return null;
+}
 
-      alert("✅ Oferta enviada!");
-      renderTrocas();
-    };
-    reader.readAsDataURL(file);
+function openUser(uid){
+  var u = getUserById(uid);
+  if(!u) return;
+
+  state.selectedUserId = uid;
+  document.getElementById("puAvatar").src = u.avatar;
+  document.getElementById("puName").innerText = u.nome;
+  document.getElementById("puRole").innerText = "Role: " + u.role;
+  document.getElementById("puId").innerText = u.id;
+  document.getElementById("puBio").innerText = u.bio || "";
+
+  var actions = document.getElementById("puActions");
+  if(state.role === "ADM" && uid !== "me"){
+    actions.style.display = "block";
+    document.getElementById("btnPromote").onclick = function(){ setRole(uid, "Moderador"); };
+    document.getElementById("btnDemote").onclick = function(){ setRole(uid, "Membro"); };
+  } else {
+    actions.style.display = "none";
   }
 
-  function renderTrocas(){
-    var box = document.getElementById("trocasList");
-    box.innerHTML = "";
+  renderUserPosts(uid);
+  show("perfilUser");
+}
 
-    if(state.trocas.length === 0){
-      box.innerHTML = "<div class='card'><div class='muted'>Nenhuma oferta ainda. Vá no Home e clique em FAZER OFERTA.</div></div>";
+function setRole(uid, role){
+  if(state.role !== "ADM") return alert("So ADM pode mudar role.");
+  for(var i=0;i<state.users.length;i++){
+    if(state.users[i].id === uid){
+      state.users[i].role = role;
+      for(var j=0;j<state.feed.length;j++){
+        if(state.feed[j].userId === uid) state.feed[j].userRole = role;
+      }
+      openUser(uid);
+      renderFeed();
       return;
     }
+  }
+}
 
-    for(var i=0;i<state.trocas.length;i++){
-      var t = state.trocas[i];
+function renderUserPosts(uid){
+  var box = document.getElementById("puPosts");
+  box.innerHTML = "";
+  var posts = state.feed.filter(function(p){ return p.userId === uid; });
 
-      var post = null;
-      for(var j=0;j<state.feed.length;j++){
-        if(state.feed[j].id === t.postId){ post = state.feed[j]; break; }
-      }
+  if(posts.length === 0){
+    box.innerHTML = "<div class='muted'>Sem posts deste perfil.</div>";
+    return;
+  }
 
-      var alvoHtml = post
-  
+  for(var i=0;i<posts.length;i++){
+    var p = posts[i];
+    var div = document.createElement("div");
+    div.className = "card";
+    div.style.margin = "10px 0";
+    div.innerHTML =
+      "<div class='muted'>Post</div>" +
+      "<div style='margin-top:6px'>"+esc(p.text)+"</div>" +
+      "<img class='post-img' src='"+esc(p.img)+"' alt='post'>";
+    if(canModerate()){
+      div.innerHTML += "<button class='btn btn-red' onclick=\"removerPost('"+esc(p.id)+"')\">Remover (Mod/ADM)</button>";
+    }
+    box.appendChild(div);
+  }
+}
+
+/* ===== Trocas dividido ===== */
+function fazerOferta(postId){
+  state.tradePostId = postId;
+  document.getElementById("trocaBadge").style.display = "block";
+  show("trocas");
+}
+
+function renderTradePanel(){
+  var left = document.getElementById("tradeLeft");
+  var leftEmpty = document.getElementById("tradeLeftEmpty");
+  var rightEmpty = document.getElementById("tradeRightEmpty");
+  var rightForm = document.getElementById("tradeRightForm");
+
+  left.innerHTML = "";
+
+  if(!state.tradePostId){
+    leftEmpty.style.display = "block";
+    rightEmpty.style.display = "block";
+    rightForm.style.display = "none";
+    return;
+  }
+
+  var post = null;
+  for(var i=0;i<state.feed.length;i++){
+    if(state.feed[i].id === state.tradePostId){ post = state.feed[i]; break; }
+  }
+
+  if(!post){
+    state.tradePostId = null;
+    leftEmpty.style.display = "block";
+    rightEmpty.style.display = "block";
+    rightForm.style.display = "none";
+    return;
+  }
+
+  leftEmpty.style.display = "none";
+  rightEmpty.style.display = "none";
+  rightForm.style.display = "block";
+
+  left.innerHTML =
+    "<div class='post-head'>" +
+      "<img class='avatar' src='"+esc(post.avatar)+"' alt='avatar' onclick=\"openUser('"+esc(post.userId)+"')\">" +
+      "<div>" +
+        "<div class='uname' onclick=\"openUser('"+esc(post.userId)+"')\">"+esc(post.userName)+"</div>" +
+        "<div class='role'>Role: "+esc(post.userRole)+"</div>" +
+      "</div>" +
+    "</div>" +
+    "<div>"+esc(post.text)+"</div>" +
+    "<img class='post-img' src='"+esc(post.img)+"' alt='post'>" +
+    "<button class='small-btn' style='width:100%; margin-top:10px' onclick=\"state.tradePostId=null; renderTradePanel();\">Limpar selecao</button>";
+}
+
+function enviarOfertaTroca(){
+  if(!state.tradePostId) return alert("Selecione uma postagem primeiro.");
+
+  var file = document.getElementById("offerImg").files[0];
+  var txt = (document.getElementById("offerTxt").value || "").trim();
+  if(!file) return alert("Selecione a imagem da oferta!");
+
+  var fromMode = document.getElementById("offerFrom").value;
+  var fromUser = null;
+
+  if(fromMode === "fake"){
+    fromUser = state.users[Math.floor(Math.random()*state.users.length)];
+  } else {
+    fromUser = { id:"me", nome: state.meName, role: state.role, avatar: pic("ME_AVATAR",200,200) };
+  }
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    state.trocas.unshift({
+      id: "t_" + Date.now(),
+      postId: state.tradePostId,
+      fromUserId: fromUser.id,
+      fromName: fromUser.nome,
+      fromAvatar: fromUser.avatar,
+      fromRole: fromUser.role,
+      offerImg: e.target.result,
+      offerTxt: txt || "Sem descricao",
+      ts: Date.now()
+    });
+
+    document.getElementById("offerImg").value = "";
+    document.getElementById("offerTxt").value = "";
+
+    renderTrocas();
+    alert("✅ Oferta enviada!");
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderTrocas(){
+  var box = document.getElementById("trocasList");
+  box.innerHTML = "";
+
+  if(state.trocas.length === 0){
+    box.innerHTML = "<div class='card'><div class='muted'>Nenhuma oferta ainda.</div></div>";
+    return;
+  }
+
+  for(var i=0;i<state.trocas.length;i++){
+    var t = state.trocas[i];
+    var post = null;
+    for(var j=0;j<state.feed.length;j++){
+      if(state.feed[j].id === t.postId){ post = state.feed[j]; break; }
+    }
+
+    var alvoHtml = post
+      ? ("<div class='muted'>🎯 Alvo: "+esc(post.userName)+"</div><img class='post-img' src='"+esc(post.img)+"'>")
+      : ("<div class='muted'>🎯 Alvo removido</div>");
+
+    var div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML =
+      "<div class='muted'>📩 Oferta recebida</div>" +
+      "<div style='display:flex; gap:10px; margin-top:10px;'>" +
+        "<div style='flex:1; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;'>" +
+          alvoHtml +
+        "</div>" +
+        "<div style='flex:1; border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px;'>" +
+          "<div class='post-head'>" +
+            "<img class='avatar' src='"+esc(t.fromAvatar)+"' onclick=\"openUser('"+esc(t.fromUserId)+"')\">" +
+            "<
