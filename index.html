@@ -509,4 +509,453 @@
 
     function getUserRoles(){ return loadJson(LS_USER_ROLES, {}); }
     function setUserRole(userId, role){
-      var map
+      var map = getUserRoles();
+      map[userId] = role;
+      saveJson(LS_USER_ROLES, map);
+    }
+    function getUserBlocks(){ return loadJson(LS_USER_BLOCKS, {}); }
+    function setUserBlocked(userId, blocked){
+      var map = getUserBlocks();
+      map[userId] = !!blocked;
+      saveJson(LS_USER_BLOCKS, map);
+    }
+    function isUserBlocked(userId){
+      var map = getUserBlocks();
+      return !!map[userId];
+    }
+
+    function isADM(){ return getRole() === "ADM"; }
+    function isMOD(){ return getRole() === "MOD" || getRole() === "ADM"; }
+
+    function roleLabel(r){
+      if(r==="ADM") return "<span class='pill ice'>★ ADM</span>";
+      if(r==="MOD") return "<span class='pill ok'>🛡 MOD</span>";
+      return "<span class='pill'>👤 Membro</span>";
+    }
+
+    function renderRolePill(){
+      var r=getRole();
+      document.getElementById("rolePill").innerHTML = "Permissão: " + roleLabel(r);
+    }
+
+    function admLogin(fromBlockedOverlay){
+      var p = prompt("Senha ADM:");
+      if(p === "1533"){
+        setRole("ADM");
+        // ADM intocável no seu ID
+        setUserRole(getMyId(), "ADM");
+        localStorage.removeItem(LS_BLOCKED);
+        document.getElementById("blockedOverlay").style.display = "none";
+        notif("★ Entrou como ADM!");
+        refreshProfile();
+        renderUsersList();
+        if(fromBlockedOverlay) ver("perfil");
+      } else {
+        alert("Senha incorreta.");
+      }
+    }
+
+    function logoutRole(){
+      setRole("MEMBER");
+      notif("Voltou para Membro.");
+      refreshProfile();
+      renderUsersList();
+    }
+
+    function ensureUsersSeed(){
+      var users = loadJson(LS_USERS, null);
+      if(users && Array.isArray(users) && users.length) return;
+
+      var seed = [
+        { id:"USR-LUNA-01", name:"Luna", pic:"https://i.pravatar.cc/120?img=5" },
+        { id:"USR-DIEGO-02", name:"Diego", pic:"https://i.pravatar.cc/120?img=11" },
+        { id:"USR-NINA-03", name:"Nina", pic:"https://i.pravatar.cc/120?img=32" },
+      ];
+
+      // inclui você como usuário real
+      seed.unshift({ id:getMyId(), name:"Você", pic: document.getElementById("p-img").src || "https://i.pravatar.cc/120?img=12" });
+
+      saveJson(LS_USERS, seed);
+    }
+
+    function getUsers(){
+      return loadJson(LS_USERS, []);
+    }
+
+    function updateMyUserPicInList(){
+      var users = getUsers();
+      var myId = getMyId();
+      for(var i=0;i<users.length;i++){
+        if(users[i].id === myId){
+          users[i].pic = document.getElementById("p-img").src;
+          users[i].name = "Você";
+        }
+      }
+      saveJson(LS_USERS, users);
+    }
+
+    // Se o device estiver marcado como bloqueado (simulação), trava tudo. ADM pode destravar.
+    function checkBlockedOverlay(){
+      var blocked = localStorage.getItem(LS_BLOCKED) === "1";
+      if(blocked && !isADM()){
+        document.getElementById("blockedOverlay").style.display = "flex";
+      } else {
+        document.getElementById("blockedOverlay").style.display = "none";
+      }
+    }
+
+    function refreshProfile(){
+      var myId=getMyId();
+      var parent=getParentId();
+      document.getElementById("myIdView").innerText=myId;
+      document.getElementById("myParentView").innerText=parent ? parent : "nenhum";
+      document.getElementById("whoami").innerText="ID: " + myId + (parent ? (" • Pai: " + parent) : "");
+      renderRolePill();
+      checkBlockedOverlay();
+    }
+
+    function renderUsersList(){
+      ensureUsersSeed();
+      var list = document.getElementById("usersList");
+      var users = getUsers();
+      var roles = getUserRoles();
+
+      var html = "";
+      for(var i=0;i<users.length;i++){
+        var u = users[i];
+        var r = roles[u.id] || "MEMBER";
+        var blocked = isUserBlocked(u.id);
+
+        var chips = "";
+        if(r==="ADM") chips += "<span class='chip adm'>ADM</span>";
+        else if(r==="MOD") chips += "<span class='chip mod'>MOD</span>";
+        else chips += "<span class='chip'>MEMBER</span>";
+        if(blocked) chips += " <span class='chip block'>BLOCK</span>";
+
+        html +=
+          "<div class='row' onclick=\"openUserProfile('"+escapeAttr(u.id)+"')\">" +
+            "<div class='row-left'>" +
+              "<img src='"+escapeAttr(u.pic)+"' alt=''>" +
+              "<div style='min-width:0;'>" +
+                "<div class='row-title'>"+escapeHtml(u.name)+"</div>" +
+                "<div class='row-sub mono'>"+escapeHtml(u.id)+"</div>" +
+                "<div class='mini' style='margin-top:6px; opacity:.9'>"+chips+"</div>" +
+              "</div>" +
+            "</div>" +
+            "<div class='row-actions'>" +
+              "<span style='opacity:.7'>›</span>" +
+            "</div>" +
+          "</div>";
+      }
+      list.innerHTML = html;
+    }
+
+    var selectedUserId = null;
+
+    function openUserProfile(userId){
+      selectedUserId = userId;
+      ensureUsersSeed();
+      var users = getUsers();
+      var roles = getUserRoles();
+      var u = null;
+
+      for(var i=0;i<users.length;i++){
+        if(users[i].id === userId){ u = users[i]; break; }
+      }
+      if(!u) return alert("Usuário não encontrado.");
+
+      var role = roles[userId] || "MEMBER";
+      var blocked = isUserBlocked(userId);
+
+      document.getElementById("uViewPic").src = u.pic;
+      document.getElementById("uViewName").innerText = u.name;
+      document.getElementById("uViewId").innerText = u.id;
+      document.getElementById("uViewRole").innerHTML =
+        "Status: " + roleLabel(role) + (blocked ? " <span class='pill danger'>⛔ Bloqueado</span>" : "");
+
+      // Ajusta botões conforme permissão
+      var canModerate = isMOD(); // MOD ou ADM
+      var info = document.getElementById("uActionInfo");
+
+      // ADM intocável: ninguém bloqueia ele (mesmo mod)
+      var targetIsADM = (role === "ADM");
+
+      document.getElementById("btnPromote").style.display = canModerate ? "block" : "none";
+      document.getElementById("btnDemote").style.display  = canModerate ? "block" : "none";
+      document.getElementById("btnBlock").style.display   = canModerate ? "block" : "none";
+      document.getElementById("btnUnblock").style.display = canModerate ? "block" : "none";
+
+      if(!canModerate){
+        info.innerHTML = "Você está como <b>Membro</b>. Faça login ADM para moderar.";
+      } else if(targetIsADM){
+        info.innerHTML = "Este usuário é <b>ADM</b> e é <b>intocável</b>.";
+      } else {
+        info.innerHTML = "Você pode promover/rebaixar e bloquear/desbloquear.";
+      }
+
+      // Desativa ações contra ADM
+      document.getElementById("btnBlock").disabled = targetIsADM;
+      document.getElementById("btnPromote").disabled = targetIsADM;
+      document.getElementById("btnDemote").disabled = targetIsADM;
+
+      // Ajusta textos dos botões
+      document.getElementById("btnUnblock").style.display = (canModerate && blocked) ? "block" : "none";
+      document.getElementById("btnBlock").style.display   = (canModerate && !blocked) ? "block" : "none";
+
+      ver("user-profile");
+    }
+
+    function promoteSelected(){
+      if(!isMOD()) return alert("Sem permissão.");
+      if(!selectedUserId) return;
+
+      // ADM intocável
+      var roles = getUserRoles();
+      if((roles[selectedUserId]||"MEMBER")==="ADM") return alert("ADM é intocável.");
+
+      setUserRole(selectedUserId, "MOD");
+      notif("🛡 Promovido para MOD.");
+      renderUsersList();
+      openUserProfile(selectedUserId);
+    }
+
+    function demoteSelected(){
+      if(!isMOD()) return alert("Sem permissão.");
+      if(!selectedUserId) return;
+
+      var roles = getUserRoles();
+      if((roles[selectedUserId]||"MEMBER")==="ADM") return alert("ADM é intocável.");
+
+      setUserRole(selectedUserId, "MEMBER");
+      notif("⬇️ Rebaixado para Membro.");
+      renderUsersList();
+      openUserProfile(selectedUserId);
+    }
+
+    function blockSelected(){
+      if(!isMOD()) return alert("Sem permissão.");
+      if(!selectedUserId) return;
+
+      var roles = getUserRoles();
+      if((roles[selectedUserId]||"MEMBER")==="ADM") return alert("ADM é intocável.");
+
+      setUserBlocked(selectedUserId, true);
+      notif("⛔ Usuário bloqueado.");
+
+      // Se bloquear o próprio usuário, marca o device como bloqueado (simulação)
+      if(selectedUserId === getMyId() && !isADM()){
+        localStorage.setItem(LS_BLOCKED, "1");
+        checkBlockedOverlay();
+      }
+
+      renderUsersList();
+      openUserProfile(selectedUserId);
+    }
+
+    function unblockSelected(){
+      if(!isMOD()) return alert("Sem permissão.");
+      if(!selectedUserId) return;
+
+      setUserBlocked(selectedUserId, false);
+      notif("✅ Usuário desbloqueado.");
+
+      if(selectedUserId === getMyId()){
+        localStorage.removeItem(LS_BLOCKED);
+        checkBlockedOverlay();
+      }
+
+      renderUsersList();
+      openUserProfile(selectedUserId);
+    }
+
+    /* ===== APP (trocas) ===== */
+    var targetItem=null;
+
+    function ver(id){
+      var telas=document.querySelectorAll(".tela");
+      for(var i=0;i<telas.length;i++) telas[i].style.display="none";
+      var el=document.getElementById(id);
+      if(el) el.style.display="block";
+      if(id==="ofertas") document.getElementById("badge").style.display="none";
+      if(id==="perfil"){ refreshProfile(); renderUsersList(); }
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+
+    function abrirTrocas(){
+      if(targetItem) abrirTelaDupla();
+      else ver("ofertas");
+    }
+
+    function selecionarItemEIrTrocas(img, txt){
+      targetItem={img:img, text:txt};
+      abrirTelaDupla();
+    }
+
+    function abrirTelaDupla(){
+      document.getElementById("targetImg").src=targetItem.img;
+      document.getElementById("targetTxt").innerText="Postagem escolhida: " + (targetItem.text || "");
+      limparOferta(true);
+      ver("troca-dupla");
+    }
+
+    function previewOffer(){
+      var f=document.getElementById("offerFile").files[0];
+      if(!f){
+        document.getElementById("offerPreview").style.display="none";
+        document.getElementById("offerPlaceholder").style.display="flex";
+        return;
+      }
+      var r=new FileReader();
+      r.onload=function(e){
+        document.getElementById("offerPreview").src=e.target.result;
+        document.getElementById("offerPreview").style.display="block";
+        document.getElementById("offerPlaceholder").style.display="none";
+      };
+      r.readAsDataURL(f);
+    }
+
+    function limparOferta(keepTarget){
+      document.getElementById("offerFile").value="";
+      document.getElementById("offerText").value="";
+      document.getElementById("offerPreview").style.display="none";
+      document.getElementById("offerPreview").src="";
+      document.getElementById("offerPlaceholder").style.display="flex";
+      if(!keepTarget) targetItem=null;
+    }
+
+    function enviarOferta(){
+      if(!targetItem) return alert("Escolha um item na Home (FAZER OFERTA) antes.");
+      var myFile=document.getElementById("offerFile").files[0];
+      var myText=(document.getElementById("offerText").value||"").trim();
+      if(!myFile) return alert("Envie uma foto do que você tem.");
+      if(!myText) return alert("Escreva a descrição da oferta.");
+
+      var r=new FileReader();
+      r.onload=function(e){
+        var myImg=e.target.result;
+
+        var html=
+          "<div class='card'>"+
+            "<div class='trade-split'>"+
+              "<div class='trade-side'><img src='"+targetItem.img+"'></div>"+
+              "<div class='vs-badge'>VS</div>"+
+              "<div class='trade-side'><img src='"+myImg+"'></div>"+
+            "</div>"+
+            "<div class='mini'><b>Você quer:</b> "+escapeHtml(targetItem.text||"")+"</div>"+
+            "<div class='mini'><b>Sua oferta:</b> "+escapeHtml(myText)+"</div>"+
+            "<button class='btn-blue' style='background:#2ecc71;color:#fff' onclick='abrirChat()'>ACEITAR & CHAT</button>"+
+          "</div>";
+
+        document.getElementById("lista-ofertas").insertAdjacentHTML("afterbegin", html);
+        document.getElementById("badge").style.display="block";
+        notif("🔔 Oferta criada! Veja em Trocas.");
+        ver("ofertas");
+      };
+      r.readAsDataURL(myFile);
+    }
+
+    function postarTroca(){
+      var txt=(document.getElementById("t-troca").value||"").trim();
+      var file=document.getElementById("f-troca").files[0];
+      if(!file) return alert("Selecione uma imagem!");
+
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var img=e.target.result;
+        var userPic=document.getElementById("p-img").src || "https://i.pravatar.cc/120?img=12";
+
+        var html=
+          "<div class='card'>"+
+            "<div class='post-head'>"+
+              "<img src='"+userPic+"' class='u-pic'>"+
+              "<div><div class='u-name'>Usuário</div><div class='mini'>Postou uma troca agora</div></div>"+
+            "</div>"+
+            "<p style='margin-top:0'>"+escapeHtml(txt||"Troca disponível!")+"</p>"+
+            "<img src='"+img+"' style='width:100%;border-radius:10px;'>"+
+            "<button class='btn-blue' onclick=\"selecionarItemEIrTrocas('"+img+"','"+escapeAttr(txt||"Troca disponível!")+"')\">FAZER OFERTA</button>"+
+          "</div>";
+
+        document.getElementById("feed").insertAdjacentHTML("afterbegin", html);
+        document.getElementById("t-troca").value="";
+        document.getElementById("f-troca").value="";
+        ver("home");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function abrirChat(){
+      document.getElementById("chat-window").style.left="0";
+      var box=document.getElementById("chat-box");
+      if(!box.dataset.seeded){
+        box.dataset.seeded="1";
+        box.insertAdjacentHTML("beforeend","<div class='h-msg'>Olá! Curti sua oferta. O que você aceita?</div>");
+      }
+    }
+    function fecharChat(){ document.getElementById("chat-window").style.left="100%"; }
+    function enviarMsg(){
+      var inpt=document.getElementById("chat-in");
+      var v=(inpt.value||"").trim();
+      if(!v) return;
+      document.getElementById("chat-box").insertAdjacentHTML("beforeend","<div class='m-msg'>"+escapeHtml(v)+"</div>");
+      inpt.value="";
+      setTimeout(function(){
+        document.getElementById("chat-box").insertAdjacentHTML("beforeend","<div class='h-msg'>Fechado. Me manda mais detalhes 🙂</div>");
+        var cb=document.getElementById("chat-box"); cb.scrollTop=cb.scrollHeight;
+      }, 650);
+    }
+
+    function previewImg(input,id){
+      var file=input.files && input.files[0];
+      if(!file) return;
+      var reader=new FileReader();
+      reader.onload=function(e){ document.getElementById(id).src=e.target.result; updateMyUserPicInList(); renderUsersList(); };
+      reader.readAsDataURL(file);
+    }
+
+    function seedFeed(){
+      var feed=document.getElementById("feed");
+      if(feed.dataset.seeded) return;
+      feed.dataset.seeded="1";
+
+      var fake=[
+        {name:"Luna", pic:"https://i.pravatar.cc/120?img=5", text:"Troco relógio por fone bluetooth.", img:"https://picsum.photos/seed/luna/900/600"},
+        {name:"Diego", pic:"https://i.pravatar.cc/120?img=11", text:"Tenho skate, quero trocar por bicicleta aro 29.", img:"https://picsum.photos/seed/diego/900/601"},
+        {name:"Nina", pic:"https://i.pravatar.cc/120?img=32", text:"Troco headset gamer por teclado mecânico.", img:"https://picsum.photos/seed/nina/900/602"}
+      ];
+
+      for(var i=0;i<fake.length;i++){
+        var u=fake[i];
+        var html=
+          "<div class='card'>"+
+            "<div class='post-head'>"+
+              "<img src='"+u.pic+"' class='u-pic'>"+
+              "<div><div class='u-name'>"+escapeHtml(u.name)+"</div><div class='mini'>Oferta pública</div></div>"+
+            "</div>"+
+            "<p style='margin-top:0'>"+escapeHtml(u.text)+"</p>"+
+            "<img src='"+u.img+"' style='width:100%;border-radius:10px;'>"+
+            "<button class='btn-blue' onclick=\"selecionarItemEIrTrocas('"+u.img+"','"+escapeAttr(u.text)+"')\">FAZER OFERTA</button>"+
+          "</div>";
+        feed.insertAdjacentHTML("beforeend", html);
+      }
+    }
+
+    /* START */
+    (function(){
+      try{
+        applyReferralFromUrl();
+        ensureUsersSeed();
+        // garante que seu ID sempre existe no mapa de roles
+        if(!getUserRoles()[getMyId()]) setUserRole(getMyId(), "MEMBER");
+
+        refreshProfile();
+        renderUsersList();
+        seedFeed();
+        ver("home");
+        notif("✅ ICE BLUE carregado!");
+      }catch(e){
+        alert("Erro no script: " + (e && e.message ? e.message : e));
+      }
+    })();
+  </script>
+</body>
+</html>
