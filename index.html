@@ -2,558 +2,61 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-  <title>ICE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ICE - TESTE</title>
   <style>
-    :root{
-      --bg:#060b16; --card:#0b1430; --stroke:#1a2a55;
-      --text:#eaf0ff; --muted:#a9b7e6; --brand:#66e1ff; --brand2:#7c5cff;
-      --good:#37d67a; --bad:#ff4d6d; --warn:#ffb020;
-      --radius:18px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background: radial-gradient(1000px 600px at 20% 10%, rgba(102,225,255,.18), transparent 60%),
-                  radial-gradient(900px 700px at 90% 30%, rgba(124,92,255,.18), transparent 60%),
-                  radial-gradient(1000px 700px at 50% 120%, rgba(55,214,122,.10), transparent 60%),
-                  var(--bg);
-      color:var(--text);
-      min-height:100vh;
-      padding-bottom: 84px;
-    }
-    .topbar{
-      position:sticky; top:0; z-index:30;
-      backdrop-filter: blur(10px);
-      background: rgba(6,11,22,.65);
-      border-bottom:1px solid rgba(26,42,85,.55);
-    }
-    .topbar-inner{
-      display:flex; align-items:center; justify-content:space-between;
-      padding:12px 14px; max-width:980px; margin:0 auto; gap:12px;
-    }
-    .brand{display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:.6px; user-select:none;}
-    .logo{
-      width:34px; height:34px; border-radius:12px;
-      background: linear-gradient(135deg, var(--brand), var(--brand2));
-      box-shadow: 0 12px 26px rgba(102,225,255,.15);
-      display:grid; place-items:center;
-      font-size:18px;
-    }
-    .pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 12px; border-radius:999px;
-      border:1px solid rgba(26,42,85,.75);
-      background: rgba(11,20,48,.55);
-      color:var(--muted);
-      font-size:13px;
-      overflow:hidden;
-      max-width:54vw;
-      white-space:nowrap;
-      text-overflow:ellipsis;
-    }
-    .btc{
-      width:20px;height:20px;border-radius:999px;
-      background: radial-gradient(circle at 30% 30%, #ffe9a6, #caa24a 55%, #6fb8ff 110%);
-      border:1px solid rgba(255,255,255,.15);
-      display:grid;place-items:center;
-      color:#0b1430;font-weight:900;
-      font-size:12px;
-    }
-
-    .layout{max-width:980px; margin:0 auto; padding:14px; display:grid; gap:14px}
-    .grid{display:grid; gap:14px; grid-template-columns:1fr;}
-    @media(min-width:860px){ .grid{grid-template-columns: 340px 1fr} }
-
-    .card{
-      border:1px solid rgba(26,42,85,.65);
-      background: linear-gradient(180deg, rgba(11,20,48,.75), rgba(10,18,42,.75));
-      border-radius: var(--radius);
-      box-shadow: 0 16px 38px rgba(0,0,0,.25);
-      overflow:hidden;
-    }
-    .card-h{
-      padding:14px 14px 10px;
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      border-bottom:1px solid rgba(26,42,85,.5);
-    }
-    .card-h h3{margin:0; font-size:14px; letter-spacing:.4px}
-    .muted{color:var(--muted)}
-    .pad{padding:14px}
-    .row{display:flex; gap:10px; align-items:center}
-    .col{display:flex; flex-direction:column; gap:10px}
-    input, button, textarea, select{font: inherit;}
-    input, textarea, select{
-      width:100%;
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid rgba(26,42,85,.75);
-      background: rgba(5,10,22,.55);
-      color:var(--text);
-      outline:none;
-    }
-    textarea{min-height:88px; resize:none}
-    input::placeholder, textarea::placeholder{color:rgba(169,183,230,.65)}
-    .btn{
-      border:none; border-radius:14px;
-      padding:12px 14px;
-      cursor:pointer;
-      font-weight:900;
-      color:#0b1430;
-      background: linear-gradient(135deg, var(--brand), rgba(124,92,255,.95));
-      box-shadow: 0 14px 28px rgba(102,225,255,.15);
-      transition: transform .08s ease;
-    }
-    .btn:active{transform: scale(.98)}
-    .btn2{
-      border:1px solid rgba(26,42,85,.75);
-      background: rgba(11,20,48,.55);
-      color: var(--text);
-      box-shadow:none;
-      font-weight:900;
-    }
-    .btn3{
-      border:1px solid rgba(26,42,85,.75);
-      background: rgba(5,10,22,.35);
-      color: var(--muted);
-      box-shadow:none;
-      font-weight:800;
-      padding:10px 12px;
-      border-radius:12px;
-      cursor:pointer;
-    }
-    .btnBad{
-      border:none; border-radius:14px;
-      padding:12px 14px;
-      cursor:pointer;
-      font-weight:900;
-      color:#21030a;
-      background: linear-gradient(135deg, rgba(255,77,109,.95), rgba(255,176,32,.85));
-      box-shadow: 0 14px 28px rgba(255,77,109,.12);
-    }
-    .tag{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:7px 10px; border-radius:999px;
-      border:1px solid rgba(26,42,85,.75);
-      background: rgba(5,10,22,.35);
-      color: var(--muted);
-      font-size:12px;
-    }
-    .divider{height:1px; background: rgba(26,42,85,.55); margin:10px 0}
-    .hidden{display:none !important}
-
-    /* avatar / profile photo */
-    .avatar{
-      width:42px;height:42px;border-radius:16px;
-      background: linear-gradient(135deg, rgba(102,225,255,.75), rgba(124,92,255,.65));
-      border:1px solid rgba(255,255,255,.12);
-      display:grid;place-items:center;
-      font-weight:900;
-      color:#061022;
-      user-select:none;
-      overflow:hidden;
-    }
-    .avatar img{width:100%;height:100%;object-fit:cover}
-    .name{font-weight:900}
-    .time{font-size:12px; color:rgba(169,183,230,.8)}
-    .kpis{display:flex; gap:10px; flex-wrap:wrap}
-    .kpi{padding:9px 12px;border-radius:14px;border:1px solid rgba(26,42,85,.75);background: rgba(5,10,22,.35);color:var(--muted);font-size:12px}
-
-    /* timeline */
-    .post{padding:14px; border-bottom:1px solid rgba(26,42,85,.45)}
-    .post:last-child{border-bottom:none}
-    .video{
-      margin-top:10px;
-      border-radius:16px;
-      overflow:hidden;
-      border:1px solid rgba(26,42,85,.6);
-      background: rgba(0,0,0,.25);
-      position:relative;
-      aspect-ratio: 16/10;
-      display:grid; place-items:center;
-      user-select:none;
-    }
-    .video .hint{
-      position:absolute; bottom:10px; left:10px;
-      background: rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.12);
-      color:rgba(255,255,255,.88);
-      padding:6px 10px; border-radius:999px;
-      font-size:12px;
-    }
-    .video .play{
-      width:64px;height:64px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.2);
-      background: rgba(102,225,255,.18);
-      display:grid;place-items:center;
-      font-size:26px;
-    }
-    .mediaBox{
-      margin-top:10px;
-      border-radius:16px;
-      overflow:hidden;
-      border:1px solid rgba(26,42,85,.6);
-      background: rgba(0,0,0,.25);
-    }
-    .mediaBox img,.mediaBox video{width:100%;display:block;max-height:420px;object-fit:cover}
-    .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-    .iconBtn{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:10px 12px; border-radius:999px;
-      border:1px solid rgba(26,42,85,.75);
-      background: rgba(5,10,22,.35);
-      color: var(--text);
-      cursor:pointer;
-      user-select:none;
-      font-weight:900;
-    }
-    .iconBtn small{color:var(--muted); font-weight:900}
-    .badge{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:20px;height:20px;border-radius:999px;
-      background: rgba(102,225,255,.20);
-      border:1px solid rgba(102,225,255,.28);
-      color:#dff8ff;font-size:12px;font-weight:900;
-    }
-
-    /* modal */
-    .modal{position:fixed; inset:0; z-index:80; background: rgba(0,0,0,.65); display:none; align-items:center; justify-content:center; padding:14px;}
-    .modal.on{display:flex}
-    .modalBox{
-      width:min(920px, 98vw);
-      border-radius:22px;
-      border:1px solid rgba(26,42,85,.65);
-      background: linear-gradient(180deg, rgba(11,20,48,.95), rgba(10,18,42,.95));
-      box-shadow: 0 30px 70px rgba(0,0,0,.35);
-      overflow:hidden;
-    }
-    .modalTop{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 12px; border-bottom:1px solid rgba(26,42,85,.55);}
-    .modalTop .left{display:flex; gap:10px; align-items:center}
-    .big{
-      display:grid; place-items:center;
-      aspect-ratio: 16/9;
-      background:
-        radial-gradient(700px 350px at 20% 20%, rgba(102,225,255,.18), transparent 60%),
-        radial-gradient(700px 400px at 80% 30%, rgba(124,92,255,.16), transparent 60%),
-        rgba(0,0,0,.22);
-      border-top:1px solid rgba(26,42,85,.45);
-    }
-
-    /* swap */
-    .split{display:grid; gap:14px; grid-template-columns:1fr;}
-    @media(min-width:860px){ .split{grid-template-columns: 1fr 1fr} }
-    .mediaPrev{
-      border-radius:16px;
-      border:1px solid rgba(26,42,85,.6);
-      background: rgba(0,0,0,.25);
-      overflow:hidden;
-      aspect-ratio: 16/10;
-      display:grid; place-items:center;
-    }
-    .mediaPrev img, .mediaPrev video{width:100%; height:100%; object-fit:cover}
-    .item{padding:14px; border-bottom:1px solid rgba(26,42,85,.45)}
-    .item:last-child{border-bottom:none}
-    .mini{display:grid; grid-template-columns: 84px 1fr; gap:10px; align-items:center;}
-    .thumb{
-      width:84px; height:64px; border-radius:14px;
-      border:1px solid rgba(26,42,85,.6);
-      background: rgba(0,0,0,.25);
-      overflow:hidden; display:grid; place-items:center;
-    }
-    .thumb img, .thumb video{width:100%; height:100%; object-fit:cover}
-    .pillOk{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:7px 10px; border-radius:999px;
-      border:1px solid rgba(55,214,122,.35);
-      background: rgba(55,214,122,.10);
-      color: rgba(55,214,122,.95);
-      font-size:12px; font-weight:900;
-    }
-
-    /* footer */
-    .footerNav{
-      position:fixed; left:0; right:0; bottom:0; z-index:90;
-      background: rgba(6,11,22,.72);
-      border-top:1px solid rgba(26,42,85,.55);
-      backdrop-filter: blur(10px);
-    }
-    .footerInner{
-      max-width:980px; margin:0 auto;
-      display:flex; justify-content:space-around; gap:8px;
-      padding:10px 12px;
-    }
-    .navBtn{
-      flex:1;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      gap:6px;
-      padding:10px 8px;
-      border-radius:16px;
-      border:1px solid transparent;
-      background: transparent;
-      color: rgba(234,240,255,.92);
-      font-weight:900;
-      cursor:pointer;
-      user-select:none;
-    }
-    .navBtn .ico{font-size:18px}
-    .navBtn .lbl{font-size:11px; color: rgba(169,183,230,.9)}
-    .navBtn.active{
-      border-color: rgba(102,225,255,.35);
-      background: rgba(102,225,255,.10);
-    }
-    .navBtn.active .lbl{color: rgba(223,248,255,.95)}
-
-    /* danger mode (piscando vermelho no perfil) */
-    @keyframes dangerPulse {
-      0% { background: rgba(255,77,109,.10); border-color: rgba(255,77,109,.35); }
-      50%{ background: rgba(255,77,109,.35); border-color: rgba(255,77,109,.75); }
-      100%{ background: rgba(255,77,109,.10); border-color: rgba(255,77,109,.35); }
-    }
-    .dangerBlink{
-      animation: dangerPulse .9s infinite;
-    }
-    .dangerBanner{
-      position: fixed;
-      top: 64px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(980px, 92vw);
-      z-index: 95;
-      padding: 12px 14px;
-      border-radius: 18px;
-      border:1px solid rgba(255,77,109,.65);
-      background: rgba(255,77,109,.15);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 18px 40px rgba(0,0,0,.35);
-      display:none;
-    }
-    .dangerBanner.show{display:block}
-    .dangerBanner .t{font-weight:900}
-    .dangerBanner .s{color:rgba(255,210,220,.92); font-size:13px; margin-top:4px; line-height:1.25}
-    .dangerBanner .r{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
-    .dangerBanner button{padding:10px 12px;border-radius:14px}
-
-    /* live preview */
-    .liveBox{
-      border-radius:16px;
-      border:1px solid rgba(26,42,85,.6);
-      background: rgba(0,0,0,.25);
-      overflow:hidden;
-    }
-    .liveBox video{width:100%; display:block; max-height:420px; object-fit:cover}
+    body{margin:0;background:#061022;color:#fff;font-family:system-ui;padding:18px}
+    input,button{width:100%;padding:14px;border-radius:14px;border:1px solid #244; margin:10px 0; font-size:16px}
+    button{background:#66e1ff;color:#021018;font-weight:900;border:none}
+    .card{max-width:520px;margin:0 auto;background:#0b1430;border:1px solid #244;border-radius:18px;padding:16px}
+    .ok{color:#37d67a;font-weight:900}
+    .bad{color:#ff4d6d;font-weight:900}
   </style>
 </head>
-
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <div class="logo">❄️</div>
-        <div>ICE</div>
-      </div>
-      <div class="pill" id="who">
-        <span class="btc">B</span>
-        <span id="whoText">Entrar / Criar conta</span>
-      </div>
-    </div>
-  </header>
+  <div class="card">
+    <h2>ICE (teste de clique)</h2>
+    <div id="status" class="bad">JS ainda não confirmou…</div>
 
-  <!-- banner automático de perigo -->
-  <div class="dangerBanner" id="dangerBanner">
-    <div class="t">🚨 PERIGO PRÓXIMO</div>
-    <div class="s" id="dangerText">Alerta próximo detectado.</div>
-    <div class="r">
-      <button class="btnBad" onclick="go('panico')">Ver alertas</button>
-      <button class="btn3" onclick="hideDanger()">Fechar</button>
-    </div>
+    <input id="u" placeholder="usuário (ex: jessica)">
+    <input id="p" placeholder="senha (ex: 123)" type="password">
+
+    <button id="btnCriar">Criar conta</button>
+    <button id="btnEntrar">Entrar</button>
+
+    <div id="msg" style="margin-top:10px"></div>
   </div>
 
-  <main class="layout">
+  <script>
+    // Se você ver "JS OK" na tela, então o JS está rodando.
+    const $ = (id)=>document.getElementById(id);
+    $("status").textContent = "JS OK ✅ (cliques devem funcionar)";
+    $("status").className = "ok";
 
-    <!-- HOME -->
-    <section id="viewHome">
-      <div class="grid">
+    const KEY_U = "ice_user";
+    const KEY_P = "ice_pass";
 
-        <!-- ESQUERDA -->
-        <section class="card">
-          <div class="card-h">
-            <h3>Conta</h3>
-            <span class="tag" id="authTag">offline</span>
-          </div>
-          <div class="pad col">
-            <div class="muted" style="font-size:13px;line-height:1.4">
-              ICE offline: tudo fica no seu celular. Com localização ligada você recebe alerta automático.
-            </div>
+    $("btnCriar").addEventListener("click", () => {
+      const u = $("u").value.trim();
+      const p = $("p").value.trim();
+      if(u.length < 3) return $("msg").innerHTML = "<span class='bad'>Usuário mínimo 3 letras</span>";
+      if(p.length < 3) return $("msg").innerHTML = "<span class='bad'>Senha mínimo 3 letras</span>";
+      localStorage.setItem(KEY_U, u);
+      localStorage.setItem(KEY_P, p);
+      $("msg").innerHTML = "<span class='ok'>Conta criada ✅ agora clique Entrar</span>";
+      alert("Conta criada ✅");
+    });
 
-            <div class="divider"></div>
-
-            <!-- LOGIN -->
-            <div class="col" id="loginForm">
-              <input id="inUser" placeholder="Usuário (ex: jessica)" maxlength="18">
-              <input id="inPass" placeholder="Senha" type="password" maxlength="30">
-              <button class="btn" onclick="login()">Entrar</button>
-              <button class="btn btn2" onclick="criarConta()">Criar conta</button>
-              <div class="muted" style="font-size:12px">* Salva só no seu celular (localStorage).</div>
-            </div>
-
-            <!-- PAINEL -->
-            <div class="col hidden" id="panelForm">
-              <div class="row">
-                <div class="avatar" id="meAvatar">I</div>
-                <div class="col" style="gap:2px">
-                  <div class="name" id="meName">Você</div>
-                  <div class="time">Online</div>
-                </div>
-              </div>
-
-              <div class="kpis">
-                <div class="kpi">Likes: <b id="kLikes">0</b></div>
-                <div class="kpi">Posts: <b id="kPosts">0</b></div>
-                <div class="kpi">Trocas: <b id="kSwaps">0</b></div>
-              </div>
-
-              <div class="divider"></div>
-
-              <textarea id="newText" placeholder="Escreva algo pro seu timeline..."></textarea>
-              <input type="file" id="postFile" accept="image/*,video/*">
-              <button class="btn" onclick="postar()">Postar (texto + foto/vídeo)</button>
-              <button class="btn3" onclick="logout()">Sair</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- DIREITA -->
-        <section class="card">
-          <div class="card-h">
-            <h3>Timeline</h3>
-            <span class="tag">2 toques abre grande</span>
-          </div>
-          <div id="feed"></div>
-        </section>
-
-      </div>
-    </section>
-
-    <!-- TROCA -->
-    <section id="viewTroca" class="hidden">
-      <section class="card">
-        <div class="card-h">
-          <h3>Troca</h3>
-          <span class="tag">tela dividida</span>
-        </div>
-
-        <div class="pad">
-          <div class="muted" style="font-size:13px;line-height:1.4">
-            Demo funcional: oferta + proposta + match (local). Pra virar “real” precisa backend depois.
-          </div>
-        </div>
-
-        <div class="pad split">
-
-          <!-- SEU LADO -->
-          <div class="card" style="border-radius:18px">
-            <div class="card-h">
-              <h3>Seu item</h3>
-              <span class="tag" id="myOfferTag">nenhum</span>
-            </div>
-            <div class="pad col">
-              <div class="mediaPrev" id="myPrev"><div class="muted">Sem mídia</div></div>
-
-              <input type="file" id="myFile" accept="image/*,video/*">
-              <input id="myTitle" placeholder="Título (ex: iPhone 11)">
-              <textarea id="myDesc" placeholder="Descrição + o que você quer em troca..."></textarea>
-              <button class="btn" onclick="criarOferta()">Publicar oferta</button>
-              <button class="btn3" onclick="limparMinhaOferta()">Apagar minha oferta</button>
-
-              <div class="divider"></div>
-              <div class="muted" style="font-size:12px">* mídia local do seu celular.</div>
-            </div>
-          </div>
-
-          <!-- OUTRO LADO -->
-          <div class="card" style="border-radius:18px">
-            <div class="card-h">
-              <h3>Ofertas de outros</h3>
-              <span class="tag"><span class="badge" id="oCount">0</span></span>
-            </div>
-
-            <div id="othersList"></div>
-
-            <div class="pad">
-              <button class="btn2" onclick="gerarOfertaFake()">Gerar oferta fake</button>
-              <button class="btn3" onclick="resetTrocas()">Reset trocas</button>
-              <div class="divider"></div>
-              <div id="matchBox" class="hidden">
-                <span class="pillOk">✅ MATCH FECHADO</span>
-                <div class="muted" style="margin-top:8px;font-size:13px" id="matchText"></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-    </section>
-
-    <!-- PÂNICO -->
-    <section id="viewPanico" class="hidden">
-      <section class="card">
-        <div class="card-h">
-          <h3>Botão do Pânico</h3>
-          <span class="tag">localização + endereço</span>
-        </div>
-
-        <div class="pad">
-          <div class="muted" style="font-size:13px;line-height:1.4">
-            Ao ativar, o ICE pega sua localização e tenta buscar o <b>endereço aproximado</b>.  
-            Você pode anexar foto/vídeo. “Ao vivo” é preview local (sem transmissão real).
-          </div>
-          <div class="divider"></div>
-
-          <div class="col">
-            <select id="panicType">
-              <option value="Assalto">Assalto</option>
-              <option value="Sequestro">Sequestro</option>
-              <option value="Alagamento">Alagamento</option>
-              <option value="Desabamento">Desabamento</option>
-              <option value="Incêndio">Incêndio</option>
-              <option value="Outro">Outro</option>
-            </select>
-
-            <textarea id="panicDesc" placeholder="Descreva o que está acontecendo..."></textarea>
-
-            <div class="row">
-              <input type="file" id="panicFile" accept="image/*,video/*" style="flex:1">
-              <button class="btn2" onclick="toggleLive()" style="white-space:nowrap">📹 Ao vivo (demo)</button>
-            </div>
-
-            <div id="liveWrap" class="liveBox hidden">
-              <video id="liveVideo" playsinline muted></video>
-              <div class="pad">
-                <div class="muted" style="font-size:12px">
-                  Preview local. Para transmitir para outros usuários, precisa servidor/WebRTC.
-                </div>
-                <button class="btn3" onclick="toggleLive()">Parar câmera</button>
-              </div>
-            </div>
-
-            <button class="btnBad" onclick="enviarPanico()">🚨 ATIVAR ALERTA</button>
-
-            <div class="divider"></div>
-
-            <div class="row" style="justify-content:space-between">
-              <span class="tag">Alertas próximos</span>
-              <button class="btn3" onclick="limparAlertas()">Limpar alertas</button>
-            </div>
-
-            <div id="panicStatus" class="muted" style="font-size:13px"></div>
-            <div id="alertsList"></div>
-          </div>
-        </div>
-      </section>
-    </section>
-
-    <!-- PERFIL -->
-    <section id="viewPerfil" class="hidden">
-      <section class="card">
-        <div class="card-h">
-    
+    $("btnEntrar").addEventListener("click", () => {
+      const u = $("u").value.trim();
+      const p = $("p").value.trim();
+      const su = localStorage.getItem(KEY_U);
+      const sp = localStorage.getItem(KEY_P);
+      if(!su || !sp) return $("msg").innerHTML = "<span class='bad'>Crie a conta primeiro</span>";
+      if(u !== su || p !== sp) return $("msg").innerHTML = "<span class='bad'>Usuário/senha incorretos</span>";
+      $("msg").innerHTML = "<span class='ok'>LOGADO ✅</span>";
+      alert("LOGADO ✅");
+    });
+  </script>
+</body>
+</html>
