@@ -36,19 +36,6 @@
       z-index:3000; transition:.45s; font-weight:800; width:84%; text-align:center;
     }
 
-    #errPanel{
-      position:fixed; left:12px; right:12px; top:70px;
-      z-index:5000;
-      display:none;
-      background:rgba(255,77,109,.16);
-      border:1px solid rgba(255,77,109,.45);
-      border-radius:14px;
-      padding:10px 12px;
-      font-size:12px;
-      backdrop-filter:blur(10px);
-    }
-    #errPanel b{ color:#ffd1da; }
-
     .card{
       background:var(--glass); backdrop-filter:blur(12px);
       border-radius:15px; margin:15px; padding:15px;
@@ -56,7 +43,7 @@
       position:relative; z-index:2;
     }
     .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-    .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); object-fit:cover; background:rgba(255,255,255,.06); }
+    .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); }
     .u-name{ font-weight:800; }
 
     .tela{ display:none; animation:fade .35s; }
@@ -201,10 +188,9 @@
       padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:12px;
       background:rgba(0,0,0,.25);
       margin-top:10px;
-      cursor:pointer;
     }
     .row-left{ display:flex; gap:10px; align-items:center; min-width:0; }
-    .row-left img{ width:40px; height:40px; border-radius:50%; border:1px solid rgba(0,212,255,.35); object-fit:cover; }
+    .row-left img{ width:40px; height:40px; border-radius:50%; border:1px solid rgba(0,212,255,.35); }
     .row-title{ font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
     .row-sub{ font-size:12px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
     .row-actions{ display:flex; gap:8px; align-items:center; }
@@ -234,8 +220,8 @@
 
 <body>
   <div id="notif">✅</div>
-  <div id="errPanel"></div>
 
+  <!-- overlay se usuário estiver bloqueado -->
   <div class="blocked-overlay" id="blockedOverlay">
     <div class="box">
       <h2 style="margin:0 0 10px 0;">⛔ Acesso bloqueado</h2>
@@ -251,17 +237,18 @@
     <div class="mini" id="rolePill"></div>
   </div>
 
+  <!-- HOME -->
   <div id="home" class="tela" style="display:block;">
-    <div id="feed">
-      <div class="card"><b>Carregando…</b><div class="mini">Se der erro, aparece em vermelho.</div></div>
-    </div>
+    <div id="feed"></div>
   </div>
 
+  <!-- OFERTAS -->
   <div id="ofertas" class="tela" style="padding:10px;">
     <h3 style="text-align:center;">🔄 Ofertas Pendentes</h3>
     <div id="lista-ofertas"></div>
   </div>
 
+  <!-- TELA DUPLA -->
   <div id="troca-dupla" class="tela">
     <div class="trade-screen">
       <div class="trade-col">
@@ -298,10 +285,11 @@
     </div>
   </div>
 
+  <!-- CHAT -->
   <div id="chat-window">
     <div class="chat-header">
       <button onclick="fecharChat()" style="background:none; border:none; color:#fff; font-size:20px;">←</button>
-      <b id="chatTitle">Chat Privado</b>
+      <b>Chat Privado</b>
     </div>
     <div id="chat-box"></div>
     <div style="padding:10px; background:#000; display:flex; gap:10px;">
@@ -310,9 +298,10 @@
     </div>
   </div>
 
+  <!-- PERFIL -->
   <div id="perfil" class="tela">
     <div class="card" style="text-align:center;">
-      <img src="https://i.pravatar.cc/120?img=12" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice); object-fit:cover;">
+      <img src="https://i.pravatar.cc/120?img=12" id="p-img" style="width:60px; height:60px; border-radius:50%; border:2px solid var(--ice);">
       <h2 id="p-nome">Seu Perfil</h2>
 
       <div class="card" style="text-align:left; margin:12px 0 0 0;">
@@ -329,6 +318,7 @@
         Trocar Foto
       </button>
 
+      <!-- LOGIN ADM/MOD -->
       <div class="card" style="text-align:left; margin-top:12px;">
         <b>🔐 Área ADM/MOD</b>
         <div class="mini">ADM: senha <b>1533</b>. ADM é intocável.</div>
@@ -336,9 +326,10 @@
         <button class="btn-ghost" onclick="logoutRole()">Sair (voltar Membro)</button>
       </div>
 
+      <!-- LISTA DE USUÁRIOS (pra moderar) -->
       <div class="card" style="text-align:left;">
         <b>👥 Usuários (simulação)</b>
-        <div class="mini">Toque em um usuário para abrir o perfil dele e gerenciar.</div>
+        <div class="mini">Toque em um usuário para abrir o perfil dele e gerenciar (se você for MOD/ADM).</div>
         <div id="usersList"></div>
       </div>
     </div>
@@ -352,24 +343,18 @@
     </div>
   </div>
 
+  <!-- PERFIL DE OUTRO USUÁRIO -->
   <div id="user-profile" class="tela">
     <div class="card">
       <button class="btn-ghost" style="margin-top:0" onclick="ver('perfil')">← Voltar</button>
 
       <div style="display:flex; gap:12px; align-items:center; margin-top:12px;">
-        <img id="uViewPic" src="" style="width:58px; height:58px; border-radius:50%; border:2px solid rgba(0,212,255,.45); object-fit:cover;" />
+        <img id="uViewPic" src="" style="width:58px; height:58px; border-radius:50%; border:2px solid rgba(0,212,255,.45);" />
         <div style="min-width:0;">
           <div style="font-weight:900; font-size:18px;" id="uViewName">Usuário</div>
           <div class="mini mono" id="uViewId">---</div>
           <div class="mini" id="uViewRole"></div>
         </div>
-      </div>
-
-      <div class="card" style="margin:12px 0 0 0;">
-        <b>🔗 Conexão via API</b>
-        <div class="mini">Isso cria um <b>roomId</b> na API ligando você + esse usuário.</div>
-        <button class="btn-blue" onclick="ligarComUsuarioAPI()">🔗 Ligar com este usuário (API)</button>
-        <div class="mini mono" id="roomInfo" style="margin-top:10px; opacity:.9;"></div>
       </div>
 
       <div class="card" style="margin:12px 0 0 0;">
@@ -390,6 +375,7 @@
     </div>
   </div>
 
+  <!-- SHARE -->
   <div class="share-balloons" aria-label="Compartilhar">
     <button title="Compartilhar" onclick="shareSystem()">📣</button>
     <button title="WhatsApp" onclick="shareWhatsApp()">🟢</button>
@@ -407,39 +393,10 @@
   </nav>
 
   <script>
-    /* ===== storage seguro (não trava se localStorage falhar) ===== */
-    (function(){
-      if(!window.__memStore) window.__memStore = {};
-      window.safeStore = {
-        get: function(k){
-          try{
-            var v = localStorage.getItem(k);
-            if(v !== null && v !== undefined) return v;
-          }catch(e){}
-          return (window.__memStore.hasOwnProperty(k) ? window.__memStore[k] : null);
-        },
-        set: function(k,v){
-          try{ localStorage.setItem(k, v); }catch(e){ window.__memStore[k]=String(v); }
-        },
-        remove: function(k){
-          try{ localStorage.removeItem(k); }catch(e){ delete window.__memStore[k]; }
-        }
-      };
-    })();
-
+    /* Evita travar em celular antigo */
     if (!String.prototype.replaceAll) {
       String.prototype.replaceAll = function(a, b){ return this.split(a).join(b); };
     }
-
-    function showError(msg){
-      var p=document.getElementById("errPanel");
-      p.style.display="block";
-      p.innerHTML="<b>ERRO:</b> "+escapeHtml(msg);
-    }
-    window.onerror=function(message, source, lineno, colno){
-      showError(message+" (linha "+lineno+":"+colno+")");
-      return false;
-    };
 
     function escapeHtml(str){
       return String(str)
@@ -458,7 +415,7 @@
       setTimeout(function(){ n.style.top = "-100px"; }, 2300);
     }
 
-    /* ===== ID + REF ===== */
+    /* ===== ID + REF (simples e seguro) ===== */
     var LS_MY_ID="ice_my_id";
     var LS_PARENT="ice_parent_id";
 
@@ -466,51 +423,90 @@
       return "ICE-" + Math.random().toString(36).slice(2,6).toUpperCase() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
     }
     function getMyId(){
-      var id = safeStore.get(LS_MY_ID);
-      if(!id){ id=genId(); safeStore.set(LS_MY_ID,id); }
+      var id = localStorage.getItem(LS_MY_ID);
+      if(!id){ id=genId(); localStorage.setItem(LS_MY_ID,id); }
       return id;
     }
-    function getParentId(){ return safeStore.get(LS_PARENT); }
-    function setParentId(pid){ safeStore.set(LS_PARENT,pid); }
+    function getParentId(){ return localStorage.getItem(LS_PARENT); }
+    function setParentId(pid){ localStorage.setItem(LS_PARENT,pid); }
 
     function buildMyLink(){
       var base = location.origin + location.pathname;
       return base + "?ref=" + encodeURIComponent(getMyId());
     }
 
-    function copyTextFallback(txt){
-      var ta=document.createElement("textarea");
-      ta.value=txt; ta.style.position="fixed"; ta.style.left="-9999px";
-      document.body.appendChild(ta); ta.select();
-      try{ document.execCommand("copy"); }catch(e){}
-      document.body.removeChild(ta);
-      return true;
+    async function copyText(txt){
+      try{ await navigator.clipboard.writeText(txt); return true; }
+      catch(e){
+        try{
+          var ta=document.createElement("textarea");
+          ta.value=txt; ta.style.position="fixed"; ta.style.left="-9999px";
+          document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+          document.body.removeChild(ta); return true;
+        }catch(e2){ return false; }
+      }
     }
-
     function showTip(msg){
       var tip=document.getElementById("shareTip");
       tip.innerHTML=msg; tip.style.display="block";
       clearTimeout(showTip._t);
       showTip._t=setTimeout(function(){ tip.style.display="none"; }, 2000);
     }
-
-    function copyMyLink(){
+    async function copyMyLink(){
       var link=buildMyLink();
-      try{
-        if(navigator.clipboard && navigator.clipboard.writeText){
-          navigator.clipboard.writeText(link).then(function(){
-            showTip("Copiado ✅<br><span class='mono'>"+escapeHtml(link)+"</span>");
-            notif("📎 Link copiado!");
-          }).catch(function(){ copyTextFallback(link); notif("📎 Link copiado!"); });
-        } else {
-          copyTextFallback(link);
-          notif("📎 Link copiado!");
-        }
-      }catch(e){
-        alert("Copie manual:\n"+link);
+      var ok=await copyText(link);
+      if(ok){ showTip("Copiado ✅<br><span class='mono'>"+escapeHtml(link)+"</span>"); notif("📎 Link copiado!"); }
+      else alert("Copie manual:\n"+link);
+    }
+    async function shareSystem(){
+      var link=buildMyLink();
+      var text="Entra no ICE BLUE pelo meu link: " + link;
+      if(navigator.share){
+        try{ await navigator.share({title:"ICE BLUE", text:text, url:link}); notif("📣 Compartilhado!"); return; }
+        catch(e){}
       }
+      await copyMyLink();
+    }
+    function shareWhatsApp(){
+      var link=buildMyLink();
+      var msg=encodeURIComponent("Entra no ICE BLUE pelo meu link: "+link);
+      window.open("https://wa.me/?text="+msg, "_blank");
     }
 
-    function shareSystem(){
-      var link=buildMyLink();
-      var text="Entra no ICE BLUE
+    function applyReferralFromUrl(){
+      try{
+        var params=new URLSearchParams(location.search);
+        var ref=params.get("ref");
+        if(!ref) return;
+
+        var myId=getMyId();
+        if(!getParentId() && ref !== myId){
+          setParentId(ref);
+          notif("✅ Pai definido: " + ref);
+        }
+        try{
+          var clean=location.origin + location.pathname;
+          history.replaceState({}, "", clean);
+        }catch(e2){}
+      }catch(e){}
+    }
+
+    /* ===== Roles / Moderação (local) ===== */
+    var LS_ROLE = "ice_role";            // "MEMBER" | "MOD" | "ADM"
+    var LS_BLOCKED = "ice_blocked";      // "1" se este device/user bloqueado
+    var LS_USER_ROLES = "ice_user_roles"; // map { userId: "MEMBER"|"MOD"|"ADM" }
+    var LS_USER_BLOCKS = "ice_user_blocks"; // map { userId: true/false }
+    var LS_USERS = "ice_users";          // array usuarios fake + pode adicionar o seu
+
+    function getRole(){ return localStorage.getItem(LS_ROLE) || "MEMBER"; }
+    function setRole(r){ localStorage.setItem(LS_ROLE, r); }
+
+    function loadJson(key, fallback){
+      try{ return JSON.parse(localStorage.getItem(key) || ""); }
+      catch(e){ return fallback; }
+    }
+    function saveJson(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+    function getUserRoles(){ return loadJson(LS_USER_ROLES, {}); }
+    function setUserRole(userId, role){
+      var map
