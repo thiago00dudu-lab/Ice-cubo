@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/trocas", "destination": "/api/trocas.js" }
-  ]
-}
