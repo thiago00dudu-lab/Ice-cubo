@@ -5,105 +5,211 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ICE-CUBO | Mineração</title>
   <style>
-    body { background:#061727; color:#e9f5ff; font-family:Arial,sans-serif; text-align:center; margin:0; padding:20px; }
-    .container { max-width:520px; margin:auto; background:rgba(255,255,255,.05); padding:20px; border-radius:20px; border:1px solid #1a3a5a; }
-    h1 { font-weight:900; color:#38bdf8; margin:0 0 6px; }
-    .sub { color:rgba(255,255,255,.6); margin:0 0 14px; }
-    .barra-gelo { width:100%; background:#0b2a6a; height:25px; border-radius:12px; margin:16px 0; overflow:hidden; border:2px solid #1a3a5a; }
-    #iceFill { background:linear-gradient(90deg,#38bdf8,#0077be); height:100%; width:100%; transition:width .4s ease; }
-    button { width:100%; padding:16px; font-size:16px; font-weight:800; border-radius:12px; border:none; cursor:pointer; transition:.15s; margin-top:10px; }
-    button:active { transform:scale(.98); }
-    .stats { display:flex; justify-content:space-around; gap:10px; margin:12px 0 6px; font-weight:800; flex-wrap:wrap; }
-    input, select { width:100%; padding:12px; margin-top:10px; border-radius:10px; border:1px solid rgba(56,189,248,.7); background:#061727; color:#fff; box-sizing:border-box; }
-    .msg { font-size:14px; margin-top:10px; color:#9cc9ea; min-height:18px; }
-    hr { border:0.1px solid #1a3a5a; margin:22px 0; opacity:.8; }
+    :root{
+      --bg:#061727;
+      --ice:#38bdf8;
+      --glass:rgba(255,255,255,.06);
+      --line:#1a3a5a;
+      --gold:#ffd700;
+      --txt:#e9f5ff;
+      --muted:#9cc9ea;
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --black:#0b1220;
+      --green:#16a34a;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; padding:20px;
+      background:var(--bg);
+      color:var(--txt);
+      font-family:Arial, sans-serif;
+      text-align:center;
+    }
+    .container{
+      max-width:520px;
+      margin:auto;
+      background:var(--glass);
+      padding:20px;
+      border-radius:20px;
+      border:1px solid var(--line);
+    }
+    h1{ margin:0 0 6px; font-weight:900; color:var(--ice); }
+    .sub{ margin:0 0 14px; color:rgba(255,255,255,.6); }
 
-    /* ------------ ROLETA CASSINO ------------ */
+    .stats{
+      display:flex; justify-content:space-around; gap:10px;
+      margin:12px 0 6px; font-weight:800; flex-wrap:wrap;
+    }
+
+    .barra-gelo{
+      width:100%;
+      background:#0b2a6a;
+      height:25px;
+      border-radius:12px;
+      margin:16px 0;
+      overflow:hidden;
+      border:2px solid var(--line);
+    }
+    #iceFill{
+      background:linear-gradient(90deg,var(--ice),#0077be);
+      height:100%;
+      width:100%;
+      transition:width .35s ease;
+    }
+
+    button{
+      width:100%;
+      padding:16px;
+      font-size:16px;
+      font-weight:900;
+      border-radius:12px;
+      border:none;
+      cursor:pointer;
+      transition:.15s;
+      margin-top:10px;
+    }
+    button:active{ transform:scale(.98); }
+    button[disabled]{ opacity:.55; cursor:not-allowed; }
+
+    input, select{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border-radius:10px;
+      border:1px solid rgba(56,189,248,.7);
+      background:var(--bg);
+      color:#fff;
+    }
+
+    .msg{
+      font-size:14px;
+      margin-top:10px;
+      color:var(--muted);
+      min-height:18px;
+    }
+    hr{ border:0.1px solid var(--line); margin:22px 0; opacity:.8; }
+
+    /* ----------------- ROLETA CASSINO (CSS) ----------------- */
     .casinoWrap{
       margin: 18px 0 8px;
       padding: 14px;
       border-radius: 18px;
-      border: 1px solid #1a3a5a;
+      border: 1px solid var(--line);
       background: rgba(255,255,255,0.04);
     }
-    .casinoTitle{
-      font-weight: 900;
-      letter-spacing: .5px;
-      color:#bfe9ff;
-      margin: 2px 0 8px;
-    }
+    .casinoTitle{ font-weight:900; color:#bfe9ff; margin:2px 0 10px; }
+
     .wheelArea{
       position:relative;
       width:min(92vw, 440px);
       height:min(92vw, 440px);
-      margin: 8px auto 12px;
+      margin: 10px auto 14px;
       display:flex;
       align-items:center;
       justify-content:center;
       user-select:none;
       touch-action: manipulation;
     }
-    canvas#wheelCanvas{
-      width:100%;
-      height:100%;
-      border-radius:50%;
-      box-shadow: 0 18px 46px rgba(0,0,0,.55);
-      border: 10px solid rgba(56,189,248,.30);
-      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.06), rgba(0,0,0,0));
-    }
     .pointer{
       position:absolute;
       top:-6px;
       left:50%;
       transform:translateX(-50%);
-      width:0; height:0;
-      border-left: 16px solid transparent;
+      width:0;height:0;
+      border-left:16px solid transparent;
       border-right:16px solid transparent;
-      border-bottom: 28px solid #ffd700;
+      border-bottom:28px solid var(--gold);
       filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
       z-index:5;
     }
-    .centerBadge{
+
+    .wheel{
+      position:relative;
+      width:100%;
+      height:100%;
+      border-radius:50%;
+      border: 10px solid rgba(56,189,248,.30);
+      box-shadow: 0 18px 46px rgba(0,0,0,.55);
+      background: conic-gradient(from -90deg,
+        /* 37 fatias (0–36) na ordem europeia) */
+        #16a34a 0deg 9.7297deg,  /* 0 (verde) */
+        #ef4444 9.7297deg 19.4594deg,
+        #0b1220 19.4594deg 29.1891deg,
+        #ef4444 29.1891deg 38.9188deg,
+        #0b1220 38.9188deg 48.6485deg,
+        #ef4444 48.6485deg 58.3782deg,
+        #0b1220 58.3782deg 68.1079deg,
+        #ef4444 68.1079deg 77.8376deg,
+        #0b1220 77.8376deg 87.5673deg,
+        #ef4444 87.5673deg 97.2970deg,
+        #0b1220 97.2970deg 107.0267deg,
+        #ef4444 107.0267deg 116.7564deg,
+        #0b1220 116.7564deg 126.4861deg,
+        #ef4444 126.4861deg 136.2158deg,
+        #0b1220 136.2158deg 145.9455deg,
+        #ef4444 145.9455deg 155.6752deg,
+        #0b1220 155.6752deg 165.4049deg,
+        #ef4444 165.4049deg 175.1346deg,
+        #0b1220 175.1346deg 184.8643deg,
+        #ef4444 184.8643deg 194.5940deg,
+        #0b1220 194.5940deg 204.3237deg,
+        #ef4444 204.3237deg 214.0534deg,
+        #0b1220 214.0534deg 223.7831deg,
+        #ef4444 223.7831deg 233.5128deg,
+        #0b1220 233.5128deg 243.2425deg,
+        #ef4444 243.2425deg 252.9722deg,
+        #0b1220 252.9722deg 262.7019deg,
+        #ef4444 262.7019deg 272.4316deg,
+        #0b1220 272.4316deg 282.1613deg,
+        #ef4444 282.1613deg 291.8910deg,
+        #0b1220 291.8910deg 301.6207deg,
+        #ef4444 301.6207deg 311.3504deg,
+        #0b1220 311.3504deg 321.0801deg,
+        #ef4444 321.0801deg 330.8098deg,
+        #0b1220 330.8098deg 340.5395deg,
+        #ef4444 340.5395deg 350.2692deg,
+        #0b1220 350.2692deg 360deg
+      );
+      transition: transform 4.8s cubic-bezier(.12,.7,.12,1);
+      transform: rotate(0deg);
+      overflow:hidden;
+    }
+    .wheel::before{
+      content:"";
       position:absolute;
+      inset:9%;
+      border-radius:50%;
+      border:2px solid rgba(255,215,0,.25);
+      box-shadow: inset 0 0 30px rgba(0,0,0,.45);
+    }
+    .wheelCenter{
+      position:absolute;
+      inset:0;
+      margin:auto;
       width: 40%;
-      height: 40%;
-      border-radius: 50%;
+      height:40%;
+      border-radius:50%;
       background: rgba(6,23,39,.92);
       border: 2px solid rgba(255,255,255,.12);
       display:flex;
       align-items:center;
       justify-content:center;
       flex-direction:column;
-      z-index:4;
       box-shadow: inset 0 0 30px rgba(56,189,248,.18);
+      z-index:3;
     }
-    .centerBadge .n{
-      font-size: 26px;
-      font-weight: 900;
-      color:#ffd700;
-      line-height: 1.1;
-    }
-    .centerBadge .t{
-      font-size: 12px;
-      color:#9cc9ea;
-      margin-top: 4px;
-    }
-    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-    .btnSpin{ background:#ffd700; color:#061727; }
-    .btnSpin[disabled]{ opacity:.55; cursor:not-allowed; }
-    .btnAux{ background:#111827; color:#e9f5ff; border:1px solid rgba(255,255,255,.12); }
-    .pillRow{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
-    .pill{
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.04);
-      color:#bfe9ff;
-    }
+    .wheelCenter .n{ font-size:28px; font-weight:900; color:var(--gold); line-height:1; }
+    .wheelCenter .t{ font-size:12px; color:var(--muted); margin-top:6px; }
 
-    /* Confetti overlay */
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+    .btnSpin{ background:var(--gold); color:var(--bg); }
+    .btnAux{ background:#111827; color:var(--txt); border:1px solid rgba(255,255,255,.12); }
+
+    .pillRow{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+    .pill{ padding:6px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color:#bfe9ff; }
+
+    /* Confetti */
     canvas#confetti{
       position: fixed;
       inset: 0;
@@ -115,8 +221,8 @@
     }
   </style>
 </head>
-<body>
 
+<body>
 <canvas id="confetti"></canvas>
 
 <div class="container">
@@ -128,52 +234,57 @@
     <div id="iceText">Gelo 100%</div>
   </div>
 
+  <!-- BARRA DE GELO -->
   <div class="barra-gelo"><div id="iceFill"></div></div>
 
-  <button id="mineBtn" style="background:#38bdf8; color:#061727;">⛏️ MINERAR</button>
+  <button id="mineBtn" style="background:var(--ice); color:var(--bg);">⛏️ MINERAR</button>
   <p id="mineMsg" class="msg"></p>
 
-  <!-- ROLETA CASSINO -->
+  <!-- ROLETA CASSINO (GRANDE NO MEIO) -->
   <div class="casinoWrap">
-    <div class="casinoTitle">🎰 Roleta (Cassino)</div>
+    <div class="casinoTitle">🎰 Roleta Cassino</div>
 
     <div class="wheelArea">
       <div class="pointer"></div>
-      <canvas id="wheelCanvas" width="900" height="900"></canvas>
-      <div class="centerBadge">
-        <div class="n" id="lastNumber">—</div>
-        <div class="t" id="lastColor">último resultado</div>
+
+      <div id="wheel" class="wheel">
+        <div class="wheelCenter">
+          <div class="n" id="lastNumber">—</div>
+          <div class="t" id="lastColor">último resultado</div>
+        </div>
       </div>
     </div>
 
     <div class="grid2">
       <div>
-        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea; margin-top:6px;">Tipo de aposta</label>
+        <div style="text-align:left; font-size:12px; color:var(--muted); margin-top:6px;">Tipo de aposta</div>
         <select id="betType">
           <option value="color">Cor (Vermelho/Preto)</option>
           <option value="number">Número (0–36)</option>
         </select>
       </div>
       <div>
-        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea; margin-top:6px;">Valor (BLUE)</label>
+        <div style="text-align:left; font-size:12px; color:var(--muted); margin-top:6px;">Valor (BLUE)</div>
         <input id="betAmount" type="number" min="1" step="1" placeholder="Ex: 10" />
       </div>
     </div>
 
-    <div class="grid2" id="betPickers" style="margin-top:10px;">
+    <div class="grid2" style="margin-top:10px;">
       <div id="pickerColor">
-        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea;">Escolha a cor</label>
+        <div style="text-align:left; font-size:12px; color:var(--muted);">Escolha a cor</div>
         <select id="betColor">
           <option value="red">Vermelho</option>
           <option value="black">Preto</option>
         </select>
       </div>
+
       <div id="pickerNumber" style="display:none;">
-        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea;">Escolha o número</label>
+        <div style="text-align:left; font-size:12px; color:var(--muted);">Escolha o número</div>
         <input id="betNumber" type="number" min="0" max="36" step="1" placeholder="0 a 36" />
       </div>
+
       <div>
-        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea;">Som</label>
+        <div style="text-align:left; font-size:12px; color:var(--muted);">Som</div>
         <select id="soundOn">
           <option value="on">Ligado</option>
           <option value="off">Desligado</option>
@@ -183,11 +294,11 @@
 
     <div class="grid2" style="margin-top:10px;">
       <button id="spinBtn" class="btnSpin">GIRAR</button>
-      <button id="oddsBtn" class="btnAux">PAYOUTS (CASA 20%)</button>
+      <button id="payBtn" class="btnAux">PAYOUTS (CASA 20%)</button>
     </div>
 
     <div class="pillRow">
-      <span class="pill">Casa: <b>20%</b> (temporário)</span>
+      <span class="pill">Casa: <b>20%</b></span>
       <span class="pill">Cor: lucro <b>0,8x</b></span>
       <span class="pill">Número: lucro <b>28x</b></span>
     </div>
@@ -197,47 +308,56 @@
 
   <hr>
 
+  <!-- SAQUE -->
   <h3>Solicitar Saque</h3>
   <input type="number" id="saqueValor" placeholder="Quantidade BLUE" />
-  <button onclick="solicitarSaque()" style="background:#22c55e; color:white;">EFETUAR SAQUE</button>
+  <button onclick="solicitarSaque()" style="background:var(--ok); color:white;">EFETUAR SAQUE</button>
   <p id="saqMsg" class="msg"></p>
 </div>
 
 <script>
-/* ----------------- BASE (SIMULADO) ----------------- */
-const LS = { get:(k,d)=>localStorage.getItem(k) ?? d, set:(k,v)=>localStorage.setItem(k,v) };
+/* ----------------- SISTEMA BASE (SIMULADO) ----------------- */
+const LS = {
+  get:(k,d)=> (localStorage.getItem(k) ?? d),
+  set:(k,v)=> localStorage.setItem(k, String(v))
+};
 
 let state = {
-  user: { user:"Jogador", isADM:true },
+  user: { user:"Jogador", isADM:true }, // troque isADM para false p testar trava do miner
   blue: Number(LS.get("blue_balance", 0)),
   withdrawals: []
 };
 
 function getBlue(){ return state.blue; }
 function setBlue(v){
-  state.blue = Math.max(0, Math.floor(v));
+  state.blue = Math.max(0, Math.floor(Number(v)||0));
   LS.set("blue_balance", state.blue);
   document.getElementById("saldoBlue").textContent = state.blue;
 }
 function me(){ return state.user; }
 function isADM(){ return state.user.isADM; }
-function uid(){ return Math.random().toString(36).substr(2, 9); }
+function uid(){ return Math.random().toString(36).slice(2, 11); }
 function persist(){ console.log("Estado salvo."); }
 function renderAll(){ document.getElementById("saldoBlue").textContent = state.blue; }
-function pushHist(type,msg){ console.log(`[${type}] ${msg}`); }
+function pushHist(type,msg){ console.log("["+type+"]", msg); }
 
-/* ----------------- MINER ----------------- */
+/* ----------------- MINER (JOGO) ----------------- */
 let ice = Number(LS.get("ice_ice", 100));
+
 function setIce(v){
   ice = Math.max(0, Math.min(100, v));
   LS.set("ice_ice", ice);
   document.getElementById("iceFill").style.width = ice + "%";
   document.getElementById("iceText").textContent = "Gelo " + ice + "%";
 }
-setIce(ice); renderAll(); setBlue(state.blue);
+setIce(ice);
+setBlue(state.blue);
+renderAll();
 
 document.getElementById("mineBtn").onclick = ()=>{
-  const u = me(); if(!u) return alert("Entre primeiro.");
+  const u = me();
+  if(!u) return alert("Entre primeiro.");
+
   if(!isADM()) return alert("Somente ADM pode iniciar o modo mineração.");
 
   const hit = 8 + Math.floor(Math.random()*12);
@@ -246,45 +366,34 @@ document.getElementById("mineBtn").onclick = ()=>{
   const gain = 1 + Math.floor(Math.random()*3);
   setBlue(getBlue()+gain);
 
-  pushHist("mining", `Urso quebrou ${hit}% do gelo • +${gain} BLUE`);
+  pushHist("mining", `Urso quebrou ${hit}% • +${gain} BLUE`);
   document.getElementById("mineMsg").textContent = `+${gain} BLUE • gelo agora ${ice}%`;
 
   if(ice<=0){
     const bonus = 20;
     setBlue(getBlue()+bonus);
-    pushHist("mining", `Bloco quebrado! Bônus: +${bonus} BLUE`);
+    pushHist("mining", `Bloco quebrado! +${bonus} BLUE`);
     setIce(100);
     document.getElementById("mineMsg").textContent = `BLOCO QUEBRADO! +${bonus} BLUE (novo gelo 100%).`;
   }
   persist(); renderAll();
 };
 
-/* ----------------- ROLETA CASSINO (0–36) ----------------- */
-/**
- * Ordem europeia comum na roleta (um exemplo clássico):
- * 0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30,
- * 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7,
- * 28, 12, 35, 3, 26
- */
+/* ----------------- ROLETA CASSINO ----------------- */
 const wheelNumbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
-
-// Vermelhos padrão (europeu)
 const redSet = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 function getColor(n){
-  if(n === 0) return "green";
+  if(n===0) return "green";
   return redSet.has(n) ? "red" : "black";
 }
 
-const HOUSE_EDGE = 0.20; // 20% ganho da casa (temporário)
-const PAY_COLOR_PROFIT = 1 * (1 - HOUSE_EDGE);    // 0.8x lucro
-const PAY_NUMBER_PROFIT = 35 * (1 - HOUSE_EDGE);  // 28x lucro
+const HOUSE = 0.20; // 20% casa
+const PAY_COLOR_PROFIT = 1*(1-HOUSE);  // 0.8
+const PAY_NUM_PROFIT   = 35*(1-HOUSE); // 28
 
-const canvas = document.getElementById("wheelCanvas");
-const ctx = canvas.getContext("2d");
-const lastNumberEl = document.getElementById("lastNumber");
-const lastColorEl = document.getElementById("lastColor");
-const rouletteMsg = document.getElementById("rouletteMsg");
+const wheelEl = document.getElementById("wheel");
 const spinBtn = document.getElementById("spinBtn");
+const payBtn = document.getElementById("payBtn");
 const betType = document.getElementById("betType");
 const betAmount = document.getElementById("betAmount");
 const betColor = document.getElementById("betColor");
@@ -292,35 +401,56 @@ const betNumber = document.getElementById("betNumber");
 const pickerColor = document.getElementById("pickerColor");
 const pickerNumber = document.getElementById("pickerNumber");
 const soundOn = document.getElementById("soundOn");
+const lastNumberEl = document.getElementById("lastNumber");
+const lastColorEl = document.getElementById("lastColor");
+const rouletteMsg = document.getElementById("rouletteMsg");
 
 betType.onchange = ()=>{
-  const t = betType.value;
-  if(t === "color"){
-    pickerColor.style.display = "";
-    pickerNumber.style.display = "none";
-  } else {
-    pickerColor.style.display = "none";
+  if(betType.value === "number"){
     pickerNumber.style.display = "";
+    pickerColor.style.display = "none";
+  }else{
+    pickerNumber.style.display = "none";
+    pickerColor.style.display = "";
   }
 };
 
-document.getElementById("oddsBtn").onclick = ()=>{
+payBtn.onclick = ()=>{
   alert(
     "CASA 20% (temporário)\n\n" +
-    "Aposta em COR:\n" +
-    "• Se acertar, lucro = 0,8x do valor.\n\n" +
-    "Aposta em NÚMERO:\n" +
-    "• Se acertar, lucro = 28x do valor.\n\n" +
-    "Exemplo COR (10): paga 10 + 8\nExemplo NÚMERO (10): paga 10 + 280"
+    "COR (vermelho/preto): lucro 0,8x\n" +
+    "NÚMERO (0–36): lucro 28x\n\n" +
+    "Exemplo COR (10): recebe 10 + 8\n" +
+    "Exemplo NÚMERO (10): recebe 10 + 280"
   );
 };
 
+let spinning = false;
+let rotDeg = Number(LS.get("roulette_deg", 0));
+wheelEl.style.transform = `rotate(${rotDeg}deg)`;
+
+function setLast(n){
+  lastNumberEl.textContent = String(n);
+  const c = getColor(n);
+  lastColorEl.textContent = (c==="red") ? "vermelho" : (c==="black" ? "preto" : "verde (0)");
+}
+
+const SEG = 360/37;
+function angleForNumber(n){
+  const idx = wheelNumbers.indexOf(n);
+  const mid = (idx * SEG) + (SEG/2);
+  return 360 - mid;
+}
+
+function pickNumber(){
+  return wheelNumbers[Math.floor(Math.random()*wheelNumbers.length)];
+}
+
+/* -------- SOM (WebAudio) -------- */
 let audioCtx = null;
 function ensureAudio(){
   if(soundOn.value === "off") return null;
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 function beep(freq, dur=0.06, type="sine", vol=0.06){
@@ -328,16 +458,13 @@ function beep(freq, dur=0.06, type="sine", vol=0.06){
   if(!ac) return;
   const o = ac.createOscillator();
   const g = ac.createGain();
-  o.type = type;
-  o.frequency.value = freq;
+  o.type = type; o.frequency.value = freq;
   g.gain.value = vol;
   o.connect(g); g.connect(ac.destination);
   o.start();
   o.stop(ac.currentTime + dur);
 }
-function tickSound(){
-  beep(900, 0.02, "square", 0.03);
-}
+function tickSound(){ beep(900, 0.02, "square", 0.03); }
 function winSound(){
   beep(880, 0.08, "sine", 0.08);
   setTimeout(()=>beep(1175, 0.09, "sine", 0.08), 90);
@@ -348,153 +475,38 @@ function loseSound(){
   setTimeout(()=>beep(165, 0.14, "sawtooth", 0.05), 120);
 }
 
-// Draw wheel
-const W = canvas.width, H = canvas.height;
-const cx = W/2, cy = H/2;
-const outerR = Math.min(W,H) * 0.48;
-const innerR = Math.min(W,H) * 0.20;
-const segCount = wheelNumbers.length;
-const segAngle = (Math.PI * 2) / segCount;
-
-function drawWheel(rotation=0){
-  ctx.clearRect(0,0,W,H);
-
-  // felt background
-  const bg = ctx.createRadialGradient(cx,cy, 20, cx,cy, outerR*1.1);
-  bg.addColorStop(0, "rgba(56,189,248,0.10)");
-  bg.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = bg;
-  ctx.beginPath(); ctx.arc(cx,cy, outerR*1.1, 0, Math.PI*2); ctx.fill();
-
-  // segments
-  for(let i=0;i<segCount;i++){
-    const n = wheelNumbers[i];
-    const col = getColor(n);
-    const start = rotation + i*segAngle;
-    const end = start + segAngle;
-
-    ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy, outerR, start, end);
-    ctx.closePath();
-
-    if(col==="green") ctx.fillStyle = "#16a34a";
-    else if(col==="red") ctx.fillStyle = "#ef4444";
-    else ctx.fillStyle = "#0b1220";
-    ctx.fill();
-
-    // segment border
-    ctx.strokeStyle = "rgba(255,255,255,0.10)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // number text
-    const mid = (start+end)/2;
-    const tx = cx + Math.cos(mid) * (outerR*0.80);
-    const ty = cy + Math.sin(mid) * (outerR*0.80);
-
-    ctx.save();
-    ctx.translate(tx,ty);
-    ctx.rotate(mid + Math.PI/2);
-    ctx.fillStyle = (col==="black") ? "#e9f5ff" : "#061727";
-    if(col==="green") ctx.fillStyle = "#061727";
-    ctx.font = "bold 26px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(String(n), 0, 0);
-    ctx.restore();
-  }
-
-  // inner ring
-  ctx.beginPath();
-  ctx.arc(cx,cy, innerR*1.15, 0, Math.PI*2);
-  ctx.fillStyle = "rgba(6,23,39,0.85)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,215,0,0.35)";
-  ctx.lineWidth = 6;
-  ctx.stroke();
-
-  // small rivets
-  for(let k=0;k<24;k++){
-    const a = rotation + k*(Math.PI*2/24);
-    const rx = cx + Math.cos(a)*(outerR*0.95);
-    const ry = cy + Math.sin(a)*(outerR*0.95);
-    ctx.beginPath();
-    ctx.arc(rx,ry, 4, 0, Math.PI*2);
-    ctx.fillStyle = "rgba(255,255,255,0.25)";
-    ctx.fill();
-  }
-
-  // center coin
-  ctx.beginPath();
-  ctx.arc(cx,cy, innerR*0.92, 0, Math.PI*2);
-  ctx.fillStyle = "rgba(255,215,0,0.18)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(56,189,248,0.25)";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-
-  ctx.fillStyle = "#ffd700";
-  ctx.font = "900 34px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("BLUE", cx, cy);
-}
-
-let rot = Number(LS.get("roulette_rot", 0));
-drawWheel(rot);
-
-function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
-
-function normalizeAngle(a){
-  const two = Math.PI*2;
-  a = a % two;
-  if(a < 0) a += two;
-  return a;
-}
-
-/**
- * O ponteiro está no topo (-90°). Vamos calcular qual segmento está no topo.
- * No canvas, 0 rad aponta para a direita. Topo = -PI/2.
- */
-function getWinningNumber(rotation){
-  const pointerAngle = -Math.PI/2;
-
-  // ângulo "visto" no mundo do wheel:
-  // cada segmento começa em rotation + i*segAngle
-  // precisamos achar i tal que o meio do segmento esteja no pointerAngle.
-  const a = normalizeAngle(pointerAngle - rotation); // ângulo relativo no wheel
-  const idx = Math.floor(a / segAngle);
-  return wheelNumbers[idx];
-}
-
-/* Confetti */
+/* -------- CONFETTI -------- */
 const confettiCanvas = document.getElementById("confetti");
 const cctx = confettiCanvas.getContext("2d");
 let confettiParticles = [];
+
 function resizeConfetti(){
-  confettiCanvas.width = window.innerWidth * devicePixelRatio;
-  confettiCanvas.height = window.innerHeight * devicePixelRatio;
+  const dpr = window.devicePixelRatio || 1;
+  confettiCanvas.width = Math.floor(window.innerWidth * dpr);
+  confettiCanvas.height = Math.floor(window.innerHeight * dpr);
 }
 window.addEventListener("resize", resizeConfetti);
 resizeConfetti();
 
 function launchConfetti(){
   confettiCanvas.style.display = "block";
+  const dpr = window.devicePixelRatio || 1;
   confettiParticles = [];
   const count = 160;
+
   for(let i=0;i<count;i++){
     confettiParticles.push({
-      x: (Math.random()*confettiCanvas.width),
-      y: -20 * devicePixelRatio,
-      vx: (Math.random()*2-1) * 5 * devicePixelRatio,
-      vy: (Math.random()*2+2) * 6 * devicePixelRatio,
-      r: (Math.random()*6+3) * devicePixelRatio,
+      x: Math.random()*confettiCanvas.width,
+      y: -20*dpr,
+      vx: (Math.random()*2-1) * 5 * dpr,
+      vy: (Math.random()*2+2) * 6 * dpr,
+      r: (Math.random()*6+3) * dpr,
       a: Math.random()*Math.PI*2,
       va: (Math.random()*0.2-0.1),
       life: 120 + Math.random()*60
     });
   }
+
   let frames = 0;
   function step(){
     frames++;
@@ -502,7 +514,7 @@ function launchConfetti(){
     for(const p of confettiParticles){
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.12 * devicePixelRatio;
+      p.vy += 0.12 * dpr;
       p.a += p.va;
       p.life -= 1;
 
@@ -513,10 +525,11 @@ function launchConfetti(){
       cctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
       cctx.restore();
     }
-    confettiParticles = confettiParticles.filter(p=>p.life>0 && p.y < confettiCanvas.height + 50*devicePixelRatio);
+    confettiParticles = confettiParticles.filter(p=>p.life>0 && p.y < confettiCanvas.height + 50*dpr);
+
     if(frames < 160 && confettiParticles.length){
       requestAnimationFrame(step);
-    } else {
+    }else{
       cctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
       confettiCanvas.style.display = "none";
     }
@@ -524,127 +537,94 @@ function launchConfetti(){
   requestAnimationFrame(step);
 }
 
-/* Spin */
-let spinning = false;
-let lastTickIndex = -1;
-
-function setLastResult(n){
-  lastNumberEl.textContent = String(n);
-  const col = getColor(n);
-  if(col === "red") lastColorEl.textContent = "vermelho";
-  else if(col === "black") lastColorEl.textContent = "preto";
-  else lastColorEl.textContent = "verde (0)";
-}
-
-function validateBet(){
-  const amt = Math.floor(Number(betAmount.value));
-  if(!amt || amt < 1) return { ok:false, msg:"Digite um valor de aposta válido." };
-  if(getBlue() < amt) return { ok:false, msg:"Sem saldo para essa aposta." };
-
-  const type = betType.value;
-  if(type === "number"){
-    const n = Number(betNumber.value);
-    if(!Number.isInteger(n) || n < 0 || n > 36) return { ok:false, msg:"Escolha um número de 0 a 36." };
-  }
-  return { ok:true, amt };
-}
-
+/* -------- GIRAR -------- */
 spinBtn.onclick = ()=>{
   const u = me(); if(!u) return alert("Entre primeiro.");
   if(spinning) return;
 
-  // iOS/Android: precisa de gesto para iniciar audio
+  // precisa de gesto para áudio no celular
   ensureAudio();
 
-  const v = validateBet();
-  if(!v.ok) return alert(v.msg);
+  const stake = Math.floor(Number(betAmount.value));
+  if(!stake || stake < 1) return alert("Valor da aposta inválido.");
+  if(getBlue() < stake) return alert("Sem saldo.");
 
-  const stake = v.amt;
-  const type = betType.value;
-  const pickCol = betColor.value;
-  const pickNum = Math.floor(Number(betNumber.value));
+  if(betType.value === "number"){
+    const n = Number(betNumber.value);
+    if(!Number.isInteger(n) || n < 0 || n > 36) return alert("Número inválido (0–36).");
+  }
 
   // desconta aposta no começo
   setBlue(getBlue() - stake);
-  pushHist("roleta", `Aposta -${stake} BLUE (${type})`);
 
   spinning = true;
   spinBtn.disabled = true;
   rouletteMsg.textContent = "Girando... 🎰";
 
-  const duration = 5200 + Math.random()*600; // 5.2s ~ 5.8s
+  const result = pickNumber();
+
+  // animação com ticks
+  const turns = 8 + Math.floor(Math.random()*5);
+  const target = (turns*360) + angleForNumber(result);
+  const startDeg = rotDeg;
+  const endDeg = rotDeg + target;
+
+  const duration = 4800;
   const startTime = performance.now();
 
-  // gira várias voltas e termina em um alvo aleatório (resultado “justo”)
-  const targetNumber = wheelNumbers[Math.floor(Math.random()*wheelNumbers.length)];
+  let lastStep = -1;
 
-  // descobrir o índice do target no wheel
-  const targetIdx = wheelNumbers.indexOf(targetNumber);
-
-  // Queremos que o segmento do target fique no topo.
-  // Segmento idx começa em rot + idx*segAngle. Para cair no topo, precisamos que:
-  // pointerAngle (-PI/2) esteja dentro desse segmento.
-  // Vamos posicionar o MEIO do segmento no topo:
-  const pointerAngle = -Math.PI/2;
-  const segmentMid = (targetIdx + 0.5) * segAngle;
-  const finalRotBase = pointerAngle - segmentMid;
-
-  // Adiciona voltas extras
-  const extraTurns = (8 + Math.floor(Math.random()*5)) * Math.PI*2; // 8 a 12 voltas
-  const fromRot = rot;
-  const toRot = finalRotBase - extraTurns;
-
-  // reset tick
-  lastTickIndex = -1;
+  function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
 
   function anim(now){
     const t = Math.min(1, (now - startTime)/duration);
     const e = easeOutCubic(t);
-    rot = fromRot + (toRot - fromRot) * e;
-    drawWheel(rot);
+    rotDeg = startDeg + (endDeg - startDeg) * e;
+    wheelEl.style.transform = `rotate(${rotDeg}deg)`;
 
-    // tick conforme cruza segmentos (sensação de bola batendo)
-    const win = getWinningNumber(rot);
-    const idx = wheelNumbers.indexOf(win);
-    if(idx !== lastTickIndex){
-      lastTickIndex = idx;
+    // tick: baseado no avanço de segmentos
+    const step = Math.floor((rotDeg)/SEG);
+    if(step !== lastStep){
+      lastStep = step;
       tickSound();
     }
 
     if(t < 1){
       requestAnimationFrame(anim);
-    } else {
-      // fixa resultado
-      LS.set("roulette_rot", String(rot));
-      const result = getWinningNumber(rot);
-      setLastResult(result);
+    }else{
+      // fixa
+      rotDeg = endDeg;
+      wheelEl.style.transform = `rotate(${rotDeg}deg)`;
+      LS.set("roulette_deg", rotDeg);
 
-      // calcula ganho
+      setLast(result);
+
       let won = false;
       let profit = 0;
 
-      if(type === "color"){
+      if(betType.value === "color"){
+        const pickC = betColor.value;
         const rc = getColor(result);
-        if((pickCol === "red" && rc==="red") || (pickCol === "black" && rc==="black")){
+        if((pickC==="red" && rc==="red") || (pickC==="black" && rc==="black")){
           won = true;
           profit = Math.floor(stake * PAY_COLOR_PROFIT);
         }
-      } else {
-        if(result === pickNum){
+      }else{
+        const pickN = Math.floor(Number(betNumber.value));
+        if(result === pickN){
           won = true;
-          profit = Math.floor(stake * PAY_NUMBER_PROFIT);
+          profit = Math.floor(stake * PAY_NUM_PROFIT);
         }
       }
 
       if(won){
-        // devolve stake + lucro
         setBlue(getBlue() + stake + profit);
-        rouletteMsg.textContent = `✅ Você ganhou! Resultado: ${result} • +${profit} BLUE (casa 20%).`;
+        rouletteMsg.textContent = `✅ Ganhou! Resultado: ${result} • +${profit} BLUE (casa 20%).`;
         pushHist("roleta", `WIN resultado ${result} • +${profit} BLUE`);
         winSound();
         launchConfetti();
-      } else {
-        rouletteMsg.textContent = `❌ Você perdeu. Resultado: ${result}.`;
+      }else{
+        rouletteMsg.textContent = `❌ Perdeu. Resultado: ${result}.`;
         pushHist("roleta", `LOSE resultado ${result}`);
         loseSound();
       }
@@ -658,7 +638,7 @@ spinBtn.onclick = ()=>{
 };
 
 /* ----------------- SAQUE ----------------- */
-window.solicitarSaque = () => {
+window.solicitarSaque = ()=>{
   const v = Math.floor(Number(document.getElementById("saqueValor").value));
   const u = me();
 
@@ -667,7 +647,13 @@ window.solicitarSaque = () => {
 
   setBlue(getBlue() - v);
 
-  state.withdrawals.unshift({ id: uid(), user: u.user, amount: v, status: "pendente", ts: Date.now() });
+  state.withdrawals.unshift({
+    id: uid(),
+    user: u.user,
+    amount: v,
+    status: "pendente",
+    ts: Date.now()
+  });
 
   pushHist("saque", `Pedido de saque: -${v} BLUE (pendente)`);
   document.getElementById("saqMsg").textContent = "Pedido enviado. ADM vai aprovar/recusar.";
@@ -675,6 +661,5 @@ window.solicitarSaque = () => {
   persist(); renderAll();
 };
 </script>
-
 </body>
 </html>
