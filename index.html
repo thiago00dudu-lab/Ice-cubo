@@ -1,110 +1,239 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ICE-CUBO | Mineração</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICE-CUBO</title>
   <style>
     :root{
-      --bg:#061727;
-      --ice:#38bdf8;
-      --glass:rgba(255,255,255,.06);
-      --line:#1a3a5a;
-      --gold:#ffd700;
+      --bg1:#03101c;
+      --bg2:#061b2b;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.10);
       --txt:#e9f5ff;
       --muted:#9cc9ea;
+      --ice:#38bdf8;
+      --gold:#ffd700;
+      --green:#22c55e;
       --danger:#ef4444;
-      --ok:#22c55e;
       --black:#0b1220;
-      --green:#16a34a;
+      --shadow: 0 18px 46px rgba(0,0,0,.55);
+      --r: 18px;
     }
     *{ box-sizing:border-box; }
     body{
-      margin:0; padding:20px;
-      background:var(--bg);
+      margin:0;
       color:var(--txt);
-      font-family:Arial, sans-serif;
-      text-align:center;
-    }
-    .container{
-      max-width:520px;
-      margin:auto;
-      background:var(--glass);
-      padding:20px;
-      border-radius:20px;
-      border:1px solid var(--line);
-    }
-    h1{ margin:0 0 6px; font-weight:900; color:var(--ice); }
-    .sub{ margin:0 0 14px; color:rgba(255,255,255,.6); }
-
-    .stats{
-      display:flex; justify-content:space-around; gap:10px;
-      margin:12px 0 6px; font-weight:800; flex-wrap:wrap;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 50% -10%, #0d3d62 0%, var(--bg2) 35%, var(--bg1) 100%);
+      min-height:100vh;
+      padding-bottom:90px;
     }
 
-    .barra-gelo{
-      width:100%;
-      background:#0b2a6a;
-      height:25px;
-      border-radius:12px;
-      margin:16px 0;
-      overflow:hidden;
-      border:2px solid var(--line);
+    /* TOP BAR */
+    .top{
+      position:sticky; top:0; z-index:20;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 12px 10px;
+      backdrop-filter: blur(10px);
+      background: rgba(3,16,28,.65);
+      border-bottom:1px solid rgba(255,255,255,.08);
     }
-    #iceFill{
-      background:linear-gradient(90deg,var(--ice),#0077be);
-      height:100%;
-      width:100%;
-      transition:width .35s ease;
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      min-width: 0;
     }
-
-    button{
-      width:100%;
-      padding:16px;
-      font-size:16px;
+    .logo{
+      width:44px; height:44px; border-radius:14px;
+      display:grid; place-items:center;
+      background: rgba(56,189,248,.12);
+      border:1px solid rgba(56,189,248,.25);
       font-weight:900;
-      border-radius:12px;
-      border:none;
-      cursor:pointer;
-      transition:.15s;
-      margin-top:10px;
     }
-    button:active{ transform:scale(.98); }
+    .brandTxt{ text-align:left; min-width:0; }
+    .brandTxt .t{ font-weight:900; letter-spacing:.4px; }
+    .brandTxt .s{ font-size:12px; color:rgba(255,255,255,.55); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .chip{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      min-width: 145px;
+      justify-content:flex-end;
+    }
+    .coin{
+      width:30px; height:30px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,215,0,.85), rgba(56,189,248,.40));
+      display:grid; place-items:center;
+      border:1px solid rgba(255,215,0,.35);
+      font-weight:900;
+    }
+    .chip .big{ font-weight:900; }
+    .chip .small{ font-size:12px; color:rgba(255,255,255,.55); }
+
+    /* LAYOUT */
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 12px; }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: 0 8px 22px rgba(0,0,0,.25);
+      padding: 14px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 12px;
+    }
+    @media(max-width:820px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .titleRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .titleRow h2{ margin:0; font-size:18px; }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .muted{ color: var(--muted); font-size:13px; }
+    .sep{ height:1px; background: rgba(255,255,255,.08); margin: 12px 0; }
+
+    /* BUTTONS / INPUTS */
+    button{
+      border:0; cursor:pointer;
+      padding: 14px 14px;
+      border-radius: 14px;
+      font-weight:900;
+      color: var(--txt);
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      transition: transform .12s, opacity .12s;
+    }
+    button:active{ transform: scale(.98); }
     button[disabled]{ opacity:.55; cursor:not-allowed; }
 
-    input, select{
+    input, select, textarea{
       width:100%;
-      padding:12px;
-      margin-top:10px;
-      border-radius:10px;
-      border:1px solid rgba(56,189,248,.7);
-      background:var(--bg);
-      color:#fff;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(56,189,248,.35);
+      background: rgba(3,16,28,.65);
+      color: var(--txt);
+      outline:none;
+    }
+    textarea{ min-height: 90px; resize:none; }
+
+    .btnIce{ background: linear-gradient(90deg, rgba(56,189,248,.95), rgba(0,120,190,.9)); color:#061727; border:0; }
+    .btnGreen{ background: rgba(34,197,94,.20); border:1px solid rgba(34,197,94,.35); }
+    .btnGold{ background: rgba(255,215,0,.20); border:1px solid rgba(255,215,0,.35); }
+    .btnDanger{ background: rgba(239,68,68,.18); border:1px solid rgba(239,68,68,.30); }
+
+    /* NAV */
+    .nav{
+      position:fixed; left:0; right:0; bottom:0; z-index:30;
+      background: rgba(3,16,28,.70);
+      backdrop-filter: blur(10px);
+      border-top:1px solid rgba(255,255,255,.08);
+      padding: 10px 8px 12px;
+    }
+    .navInner{
+      max-width: 980px;
+      margin: 0 auto;
+      display:flex;
+      gap: 8px;
+      justify-content:space-between;
+    }
+    .navBtn{
+      flex:1;
+      padding:10px 8px;
+      border-radius: 14px;
+      font-size: 12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      color: rgba(233,245,255,.75);
+    }
+    .navBtn.active{
+      background: rgba(56,189,248,.12);
+      border-color: rgba(56,189,248,.25);
+      color: var(--txt);
+    }
+    .ico{ font-size:18px; line-height: 1; }
+
+    /* HOME (VIDEO BOARD) */
+    .board{
+      height: 210px;
+      border-radius: var(--r);
+      border:1px solid rgba(255,255,255,.10);
+      background: radial-gradient(700px 300px at 50% 0%, rgba(56,189,248,.10), rgba(0,0,0,0));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(255,255,255,.60);
+      text-align:center;
+      padding: 12px;
+    }
+    .reelsGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media(max-width:520px){ .reelsGrid{ grid-template-columns:1fr; } }
+    .reel{
+      border-radius: var(--r);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.15);
+      padding: 10px;
+    }
+    .reel .thumb{
+      height: 180px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(56,189,248,.25), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.08);
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      color: rgba(233,245,255,.75);
+    }
+    .rowBtns{ display:flex; gap:10px; margin-top:10px; }
+    .rowBtns button{ flex:1; padding: 12px; border-radius: 14px; }
+
+    /* CARTEIRA */
+    .walletRow{
+      display:grid;
+      grid-template-columns: 1fr 160px;
+      gap: 10px;
+      align-items:end;
+    }
+    @media(max-width:520px){ .walletRow{ grid-template-columns:1fr; } }
+
+    .warn{
+      padding: 12px;
+      border-radius: var(--r);
+      border:1px solid rgba(255,215,0,.22);
+      background: rgba(255,215,0,.08);
+      color: rgba(255,255,255,.85);
+      text-align:left;
+      font-size: 13px;
     }
 
-    .msg{
-      font-size:14px;
-      margin-top:10px;
-      color:var(--muted);
-      min-height:18px;
-    }
-    hr{ border:0.1px solid var(--line); margin:22px 0; opacity:.8; }
-
-    /* ----------------- ROLETA CASSINO (CSS) ----------------- */
-    .casinoWrap{
-      margin: 18px 0 8px;
-      padding: 14px;
-      border-radius: 18px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.04);
-    }
-    .casinoTitle{ font-weight:900; color:#bfe9ff; margin:2px 0 10px; }
-
+    /* ROLETA */
     .wheelArea{
       position:relative;
-      width:min(92vw, 440px);
-      height:min(92vw, 440px);
-      margin: 10px auto 14px;
+      width:min(92vw, 420px);
+      height:min(92vw, 420px);
+      margin: 10px auto 12px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -123,17 +252,15 @@
       filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
       z-index:5;
     }
-
     .wheel{
       position:relative;
       width:100%;
       height:100%;
       border-radius:50%;
       border: 10px solid rgba(56,189,248,.30);
-      box-shadow: 0 18px 46px rgba(0,0,0,.55);
+      box-shadow: var(--shadow);
       background: conic-gradient(from -90deg,
-        /* 37 fatias (0–36) na ordem europeia) */
-        #16a34a 0deg 9.7297deg,  /* 0 (verde) */
+        #16a34a 0deg 9.7297deg,
         #ef4444 9.7297deg 19.4594deg,
         #0b1220 19.4594deg 29.1891deg,
         #ef4444 29.1891deg 38.9188deg,
@@ -190,7 +317,7 @@
       width: 40%;
       height:40%;
       border-radius:50%;
-      background: rgba(6,23,39,.92);
+      background: rgba(3,16,28,.92);
       border: 2px solid rgba(255,255,255,.12);
       display:flex;
       align-items:center;
@@ -201,10 +328,6 @@
     }
     .wheelCenter .n{ font-size:28px; font-weight:900; color:var(--gold); line-height:1; }
     .wheelCenter .t{ font-size:12px; color:var(--muted); margin-top:6px; }
-
-    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-    .btnSpin{ background:var(--gold); color:var(--bg); }
-    .btnAux{ background:#111827; color:var(--txt); border:1px solid rgba(255,255,255,.12); }
 
     .pillRow{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
     .pill{ padding:6px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color:#bfe9ff; }
@@ -219,447 +342,301 @@
       display:none;
       z-index: 999;
     }
+
+    /* SECTIONS */
+    .section{ display:none; }
+    .section.active{ display:block; }
+
+    .smallNote{ font-size:12px; color: rgba(255,255,255,.55); margin-top:8px; }
   </style>
 </head>
-
 <body>
-<canvas id="confetti"></canvas>
 
-<div class="container">
-  <h1>ICE-CUBO</h1>
-  <p class="sub">timeline • perfil • carteira</p>
+  <canvas id="confetti"></canvas>
 
-  <div class="stats">
-    <div>Saldo: <span id="saldoBlue">0</span> BLUE</div>
-    <div id="iceText">Gelo 100%</div>
+  <div class="top">
+    <div class="brand">
+      <div class="logo">IC</div>
+      <div class="brandTxt">
+        <div class="t">ICE-CUBO</div>
+        <div class="s">Timeline • Perfil • Carteira</div>
+      </div>
+    </div>
+
+    <div class="chip">
+      <div class="coin">฿</div>
+      <div style="text-align:right;">
+        <div class="big"><span id="uiBlue">0</span> BLUE</div>
+        <div class="small" id="uiLogin">deslogado</div>
+      </div>
+    </div>
   </div>
 
-  <!-- BARRA DE GELO -->
-  <div class="barra-gelo"><div id="iceFill"></div></div>
+  <div class="wrap">
 
-  <button id="mineBtn" style="background:var(--ice); color:var(--bg);">⛏️ MINERAR</button>
-  <p id="mineMsg" class="msg"></p>
+    <!-- HOME -->
+    <section id="sec-home" class="section active">
+      <div class="grid">
+        <div class="card">
+          <div class="titleRow">
+            <h2>🎥 Tela Grande</h2>
+            <span class="badge">toque 2x pra subir</span>
+          </div>
+          <div class="sep"></div>
+          <div class="board" id="bigBoard">
+            Toque 2x em um “reel” abaixo<br><span class="muted">ele sobe aqui pra tela grande</span>
+          </div>
 
-  <!-- ROLETA CASSINO (GRANDE NO MEIO) -->
-  <div class="casinoWrap">
-    <div class="casinoTitle">🎰 Roleta Cassino</div>
+          <div class="sep"></div>
+          <div class="titleRow">
+            <h2>🧊 Minerar</h2>
+            <span class="badge" id="iceText">Gelo 100%</span>
+          </div>
 
-    <div class="wheelArea">
-      <div class="pointer"></div>
+          <div class="barra-gelo"><div id="iceFill"></div></div>
+          <button class="btnIce" id="mineBtn">⛏️ MINERAR</button>
+          <div class="muted" id="mineMsg"></div>
+        </div>
 
-      <div id="wheel" class="wheel">
-        <div class="wheelCenter">
-          <div class="n" id="lastNumber">—</div>
-          <div class="t" id="lastColor">último resultado</div>
+        <div class="card">
+          <div class="titleRow">
+            <h2>🧵 Timeline</h2>
+            <span class="badge" id="postsCount">posts 2</span>
+          </div>
+          <div class="sep"></div>
+
+          <div class="reelsGrid" id="reelsGrid">
+            <!-- reels -->
+          </div>
+
+          <div class="sep"></div>
+          <div class="rowBtns">
+            <button id="btnLogin" class="btnGreen">👤 Entrar</button>
+            <button id="btnLogout" class="btnDanger">Sair</button>
+          </div>
+          <div class="smallNote">* Tudo aqui é demo (localStorage).</div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="grid2">
-      <div>
-        <div style="text-align:left; font-size:12px; color:var(--muted); margin-top:6px;">Tipo de aposta</div>
-        <select id="betType">
-          <option value="color">Cor (Vermelho/Preto)</option>
-          <option value="number">Número (0–36)</option>
+    <!-- PERFIL -->
+    <section id="sec-perfil" class="section">
+      <div class="card">
+        <div class="titleRow">
+          <h2>👤 Perfil</h2>
+          <span class="badge" id="roleBadge">visitante</span>
+        </div>
+        <div class="sep"></div>
+
+        <div class="muted">Nome</div>
+        <input id="nameInput" placeholder="Seu nome (ex: Jessica)" />
+
+        <div class="muted" style="margin-top:10px;">Modo</div>
+        <select id="admSelect">
+          <option value="false">Usuário</option>
+          <option value="true">ADM</option>
         </select>
+
+        <button class="btnIce" id="saveProfile">Salvar perfil</button>
+        <div class="muted" id="profileMsg"></div>
       </div>
-      <div>
-        <div style="text-align:left; font-size:12px; color:var(--muted); margin-top:6px;">Valor (BLUE)</div>
-        <input id="betAmount" type="number" min="1" step="1" placeholder="Ex: 10" />
+    </section>
+
+    <!-- CARTEIRA -->
+    <section id="sec-carteira" class="section">
+      <div class="card">
+        <div class="titleRow">
+          <h2>📁 Carteira</h2>
+          <span class="badge">BLUE <b id="walletBlue">0</b></span>
+        </div>
+        <div class="sep"></div>
+
+        <div class="warn">
+          ⚠️ <b>Importante (protótipo)</b><br><br>
+          Depósito real (Mercado Pago) precisa de <b>backend + token</b>. No seu Vercel ele está tentando ler JSON mas recebe HTML, por isso o erro.<br>
+          Aqui eu deixei <b>Depósito rápido</b> funcionando e o “real” como <b>manutenção</b> (pra não quebrar sua tela).
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="titleRow">
+          <h2>💳 Depósito</h2>
+          <span class="badge">BRL → BLUE</span>
+        </div>
+
+        <div class="walletRow">
+          <input id="depValue" type="number" min="1" step="1" placeholder="Valor em BRL (ex: 10)" />
+          <button class="btnGreen" id="depFast">⚡ Depósito rápido</button>
+        </div>
+
+        <button class="btnAux" id="depReal" disabled>💠 Depósito real (Mercado Pago) — em manutenção</button>
+        <div class="muted" id="depMsg"></div>
+
+        <div class="sep"></div>
+
+        <div class="titleRow">
+          <h2>🎰 Roleta (Cassino)</h2>
+          <span class="badge">casa 20%</span>
+        </div>
+
+        <div class="wheelArea">
+          <div class="pointer"></div>
+          <div id="wheel" class="wheel">
+            <div class="wheelCenter">
+              <div class="n" id="lastNumber">—</div>
+              <div class="t" id="lastColor">último resultado</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <select id="betType">
+            <option value="color">Apostar na COR</option>
+            <option value="number">Apostar no NÚMERO</option>
+          </select>
+          <input id="betAmount" type="number" min="1" step="1" placeholder="Valor da aposta (BLUE)" />
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+          <select id="betColor">
+            <option value="red">Vermelho</option>
+            <option value="black">Preto</option>
+          </select>
+          <input id="betNumber" type="number" min="0" max="36" step="1" placeholder="Número (0–36)" style="display:none;" />
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+          <button class="btnGold" id="spinBtn">GIRAR</button>
+          <button class="btnAux" id="payoutBtn">PAYOUTS</button>
+        </div>
+
+        <div class="pillRow">
+          <span class="pill">Cor: lucro <b>0,8x</b></span>
+          <span class="pill">Número: lucro <b>28x</b></span>
+        </div>
+
+        <div class="muted" id="rouletteMsg"></div>
+
+        <div class="sep"></div>
+
+        <div class="titleRow">
+          <h2>🏧 Saque</h2>
+          <span class="badge">BLUE → pedido</span>
+        </div>
+
+        <div class="walletRow">
+          <input id="saqueValor" type="number" min="1" step="1" placeholder="Valor para sacar" />
+          <button class="btnGold" id="btnSaque">📨 Solicitar</button>
+        </div>
+        <div class="muted" id="saqMsg"></div>
+
+        <div class="sep"></div>
+
+        <div class="titleRow">
+          <h2>🕓 Histórico</h2>
+          <span class="badge" id="histCount">itens 0</span>
+        </div>
+        <div id="histList" class="muted" style="text-align:left; line-height:1.5;"></div>
       </div>
-    </div>
+    </section>
 
-    <div class="grid2" style="margin-top:10px;">
-      <div id="pickerColor">
-        <div style="text-align:left; font-size:12px; color:var(--muted);">Escolha a cor</div>
-        <select id="betColor">
-          <option value="red">Vermelho</option>
-          <option value="black">Preto</option>
-        </select>
+    <!-- TROCAS -->
+    <section id="sec-trocas" class="section">
+      <div class="card">
+        <div class="titleRow">
+          <h2>🔁 Trocas</h2>
+          <span class="badge">demo</span>
+        </div>
+        <div class="sep"></div>
+        <div class="muted">Aqui você pode colocar seu sistema de troca 1x1 depois. Por enquanto é só placeholder.</div>
       </div>
+    </section>
 
-      <div id="pickerNumber" style="display:none;">
-        <div style="text-align:left; font-size:12px; color:var(--muted);">Escolha o número</div>
-        <input id="betNumber" type="number" min="0" max="36" step="1" placeholder="0 a 36" />
+    <!-- ADM -->
+    <section id="sec-adm" class="section">
+      <div class="card">
+        <div class="titleRow">
+          <h2>⭐ ADM</h2>
+          <span class="badge">somente demo</span>
+        </div>
+        <div class="sep"></div>
+        <div class="muted">
+          Aqui você pode depois aprovar saques, moderar posts, etc.
+          <br><br>
+          (Neste protótipo fica tudo no navegador)
+        </div>
       </div>
+    </section>
 
-      <div>
-        <div style="text-align:left; font-size:12px; color:var(--muted);">Som</div>
-        <select id="soundOn">
-          <option value="on">Ligado</option>
-          <option value="off">Desligado</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="grid2" style="margin-top:10px;">
-      <button id="spinBtn" class="btnSpin">GIRAR</button>
-      <button id="payBtn" class="btnAux">PAYOUTS (CASA 20%)</button>
-    </div>
-
-    <div class="pillRow">
-      <span class="pill">Casa: <b>20%</b></span>
-      <span class="pill">Cor: lucro <b>0,8x</b></span>
-      <span class="pill">Número: lucro <b>28x</b></span>
-    </div>
-
-    <div id="rouletteMsg" class="msg"></div>
   </div>
 
-  <hr>
-
-  <!-- SAQUE -->
-  <h3>Solicitar Saque</h3>
-  <input type="number" id="saqueValor" placeholder="Quantidade BLUE" />
-  <button onclick="solicitarSaque()" style="background:var(--ok); color:white;">EFETUAR SAQUE</button>
-  <p id="saqMsg" class="msg"></p>
-</div>
+  <!-- NAV -->
+  <div class="nav">
+    <div class="navInner">
+      <button class="navBtn active" data-tab="home"><div class="ico">🏠</div><div>HOME</div></button>
+      <button class="navBtn" data-tab="perfil"><div class="ico">👤</div><div>PERFIL</div></button>
+      <button class="navBtn" data-tab="carteira"><div class="ico">📁</div><div>CARTEIRA</div></button>
+      <button class="navBtn" data-tab="trocas"><div class="ico">🔁</div><div>TROCAS</div></button>
+      <button class="navBtn" data-tab="adm"><div class="ico">⭐</div><div>ADM</div></button>
+    </div>
+  </div>
 
 <script>
-/* ----------------- SISTEMA BASE (SIMULADO) ----------------- */
+/* =========================
+   BASE (localStorage)
+========================= */
 const LS = {
   get:(k,d)=> (localStorage.getItem(k) ?? d),
   set:(k,v)=> localStorage.setItem(k, String(v))
 };
 
 let state = {
-  user: { user:"Jogador", isADM:true }, // troque isADM para false p testar trava do miner
+  user: JSON.parse(LS.get("ice_user", "null")),
   blue: Number(LS.get("blue_balance", 0)),
-  withdrawals: []
+  ice: Number(LS.get("ice_ice", 100)),
+  hist: JSON.parse(LS.get("ice_hist", "[]"))
 };
 
-function getBlue(){ return state.blue; }
+function saveState(){
+  LS.set("ice_user", JSON.stringify(state.user));
+  LS.set("blue_balance", state.blue);
+  LS.set("ice_ice", state.ice);
+  LS.set("ice_hist", JSON.stringify(state.hist));
+}
+
+function pushHist(type, msg){
+  state.hist.unshift({ type, msg, ts: Date.now() });
+  if(state.hist.length > 50) state.hist.length = 50;
+  saveState();
+}
+
+function fmtTime(ts){
+  const d = new Date(ts);
+  return d.toLocaleString();
+}
+
+/* =========================
+   UI helpers
+========================= */
+const uiBlue = document.getElementById("uiBlue");
+const uiLogin = document.getElementById("uiLogin");
+const walletBlue = document.getElementById("walletBlue");
+const roleBadge = document.getElementById("roleBadge");
+
 function setBlue(v){
   state.blue = Math.max(0, Math.floor(Number(v)||0));
-  LS.set("blue_balance", state.blue);
-  document.getElementById("saldoBlue").textContent = state.blue;
+  saveState();
+  renderHeader();
 }
-function me(){ return state.user; }
-function isADM(){ return state.user.isADM; }
-function uid(){ return Math.random().toString(36).slice(2, 11); }
-function persist(){ console.log("Estado salvo."); }
-function renderAll(){ document.getElementById("saldoBlue").textContent = state.blue; }
-function pushHist(type,msg){ console.log("["+type+"]", msg); }
+function getBlue(){ return state.blue; }
 
-/* ----------------- MINER (JOGO) ----------------- */
-let ice = Number(LS.get("ice_ice", 100));
+function renderHeader(){
+  uiBlue.textContent = state.blue;
+  walletBlue.textContent = state.blue;
 
-function setIce(v){
-  ice = Math.max(0, Math.min(100, v));
-  LS.set("ice_ice", ice);
-  document.getElementById("iceFill").style.width = ice + "%";
-  document.getElementById("iceText").textContent = "Gelo " + ice + "%";
-}
-setIce(ice);
-setBlue(state.blue);
-renderAll();
-
-document.getElementById("mineBtn").onclick = ()=>{
-  const u = me();
-  if(!u) return alert("Entre primeiro.");
-
-  if(!isADM()) return alert("Somente ADM pode iniciar o modo mineração.");
-
-  const hit = 8 + Math.floor(Math.random()*12);
-  setIce(ice - hit);
-
-  const gain = 1 + Math.floor(Math.random()*3);
-  setBlue(getBlue()+gain);
-
-  pushHist("mining", `Urso quebrou ${hit}% • +${gain} BLUE`);
-  document.getElementById("mineMsg").textContent = `+${gain} BLUE • gelo agora ${ice}%`;
-
-  if(ice<=0){
-    const bonus = 20;
-    setBlue(getBlue()+bonus);
-    pushHist("mining", `Bloco quebrado! +${bonus} BLUE`);
-    setIce(100);
-    document.getElementById("mineMsg").textContent = `BLOCO QUEBRADO! +${bonus} BLUE (novo gelo 100%).`;
-  }
-  persist(); renderAll();
-};
-
-/* ----------------- ROLETA CASSINO ----------------- */
-const wheelNumbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
-const redSet = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-function getColor(n){
-  if(n===0) return "green";
-  return redSet.has(n) ? "red" : "black";
-}
-
-const HOUSE = 0.20; // 20% casa
-const PAY_COLOR_PROFIT = 1*(1-HOUSE);  // 0.8
-const PAY_NUM_PROFIT   = 35*(1-HOUSE); // 28
-
-const wheelEl = document.getElementById("wheel");
-const spinBtn = document.getElementById("spinBtn");
-const payBtn = document.getElementById("payBtn");
-const betType = document.getElementById("betType");
-const betAmount = document.getElementById("betAmount");
-const betColor = document.getElementById("betColor");
-const betNumber = document.getElementById("betNumber");
-const pickerColor = document.getElementById("pickerColor");
-const pickerNumber = document.getElementById("pickerNumber");
-const soundOn = document.getElementById("soundOn");
-const lastNumberEl = document.getElementById("lastNumber");
-const lastColorEl = document.getElementById("lastColor");
-const rouletteMsg = document.getElementById("rouletteMsg");
-
-betType.onchange = ()=>{
-  if(betType.value === "number"){
-    pickerNumber.style.display = "";
-    pickerColor.style.display = "none";
+  if(state.user){
+    uiLogin.textContent = "logado";
+    roleBadge.textContent = state.user.isADM ? "ADM" : "usuário";
   }else{
-    pickerNumber.style.display = "none";
-    pickerColor.style.display = "";
-  }
-};
-
-payBtn.onclick = ()=>{
-  alert(
-    "CASA 20% (temporário)\n\n" +
-    "COR (vermelho/preto): lucro 0,8x\n" +
-    "NÚMERO (0–36): lucro 28x\n\n" +
-    "Exemplo COR (10): recebe 10 + 8\n" +
-    "Exemplo NÚMERO (10): recebe 10 + 280"
-  );
-};
-
-let spinning = false;
-let rotDeg = Number(LS.get("roulette_deg", 0));
-wheelEl.style.transform = `rotate(${rotDeg}deg)`;
-
-function setLast(n){
-  lastNumberEl.textContent = String(n);
-  const c = getColor(n);
-  lastColorEl.textContent = (c==="red") ? "vermelho" : (c==="black" ? "preto" : "verde (0)");
-}
-
-const SEG = 360/37;
-function angleForNumber(n){
-  const idx = wheelNumbers.indexOf(n);
-  const mid = (idx * SEG) + (SEG/2);
-  return 360 - mid;
-}
-
-function pickNumber(){
-  return wheelNumbers[Math.floor(Math.random()*wheelNumbers.length)];
-}
-
-/* -------- SOM (WebAudio) -------- */
-let audioCtx = null;
-function ensureAudio(){
-  if(soundOn.value === "off") return null;
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
-function beep(freq, dur=0.06, type="sine", vol=0.06){
-  const ac = ensureAudio();
-  if(!ac) return;
-  const o = ac.createOscillator();
-  const g = ac.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.value = vol;
-  o.connect(g); g.connect(ac.destination);
-  o.start();
-  o.stop(ac.currentTime + dur);
-}
-function tickSound(){ beep(900, 0.02, "square", 0.03); }
-function winSound(){
-  beep(880, 0.08, "sine", 0.08);
-  setTimeout(()=>beep(1175, 0.09, "sine", 0.08), 90);
-  setTimeout(()=>beep(1568, 0.10, "sine", 0.08), 190);
-}
-function loseSound(){
-  beep(220, 0.12, "sawtooth", 0.05);
-  setTimeout(()=>beep(165, 0.14, "sawtooth", 0.05), 120);
-}
-
-/* -------- CONFETTI -------- */
-const confettiCanvas = document.getElementById("confetti");
-const cctx = confettiCanvas.getContext("2d");
-let confettiParticles = [];
-
-function resizeConfetti(){
-  const dpr = window.devicePixelRatio || 1;
-  confettiCanvas.width = Math.floor(window.innerWidth * dpr);
-  confettiCanvas.height = Math.floor(window.innerHeight * dpr);
-}
-window.addEventListener("resize", resizeConfetti);
-resizeConfetti();
-
-function launchConfetti(){
-  confettiCanvas.style.display = "block";
-  const dpr = window.devicePixelRatio || 1;
-  confettiParticles = [];
-  const count = 160;
-
-  for(let i=0;i<count;i++){
-    confettiParticles.push({
-      x: Math.random()*confettiCanvas.width,
-      y: -20*dpr,
-      vx: (Math.random()*2-1) * 5 * dpr,
-      vy: (Math.random()*2+2) * 6 * dpr,
-      r: (Math.random()*6+3) * dpr,
-      a: Math.random()*Math.PI*2,
-      va: (Math.random()*0.2-0.1),
-      life: 120 + Math.random()*60
-    });
-  }
-
-  let frames = 0;
-  function step(){
-    frames++;
-    cctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
-    for(const p of confettiParticles){
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.12 * dpr;
-      p.a += p.va;
-      p.life -= 1;
-
-      cctx.save();
-      cctx.translate(p.x,p.y);
-      cctx.rotate(p.a);
-      cctx.fillStyle = `hsla(${(p.x/10)%360}, 90%, 60%, 0.95)`;
-      cctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
-      cctx.restore();
-    }
-    confettiParticles = confettiParticles.filter(p=>p.life>0 && p.y < confettiCanvas.height + 50*dpr);
-
-    if(frames < 160 && confettiParticles.length){
-      requestAnimationFrame(step);
-    }else{
-      cctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
-      confettiCanvas.style.display = "none";
-    }
-  }
-  requestAnimationFrame(step);
-}
-
-/* -------- GIRAR -------- */
-spinBtn.onclick = ()=>{
-  const u = me(); if(!u) return alert("Entre primeiro.");
-  if(spinning) return;
-
-  // precisa de gesto para áudio no celular
-  ensureAudio();
-
-  const stake = Math.floor(Number(betAmount.value));
-  if(!stake || stake < 1) return alert("Valor da aposta inválido.");
-  if(getBlue() < stake) return alert("Sem saldo.");
-
-  if(betType.value === "number"){
-    const n = Number(betNumber.value);
-    if(!Number.isInteger(n) || n < 0 || n > 36) return alert("Número inválido (0–36).");
-  }
-
-  // desconta aposta no começo
-  setBlue(getBlue() - stake);
-
-  spinning = true;
-  spinBtn.disabled = true;
-  rouletteMsg.textContent = "Girando... 🎰";
-
-  const result = pickNumber();
-
-  // animação com ticks
-  const turns = 8 + Math.floor(Math.random()*5);
-  const target = (turns*360) + angleForNumber(result);
-  const startDeg = rotDeg;
-  const endDeg = rotDeg + target;
-
-  const duration = 4800;
-  const startTime = performance.now();
-
-  let lastStep = -1;
-
-  function easeOutCubic(t){ return 1 - Math.pow(1-t,3); }
-
-  function anim(now){
-    const t = Math.min(1, (now - startTime)/duration);
-    const e = easeOutCubic(t);
-    rotDeg = startDeg + (endDeg - startDeg) * e;
-    wheelEl.style.transform = `rotate(${rotDeg}deg)`;
-
-    // tick: baseado no avanço de segmentos
-    const step = Math.floor((rotDeg)/SEG);
-    if(step !== lastStep){
-      lastStep = step;
-      tickSound();
-    }
-
-    if(t < 1){
-      requestAnimationFrame(anim);
-    }else{
-      // fixa
-      rotDeg = endDeg;
-      wheelEl.style.transform = `rotate(${rotDeg}deg)`;
-      LS.set("roulette_deg", rotDeg);
-
-      setLast(result);
-
-      let won = false;
-      let profit = 0;
-
-      if(betType.value === "color"){
-        const pickC = betColor.value;
-        const rc = getColor(result);
-        if((pickC==="red" && rc==="red") || (pickC==="black" && rc==="black")){
-          won = true;
-          profit = Math.floor(stake * PAY_COLOR_PROFIT);
-        }
-      }else{
-        const pickN = Math.floor(Number(betNumber.value));
-        if(result === pickN){
-          won = true;
-          profit = Math.floor(stake * PAY_NUM_PROFIT);
-        }
-      }
-
-      if(won){
-        setBlue(getBlue() + stake + profit);
-        rouletteMsg.textContent = `✅ Ganhou! Resultado: ${result} • +${profit} BLUE (casa 20%).`;
-        pushHist("roleta", `WIN resultado ${result} • +${profit} BLUE`);
-        winSound();
-        launchConfetti();
-      }else{
-        rouletteMsg.textContent = `❌ Perdeu. Resultado: ${result}.`;
-        pushHist("roleta", `LOSE resultado ${result}`);
-        loseSound();
-      }
-
-      spinning = false;
-      spinBtn.disabled = false;
-      persist(); renderAll();
-    }
-  }
-  requestAnimationFrame(anim);
-};
-
-/* ----------------- SAQUE ----------------- */
-window.solicitarSaque = ()=>{
-  const v = Math.floor(Number(document.getElementById("saqueValor").value));
-  const u = me();
-
-  if(!v || v < 1) return alert("Valor inválido.");
-  if(getBlue() < v) return alert("Sem saldo.");
-
-  setBlue(getBlue() - v);
-
-  state.withdrawals.unshift({
-    id: uid(),
-    user: u.user,
-    amount: v,
-    status: "pendente",
-    ts: Date.now()
-  });
-
-  pushHist("saque", `Pedido de saque: -${v} BLUE (pendente)`);
-  document.getElementById("saqMsg").textContent = "Pedido enviado. ADM vai aprovar/recusar.";
-
-  persist(); renderAll();
-};
-</script>
-</body>
-</html>
+    uiLogin.textContent = "deslogado";
+    roleBadge.tex
