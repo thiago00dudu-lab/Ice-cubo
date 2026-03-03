@@ -1,442 +1,678 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICE-CUBO | Mineração</title>
-    <style>
-        /* Estilo para rodar bem no celular */
-        body { background: #061727; color: #e9f5ff; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 500px; margin: auto; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; border: 1px solid #1a3a5a; }
-        h1 { font-weight: 900; color: #38bdf8; margin-bottom: 5px; }
-        .barra-gelo { width: 100%; background: #0b2a6a; height: 25px; border-radius: 12px; margin: 20px 0; overflow: hidden; border: 2px solid #1a3a5a; }
-        #iceFill { background: linear-gradient(90deg, #38bdf8, #0077be); height: 100%; width: 100%; transition: width 0.4s ease; }
-        button { width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; transition: 0.2s; margin-top: 10px; }
-        #mineBtn { background: #38bdf8; color: #061727; }
-        #mineBtn:active { transform: scale(0.95); }
-        .stats { display: flex; justify-content: space-around; margin: 20px 0; font-weight: bold; }
-        input { width: 90%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #38bdf8; background: #061727; color: white; }
-        .msg { font-size: 14px; margin-top: 10px; color: #9cc9ea; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ICE-CUBO | Mineração</title>
+  <style>
+    body { background:#061727; color:#e9f5ff; font-family:Arial,sans-serif; text-align:center; margin:0; padding:20px; }
+    .container { max-width:520px; margin:auto; background:rgba(255,255,255,.05); padding:20px; border-radius:20px; border:1px solid #1a3a5a; }
+    h1 { font-weight:900; color:#38bdf8; margin:0 0 6px; }
+    .sub { color:rgba(255,255,255,.6); margin:0 0 14px; }
+    .barra-gelo { width:100%; background:#0b2a6a; height:25px; border-radius:12px; margin:16px 0; overflow:hidden; border:2px solid #1a3a5a; }
+    #iceFill { background:linear-gradient(90deg,#38bdf8,#0077be); height:100%; width:100%; transition:width .4s ease; }
+    button { width:100%; padding:16px; font-size:16px; font-weight:800; border-radius:12px; border:none; cursor:pointer; transition:.15s; margin-top:10px; }
+    button:active { transform:scale(.98); }
+    .stats { display:flex; justify-content:space-around; gap:10px; margin:12px 0 6px; font-weight:800; flex-wrap:wrap; }
+    input, select { width:100%; padding:12px; margin-top:10px; border-radius:10px; border:1px solid rgba(56,189,248,.7); background:#061727; color:#fff; box-sizing:border-box; }
+    .msg { font-size:14px; margin-top:10px; color:#9cc9ea; min-height:18px; }
+    hr { border:0.1px solid #1a3a5a; margin:22px 0; opacity:.8; }
 
-        /* ----------------- ROLETA ----------------- */
-        .roletaWrap{
-            margin: 18px 0 8px;
-            padding: 14px;
-            border-radius: 18px;
-            border: 1px solid #1a3a5a;
-            background: rgba(255,255,255,0.04);
-        }
-        .roletaTitle{
-            font-weight: 900;
-            letter-spacing: .5px;
-            color:#bfe9ff;
-            margin: 2px 0 10px;
-        }
-        .wheelBox{
-            position: relative;
-            width: min(92vw, 420px);
-            height: min(92vw, 420px);
-            margin: 0 auto;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-        }
-        .pointer{
-            position:absolute;
-            top: -6px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 16px solid transparent;
-            border-right: 16px solid transparent;
-            border-bottom: 28px solid #ffd700;
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,.5));
-            z-index: 3;
-        }
-        .wheel{
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 10px solid rgba(56,189,248,.35);
-            box-shadow: 0 18px 40px rgba(0,0,0,.45);
-            background:
-                conic-gradient(
-                    #0ea5e9 0deg 45deg,
-                    #0b2a6a 45deg 90deg,
-                    #38bdf8 90deg 135deg,
-                    #073a66 135deg 180deg,
-                    #22c55e 180deg 225deg,
-                    #0b2a6a 225deg 270deg,
-                    #ef4444 270deg 315deg,
-                    #073a66 315deg 360deg
-                );
-            position: relative;
-            transition: transform 4s cubic-bezier(.12,.7,.12,1);
-            transform: rotate(0deg);
-            z-index:1;
-            overflow:hidden;
-        }
-        .wheelCenter{
-            position:absolute;
-            width: 42%;
-            height: 42%;
-            border-radius: 50%;
-            background: rgba(6,23,39,.92);
-            border: 2px solid rgba(255,255,255,.12);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            flex-direction:column;
-            z-index:2;
-            box-shadow: inset 0 0 30px rgba(56,189,248,.18);
-        }
-        .wheelCenter .big{
-            font-size: 20px;
-            font-weight: 900;
-            color:#ffd700;
-            margin-bottom: 4px;
-        }
-        .wheelCenter .small{
-            font-size: 12px;
-            color:#9cc9ea;
-        }
+    /* ------------ ROLETA CASSINO ------------ */
+    .casinoWrap{
+      margin: 18px 0 8px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid #1a3a5a;
+      background: rgba(255,255,255,0.04);
+    }
+    .casinoTitle{
+      font-weight: 900;
+      letter-spacing: .5px;
+      color:#bfe9ff;
+      margin: 2px 0 8px;
+    }
+    .wheelArea{
+      position:relative;
+      width:min(92vw, 440px);
+      height:min(92vw, 440px);
+      margin: 8px auto 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      touch-action: manipulation;
+    }
+    canvas#wheelCanvas{
+      width:100%;
+      height:100%;
+      border-radius:50%;
+      box-shadow: 0 18px 46px rgba(0,0,0,.55);
+      border: 10px solid rgba(56,189,248,.30);
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.06), rgba(0,0,0,0));
+    }
+    .pointer{
+      position:absolute;
+      top:-6px;
+      left:50%;
+      transform:translateX(-50%);
+      width:0; height:0;
+      border-left: 16px solid transparent;
+      border-right:16px solid transparent;
+      border-bottom: 28px solid #ffd700;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
+      z-index:5;
+    }
+    .centerBadge{
+      position:absolute;
+      width: 40%;
+      height: 40%;
+      border-radius: 50%;
+      background: rgba(6,23,39,.92);
+      border: 2px solid rgba(255,255,255,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      z-index:4;
+      box-shadow: inset 0 0 30px rgba(56,189,248,.18);
+    }
+    .centerBadge .n{
+      font-size: 26px;
+      font-weight: 900;
+      color:#ffd700;
+      line-height: 1.1;
+    }
+    .centerBadge .t{
+      font-size: 12px;
+      color:#9cc9ea;
+      margin-top: 4px;
+    }
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .btnSpin{ background:#ffd700; color:#061727; }
+    .btnSpin[disabled]{ opacity:.55; cursor:not-allowed; }
+    .btnAux{ background:#111827; color:#e9f5ff; border:1px solid rgba(255,255,255,.12); }
+    .pillRow{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+    .pill{
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.04);
+      color:#bfe9ff;
+    }
 
-        .roletaBtns{
-            display:grid;
-            grid-template-columns: 1fr 1fr;
-            gap:10px;
-            margin-top: 12px;
-        }
-        .spinBtn{
-            background: #ffd700;
-            color:#061727;
-        }
-        .spinBtn:active{ transform: scale(.97); }
-        .spinBtn[disabled]{
-            opacity: .55;
-            cursor:not-allowed;
-        }
-        .infoBtn{
-            background: #1f2937;
-            color:#e9f5ff;
-            border: 1px solid rgba(255,255,255,.12);
-        }
-        .tagCost{
-            font-size: 12px;
-            color:#9cc9ea;
-            margin-top: 8px;
-        }
-        .roletaMsg{
-            margin-top: 10px;
-            font-size: 14px;
-            color:#bfe9ff;
-            min-height: 20px;
-        }
-        .modalBack{
-            position: fixed;
-            inset:0;
-            background: rgba(0,0,0,.55);
-            display:none;
-            align-items:center;
-            justify-content:center;
-            padding: 18px;
-            z-index: 50;
-        }
-        .modal{
-            width: min(92vw, 520px);
-            background: #081c2f;
-            border: 1px solid #1a3a5a;
-            border-radius: 18px;
-            padding: 14px 14px 10px;
-            text-align:left;
-        }
-        .modal h4{
-            margin: 0 0 10px;
-            color:#ffd700;
-        }
-        .modal .line{
-            display:flex;
-            justify-content:space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,.08);
-            font-size: 14px;
-        }
-        .modal .close{
-            width: 100%;
-            margin-top: 12px;
-            background: #38bdf8;
-            color:#061727;
-        }
-    </style>
+    /* Confetti overlay */
+    canvas#confetti{
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      display:none;
+      z-index: 999;
+    }
+  </style>
 </head>
 <body>
 
+<canvas id="confetti"></canvas>
+
 <div class="container">
-    <h1>ICE-CUBO</h1>
-    <p style="color: rgba(255,255,255,0.6)">timeline • perfil • carteira</p>
+  <h1>ICE-CUBO</h1>
+  <p class="sub">timeline • perfil • carteira</p>
 
-    <div class="stats">
-        <div>Saldo: <span id="saldoBlue">0</span> BLUE</div>
-        <div id="iceText">Gelo 100%</div>
+  <div class="stats">
+    <div>Saldo: <span id="saldoBlue">0</span> BLUE</div>
+    <div id="iceText">Gelo 100%</div>
+  </div>
+
+  <div class="barra-gelo"><div id="iceFill"></div></div>
+
+  <button id="mineBtn" style="background:#38bdf8; color:#061727;">⛏️ MINERAR</button>
+  <p id="mineMsg" class="msg"></p>
+
+  <!-- ROLETA CASSINO -->
+  <div class="casinoWrap">
+    <div class="casinoTitle">🎰 Roleta (Cassino)</div>
+
+    <div class="wheelArea">
+      <div class="pointer"></div>
+      <canvas id="wheelCanvas" width="900" height="900"></canvas>
+      <div class="centerBadge">
+        <div class="n" id="lastNumber">—</div>
+        <div class="t" id="lastColor">último resultado</div>
+      </div>
     </div>
 
-    <!-- BARRA DE GELO (JOGO) -->
-    <div class="barra-gelo">
-        <div id="iceFill"></div>
+    <div class="grid2">
+      <div>
+        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea; margin-top:6px;">Tipo de aposta</label>
+        <select id="betType">
+          <option value="color">Cor (Vermelho/Preto)</option>
+          <option value="number">Número (0–36)</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea; margin-top:6px;">Valor (BLUE)</label>
+        <input id="betAmount" type="number" min="1" step="1" placeholder="Ex: 10" />
+      </div>
     </div>
 
-    <button id="mineBtn">⛏️ MINERAR</button>
-    <p id="mineMsg" class="msg"></p>
-
-    <!-- ROLETA (GRANDE NO MEIO) -->
-    <div class="roletaWrap">
-        <div class="roletaTitle">🎰 ROLETA BLUE</div>
-
-        <div class="wheelBox">
-            <div class="pointer"></div>
-            <div id="wheel" class="wheel"></div>
-            <div class="wheelCenter">
-                <div class="big" id="lastPrize">—</div>
-                <div class="small">último prêmio</div>
-            </div>
-        </div>
-
-        <div class="roletaBtns">
-            <button id="spinBtn" class="spinBtn">GIRAR</button>
-            <button id="oddsBtn" class="infoBtn">PROBABILIDADES</button>
-        </div>
-        <div class="tagCost">Custo do giro: <b><span id="spinCostText">3</span> BLUE</b></div>
-        <div class="roletaMsg" id="roletaMsg"></div>
+    <div class="grid2" id="betPickers" style="margin-top:10px;">
+      <div id="pickerColor">
+        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea;">Escolha a cor</label>
+        <select id="betColor">
+          <option value="red">Vermelho</option>
+          <option value="black">Preto</option>
+        </select>
+      </div>
+      <div id="pickerNumber" style="display:none;">
+        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea;">Escolha o número</label>
+        <input id="betNumber" type="number" min="0" max="36" step="1" placeholder="0 a 36" />
+      </div>
+      <div>
+        <label style="display:block; text-align:left; font-size:12px; color:#9cc9ea;">Som</label>
+        <select id="soundOn">
+          <option value="on">Ligado</option>
+          <option value="off">Desligado</option>
+        </select>
+      </div>
     </div>
 
-    <hr style="border: 0.1px solid #1a3a5a; margin: 26px 0;">
-
-    <!-- SISTEMA DE SAQUE -->
-    <h3>Solicitar Saque</h3>
-    <input type="number" id="saqueValor" placeholder="Quantidade BLUE">
-    <button onclick="solicitarSaque()" style="background: #22c55e; color: white;">EFETUAR SAQUE</button>
-    <p id="saqMsg" class="msg"></p>
-</div>
-
-<!-- MODAL PROBABILIDADES -->
-<div class="modalBack" id="modalBack">
-    <div class="modal">
-        <h4>📊 Probabilidades da Roleta</h4>
-        <div id="oddsList"></div>
-        <button class="close" id="closeModal">FECHAR</button>
-        <p class="msg" style="margin-top:10px">
-            Obs: isso é só simulação (localStorage). Dá pra mudar prêmios e chances.
-        </p>
+    <div class="grid2" style="margin-top:10px;">
+      <button id="spinBtn" class="btnSpin">GIRAR</button>
+      <button id="oddsBtn" class="btnAux">PAYOUTS (CASA 20%)</button>
     </div>
+
+    <div class="pillRow">
+      <span class="pill">Casa: <b>20%</b> (temporário)</span>
+      <span class="pill">Cor: lucro <b>0,8x</b></span>
+      <span class="pill">Número: lucro <b>28x</b></span>
+    </div>
+
+    <div id="rouletteMsg" class="msg"></div>
+  </div>
+
+  <hr>
+
+  <h3>Solicitar Saque</h3>
+  <input type="number" id="saqueValor" placeholder="Quantidade BLUE" />
+  <button onclick="solicitarSaque()" style="background:#22c55e; color:white;">EFETUAR SAQUE</button>
+  <p id="saqMsg" class="msg"></p>
 </div>
 
 <script>
-/* ----------------- SISTEMA BASE (SIMULADO) ----------------- */
-const LS = {
-    get: (k, d) => localStorage.getItem(k) || d,
-    set: (k, v) => localStorage.setItem(k, v)
-};
+/* ----------------- BASE (SIMULADO) ----------------- */
+const LS = { get:(k,d)=>localStorage.getItem(k) ?? d, set:(k,v)=>localStorage.setItem(k,v) };
 
 let state = {
-    user: { user: "Jogador", isADM: true }, // Altere isADM para false para testar a trava
-    blue: Number(LS.get("blue_balance", 0)),
-    withdrawals: []
+  user: { user:"Jogador", isADM:true },
+  blue: Number(LS.get("blue_balance", 0)),
+  withdrawals: []
 };
 
-function getBlue() { return state.blue; }
-function setBlue(v) {
-    state.blue = v;
-    LS.set("blue_balance", v);
-    document.getElementById("saldoBlue").textContent = v;
+function getBlue(){ return state.blue; }
+function setBlue(v){
+  state.blue = Math.max(0, Math.floor(v));
+  LS.set("blue_balance", state.blue);
+  document.getElementById("saldoBlue").textContent = state.blue;
 }
-function me() { return state.user; }
-function isADM() { return state.user.isADM; }
-function uid() { return Math.random().toString(36).substr(2, 9); }
-function persist() { console.log("Estado salvo."); }
-function renderAll() { document.getElementById("saldoBlue").textContent = state.blue; }
-function pushHist(type, msg) { console.log(`[${type}] ${msg}`); }
+function me(){ return state.user; }
+function isADM(){ return state.user.isADM; }
+function uid(){ return Math.random().toString(36).substr(2, 9); }
+function persist(){ console.log("Estado salvo."); }
+function renderAll(){ document.getElementById("saldoBlue").textContent = state.blue; }
+function pushHist(type,msg){ console.log(`[${type}] ${msg}`); }
 
-/* ----------------- MINER (JOGO IGUAL AO PRINT) ----------------- */
+/* ----------------- MINER ----------------- */
 let ice = Number(LS.get("ice_ice", 100));
-
 function setIce(v){
-    ice = Math.max(0, Math.min(100, v));
-    LS.set("ice_ice", ice);
-    document.getElementById("iceFill").style.width = ice + "%";
-    document.getElementById("iceText").textContent = "Gelo " + ice + "%";
+  ice = Math.max(0, Math.min(100, v));
+  LS.set("ice_ice", ice);
+  document.getElementById("iceFill").style.width = ice + "%";
+  document.getElementById("iceText").textContent = "Gelo " + ice + "%";
 }
-
-// Inicia o gelo
-setIce(ice);
-renderAll();
+setIce(ice); renderAll(); setBlue(state.blue);
 
 document.getElementById("mineBtn").onclick = ()=>{
-    const u = me();
-    if(!u) return alert("Entre primeiro.");
+  const u = me(); if(!u) return alert("Entre primeiro.");
+  if(!isADM()) return alert("Somente ADM pode iniciar o modo mineração.");
 
-    // Trava de ADM do código original
-    if(!isADM()) return alert("Somente ADM pode iniciar o modo mineração.");
+  const hit = 8 + Math.floor(Math.random()*12);
+  setIce(ice - hit);
 
-    const hit = 8 + Math.floor(Math.random()*12);
-    setIce(ice - hit);
+  const gain = 1 + Math.floor(Math.random()*3);
+  setBlue(getBlue()+gain);
 
-    const gain = 1 + Math.floor(Math.random()*3);
-    setBlue(getBlue()+gain);
+  pushHist("mining", `Urso quebrou ${hit}% do gelo • +${gain} BLUE`);
+  document.getElementById("mineMsg").textContent = `+${gain} BLUE • gelo agora ${ice}%`;
 
-    pushHist("mining", `Urso quebrou ${hit}% do gelo • +${gain} BLUE`);
-    document.getElementById("mineMsg").textContent = `+ ${gain} BLUE • gelo agora ${ice}%`;
-
-    if(ice<=0){
-        const bonus = 20;
-        setBlue(getBlue()+bonus);
-        pushHist("mining", `Bloco quebrado! Bônus: +${bonus} BLUE`);
-        setIce(100);
-        document.getElementById("mineMsg").textContent = "BLOCO QUEBRADO! +"+bonus+" BLUE (novo gelo 100%).";
-    }
-    persist(); renderAll();
+  if(ice<=0){
+    const bonus = 20;
+    setBlue(getBlue()+bonus);
+    pushHist("mining", `Bloco quebrado! Bônus: +${bonus} BLUE`);
+    setIce(100);
+    document.getElementById("mineMsg").textContent = `BLOCO QUEBRADO! +${bonus} BLUE (novo gelo 100%).`;
+  }
+  persist(); renderAll();
 };
 
-/* ----------------- ROLETA (GRANDE) ----------------- */
-const wheel = document.getElementById("wheel");
+/* ----------------- ROLETA CASSINO (0–36) ----------------- */
+/**
+ * Ordem europeia comum na roleta (um exemplo clássico):
+ * 0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30,
+ * 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7,
+ * 28, 12, 35, 3, 26
+ */
+const wheelNumbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+
+// Vermelhos padrão (europeu)
+const redSet = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+function getColor(n){
+  if(n === 0) return "green";
+  return redSet.has(n) ? "red" : "black";
+}
+
+const HOUSE_EDGE = 0.20; // 20% ganho da casa (temporário)
+const PAY_COLOR_PROFIT = 1 * (1 - HOUSE_EDGE);    // 0.8x lucro
+const PAY_NUMBER_PROFIT = 35 * (1 - HOUSE_EDGE);  // 28x lucro
+
+const canvas = document.getElementById("wheelCanvas");
+const ctx = canvas.getContext("2d");
+const lastNumberEl = document.getElementById("lastNumber");
+const lastColorEl = document.getElementById("lastColor");
+const rouletteMsg = document.getElementById("rouletteMsg");
 const spinBtn = document.getElementById("spinBtn");
-const roletaMsg = document.getElementById("roletaMsg");
-const lastPrize = document.getElementById("lastPrize");
-const spinCostText = document.getElementById("spinCostText");
+const betType = document.getElementById("betType");
+const betAmount = document.getElementById("betAmount");
+const betColor = document.getElementById("betColor");
+const betNumber = document.getElementById("betNumber");
+const pickerColor = document.getElementById("pickerColor");
+const pickerNumber = document.getElementById("pickerNumber");
+const soundOn = document.getElementById("soundOn");
 
-const SPIN_COST = 3; // custo do giro (mude aqui)
-spinCostText.textContent = SPIN_COST;
+betType.onchange = ()=>{
+  const t = betType.value;
+  if(t === "color"){
+    pickerColor.style.display = "";
+    pickerNumber.style.display = "none";
+  } else {
+    pickerColor.style.display = "none";
+    pickerNumber.style.display = "";
+  }
+};
 
-// Fatias (8 fatias combinando com o conic-gradient acima)
-const segments = [
-  { label: "0",  prize: 0,  weight: 30, color: "azul" },
-  { label: "1",  prize: 1,  weight: 22, color: "escuro" },
-  { label: "2",  prize: 2,  weight: 18, color: "azul claro" },
-  { label: "5",  prize: 5,  weight: 12, color: "escuro" },
-  { label: "10", prize: 10, weight: 9,  color: "verde" },
-  { label: "2",  prize: 2,  weight: 5,  color: "escuro" },
-  { label: "20", prize: 20, weight: 3,  color: "vermelho" },
-  { label: "1",  prize: 1,  weight: 1,  color: "escuro" }
-];
+document.getElementById("oddsBtn").onclick = ()=>{
+  alert(
+    "CASA 20% (temporário)\n\n" +
+    "Aposta em COR:\n" +
+    "• Se acertar, lucro = 0,8x do valor.\n\n" +
+    "Aposta em NÚMERO:\n" +
+    "• Se acertar, lucro = 28x do valor.\n\n" +
+    "Exemplo COR (10): paga 10 + 8\nExemplo NÚMERO (10): paga 10 + 280"
+  );
+};
 
+let audioCtx = null;
+function ensureAudio(){
+  if(soundOn.value === "off") return null;
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+function beep(freq, dur=0.06, type="sine", vol=0.06){
+  const ac = ensureAudio();
+  if(!ac) return;
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = vol;
+  o.connect(g); g.connect(ac.destination);
+  o.start();
+  o.stop(ac.currentTime + dur);
+}
+function tickSound(){
+  beep(900, 0.02, "square", 0.03);
+}
+function winSound(){
+  beep(880, 0.08, "sine", 0.08);
+  setTimeout(()=>beep(1175, 0.09, "sine", 0.08), 90);
+  setTimeout(()=>beep(1568, 0.10, "sine", 0.08), 190);
+}
+function loseSound(){
+  beep(220, 0.12, "sawtooth", 0.05);
+  setTimeout(()=>beep(165, 0.14, "sawtooth", 0.05), 120);
+}
+
+// Draw wheel
+const W = canvas.width, H = canvas.height;
+const cx = W/2, cy = H/2;
+const outerR = Math.min(W,H) * 0.48;
+const innerR = Math.min(W,H) * 0.20;
+const segCount = wheelNumbers.length;
+const segAngle = (Math.PI * 2) / segCount;
+
+function drawWheel(rotation=0){
+  ctx.clearRect(0,0,W,H);
+
+  // felt background
+  const bg = ctx.createRadialGradient(cx,cy, 20, cx,cy, outerR*1.1);
+  bg.addColorStop(0, "rgba(56,189,248,0.10)");
+  bg.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.arc(cx,cy, outerR*1.1, 0, Math.PI*2); ctx.fill();
+
+  // segments
+  for(let i=0;i<segCount;i++){
+    const n = wheelNumbers[i];
+    const col = getColor(n);
+    const start = rotation + i*segAngle;
+    const end = start + segAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy, outerR, start, end);
+    ctx.closePath();
+
+    if(col==="green") ctx.fillStyle = "#16a34a";
+    else if(col==="red") ctx.fillStyle = "#ef4444";
+    else ctx.fillStyle = "#0b1220";
+    ctx.fill();
+
+    // segment border
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // number text
+    const mid = (start+end)/2;
+    const tx = cx + Math.cos(mid) * (outerR*0.80);
+    const ty = cy + Math.sin(mid) * (outerR*0.80);
+
+    ctx.save();
+    ctx.translate(tx,ty);
+    ctx.rotate(mid + Math.PI/2);
+    ctx.fillStyle = (col==="black") ? "#e9f5ff" : "#061727";
+    if(col==="green") ctx.fillStyle = "#061727";
+    ctx.font = "bold 26px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(n), 0, 0);
+    ctx.restore();
+  }
+
+  // inner ring
+  ctx.beginPath();
+  ctx.arc(cx,cy, innerR*1.15, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(6,23,39,0.85)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,215,0,0.35)";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // small rivets
+  for(let k=0;k<24;k++){
+    const a = rotation + k*(Math.PI*2/24);
+    const rx = cx + Math.cos(a)*(outerR*0.95);
+    const ry = cy + Math.sin(a)*(outerR*0.95);
+    ctx.beginPath();
+    ctx.arc(rx,ry, 4, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.fill();
+  }
+
+  // center coin
+  ctx.beginPath();
+  ctx.arc(cx,cy, innerR*0.92, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(255,215,0,0.18)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(56,189,248,0.25)";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffd700";
+  ctx.font = "900 34px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("BLUE", cx, cy);
+}
+
+let rot = Number(LS.get("roulette_rot", 0));
+drawWheel(rot);
+
+function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+
+function normalizeAngle(a){
+  const two = Math.PI*2;
+  a = a % two;
+  if(a < 0) a += two;
+  return a;
+}
+
+/**
+ * O ponteiro está no topo (-90°). Vamos calcular qual segmento está no topo.
+ * No canvas, 0 rad aponta para a direita. Topo = -PI/2.
+ */
+function getWinningNumber(rotation){
+  const pointerAngle = -Math.PI/2;
+
+  // ângulo "visto" no mundo do wheel:
+  // cada segmento começa em rotation + i*segAngle
+  // precisamos achar i tal que o meio do segmento esteja no pointerAngle.
+  const a = normalizeAngle(pointerAngle - rotation); // ângulo relativo no wheel
+  const idx = Math.floor(a / segAngle);
+  return wheelNumbers[idx];
+}
+
+/* Confetti */
+const confettiCanvas = document.getElementById("confetti");
+const cctx = confettiCanvas.getContext("2d");
+let confettiParticles = [];
+function resizeConfetti(){
+  confettiCanvas.width = window.innerWidth * devicePixelRatio;
+  confettiCanvas.height = window.innerHeight * devicePixelRatio;
+}
+window.addEventListener("resize", resizeConfetti);
+resizeConfetti();
+
+function launchConfetti(){
+  confettiCanvas.style.display = "block";
+  confettiParticles = [];
+  const count = 160;
+  for(let i=0;i<count;i++){
+    confettiParticles.push({
+      x: (Math.random()*confettiCanvas.width),
+      y: -20 * devicePixelRatio,
+      vx: (Math.random()*2-1) * 5 * devicePixelRatio,
+      vy: (Math.random()*2+2) * 6 * devicePixelRatio,
+      r: (Math.random()*6+3) * devicePixelRatio,
+      a: Math.random()*Math.PI*2,
+      va: (Math.random()*0.2-0.1),
+      life: 120 + Math.random()*60
+    });
+  }
+  let frames = 0;
+  function step(){
+    frames++;
+    cctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+    for(const p of confettiParticles){
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.12 * devicePixelRatio;
+      p.a += p.va;
+      p.life -= 1;
+
+      cctx.save();
+      cctx.translate(p.x,p.y);
+      cctx.rotate(p.a);
+      cctx.fillStyle = `hsla(${(p.x/10)%360}, 90%, 60%, 0.95)`;
+      cctx.fillRect(-p.r, -p.r, p.r*2, p.r*2);
+      cctx.restore();
+    }
+    confettiParticles = confettiParticles.filter(p=>p.life>0 && p.y < confettiCanvas.height + 50*devicePixelRatio);
+    if(frames < 160 && confettiParticles.length){
+      requestAnimationFrame(step);
+    } else {
+      cctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
+      confettiCanvas.style.display = "none";
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+/* Spin */
 let spinning = false;
-let currentRotation = Number(LS.get("wheel_rot", 0));
-wheel.style.transform = `rotate(${currentRotation}deg)`;
+let lastTickIndex = -1;
 
-function pickWeighted(list){
-  const total = list.reduce((a,b)=>a+b.weight,0);
-  let r = Math.random() * total;
-  for(const item of list){
-    r -= item.weight;
-    if(r <= 0) return item;
-  }
-  return list[list.length-1];
+function setLastResult(n){
+  lastNumberEl.textContent = String(n);
+  const col = getColor(n);
+  if(col === "red") lastColorEl.textContent = "vermelho";
+  else if(col === "black") lastColorEl.textContent = "preto";
+  else lastColorEl.textContent = "verde (0)";
 }
 
-// 8 segmentos => cada um 45 graus
-const SEG_ANGLE = 360 / 8;
+function validateBet(){
+  const amt = Math.floor(Number(betAmount.value));
+  if(!amt || amt < 1) return { ok:false, msg:"Digite um valor de aposta válido." };
+  if(getBlue() < amt) return { ok:false, msg:"Sem saldo para essa aposta." };
 
-// a ponta fica no topo (0deg). Precisamos alinhar o "meio" do segmento na ponta.
-function angleForIndex(i){
-  // Segmentos no conic-gradient começam no 0deg e vão em ordem.
-  // Para cair no segmento i, fazemos o topo apontar para o centro dele:
-  const center = (i * SEG_ANGLE) + (SEG_ANGLE/2);
-  // Como a roleta gira, queremos que o centro vá pro topo => rotação negativa do center.
-  return 360 - center;
-}
-
-function showPrize(p){
-  lastPrize.textContent = p === 0 ? "0" : `+${p}`;
-  if(p === 0){
-    roletaMsg.textContent = "😬 Deu 0… tenta de novo!";
-  }else{
-    roletaMsg.textContent = `🎉 Você ganhou +${p} BLUE!`;
+  const type = betType.value;
+  if(type === "number"){
+    const n = Number(betNumber.value);
+    if(!Number.isInteger(n) || n < 0 || n > 36) return { ok:false, msg:"Escolha um número de 0 a 36." };
   }
+  return { ok:true, amt };
 }
 
 spinBtn.onclick = ()=>{
-  const u = me();
-  if(!u) return alert("Entre primeiro.");
+  const u = me(); if(!u) return alert("Entre primeiro.");
   if(spinning) return;
 
-  if(getBlue() < SPIN_COST) return alert("Sem saldo para girar a roleta.");
+  // iOS/Android: precisa de gesto para iniciar audio
+  ensureAudio();
 
-  // desconta o custo antes
-  setBlue(getBlue() - SPIN_COST);
-  pushHist("roleta", `Giro -${SPIN_COST} BLUE`);
+  const v = validateBet();
+  if(!v.ok) return alert(v.msg);
+
+  const stake = v.amt;
+  const type = betType.value;
+  const pickCol = betColor.value;
+  const pickNum = Math.floor(Number(betNumber.value));
+
+  // desconta aposta no começo
+  setBlue(getBlue() - stake);
+  pushHist("roleta", `Aposta -${stake} BLUE (${type})`);
 
   spinning = true;
   spinBtn.disabled = true;
-  roletaMsg.textContent = "Girando... 🎰";
+  rouletteMsg.textContent = "Girando... 🎰";
 
-  const chosen = pickWeighted(segments);
-  const idx = segments.indexOf(chosen);
+  const duration = 5200 + Math.random()*600; // 5.2s ~ 5.8s
+  const startTime = performance.now();
 
-  // várias voltas + ajuste fino pro índice
-  const extraTurns = 6 + Math.floor(Math.random()*4); // 6 a 9 voltas
-  const target = (extraTurns * 360) + angleForIndex(idx);
+  // gira várias voltas e termina em um alvo aleatório (resultado “justo”)
+  const targetNumber = wheelNumbers[Math.floor(Math.random()*wheelNumbers.length)];
 
-  currentRotation = (currentRotation + target) % 360000; // grande só pra não “pular”
-  wheel.style.transform = `rotate(${currentRotation}deg)`;
-  LS.set("wheel_rot", currentRotation);
+  // descobrir o índice do target no wheel
+  const targetIdx = wheelNumbers.indexOf(targetNumber);
 
-  // quando termina animação
-  setTimeout(()=>{
-    // paga prêmio
-    if(chosen.prize > 0){
-      setBlue(getBlue() + chosen.prize);
-      pushHist("roleta", `Prêmio +${chosen.prize} BLUE`);
-    }else{
-      pushHist("roleta", `Prêmio 0 BLUE`);
+  // Queremos que o segmento do target fique no topo.
+  // Segmento idx começa em rot + idx*segAngle. Para cair no topo, precisamos que:
+  // pointerAngle (-PI/2) esteja dentro desse segmento.
+  // Vamos posicionar o MEIO do segmento no topo:
+  const pointerAngle = -Math.PI/2;
+  const segmentMid = (targetIdx + 0.5) * segAngle;
+  const finalRotBase = pointerAngle - segmentMid;
+
+  // Adiciona voltas extras
+  const extraTurns = (8 + Math.floor(Math.random()*5)) * Math.PI*2; // 8 a 12 voltas
+  const fromRot = rot;
+  const toRot = finalRotBase - extraTurns;
+
+  // reset tick
+  lastTickIndex = -1;
+
+  function anim(now){
+    const t = Math.min(1, (now - startTime)/duration);
+    const e = easeOutCubic(t);
+    rot = fromRot + (toRot - fromRot) * e;
+    drawWheel(rot);
+
+    // tick conforme cruza segmentos (sensação de bola batendo)
+    const win = getWinningNumber(rot);
+    const idx = wheelNumbers.indexOf(win);
+    if(idx !== lastTickIndex){
+      lastTickIndex = idx;
+      tickSound();
     }
 
-    showPrize(chosen.prize);
+    if(t < 1){
+      requestAnimationFrame(anim);
+    } else {
+      // fixa resultado
+      LS.set("roulette_rot", String(rot));
+      const result = getWinningNumber(rot);
+      setLastResult(result);
 
-    spinning = false;
-    spinBtn.disabled = false;
-    persist(); renderAll();
-  }, 4200);
+      // calcula ganho
+      let won = false;
+      let profit = 0;
+
+      if(type === "color"){
+        const rc = getColor(result);
+        if((pickCol === "red" && rc==="red") || (pickCol === "black" && rc==="black")){
+          won = true;
+          profit = Math.floor(stake * PAY_COLOR_PROFIT);
+        }
+      } else {
+        if(result === pickNum){
+          won = true;
+          profit = Math.floor(stake * PAY_NUMBER_PROFIT);
+        }
+      }
+
+      if(won){
+        // devolve stake + lucro
+        setBlue(getBlue() + stake + profit);
+        rouletteMsg.textContent = `✅ Você ganhou! Resultado: ${result} • +${profit} BLUE (casa 20%).`;
+        pushHist("roleta", `WIN resultado ${result} • +${profit} BLUE`);
+        winSound();
+        launchConfetti();
+      } else {
+        rouletteMsg.textContent = `❌ Você perdeu. Resultado: ${result}.`;
+        pushHist("roleta", `LOSE resultado ${result}`);
+        loseSound();
+      }
+
+      spinning = false;
+      spinBtn.disabled = false;
+      persist(); renderAll();
+    }
+  }
+  requestAnimationFrame(anim);
 };
 
-// Modal de probabilidades
-const modalBack = document.getElementById("modalBack");
-const oddsBtn = document.getElementById("oddsBtn");
-const closeModal = document.getElementById("closeModal");
-const oddsList = document.getElementById("oddsList");
-
-function renderOdds(){
-  const total = segments.reduce((a,b)=>a+b.weight,0);
-  oddsList.innerHTML = segments.map(s=>{
-    const pct = ((s.weight/total)*100).toFixed(1);
-    const win = s.prize === 0 ? "0" : `+${s.prize} BLUE`;
-    return `<div class="line"><span>${win}</span><b>${pct}%</b></div>`;
-  }).join("");
-}
-oddsBtn.onclick = ()=>{ renderOdds(); modalBack.style.display="flex"; };
-closeModal.onclick = ()=>{ modalBack.style.display="none"; };
-modalBack.onclick = (e)=>{ if(e.target === modalBack) modalBack.style.display="none"; };
-
-/* ----------------- SAQUE (IGUAL AO PRINT) ----------------- */
+/* ----------------- SAQUE ----------------- */
 window.solicitarSaque = () => {
-    const v = Number(document.getElementById("saqueValor").value);
-    const u = me();
+  const v = Math.floor(Number(document.getElementById("saqueValor").value));
+  const u = me();
 
-    if(!v || v<1) return alert("Valor inválido.");
-    if(getBlue() < v) return alert("Sem saldo.");
+  if(!v || v < 1) return alert("Valor inválido.");
+  if(getBlue() < v) return alert("Sem saldo.");
 
-    setBlue(getBlue()-v);
+  setBlue(getBlue() - v);
 
-    state.withdrawals.unshift({
-        id:uid(),
-        user:u.user,
-        amount:v,
-        status:"pendente",
-        ts:Date.now()
-    });
+  state.withdrawals.unshift({ id: uid(), user: u.user, amount: v, status: "pendente", ts: Date.now() });
 
-    pushHist("saque", `Pedido de saque: -${v} BLUE (pendente)`);
-    document.getElementById("saqMsg").textContent = "Pedido enviado. ADM vai aprovar/recusar.";
+  pushHist("saque", `Pedido de saque: -${v} BLUE (pendente)`);
+  document.getElementById("saqMsg").textContent = "Pedido enviado. ADM vai aprovar/recusar.";
 
-    persist(); renderAll();
+  persist(); renderAll();
 };
 </script>
 
