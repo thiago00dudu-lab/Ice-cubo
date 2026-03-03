@@ -332,10 +332,15 @@
 
   <script>
     /***********************
-     *  1) COLE SUAS CHAVES AQUI
+     *  SUPABASE CONFIG (JÁ PREENCHIDO)
      ***********************/
-    const SUPABASE_URL = "COLE_AQUI_SUA_PROJECT_URL";
-    const SUPABASE_ANON_KEY = "COLE_AQUI_SUA_PUBLISHABLE_API_KEY";
+    const SUPABASE_URL = "https://whjomowgzoqmkcaepbgv.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_nBUkmMoalAqB0Ki8sSMFnw_UCX4fnMu";
+
+    if (!window.supabase) {
+      alert("Erro: não carregou o supabase-js. Verifique internet/CDN.");
+    }
+
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     /***********************
@@ -346,7 +351,8 @@
       current: "ice_current_v1",
       trade: "ice_trade_v1",
       posts: "ice_posts_v1",
-      admSession: "ice_adm_session_v1"
+      admSession: "ice_adm_session_v1",
+      supaAnon: "ice_supa_anon_ok_v1"
     };
 
     const ADMIN_PIN = "1533"; // não aparece na tela
@@ -410,6 +416,32 @@
         <text x='50%' y='56%' text-anchor='middle' font-size='28' font-family='sans-serif' fill='#${fg}' font-weight='900'>${initials}</text>
       </svg>`;
       return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    }
+
+    /***********************
+     *  SUPABASE: LOGIN ANÔNIMO (pra policy "authenticated" funcionar)
+     ***********************/
+    async function ensureSupabaseAnonAuth(){
+      try{
+        const { data: sess } = await supabase.auth.getSession();
+        if(sess && sess.session){
+          saveJSON(LS.supaAnon, { ok:true, t:Date.now() });
+          return true;
+        }
+        // tenta login anônimo (precisa habilitar no Supabase Auth)
+        const { error } = await supabase.auth.signInAnonymously();
+        if(error){
+          console.log("Anon auth error:", error);
+          saveJSON(LS.supaAnon, { ok:false, t:Date.now(), msg:String(error.message || error) });
+          return false;
+        }
+        saveJSON(LS.supaAnon, { ok:true, t:Date.now() });
+        return true;
+      }catch(e){
+        console.log("Anon auth exception:", e);
+        saveJSON(LS.supaAnon, { ok:false, t:Date.now(), msg:String(e) });
+        return false;
+      }
     }
 
     /***********************
@@ -493,6 +525,7 @@
     async function loadFeedFromServer(){
       try{
         $("#feedStatus").textContent = "Carregando feed...";
+
         const { data, error } = await supabase
           .from("posts")
           .select("*")
@@ -501,7 +534,7 @@
 
         if(error){
           console.log(error);
-          $("#feedStatus").textContent = "Erro no feed (ver chaves/policies).";
+          $("#feedStatus").textContent = "Erro no feed (chaves/policies).";
           toast("Erro ao carregar feed.");
           return;
         }
@@ -513,7 +546,7 @@
           role: p.role || "member",
           pic: p.pic || null,
           text: p.text || "",
-          media: null, // foto/vídeo no feed depois via Storage
+          media: null,
           t: new Date(p.created_at).getTime()
         }));
 
@@ -532,11 +565,9 @@
       const file = $("#postFile").files[0];
 
       if(file){
-        // Por enquanto não salvamos mídia no banco (vai pro Storage depois)
-        toast("Foto/vídeo no feed: eu ativo depois. Poste só texto agora.");
+        toast("Foto/vídeo no feed: ativo depois. Poste só texto agora.");
         return;
       }
-
       if(!text){
         toast("Escreva algo.");
         return;
@@ -552,7 +583,11 @@
 
       if(error){
         console.log(error);
-        toast("Erro ao publicar (veja policies).");
+
+        // dica de policy
+        toast("Não publicou. Provável RLS. Veja aviso no feedStatus.");
+        $("#feedStatus").textContent =
+          "POST BLOQUEADO (RLS): Se sua policy INSERT é só 'authenticated', habilite login anônimo no Supabase Auth OU crie policy INSERT para public.";
         return;
       }
 
@@ -843,24 +878,36 @@
     /***********************
      *  START
      ***********************/
-    seedIfEmpty();
-    applyRefFromHash();
+    (async function boot(){
+      seedIfEmpty();
+      applyRefFromHash();
 
-    (function ensureName(){
-      const me = getMe();
-      if(!me.name || me.name === "Você"){
-        const n = prompt("Seu nome (aparece no app):", "Jessica");
-        if(n && n.trim().length >= 2){
-          updateUser(me.id, { name: n.trim().slice(0,24) });
+      (function ensureName(){
+        const me = getMe();
+        if(!me.name || me.name === "Você"){
+          const n = prompt("Seu nome (aparece no app):", "Jessica");
+          if(n && n.trim().length >= 2){
+            updateUser(me.id, { name: n.trim().slice(0,24) });
+          }
         }
+      })();
+
+      showTela("tHome");
+
+      // tenta autenticar anonimamente
+      const ok = await ensureSupabaseAnonAuth();
+      if(!ok){
+        $("#feedStatus").textContent =
+          "Atenção: sem login anônimo. Se seu INSERT está 'authenticated only', vai bloquear postar.";
+        toast("Ative 'Anonymous sign-ins' no Supabase Auth (ou mude policy INSERT).");
+      } else {
+        toast("Supabase OK (anon auth).");
       }
+
+      // carrega feed
+      await loadFeedFromServer();
+      setInterval(loadFeedFromServer, 8000);
     })();
-
-    showTela("tHome");
-
-    // carrega do Supabase e atualiza sempre
-    loadFeedFromServer();
-    setInterval(loadFeedFromServer, 8000);
   </script>
 </body>
 </html>
