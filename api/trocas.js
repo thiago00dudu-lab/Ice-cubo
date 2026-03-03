@@ -1,35 +1,40 @@
-let STORE = globalThis.__ICE_STORE__;
-if (!STORE) STORE = globalThis.__ICE_STORE__ = { trocas: [], ofertas: [] };
+let STORE = global.__ICE_STORE__ || { trocas: [] };
+global.__ICE_STORE__ = STORE;
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") return res.status(200).json({ ok: true });
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
   if (req.method === "GET") {
-    const list = (STORE.trocas || []).slice().sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
-    return res.status(200).json(list);
+    return res.status(200).json(STORE.trocas);
   }
 
   if (req.method === "POST") {
-    const b = req.body || {};
-    if (!b.img) return res.status(400).json({ error: "Faltou img" });
+    const body = req.body || {};
 
-    const item = {
-      id: "T" + Date.now(),
-      userId: String(b.userId || ""),
-      userName: String(b.userName || "Usuário"),
-      userPic: String(b.userPic || ""),
-      text: String(b.text || "Troca disponível!"),
-      img: String(b.img || ""),
-      createdAt: Number(b.createdAt || Date.now()),
+    if (!body.img) {
+      return res.status(400).json({ error: "Imagem obrigatória" });
+    }
+
+    const nova = {
+      id: Date.now(),
+      userId: body.userId || "",
+      userName: body.userName || "Usuário",
+      userPic: body.userPic || "",
+      text: body.text || "",
+      img: body.img,
+      createdAt: Date.now()
     };
 
-    STORE.trocas.unshift(item);
-    return res.status(200).json({ ok: true, item });
+    STORE.trocas.unshift(nova);
+
+    return res.status(200).json({ ok: true });
   }
 
-  return res.status(405).json({ error: "Method not allowed" });
+  return res.status(405).json({ error: "Método não permitido" });
 }
