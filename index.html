@@ -1,158 +1,508 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>ICE BLUE</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICE BLUE</title>
 
-<style>
-:root{--ice:#00d4ff;--glass:rgba(255,255,255,.10);--danger:#ff4d6d;}
-body{margin:0;color:#fff;font-family:sans-serif;min-height:100vh;padding-bottom:90px;background:linear-gradient(180deg,#001b2e 0%,#003b66 45%,#00121f 100%);}
-.header{background:#000a;padding:12px;text-align:center;border-bottom:2px solid var(--ice);font-weight:900;font-size:24px;}
-.card{background:var(--glass);backdrop-filter:blur(12px);margin:15px;padding:15px;border-radius:15px;border:1px solid #ffffff22;}
-.btn{background:var(--ice);color:#000;border:none;padding:12px;border-radius:10px;width:100%;margin-top:10px;font-weight:900;}
-.btn-ghost{background:#ffffff22;color:#fff;border:1px solid #ffffff33;padding:12px;border-radius:10px;width:100%;margin-top:10px;}
-textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #ffffff22;background:#0006;color:#fff;}
-.nav{position:fixed;bottom:0;width:100%;background:#000;padding:12px;display:flex;justify-content:space-around;border-top:1px solid var(--ice);}
-.nav div{cursor:pointer;}
-.tela{display:none;}
-img{max-width:100%;border-radius:12px;}
-</style>
+  <style>
+    :root{ --ice:#00d4ff; --glass:rgba(255,255,255,.10); --danger:#ff4d6d; --ok:#2ecc71; }
+    body{
+      margin:0; color:#fff; font-family:sans-serif;
+      min-height:100vh; padding-bottom:90px; overflow-x:hidden;
+      background: linear-gradient(180deg, #001b2e 0%, #003b66 45%, #00121f 100%);
+    }
+    .header-ice{
+      background:rgba(0,0,0,.70); backdrop-filter:blur(10px);
+      padding:10px; border-bottom:2px solid var(--ice);
+      position:sticky; top:0; z-index:1001; text-align:center;
+    }
+    .title{ font-weight:1000; font-size:28px; letter-spacing:1px; }
+    .mini{ font-size:12px; opacity:.85; margin-top:6px; line-height:1.3; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.35);
+      font-size:12px;
+    }
+    .pill.ice{ border-color:rgba(0,212,255,.45); color:#bff6ff; }
+    .pill.ok{ border-color:rgba(46,204,113,.45); color:#c9ffe0; }
+    .pill.danger{ border-color:rgba(255,77,109,.55); color:#ffd1da; }
+
+    #notif{
+      position:fixed; top:-120px; left:50%; transform:translateX(-50%);
+      background:var(--ice); color:#000; padding:12px 14px; border-radius:14px;
+      z-index:3000; transition:.45s; font-weight:900; width:86%; text-align:center;
+      box-shadow:0 10px 40px rgba(0,0,0,.35);
+    }
+    .card{
+      background:var(--glass); backdrop-filter:blur(12px);
+      border-radius:15px; margin:15px; padding:15px;
+      border:1px solid rgba(255,255,255,.12);
+      position:relative; z-index:2;
+    }
+    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .u-pic{ width:44px; height:44px; border-radius:50%; border:1.5px solid var(--ice); object-fit:cover; background:rgba(0,0,0,.25); }
+    .u-name{ font-weight:900; display:flex; align-items:center; gap:8px; }
+    .u-sub{ font-size:12px; opacity:.8; margin-top:2px; }
+
+    .tela{ display:none; animation:fade .25s; }
+    @keyframes fade{ from{opacity:0} to{opacity:1} }
+
+    .btn-blue{
+      background:var(--ice); color:#000; font-weight:1000;
+      border:none; padding:12px; border-radius:10px;
+      width:100%; cursor:pointer; margin-top:10px;
+    }
+    .btn-ghost{
+      background:rgba(255,255,255,.12); color:#fff;
+      border:1px solid rgba(255,255,255,.20);
+      padding:12px; border-radius:10px;
+      width:100%; cursor:pointer; margin-top:10px;
+    }
+    .btn-danger{
+      background:rgba(255,77,109,.18); color:#fff; font-weight:1000;
+      border:1px solid rgba(255,77,109,.45);
+      padding:12px; border-radius:10px; width:100%; cursor:pointer; margin-top:10px;
+    }
+    textarea, input[type="text"]{
+      background:rgba(0,0,0,.35); color:#fff;
+      border:1px solid rgba(255,255,255,.15);
+      border-radius:10px; padding:10px; outline:none;
+      width:100%; box-sizing:border-box;
+    }
+    input[type="file"]{ color:#fff; width:100%; }
+
+    .row{ display:flex; gap:10px; }
+    .col{ flex:1; }
+    @media (max-width:720px){ .row{flex-direction:column;} }
+
+    .nav{
+      position:fixed; bottom:0; width:100%;
+      background:rgba(0,0,0,.92);
+      display:flex; justify-content:space-around;
+      padding:12px 0; border-top:1px solid var(--ice);
+      z-index:1000;
+    }
+    .nav-item{ color:#8ef; text-align:center; font-size:10px; cursor:pointer; flex:1; user-select:none; }
+    .nav-item span{ font-size:22px; display:block; }
+    .nav-item.active{ color:#fff; }
+
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.65);
+      display:none; z-index:2500;
+      align-items:flex-end; justify-content:center;
+      backdrop-filter:blur(8px);
+    }
+    .sheet{
+      width:100%; max-width:680px;
+      background:rgba(0,0,0,.88);
+      border-top:1px solid rgba(0,212,255,.35);
+      border-radius:16px 16px 0 0;
+      padding:14px; box-sizing:border-box;
+    }
+    .divider{ height:1px; background:rgba(255,255,255,.12); margin:12px 0; }
+    .linkbox{
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px; padding:10px;
+      word-break:break-all;
+    }
+    .muted{ opacity:.85; }
+    .center{ text-align:center; }
+  </style>
 </head>
 
 <body>
+  <div id="notif">OK</div>
 
-<div class="header">ICE BLUE</div>
+  <div class="header-ice">
+    <div class="title">ICE BLUE</div>
+    <div class="mini">
+      ID: <span class="mono" id="myIdTop">—</span><br/>
+      Permissão:
+      <span class="pill ice" id="myRolePill">MEMBRO</span>
+    </div>
+  </div>
 
-<section id="home" class="tela">
-<div class="card">
-<button class="btn" id="novo">➕ Criar Post</button>
-<button class="btn-ghost" id="atualizar">🔄 Atualizar Feed</button>
-</div>
-<div id="feed"></div>
-</section>
+  <!-- HOME -->
+  <section id="tHome" class="tela">
+    <div class="card">
+      <div class="post-head">
+        <img class="u-pic" id="mePicHome" alt="foto" />
+        <div>
+          <div class="u-name" id="meNameHome">Seu Perfil</div>
+          <div class="u-sub muted" id="feedStatus">Clique em “Atualizar feed”</div>
+        </div>
+      </div>
+      <button class="btn-blue" id="btnNovoPost">➕ Criar postagem</button>
+      <button class="btn-ghost" id="btnAtualizarFeed">🔄 Atualizar feed</button>
+    </div>
+    <div id="feed"></div>
+  </section>
 
-<section id="perfil" class="tela">
-<div class="card">
-<div id="meuNome" style="font-weight:900;font-size:20px;"></div>
-<div id="meuId" style="font-size:12px;opacity:.8;"></div>
-<button class="btn-ghost" id="trocarFoto">Trocar Foto</button>
-<input type="file" id="fileFoto" accept="image/*" style="display:none"/>
-<button class="btn-ghost" id="resetar">Resetar Local</button>
-</div>
-</section>
+  <!-- TROCAS -->
+  <section id="tTrocas" class="tela">
+    <div class="card">
+      <div style="font-weight:1000; font-size:18px;">🔁 Troca 1 vs 1</div>
+      <div class="mini muted">No celular: use imagem leve (até ~900KB) pra não travar.</div>
+      <div class="divider"></div>
 
-<div class="nav">
-<div onclick="mostrar('home')">🏠</div>
-<div onclick="mostrar('perfil')">👤</div>
-</div>
+      <div class="row">
+        <div class="col">
+          <div class="pill ice">Seu lado</div>
+          <div style="height:10px"></div>
+          <input type="file" id="fileA" accept="image/*" />
+          <div style="height:10px"></div>
+          <textarea id="descA" rows="4" placeholder="Descreva o que você oferece..."></textarea>
+          <button class="btn-blue" id="saveA">Salvar meu item</button>
+          <div style="height:10px"></div>
+          <div id="previewA" class="linkbox muted">Nenhum item ainda.</div>
+        </div>
 
-<div id="modal" style="display:none;position:fixed;inset:0;background:#000a;padding:20px;">
-<div class="card">
-<textarea id="texto" rows="4" placeholder="Escreva algo..."></textarea>
-<button class="btn" id="publicar">Publicar</button>
-<button class="btn-ghost" onclick="fechar()">Fechar</button>
-</div>
-</div>
+        <div class="col">
+          <div class="pill ok">Outro usuário</div>
+          <div style="height:10px"></div>
+          <input type="file" id="fileB" accept="image/*" />
+          <div style="height:10px"></div>
+          <textarea id="descB" rows="4" placeholder="O que você oferece em troca?"></textarea>
+          <button class="btn-ghost" id="saveB">Publicar como outro usuário</button>
+          <div style="height:10px"></div>
+          <div id="previewB" class="linkbox muted">Vazio (aguardando alguém).</div>
+        </div>
+      </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <button class="btn-danger" id="clearTroca">🧹 Limpar Troca</button>
+    </div>
+  </section>
 
-<script>
-const SUPABASE_URL = "https://whjomowgzoukmcaepbgv.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_nBUkmMoalAqB0Ki8sSMFnw_UCX4fnMu";
+  <!-- PERFIL -->
+  <section id="tPerfil" class="tela">
+    <div class="card center">
+      <img class="u-pic" id="mePic" style="width:78px;height:78px;border-width:2px" alt="foto" />
+      <div style="height:10px"></div>
+      <div style="font-weight:1000; font-size:34px;" id="meTitle">Seu Perfil</div>
+      <div class="mini muted">
+        Seu ID: <span class="mono" id="myId">—</span>
+      </div>
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      <button class="btn-ghost" id="btnTrocarFoto">Trocar Foto</button>
+      <input type="file" id="fileFoto" accept="image/*" style="display:none" />
 
-function mostrar(id){
-document.querySelectorAll(".tela").forEach(t=>t.style.display="none");
-document.getElementById(id).style.display="block";
-}
+      <button class="btn-danger" id="btnReset">Resetar (zerar) dados locais</button>
+    </div>
+  </section>
 
-mostrar("home");
+  <!-- MODAL NOVO POST -->
+  <div class="overlay" id="ovPost">
+    <div class="sheet">
+      <div style="display:flex; gap:10px; align-items:center; justify-content:space-between;">
+        <div>
+          <div style="font-weight:1000; font-size:18px;">➕ Nova postagem</div>
+          <div class="mini muted">Texto apenas pra não travar.</div>
+        </div>
+        <button class="btn-ghost" id="closePost" style="margin-top:0; width:120px;">Fechar</button>
+      </div>
 
-function rand(){
-return "ICE-"+Math.random().toString(36).substring(2,8).toUpperCase();
-}
+      <div style="height:10px"></div>
+      <textarea id="postText" rows="4" placeholder="Escreva algo..."></textarea>
+      <button class="btn-blue" id="publishPost">Publicar</button>
+    </div>
+  </div>
 
-let me = JSON.parse(localStorage.getItem("me"));
-if(!me){
-me={id:rand(),name:prompt("Seu nome:","Jessica")||"Você",pic:null};
-localStorage.setItem("me",JSON.stringify(me));
-}
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-item" data-go="tHome"><span>🏠</span>Home</div>
+    <div class="nav-item" data-go="tTrocas"><span>🔁</span>Trocas</div>
+    <div class="nav-item" data-go="tPerfil"><span>👤</span>Perfil</div>
+  </nav>
 
-function renderPerfil(){
-document.getElementById("meuNome").innerText=me.name;
-document.getElementById("meuId").innerText=me.id;
-}
+  <!-- SUPABASE -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-renderPerfil();
+  <script>
+    // ======= SUPABASE (já com os seus dados) =======
+    const SUPABASE_URL = "https://whjomowgzoukmcaepbgv.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_nBUkmMoalAqB0Ki8sSMFnw_UCX4fnMu";
 
-async function auth(){
-const {data}=await supabase.auth.getSession();
-if(!data.session){
-await supabase.auth.signInAnonymously();
-}
-}
+    const $ = (q)=>document.querySelector(q);
+    const $$ = (q)=>Array.from(document.querySelectorAll(q));
 
-async function carregar(){
-await auth();
-const {data,error}=await supabase.from("posts").select("*").order("created_at",{ascending:false});
-if(error){alert("Erro RLS/Policy");return;}
-const feed=document.getElementById("feed");
-feed.innerHTML="";
-(data||[]).forEach(p=>{
-feed.innerHTML+=`
-<div class="card">
-<b>${p.name}</b><br/>
-${p.text}
-</div>`;
-});
-}
+    function toast(msg){
+      const n = $("#notif");
+      n.textContent = msg;
+      n.style.top = "14px";
+      setTimeout(()=> n.style.top = "-120px", 1700);
+    }
 
-document.getElementById("atualizar").onclick=carregar;
+    // init supabase sem quebrar a tela
+    let supabase = null;
+    try{
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }catch(e){
+      console.log(e);
+      toast("Supabase: erro no client.");
+    }
 
-document.getElementById("novo").onclick=()=>{
-document.getElementById("modal").style.display="block";
-}
+    // ======= LOCAL STORAGE =======
+    const LS = { me:"ice_me_v2", trade:"ice_trade_v2", posts:"ice_posts_v2" };
 
-function fechar(){
-document.getElementById("modal").style.display="none";
-}
+    function randId(){
+      const a="ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+      let s="ICE-";
+      for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)];
+      s+="-";
+      for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)];
+      return s;
+    }
+    function loadJSON(k,f){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):f; }catch(e){ return f; } }
+    function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 
-document.getElementById("publicar").onclick=async()=>{
-await auth();
-const texto=document.getElementById("texto").value.trim();
-if(!texto)return alert("Escreva algo");
-const {error}=await supabase.from("posts").insert([{name:me.name,text:texto}]);
-if(error){alert("POST BLOQUEADO - veja policy");return;}
-document.getElementById("texto").value="";
-fechar();
-carregar();
-}
+    function avatarFallback(name){
+      const bg="001d3d", fg="bff6ff";
+      const initials=(name||"U").trim().split(/\s+/).slice(0,2).map(s=>s[0].toUpperCase()).join("").slice(0,2) || "U";
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'>
+        <rect width='100%' height='100%' rx='40' ry='40' fill='#${bg}'/>
+        <text x='50%' y='56%' text-anchor='middle' font-size='28' font-family='sans-serif' fill='#${fg}' font-weight='900'>${initials}</text>
+      </svg>`;
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    }
 
-document.getElementById("trocarFoto").onclick=()=>document.getElementById("fileFoto").click();
+    // ======= PERFIL =======
+    let me = loadJSON(LS.me, null);
+    if(!me){
+      const nome = prompt("Seu nome (vai aparecer no feed):", "Jessica") || "Você";
+      me = { id: randId(), name: nome.trim().slice(0,24), role:"member", pic:null };
+      saveJSON(LS.me, me);
+    }
 
-document.getElementById("fileFoto").onchange=async(e)=>{
-const file=e.target.files[0];
-if(!file)return;
-if(file.size>900*1024){alert("Imagem muito pesada");return;}
-const reader=new FileReader();
-reader.onload=()=>{
-me.pic=reader.result;
-localStorage.setItem("me",JSON.stringify(me));
-};
-reader.readAsDataURL(file);
-}
+    function renderMe(){
+      $("#myIdTop").textContent = me.id;
+      $("#myRolePill").textContent = (me.role==="admin"?"ADM":me.role==="mod"?"MOD":"MEMBRO");
+      $("#meNameHome").textContent = me.name;
+      $("#mePicHome").src = me.pic || avatarFallback(me.name);
 
-document.getElementById("resetar").onclick=()=>{
-localStorage.clear();
-location.reload();
-}
+      $("#myId").textContent = me.id;
+      $("#meTitle").textContent = me.name;
+      $("#mePic").src = me.pic || avatarFallback(me.name);
+    }
 
-document.addEventListener("DOMContentLoaded",()=>{
-document.getElementById("feed").innerHTML='<div class="card">Clique em Atualizar Feed</div>';
-});
-</script>
+    // ======= NAV / TELAS (isso evita sumir tudo) =======
+    function showTela(id){
+      $$(".tela").forEach(t => t.style.display = "none");
+      const el = $("#"+id);
+      if(el) el.style.display = "block";
+      $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.go === id));
+      window.scrollTo({top:0, behavior:"smooth"});
+      renderMe();
+      if(id==="tTrocas") renderTroca();
+      if(id==="tHome") renderFeedLocalOnly();
+    }
+    $$(".nav-item").forEach(n => n.addEventListener("click", ()=> showTela(n.dataset.go)));
 
+    // ======= AUTH ANÔNIMO (se não ativar no Supabase, a tela NÃO trava) =======
+    async function ensureAnonAuth(){
+      if(!supabase) return false;
+      try{
+        const { data } = await supabase.auth.getSession();
+        if(data && data.session) return true;
+        const { error } = await supabase.auth.signInAnonymously();
+        if(error){
+          console.log(error);
+          toast("Ative Anonymous em Auth → Providers.");
+          return false;
+        }
+        return true;
+      }catch(e){
+        console.log(e);
+        toast("Erro no Auth.");
+        return false;
+      }
+    }
+
+    // ======= FEED =======
+    function escapeHtml(str){
+      return (str||"")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function renderFeedLocalOnly(){
+      const feed = $("#feed");
+      const posts = loadJSON(LS.posts, []);
+      if(!posts.length){
+        feed.innerHTML = `<div class="card muted">Clique em “Atualizar feed”.</div>`;
+        return;
+      }
+      feed.innerHTML = posts.map(p=>`
+        <div class="card">
+          <div class="post-head">
+            <img class="u-pic" src="${p.pic || avatarFallback(p.name)}" alt="foto" />
+            <div>
+              <div class="u-name">${escapeHtml(p.name||"Anon")}</div>
+              <div class="u-sub muted">${new Date(p.t).toLocaleString("pt-BR")}</div>
+            </div>
+          </div>
+          <div style="font-size:15px;line-height:1.35;">${escapeHtml(p.text||"")}</div>
+        </div>
+      `).join("");
+    }
+
+    async function loadFeedFromServer(){
+      $("#feedStatus").textContent = "Carregando...";
+      if(!supabase){
+        $("#feedStatus").textContent = "Supabase não carregou.";
+        toast("Supabase não carregou.");
+        return;
+      }
+
+      const ok = await ensureAnonAuth();
+      if(!ok){
+        $("#feedStatus").textContent = "Auth bloqueado (Anonymous).";
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending:false })
+        .limit(60);
+
+      if(error){
+        console.log(error);
+        $("#feedStatus").textContent = "Bloqueado por RLS/Policy.";
+        toast("RLS/Policy bloqueou.");
+        return;
+      }
+
+      const posts = (data||[]).map(p=>({
+        name: p.name || "Anon",
+        text: p.text || "",
+        pic: p.pic || null,
+        t: new Date(p.created_at).getTime()
+      }));
+
+      saveJSON(LS.posts, posts);
+      renderFeedLocalOnly();
+      $("#feedStatus").textContent = "Feed online (ok)";
+      toast("Feed atualizado!");
+    }
+
+    async function publishPost(){
+      const text = ($("#postText").value || "").trim();
+      if(!text){ toast("Escreva algo."); return; }
+
+      if(!supabase){ toast("Supabase não carregou."); return; }
+
+      const ok = await ensureAnonAuth();
+      if(!ok) return;
+
+      const { error } = await supabase.from("posts").insert([{
+        name: me.name,
+        pic: me.pic,
+        text
+      }]);
+
+      if(error){
+        console.log(error);
+        toast("POST BLOQUEADO (Policy).");
+        return;
+      }
+
+      $("#postText").value = "";
+      $("#ovPost").style.display = "none";
+      toast("Postado!");
+      await loadFeedFromServer();
+    }
+
+    // ======= TROCAS (LOCAL) =======
+    function getTrade(){ return loadJSON(LS.trade, {A:null,B:null}); }
+    function setTrade(v){ saveJSON(LS.trade, v); }
+
+    async function fileToDataURL(file){
+      return new Promise((res, rej)=>{
+        const r = new FileReader();
+        r.onload = ()=> res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+
+    function renderTroca(){
+      const t = getTrade();
+      $("#previewA").innerHTML = t.A ? `
+        <div class="muted" style="margin-bottom:8px;">${escapeHtml(t.A.desc||"")}</div>
+        ${t.A.img ? `<img src="${t.A.img}" alt="img"/>` : "<span class='muted'>Sem imagem</span>"}
+      ` : "Nenhum item ainda.";
+
+      $("#previewB").innerHTML = t.B ? `
+        <div class="muted" style="margin-bottom:8px;">${escapeHtml(t.B.desc||"")}</div>
+        ${t.B.img ? `<img src="${t.B.img}" alt="img"/>` : "<span class='muted'>Sem imagem</span>"}
+      ` : "Vazio (aguardando alguém).";
+    }
+
+    async function saveSide(side){
+      const file = $(side==="A" ? "#fileA" : "#fileB").files[0];
+      const desc = $(side==="A" ? "#descA" : "#descB").value.trim();
+
+      if(!file && !desc){ toast("Coloque uma imagem ou texto."); return; }
+      if(file && file.size > 900*1024){ toast("Imagem pesada. Use até ~900KB."); return; }
+
+      let img = null;
+      if(file) img = await fileToDataURL(file);
+
+      const t = getTrade();
+      t[side] = { img, desc };
+      setTrade(t);
+
+      $(side==="A" ? "#fileA" : "#fileB").value = "";
+      toast(side==="A" ? "Seu item salvo!" : "Item do outro usuário salvo!");
+      renderTroca();
+    }
+
+    // ======= EVENTOS =======
+    $("#btnAtualizarFeed").addEventListener("click", loadFeedFromServer);
+    $("#btnNovoPost").addEventListener("click", ()=> $("#ovPost").style.display="flex");
+    $("#closePost").addEventListener("click", ()=> $("#ovPost").style.display="none");
+    $("#publishPost").addEventListener("click", publishPost);
+
+    $("#saveA").addEventListener("click", ()=> saveSide("A"));
+    $("#saveB").addEventListener("click", ()=> saveSide("B"));
+    $("#clearTroca").addEventListener("click", ()=>{
+      setTrade({A:null,B:null});
+      $("#descA").value=""; $("#descB").value="";
+      $("#fileA").value=""; $("#fileB").value="";
+      toast("Troca limpa.");
+      renderTroca();
+    });
+
+    $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
+    $("#fileFoto").addEventListener("change", async (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      if(file.size > 900*1024){ toast("Foto pesada. Use até ~900KB."); return; }
+      me.pic = await fileToDataURL(file);
+      saveJSON(LS.me, me);
+      $("#fileFoto").value="";
+      toast("Foto trocada!");
+      renderMe();
+    });
+
+    $("#btnReset").addEventListener("click", ()=>{
+      localStorage.clear();
+      location.reload();
+    });
+
+    // ======= START (não deixa tela sumir) =======
+    window.addEventListener("load", ()=>{
+      renderMe();
+      renderTroca();
+      renderFeedLocalOnly();
+      showTela("tHome");
+    });
+  </script>
 </body>
 </html>
