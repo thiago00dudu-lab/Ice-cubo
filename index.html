@@ -7,13 +7,11 @@
 
   <style>
     :root{ --ice:#00d4ff; --glass:rgba(255,255,255,.10); --danger:#ff4d6d; --ok:#2ecc71; }
-
     body{
       margin:0; color:#fff; font-family:sans-serif;
       min-height:100vh; padding-bottom:90px; overflow-x:hidden;
       background: linear-gradient(180deg, #001b2e 0%, #003b66 45%, #00121f 100%);
     }
-
     .header-ice{
       background:rgba(0,0,0,.70); backdrop-filter:blur(10px);
       padding:10px; border-bottom:2px solid var(--ice);
@@ -119,7 +117,6 @@
       padding:2px 6px; font-size:10px; display:none;
     }
 
-    /* MODAL */
     .overlay{
       position:fixed; inset:0; background:rgba(0,0,0,.65);
       display:none; z-index:2500;
@@ -133,8 +130,6 @@
       border-radius:16px 16px 0 0;
       padding:14px; box-sizing:border-box;
     }
-    .sheet h3{ margin:6px 0 10px; }
-    .sheet .small{ font-size:12px; opacity:.85; margin-top:6px; }
     .list{
       margin-top:10px;
       border:1px solid rgba(255,255,255,.12);
@@ -147,8 +142,6 @@
     }
     .li:first-child{ border-top:none; }
     .li .left{ display:flex; align-items:center; gap:10px; }
-    .li .left .who{ font-weight:900; }
-    .li .left .meta{ font-size:12px; opacity:.85; margin-top:2px; }
     .tag{
       font-size:11px; font-weight:900;
       padding:4px 8px; border-radius:999px;
@@ -183,7 +176,6 @@
     </div>
   </div>
 
-  <!-- HOME -->
   <section id="tHome" class="tela">
     <div class="card">
       <div class="post-head">
@@ -193,26 +185,24 @@
           <div class="u-sub muted" id="feedStatus">Feed online (Supabase)</div>
         </div>
       </div>
-      <div class="muted">Agora os posts ficam no banco e aparecem pra todo mundo.</div>
+      <div class="muted">Posts no banco (Supabase). Atualiza no botão pra não travar.</div>
       <button class="btn-blue" id="btnNovoPost">➕ Criar postagem</button>
       <button class="btn-ghost" id="btnAtualizarFeed">🔄 Atualizar feed</button>
     </div>
-
     <div id="feed"></div>
   </section>
 
-  <!-- TROCAS -->
   <section id="tTrocas" class="tela">
     <div class="card">
       <div style="font-weight:1000; font-size:18px;">🔁 Troca 1 vs 1</div>
-      <div class="mini muted">Por enquanto a troca ainda é local (depois eu coloco online igual o feed).</div>
+      <div class="mini muted">No celular: só imagem leve (vídeo trava). Limite ~1.5MB.</div>
       <div class="divider"></div>
 
       <div class="row">
         <div class="col">
           <div class="pill ice">Seu lado</div>
           <div style="height:10px"></div>
-          <input type="file" id="fileA" accept="image/*,video/*" />
+          <input type="file" id="fileA" accept="image/*" />
           <div style="height:10px"></div>
           <textarea id="descA" rows="4" placeholder="Descreva o que você oferece..."></textarea>
           <button class="btn-blue" id="saveA">Salvar meu item</button>
@@ -223,7 +213,7 @@
         <div class="col">
           <div class="pill ok">Outro usuário</div>
           <div style="height:10px"></div>
-          <input type="file" id="fileB" accept="image/*,video/*" />
+          <input type="file" id="fileB" accept="image/*" />
           <div style="height:10px"></div>
           <textarea id="descB" rows="4" placeholder="O que você quer oferecer em troca?"></textarea>
           <button class="btn-ok" id="saveB">Publicar como outro usuário</button>
@@ -236,7 +226,6 @@
     </div>
   </section>
 
-  <!-- PERFIL -->
   <section id="tPerfil" class="tela">
     <div class="card center">
       <img class="u-pic" id="mePic" style="width:74px;height:74px;border-width:2px" alt="foto" />
@@ -257,10 +246,9 @@
 
       <div class="divider"></div>
 
-      <!-- ADM -->
       <div id="admBox" class="card" style="margin:0; text-align:left; display:none;">
         <div style="font-weight:1000; font-size:18px;">🛡️ Área ADM/MOD (local)</div>
-        <div class="mini muted">A área só aparece para ADM. A senha não fica visível pra ninguém.</div>
+        <div class="mini muted">A área só aparece para ADM. A senha não fica visível.</div>
         <button class="btn-blue" id="btnAbrirAdm">Entrar na Área ADM</button>
       </div>
 
@@ -268,40 +256,30 @@
     </div>
   </section>
 
-  <!-- MODAL NOVO POST -->
   <div class="overlay" id="ovPost">
     <div class="sheet">
       <div class="row" style="align-items:center;">
         <div class="col">
           <h3 style="margin:0;">➕ Nova postagem</h3>
-          <div class="small muted">Vai para o banco e todo mundo vê.</div>
+          <div class="mini muted">Texto apenas (sem mídia) pra não travar.</div>
         </div>
         <div style="width:120px">
           <button class="btn-ghost" id="closePost" style="margin-top:0;">Fechar</button>
         </div>
       </div>
-      <div style="height:10px"></div>
-
-      <!-- (foto/vídeo no feed depois via Storage) -->
-      <input type="file" id="postFile" accept="image/*,video/*" />
 
       <div style="height:10px"></div>
       <textarea id="postText" rows="4" placeholder="Escreva algo..."></textarea>
       <button class="btn-blue" id="publishPost">Publicar</button>
-
-      <div class="small muted" style="margin-top:10px;">
-        * Foto/vídeo no feed: eu ativo depois com Supabase Storage.
-      </div>
     </div>
   </div>
 
-  <!-- MODAL ADM -->
   <div class="overlay" id="ovAdm">
     <div class="sheet">
       <div class="row" style="align-items:center;">
         <div class="col">
           <h3 style="margin:0;">🛡️ Painel ADM</h3>
-          <div class="small muted">Promover/rebaixar usuários pra MOD (estrela azul no nome).</div>
+          <div class="mini muted">Promover/rebaixar usuários pra MOD (local).</div>
         </div>
         <div style="width:120px">
           <button class="btn-ghost" id="closeAdm" style="margin-top:0;">Fechar</button>
@@ -309,53 +287,26 @@
       </div>
 
       <div class="divider"></div>
-
       <div class="list" id="usersList"></div>
-
       <div class="divider"></div>
-
-      <div class="small muted">
-        * Este painel ainda é local por enquanto.
-      </div>
+      <div class="mini muted">* Esse painel é local por enquanto.</div>
     </div>
   </div>
 
-  <!-- NAV -->
   <nav class="nav">
     <div class="nav-item" data-go="tHome"><span>🏠</span>Home</div>
     <div class="nav-item" data-go="tTrocas"><span>🔁</span>Trocas <span class="badge" id="badgeTroca">1</span></div>
     <div class="nav-item" data-go="tPerfil"><span>👤</span>Perfil</div>
   </nav>
 
-  <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
     /***********************
-     *  SUPABASE CONFIG (JÁ PREENCHIDO)
+     *  1) COLE AS CHAVES AQUI (ESSAS DUAS LINHAS)
      ***********************/
-    const SUPABASE_URL = "https://whjomowgzoqmkcaepbgv.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_nBUkmMoalAqB0Ki8sSMFnw_UCX4fnMu";
-
-    if (!window.supabase) {
-      alert("Erro: não carregou o supabase-js. Verifique internet/CDN.");
-    }
-
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    /***********************
-     *  UTIL / STORAGE
-     ***********************/
-    const LS = {
-      users: "ice_users_v1",
-      current: "ice_current_v1",
-      trade: "ice_trade_v1",
-      posts: "ice_posts_v1",
-      admSession: "ice_adm_session_v1",
-      supaAnon: "ice_supa_anon_ok_v1"
-    };
-
-    const ADMIN_PIN = "1533"; // não aparece na tela
+    const SUPABASE_URL = "https://SEU-PROJECT-REF.supabase.co";   // <- cola sua API URL aqui
+    const SUPABASE_ANON_KEY = "sb_publishable_COLE_AQUI";          // <- cola sua sb_publishable aqui
 
     const $ = (q) => document.querySelector(q);
     const $$ = (q) => Array.from(document.querySelectorAll(q));
@@ -366,6 +317,25 @@
       n.style.top = "14px";
       setTimeout(()=> n.style.top = "-120px", 1900);
     }
+
+    // Supabase safe init
+    let supabase = null;
+    try{
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }catch(e){
+      console.log(e);
+      toast("Supabase: URL/KEY inválida.");
+    }
+
+    const LS = {
+      users: "ice_users_v1",
+      current: "ice_current_v1",
+      trade: "ice_trade_v1",
+      posts: "ice_posts_v1",
+      admSession: "ice_adm_session_v1"
+    };
+
+    const ADMIN_PIN = "1533";
 
     function randId(){
       const a = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -383,10 +353,7 @@
         return JSON.parse(v);
       }catch(e){ return fallback; }
     }
-
-    function saveJSON(key, value){
-      localStorage.setItem(key, JSON.stringify(value));
-    }
+    function saveJSON(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
 
     function escapeHtml(str){
       return (str||"")
@@ -418,35 +385,6 @@
       return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
     }
 
-    /***********************
-     *  SUPABASE: LOGIN ANÔNIMO (pra policy "authenticated" funcionar)
-     ***********************/
-    async function ensureSupabaseAnonAuth(){
-      try{
-        const { data: sess } = await supabase.auth.getSession();
-        if(sess && sess.session){
-          saveJSON(LS.supaAnon, { ok:true, t:Date.now() });
-          return true;
-        }
-        // tenta login anônimo (precisa habilitar no Supabase Auth)
-        const { error } = await supabase.auth.signInAnonymously();
-        if(error){
-          console.log("Anon auth error:", error);
-          saveJSON(LS.supaAnon, { ok:false, t:Date.now(), msg:String(error.message || error) });
-          return false;
-        }
-        saveJSON(LS.supaAnon, { ok:true, t:Date.now() });
-        return true;
-      }catch(e){
-        console.log("Anon auth exception:", e);
-        saveJSON(LS.supaAnon, { ok:false, t:Date.now(), msg:String(e) });
-        return false;
-      }
-    }
-
-    /***********************
-     *  USERS (LOCAL)
-     ***********************/
     function seedIfEmpty(){
       let users = loadJSON(LS.users, null);
       if(users && Array.isArray(users) && users.length) return;
@@ -505,9 +443,6 @@
       return "ok";
     }
 
-    /***********************
-     *  NAV
-     ***********************/
     function showTela(id){
       $$(".tela").forEach(t => t.style.display = "none");
       $("#"+id).style.display = "block";
@@ -515,63 +450,76 @@
       window.scrollTo({top:0, behavior:"smooth"});
       renderAll();
     }
-    $$(".nav-item").forEach(n=>{
-      n.addEventListener("click", ()=> showTela(n.dataset.go));
-    });
+    $$(".nav-item").forEach(n=> n.addEventListener("click", ()=> showTela(n.dataset.go)));
 
-    /***********************
-     *  FEED (SUPABASE)
-     ***********************/
-    async function loadFeedFromServer(){
+    // FEED
+    async function ensureAnonAuth(){
+      if(!supabase) return false;
       try{
-        $("#feedStatus").textContent = "Carregando feed...";
-
-        const { data, error } = await supabase
-          .from("posts")
-          .select("*")
-          .order("created_at", { ascending:false })
-          .limit(100);
-
+        const { data: sess } = await supabase.auth.getSession();
+        if(sess && sess.session) return true;
+        const { error } = await supabase.auth.signInAnonymously();
         if(error){
-          console.log(error);
-          $("#feedStatus").textContent = "Erro no feed (chaves/policies).";
-          toast("Erro ao carregar feed.");
-          return;
+          toast("Ative Anonymous em Auth → Providers.");
+          return false;
         }
-
-        const posts = (data||[]).map(p => ({
-          id: "db_" + p.id,
-          uid: p.uid || "anon",
-          name: p.name || "Anônimo",
-          role: p.role || "member",
-          pic: p.pic || null,
-          text: p.text || "",
-          media: null,
-          t: new Date(p.created_at).getTime()
-        }));
-
-        saveJSON(LS.posts, posts);
-        renderFeed();
-        $("#feedStatus").textContent = "Feed online (Supabase)";
+        return true;
       }catch(e){
         console.log(e);
-        $("#feedStatus").textContent = "Erro no feed.";
+        toast("Erro auth (Supabase).");
+        return false;
       }
     }
 
+    async function loadFeedFromServer(){
+      if(!supabase){
+        $("#feedStatus").textContent = "Supabase não configurado (URL/KEY).";
+        return;
+      }
+      $("#feedStatus").textContent = "Carregando feed...";
+      const ok = await ensureAnonAuth();
+      if(!ok){
+        $("#feedStatus").textContent = "Auth bloqueado. Veja Providers.";
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending:false })
+        .limit(60);
+
+      if(error){
+        console.log(error);
+        $("#feedStatus").textContent = "Erro no feed (RLS/Policy).";
+        toast("Feed bloqueado por policy.");
+        return;
+      }
+
+      const posts = (data||[]).map(p => ({
+        id: "db_" + p.id,
+        uid: p.uid || "anon",
+        name: p.name || "Anônimo",
+        role: p.role || "member",
+        pic: p.pic || null,
+        text: p.text || "",
+        t: new Date(p.created_at).getTime()
+      }));
+
+      saveJSON(LS.posts, posts);
+      renderFeed();
+      $("#feedStatus").textContent = "Feed online (Supabase)";
+    }
+
     async function publishPost(){
+      if(!supabase){ toast("Supabase não configurado."); return; }
+
+      const ok = await ensureAnonAuth();
+      if(!ok) return;
+
       const me = getMe();
       const text = ($("#postText").value || "").trim();
-      const file = $("#postFile").files[0];
-
-      if(file){
-        toast("Foto/vídeo no feed: ativo depois. Poste só texto agora.");
-        return;
-      }
-      if(!text){
-        toast("Escreva algo.");
-        return;
-      }
+      if(!text){ toast("Escreva algo."); return; }
 
       const { error } = await supabase.from("posts").insert([{
         uid: me.id,
@@ -583,17 +531,12 @@
 
       if(error){
         console.log(error);
-
-        // dica de policy
-        toast("Não publicou. Provável RLS. Veja aviso no feedStatus.");
-        $("#feedStatus").textContent =
-          "POST BLOQUEADO (RLS): Se sua policy INSERT é só 'authenticated', habilite login anônimo no Supabase Auth OU crie policy INSERT para public.";
+        toast("POST BLOQUEADO (RLS/Policy).");
         return;
       }
 
       $("#ovPost").style.display = "none";
       $("#postText").value = "";
-      $("#postFile").value = "";
       toast("Post publicado!");
       await loadFeedFromServer();
     }
@@ -624,19 +567,12 @@
             <div style="font-size:15px; line-height:1.35;">${escapeHtml(p.text)}</div>
           </div>
         `;
-      }).join("") || `<div class="card muted">Sem posts ainda. Crie o primeiro 😈</div>`;
+      }).join("") || `<div class="card muted">Sem posts ainda.</div>`;
     }
 
-    /***********************
-     *  TROCAS (LOCAL)
-     ***********************/
+    // TROCAS (LOCAL, só imagem leve)
     function renderMedia(dataUrl){
       if(!dataUrl) return "";
-      if(dataUrl.startsWith("data:video")){
-        return `<video controls playsinline style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:#000;">
-          <source src="${dataUrl}">
-        </video>`;
-      }
       return `<img src="${dataUrl}" style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.12);" alt="midia" />`;
     }
 
@@ -644,11 +580,21 @@
       const trade = loadJSON(LS.trade, {A:null, B:null});
       const fileEl = side === "A" ? $("#fileA") : $("#fileB");
       const descEl = side === "A" ? $("#descA") : $("#descB");
-      const dataUrl = await fileToDataURL(fileEl.files[0]);
+      const f = fileEl.files[0];
+
+      if(f){
+        // limite 1.5MB
+        if(f.size > 1500 * 1024){
+          toast("Imagem muito pesada. Use até ~1.5MB.");
+          return;
+        }
+      }
+
+      const dataUrl = await fileToDataURL(f);
       const desc = (descEl.value || "").trim();
 
       if(!dataUrl && !desc){
-        toast("Coloque foto/vídeo ou descrição.");
+        toast("Coloque imagem ou descrição.");
         return;
       }
 
@@ -667,7 +613,7 @@
     function tradeBoxHTML(item){
       const media = item.media ? renderMedia(item.media) : "";
       const text = item.desc ? `<div style="margin-top:8px">${escapeHtml(item.desc)}</div>` : "";
-      return `${media}${text}` || "—";
+      return (media + text) || "—";
     }
 
     function renderTrade(){
@@ -677,9 +623,6 @@
       $("#badgeTroca").style.display = trade.B ? "inline-block" : "none";
     }
 
-    /***********************
-     *  PERFIL + ADM (LOCAL)
-     ***********************/
     function renderPerfil(){
       const me = getMe();
 
@@ -697,7 +640,8 @@
         escapeHtml(me.name) +
         (me.role==="mod" ? ` <span class="mod-star">★</span>` : "") +
         (me.role==="admin" ? ` <span class="adm-badge">ADM</span>` : "");
-      $("#meNameHome").replaceWith(nameLine);
+      const old = $("#meNameHome");
+      old.replaceWith(nameLine);
       nameLine.id = "meNameHome";
 
       $("#mePic").src = me.pic || avatarFallback(me.name);
@@ -729,7 +673,7 @@
       const list = $("#usersList");
 
       if(!users.length){
-        list.innerHTML = `<div class="li"><div class="left"><div><div class="who">Sem usuários</div><div class="meta muted">Aqui é local por enquanto.</div></div></div><span class="tag mem">—</span></div>`;
+        list.innerHTML = `<div class="li"><div class="left"><div><div style="font-weight:900;">Sem usuários</div></div></div><span class="tag mem">—</span></div>`;
         return;
       }
 
@@ -749,8 +693,8 @@
             <div class="left">
               <img class="u-pic" src="${u.pic || avatarFallback(u.name)}" alt="foto" />
               <div>
-                <div class="who">${escapeHtml(u.name)} ${star}</div>
-                <div class="meta muted mono">${escapeHtml(u.id)}</div>
+                <div style="font-weight:900;">${escapeHtml(u.name)} ${star}</div>
+                <div class="mini muted mono">${escapeHtml(u.id)}</div>
               </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
@@ -778,18 +722,11 @@
       });
     }
 
-    /***********************
-     *  MODAL POST
-     ***********************/
     function openNewPost(){
       $("#ovPost").style.display = "flex";
       $("#postText").value = "";
-      $("#postFile").value = "";
     }
 
-    /***********************
-     *  ACTIONS
-     ***********************/
     $("#btnNovoPost").addEventListener("click", openNewPost);
     $("#closePost").addEventListener("click", ()=> $("#ovPost").style.display="none");
     $("#publishPost").addEventListener("click", publishPost);
@@ -831,6 +768,11 @@
     $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
     $("#fileFoto").addEventListener("change", async (e)=>{
       const file = e.target.files[0];
+      if(file && file.size > 900 * 1024){
+        toast("Foto muito pesada. Use até ~900KB.");
+        e.target.value = "";
+        return;
+      }
       const data = await fileToDataURL(file);
       if(!data) return;
       const me = getMe();
@@ -853,9 +795,6 @@
     $("#ovPost").addEventListener("click", (e)=>{ if(e.target.id==="ovPost") $("#ovPost").style.display="none"; });
     $("#ovAdm").addEventListener("click", (e)=>{ if(e.target.id==="ovAdm") $("#ovAdm").style.display="none"; });
 
-    /***********************
-     *  REF (PAI) via hash
-     ***********************/
     function applyRefFromHash(){
       const me = getMe();
       const h = location.hash || "";
@@ -875,39 +814,23 @@
       renderFeed();
     }
 
-    /***********************
-     *  START
-     ***********************/
-    (async function boot(){
-      seedIfEmpty();
-      applyRefFromHash();
+    seedIfEmpty();
+    applyRefFromHash();
 
-      (function ensureName(){
-        const me = getMe();
-        if(!me.name || me.name === "Você"){
-          const n = prompt("Seu nome (aparece no app):", "Jessica");
-          if(n && n.trim().length >= 2){
-            updateUser(me.id, { name: n.trim().slice(0,24) });
-          }
+    (function ensureName(){
+      const me = getMe();
+      if(!me.name || me.name === "Você"){
+        const n = prompt("Seu nome (aparece no app):", "Jessica");
+        if(n && n.trim().length >= 2){
+          updateUser(me.id, { name: n.trim().slice(0,24) });
         }
-      })();
-
-      showTela("tHome");
-
-      // tenta autenticar anonimamente
-      const ok = await ensureSupabaseAnonAuth();
-      if(!ok){
-        $("#feedStatus").textContent =
-          "Atenção: sem login anônimo. Se seu INSERT está 'authenticated only', vai bloquear postar.";
-        toast("Ative 'Anonymous sign-ins' no Supabase Auth (ou mude policy INSERT).");
-      } else {
-        toast("Supabase OK (anon auth).");
       }
-
-      // carrega feed
-      await loadFeedFromServer();
-      setInterval(loadFeedFromServer, 8000);
     })();
+
+    showTela("tHome");
+
+    // primeiro carregamento do feed (sem loop pra não travar)
+    loadFeedFromServer();
   </script>
 </body>
 </html>
