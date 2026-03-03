@@ -17,6 +17,156 @@
         .stats { display: flex; justify-content: space-around; margin: 20px 0; font-weight: bold; }
         input { width: 90%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #38bdf8; background: #061727; color: white; }
         .msg { font-size: 14px; margin-top: 10px; color: #9cc9ea; }
+
+        /* ----------------- ROLETA ----------------- */
+        .roletaWrap{
+            margin: 18px 0 8px;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid #1a3a5a;
+            background: rgba(255,255,255,0.04);
+        }
+        .roletaTitle{
+            font-weight: 900;
+            letter-spacing: .5px;
+            color:#bfe9ff;
+            margin: 2px 0 10px;
+        }
+        .wheelBox{
+            position: relative;
+            width: min(92vw, 420px);
+            height: min(92vw, 420px);
+            margin: 0 auto;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .pointer{
+            position:absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 16px solid transparent;
+            border-right: 16px solid transparent;
+            border-bottom: 28px solid #ffd700;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,.5));
+            z-index: 3;
+        }
+        .wheel{
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 10px solid rgba(56,189,248,.35);
+            box-shadow: 0 18px 40px rgba(0,0,0,.45);
+            background:
+                conic-gradient(
+                    #0ea5e9 0deg 45deg,
+                    #0b2a6a 45deg 90deg,
+                    #38bdf8 90deg 135deg,
+                    #073a66 135deg 180deg,
+                    #22c55e 180deg 225deg,
+                    #0b2a6a 225deg 270deg,
+                    #ef4444 270deg 315deg,
+                    #073a66 315deg 360deg
+                );
+            position: relative;
+            transition: transform 4s cubic-bezier(.12,.7,.12,1);
+            transform: rotate(0deg);
+            z-index:1;
+            overflow:hidden;
+        }
+        .wheelCenter{
+            position:absolute;
+            width: 42%;
+            height: 42%;
+            border-radius: 50%;
+            background: rgba(6,23,39,.92);
+            border: 2px solid rgba(255,255,255,.12);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-direction:column;
+            z-index:2;
+            box-shadow: inset 0 0 30px rgba(56,189,248,.18);
+        }
+        .wheelCenter .big{
+            font-size: 20px;
+            font-weight: 900;
+            color:#ffd700;
+            margin-bottom: 4px;
+        }
+        .wheelCenter .small{
+            font-size: 12px;
+            color:#9cc9ea;
+        }
+
+        .roletaBtns{
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+            gap:10px;
+            margin-top: 12px;
+        }
+        .spinBtn{
+            background: #ffd700;
+            color:#061727;
+        }
+        .spinBtn:active{ transform: scale(.97); }
+        .spinBtn[disabled]{
+            opacity: .55;
+            cursor:not-allowed;
+        }
+        .infoBtn{
+            background: #1f2937;
+            color:#e9f5ff;
+            border: 1px solid rgba(255,255,255,.12);
+        }
+        .tagCost{
+            font-size: 12px;
+            color:#9cc9ea;
+            margin-top: 8px;
+        }
+        .roletaMsg{
+            margin-top: 10px;
+            font-size: 14px;
+            color:#bfe9ff;
+            min-height: 20px;
+        }
+        .modalBack{
+            position: fixed;
+            inset:0;
+            background: rgba(0,0,0,.55);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            padding: 18px;
+            z-index: 50;
+        }
+        .modal{
+            width: min(92vw, 520px);
+            background: #081c2f;
+            border: 1px solid #1a3a5a;
+            border-radius: 18px;
+            padding: 14px 14px 10px;
+            text-align:left;
+        }
+        .modal h4{
+            margin: 0 0 10px;
+            color:#ffd700;
+        }
+        .modal .line{
+            display:flex;
+            justify-content:space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            font-size: 14px;
+        }
+        .modal .close{
+            width: 100%;
+            margin-top: 12px;
+            background: #38bdf8;
+            color:#061727;
+        }
     </style>
 </head>
 <body>
@@ -38,13 +188,46 @@
     <button id="mineBtn">⛏️ MINERAR</button>
     <p id="mineMsg" class="msg"></p>
 
-    <hr style="border: 0.1px solid #1a3a5a; margin: 30px 0;">
+    <!-- ROLETA (GRANDE NO MEIO) -->
+    <div class="roletaWrap">
+        <div class="roletaTitle">🎰 ROLETA BLUE</div>
+
+        <div class="wheelBox">
+            <div class="pointer"></div>
+            <div id="wheel" class="wheel"></div>
+            <div class="wheelCenter">
+                <div class="big" id="lastPrize">—</div>
+                <div class="small">último prêmio</div>
+            </div>
+        </div>
+
+        <div class="roletaBtns">
+            <button id="spinBtn" class="spinBtn">GIRAR</button>
+            <button id="oddsBtn" class="infoBtn">PROBABILIDADES</button>
+        </div>
+        <div class="tagCost">Custo do giro: <b><span id="spinCostText">3</span> BLUE</b></div>
+        <div class="roletaMsg" id="roletaMsg"></div>
+    </div>
+
+    <hr style="border: 0.1px solid #1a3a5a; margin: 26px 0;">
 
     <!-- SISTEMA DE SAQUE -->
     <h3>Solicitar Saque</h3>
     <input type="number" id="saqueValor" placeholder="Quantidade BLUE">
     <button onclick="solicitarSaque()" style="background: #22c55e; color: white;">EFETUAR SAQUE</button>
     <p id="saqMsg" class="msg"></p>
+</div>
+
+<!-- MODAL PROBABILIDADES -->
+<div class="modalBack" id="modalBack">
+    <div class="modal">
+        <h4>📊 Probabilidades da Roleta</h4>
+        <div id="oddsList"></div>
+        <button class="close" id="closeModal">FECHAR</button>
+        <p class="msg" style="margin-top:10px">
+            Obs: isso é só simulação (localStorage). Dá pra mudar prêmios e chances.
+        </p>
+    </div>
 </div>
 
 <script>
@@ -61,8 +244,8 @@ let state = {
 };
 
 function getBlue() { return state.blue; }
-function setBlue(v) { 
-    state.blue = v; 
+function setBlue(v) {
+    state.blue = v;
     LS.set("blue_balance", v);
     document.getElementById("saldoBlue").textContent = v;
 }
@@ -88,13 +271,12 @@ setIce(ice);
 renderAll();
 
 document.getElementById("mineBtn").onclick = ()=>{
-    const u = me(); 
+    const u = me();
     if(!u) return alert("Entre primeiro.");
-    
+
     // Trava de ADM do código original
     if(!isADM()) return alert("Somente ADM pode iniciar o modo mineração.");
 
-    // Lógica de quebra (hit) e ganho (gain)
     const hit = 8 + Math.floor(Math.random()*12);
     setIce(ice - hit);
 
@@ -114,27 +296,146 @@ document.getElementById("mineBtn").onclick = ()=>{
     persist(); renderAll();
 };
 
+/* ----------------- ROLETA (GRANDE) ----------------- */
+const wheel = document.getElementById("wheel");
+const spinBtn = document.getElementById("spinBtn");
+const roletaMsg = document.getElementById("roletaMsg");
+const lastPrize = document.getElementById("lastPrize");
+const spinCostText = document.getElementById("spinCostText");
+
+const SPIN_COST = 3; // custo do giro (mude aqui)
+spinCostText.textContent = SPIN_COST;
+
+// Fatias (8 fatias combinando com o conic-gradient acima)
+const segments = [
+  { label: "0",  prize: 0,  weight: 30, color: "azul" },
+  { label: "1",  prize: 1,  weight: 22, color: "escuro" },
+  { label: "2",  prize: 2,  weight: 18, color: "azul claro" },
+  { label: "5",  prize: 5,  weight: 12, color: "escuro" },
+  { label: "10", prize: 10, weight: 9,  color: "verde" },
+  { label: "2",  prize: 2,  weight: 5,  color: "escuro" },
+  { label: "20", prize: 20, weight: 3,  color: "vermelho" },
+  { label: "1",  prize: 1,  weight: 1,  color: "escuro" }
+];
+
+let spinning = false;
+let currentRotation = Number(LS.get("wheel_rot", 0));
+wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+function pickWeighted(list){
+  const total = list.reduce((a,b)=>a+b.weight,0);
+  let r = Math.random() * total;
+  for(const item of list){
+    r -= item.weight;
+    if(r <= 0) return item;
+  }
+  return list[list.length-1];
+}
+
+// 8 segmentos => cada um 45 graus
+const SEG_ANGLE = 360 / 8;
+
+// a ponta fica no topo (0deg). Precisamos alinhar o "meio" do segmento na ponta.
+function angleForIndex(i){
+  // Segmentos no conic-gradient começam no 0deg e vão em ordem.
+  // Para cair no segmento i, fazemos o topo apontar para o centro dele:
+  const center = (i * SEG_ANGLE) + (SEG_ANGLE/2);
+  // Como a roleta gira, queremos que o centro vá pro topo => rotação negativa do center.
+  return 360 - center;
+}
+
+function showPrize(p){
+  lastPrize.textContent = p === 0 ? "0" : `+${p}`;
+  if(p === 0){
+    roletaMsg.textContent = "😬 Deu 0… tenta de novo!";
+  }else{
+    roletaMsg.textContent = `🎉 Você ganhou +${p} BLUE!`;
+  }
+}
+
+spinBtn.onclick = ()=>{
+  const u = me();
+  if(!u) return alert("Entre primeiro.");
+  if(spinning) return;
+
+  if(getBlue() < SPIN_COST) return alert("Sem saldo para girar a roleta.");
+
+  // desconta o custo antes
+  setBlue(getBlue() - SPIN_COST);
+  pushHist("roleta", `Giro -${SPIN_COST} BLUE`);
+
+  spinning = true;
+  spinBtn.disabled = true;
+  roletaMsg.textContent = "Girando... 🎰";
+
+  const chosen = pickWeighted(segments);
+  const idx = segments.indexOf(chosen);
+
+  // várias voltas + ajuste fino pro índice
+  const extraTurns = 6 + Math.floor(Math.random()*4); // 6 a 9 voltas
+  const target = (extraTurns * 360) + angleForIndex(idx);
+
+  currentRotation = (currentRotation + target) % 360000; // grande só pra não “pular”
+  wheel.style.transform = `rotate(${currentRotation}deg)`;
+  LS.set("wheel_rot", currentRotation);
+
+  // quando termina animação
+  setTimeout(()=>{
+    // paga prêmio
+    if(chosen.prize > 0){
+      setBlue(getBlue() + chosen.prize);
+      pushHist("roleta", `Prêmio +${chosen.prize} BLUE`);
+    }else{
+      pushHist("roleta", `Prêmio 0 BLUE`);
+    }
+
+    showPrize(chosen.prize);
+
+    spinning = false;
+    spinBtn.disabled = false;
+    persist(); renderAll();
+  }, 4200);
+};
+
+// Modal de probabilidades
+const modalBack = document.getElementById("modalBack");
+const oddsBtn = document.getElementById("oddsBtn");
+const closeModal = document.getElementById("closeModal");
+const oddsList = document.getElementById("oddsList");
+
+function renderOdds(){
+  const total = segments.reduce((a,b)=>a+b.weight,0);
+  oddsList.innerHTML = segments.map(s=>{
+    const pct = ((s.weight/total)*100).toFixed(1);
+    const win = s.prize === 0 ? "0" : `+${s.prize} BLUE`;
+    return `<div class="line"><span>${win}</span><b>${pct}%</b></div>`;
+  }).join("");
+}
+oddsBtn.onclick = ()=>{ renderOdds(); modalBack.style.display="flex"; };
+closeModal.onclick = ()=>{ modalBack.style.display="none"; };
+modalBack.onclick = (e)=>{ if(e.target === modalBack) modalBack.style.display="none"; };
+
 /* ----------------- SAQUE (IGUAL AO PRINT) ----------------- */
 window.solicitarSaque = () => {
     const v = Number(document.getElementById("saqueValor").value);
     const u = me();
-    
+
     if(!v || v<1) return alert("Valor inválido.");
     if(getBlue() < v) return alert("Sem saldo.");
 
     setBlue(getBlue()-v);
-    
+
     state.withdrawals.unshift({
-        id:uid(), 
-        user:u.user, 
-        amount:v, 
-        status:"pendente", 
+        id:uid(),
+        user:u.user,
+        amount:v,
+        status:"pendente",
         ts:Date.now()
     });
 
     pushHist("saque", `Pedido de saque: -${v} BLUE (pendente)`);
     document.getElementById("saqMsg").textContent = "Pedido enviado. ADM vai aprovar/recusar.";
-    
+
     persist(); renderAll();
 };
 </script>
