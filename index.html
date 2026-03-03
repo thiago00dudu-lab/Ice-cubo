@@ -765,8 +765,8 @@
       }
     });
 
-    $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
-    $("#fileFoto").addEventListener("change", async (e)=>{
+    $("#btnTrocarFoto")?.addEventListener("click", ()=> $("#fileFoto").click());
+    $("#fileA")?.addEventListener("change", async (e)=>{
       const file = e.target.files[0];
       if(file && file.size > 900 * 1024){
         toast("Foto muito pesada. Use até ~900KB.");
