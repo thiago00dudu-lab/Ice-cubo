@@ -5,18 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ICE BLUE</title>
 
-  <!-- Supabase JS (CDN) -->
+  <!-- SUPABASE JS (obrigatório) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root{ --ice:#00d4ff; --glass:rgba(255,255,255,.10); --danger:#ff4d6d; --ok:#2ecc71; }
-
     body{
       margin:0; color:#fff; font-family:sans-serif;
       min-height:100vh; padding-bottom:90px; overflow-x:hidden;
       background: linear-gradient(180deg, #001b2e 0%, #003b66 45%, #00121f 100%);
     }
-
     .header-ice{
       background:rgba(0,0,0,.70); backdrop-filter:blur(10px);
       padding:10px; border-bottom:2px solid var(--ice);
@@ -103,8 +101,8 @@
     }
     input[type="file"]{ color:#fff; width:100%; }
 
-    .row{ display:flex; gap:10px; flex-wrap:wrap; }
-    .col{ flex:1; min-width:240px; }
+    .row{ display:flex; gap:10px; }
+    .col{ flex:1; }
 
     .nav{
       position:fixed; bottom:0; width:100%;
@@ -122,6 +120,7 @@
       padding:2px 6px; font-size:10px; display:none;
     }
 
+    /* MODAL */
     .overlay{
       position:fixed; inset:0; background:rgba(0,0,0,.65);
       display:none; z-index:2500;
@@ -161,16 +160,19 @@
     .tag.mod{ border-color:rgba(0,212,255,.55); color:#bff6ff; }
     .tag.mem{ border-color:rgba(255,255,255,.20); color:#fff; opacity:.85; }
     .tag.adm{ border-color:rgba(255,215,0,.45); color:#ffeaa7; }
-
     .linkbox{
       background:rgba(0,0,0,.25);
       border:1px solid rgba(255,255,255,.12);
       border-radius:12px; padding:10px;
-      word-break:break-word;
+      word-break:break-all;
     }
     .muted{ opacity:.85; }
     .center{ text-align:center; }
     .divider{ height:1px; background:rgba(255,255,255,.12); margin:12px 0; }
+
+    @media (max-width: 760px){
+      .row{ flex-direction:column; }
+    }
   </style>
 </head>
 
@@ -181,8 +183,7 @@
     <div class="title">ICE BLUE</div>
     <div class="mini">
       ID: <span class="mono" id="myIdTop">—</span><br/>
-      Permissão:
-      <span class="pill ok" id="myRolePill">MEMBRO</span>
+      Permissão: <span class="pill ok" id="myRolePill">MEMBRO</span>
     </div>
   </div>
 
@@ -193,14 +194,12 @@
         <img class="u-pic" id="mePicHome" alt="foto" />
         <div>
           <div class="u-name" id="meNameHome">Seu Perfil</div>
-          <div class="u-sub muted">Feed REAL (Supabase)</div>
+          <div class="u-sub muted">Timeline (REAL Supabase)</div>
         </div>
       </div>
-
+      <div class="muted">Posts reais salvos no banco.</div>
       <button class="btn-blue" id="btnNovoPost">➕ Criar postagem</button>
-      <button class="btn-ghost" id="btnAbrirChat">💬 Abrir Chat Geral</button>
     </div>
-
     <div id="feed"></div>
   </section>
 
@@ -217,10 +216,10 @@
           <div style="height:10px"></div>
           <input type="file" id="fileA" accept="image/*,video/*" />
           <div style="height:10px"></div>
-          <textarea id="descA" rows="4" placeholder="Descreva o que você oferece..."></textarea>
+          <textarea id="descA" rows="3" placeholder="Descreva o que você oferece..."></textarea>
           <button class="btn-blue" id="saveA">Salvar meu item</button>
           <div style="height:10px"></div>
-          <div id="previewA" class="linkbox muted">Carregando…</div>
+          <div id="previewA" class="linkbox muted">Sem dados.</div>
         </div>
 
         <div class="col">
@@ -228,10 +227,10 @@
           <div style="height:10px"></div>
           <input type="file" id="fileB" accept="image/*,video/*" />
           <div style="height:10px"></div>
-          <textarea id="descB" rows="4" placeholder="O que você quer oferecer em troca?"></textarea>
+          <textarea id="descB" rows="3" placeholder="O que você quer oferecer em troca?"></textarea>
           <button class="btn-ok" id="saveB">Publicar como outro usuário</button>
           <div style="height:10px"></div>
-          <div id="previewB" class="linkbox muted">Carregando…</div>
+          <div id="previewB" class="linkbox muted">Sem dados.</div>
         </div>
       </div>
 
@@ -244,23 +243,28 @@
     <div class="card center">
       <img class="u-pic" id="mePic" style="width:74px;height:74px;border-width:2px" alt="foto" />
       <div style="height:10px"></div>
-      <div style="font-weight:1000; font-size:34px;">Seu Perfil</div>
-
+      <div style="font-weight:1000; font-size:34px;" id="meTitle">Seu Perfil</div>
       <div class="mini muted">
         Seu ID: <span class="mono" id="myId">—</span><br/>
-        Nome: <span class="mono" id="myNameLabel">—</span>
+        Seu Pai (ref): <span class="mono" id="myRef">nenhum</span>
       </div>
 
-      <div class="divider"></div>
-
-      <input type="text" id="nameInput" placeholder="Trocar nome (ex: Jessica)" />
-      <button class="btn-blue" id="btnSaveName">Salvar nome</button>
+      <button class="btn-blue" id="btnShare">📣 Compartilhar meu link</button>
+      <button class="btn-ghost" id="btnCopy">📎 Copiar link</button>
 
       <div style="height:10px"></div>
       <button class="btn-ghost" id="btnTrocarFoto">Trocar Foto</button>
       <input type="file" id="fileFoto" accept="image/*" style="display:none" />
 
-      <button class="btn-danger" id="btnReset">Resetar (apagar seu ID local)</button>
+      <div class="divider"></div>
+
+      <div id="admBox" class="card" style="margin:0; text-align:left; display:none;">
+        <div style="font-weight:1000; font-size:18px;">🛡️ Área ADM/MOD (REAL)</div>
+        <div class="mini muted">Aviso: sem login, isso é protótipo.</div>
+        <button class="btn-blue" id="btnAbrirAdm">Entrar na Área ADM</button>
+      </div>
+
+      <button class="btn-danger" id="btnReset">Resetar (limpar só neste celular)</button>
     </div>
   </section>
 
@@ -270,7 +274,7 @@
       <div class="row" style="align-items:center;">
         <div class="col">
           <h3 style="margin:0;">➕ Nova postagem</h3>
-          <div class="small muted">Vai pro banco (Supabase) e aparece pra todo mundo.</div>
+          <div class="small muted">Vai pro banco (Supabase).</div>
         </div>
         <div style="width:120px">
           <button class="btn-ghost" id="closePost" style="margin-top:0;">Fechar</button>
@@ -284,27 +288,24 @@
     </div>
   </div>
 
-  <!-- MODAL CHAT -->
-  <div class="overlay" id="ovChat">
+  <!-- MODAL ADM -->
+  <div class="overlay" id="ovAdm">
     <div class="sheet">
       <div class="row" style="align-items:center;">
         <div class="col">
-          <h3 style="margin:0;">💬 Chat Geral</h3>
-          <div class="small muted">Tempo real (Supabase Realtime).</div>
+          <h3 style="margin:0;">🛡️ Painel ADM</h3>
+          <div class="small muted">Promover/rebaixar pra MOD (estrela azul).</div>
         </div>
         <div style="width:120px">
-          <button class="btn-ghost" id="closeChat" style="margin-top:0;">Fechar</button>
+          <button class="btn-ghost" id="closeAdm" style="margin-top:0;">Fechar</button>
         </div>
       </div>
 
       <div class="divider"></div>
-
-      <div id="chatBox" class="list" style="max-height:45vh; overflow:auto;"></div>
+      <div class="list" id="usersList"></div>
 
       <div class="divider"></div>
-
-      <textarea id="chatText" rows="2" placeholder="Digite sua mensagem..."></textarea>
-      <button class="btn-blue" id="sendChat">Enviar</button>
+      <div class="small muted">* Protótipo sem autenticação: qualquer um pode “fingir”. Depois a gente coloca login.</div>
     </div>
   </div>
 
@@ -316,16 +317,19 @@
   </nav>
 
   <script>
-    /*****************************************************
-     * 1) COLE AQUI SEUS DADOS DO SUPABASE (2 LINHAS)
-     *****************************************************/
-    const SUPABASE_URL = "https://whjomowgzoukmcaepbgv";
-    const SUPABASE_KEY = "sb_publishable_nBUkmMoalAqB0Ki8sSMFnw_UCX4fnMu";
+    /************************************************************
+     *  1) COLE AQUI OS DADOS DO SUPABASE (2 LINHAS)
+     ************************************************************/
+    const SUPABASE_URL = "https://whjomowgzoukmcaepbgv.supabase.co";
+    const SUPABASE_KEY = "COLE_AQUI_SUA_PUBLISHABLE_KEY"; // sb_publishable_...
 
-    /*****************************************************
-     * 2) APP
-     *****************************************************/
     const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    /***********************
+     *  STORAGE local (só pra lembrar seu ID neste celular)
+     ***********************/
+    const LS = { me: "ice_me_v1", admSess: "ice_adm_sess_v1" };
+    const ADMIN_PIN = "1533";
 
     const $ = (q) => document.querySelector(q);
     const $$ = (q) => Array.from(document.querySelectorAll(q));
@@ -386,113 +390,180 @@
       return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
     }
 
-    // Identidade local (pra você ser "um usuário" sem login)
-    const LS_ME = "ice_me_v1";
-    function getMeLocal(){
-      try{
-        const v = localStorage.getItem(LS_ME);
-        if(v) return JSON.parse(v);
-      }catch(e){}
-      const me = { id: randId(), name: "Jessica", pic: null, role: "member" };
-      localStorage.setItem(LS_ME, JSON.stringify(me));
-      return me;
+    function roleLabel(role){
+      if(role === "admin") return "ADM";
+      if(role === "mod") return "MOD";
+      return "MEMBRO";
     }
-    function setMeLocal(patch){
-      const me = getMeLocal();
-      const next = { ...me, ...patch };
-      localStorage.setItem(LS_ME, JSON.stringify(next));
-      return next;
+    function rolePillClass(role){
+      if(role === "admin") return "danger";
+      if(role === "mod") return "ice";
+      return "ok";
     }
 
-    // UI NAV
+    /***********************
+     *  NAV
+     ***********************/
     function showTela(id){
       $$(".tela").forEach(t => t.style.display = "none");
-      const el = $("#"+id);
-      if(el) el.style.display = "block";
+      $("#"+id).style.display = "block";
       $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.go === id));
       window.scrollTo({top:0, behavior:"smooth"});
     }
-    function bindNav(){
-      $$(".nav-item").forEach(n=>{
-        n.addEventListener("click", ()=> showTela(n.dataset.go));
-      });
+    $$(".nav-item").forEach(n => n.addEventListener("click", ()=> showTela(n.dataset.go)));
+
+    /***********************
+     *  ME (cria/usa usuário REAL no banco)
+     ***********************/
+    let ME = null;
+
+    function getMeLocal(){
+      try{ return JSON.parse(localStorage.getItem(LS.me) || "null"); }catch(e){ return null; }
     }
+    function setMeLocal(v){ localStorage.setItem(LS.me, JSON.stringify(v)); }
 
-    // SUPABASE: garante seu user no banco
-    async function ensureUser(){
-      const me = getMeLocal();
-      $("#myIdTop").textContent = me.id;
-      $("#myId").textContent = me.id;
-      $("#myNameLabel").textContent = me.name;
+    async function ensureMe(){
+      // 1) pega do localStorage
+      const saved = getMeLocal();
+      let id = saved && saved.id ? saved.id : null;
 
-      $("#mePic").src = me.pic || avatarFallback(me.name);
-      $("#mePicHome").src = me.pic || avatarFallback(me.name);
-      $("#meNameHome").textContent = me.name;
+      // 2) se não tem, cria um novo ID
+      if(!id){
+        id = randId();
+        setMeLocal({ id });
+      }
 
-      // upsert no banco
-      const { error } = await supa
+      // 3) busca no banco
+      const { data: user, error } = await supa
         .from("ice_users")
-        .upsert({ id: me.id, name: me.name, pic: me.pic, role: me.role }, { onConflict: "id" });
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
 
       if(error){
         console.log(error);
-        toast("Erro Supabase (users). Veja se colocou URL/KEY certo.");
+        toast("Erro Supabase (users). Verifique URL/KEY e RLS.");
+        return;
+      }
+
+      // 4) se não existe, cria (primeira pessoa vira admin)
+      if(!user){
+        // checa se já existe algum user no banco
+        const { data: anyUsers, error: e2 } = await supa
+          .from("ice_users")
+          .select("id")
+          .limit(1);
+
+        if(e2){ console.log(e2); }
+
+        const role = (anyUsers && anyUsers.length) ? "member" : "admin";
+        const name = prompt("Seu nome (aparece no app):", "Jessica") || "Jessica";
+        const ref = readRefFromHash();
+
+        const { data: created, error: e3 } = await supa
+          .from("ice_users")
+          .insert([{ id, name: name.trim().slice(0,24), role, ref }])
+          .select("*")
+          .single();
+
+        if(e3){
+          console.log(e3);
+          toast("Não consegui criar seu usuário (policy users).");
+          return;
+        }
+        ME = created;
+        toast(role === "admin" ? "Você virou ADM (primeiro do banco)!" : "Conta criada!");
+      }else{
+        ME = user;
       }
     }
 
-    // POSTS
-    async function fetchPosts(){
+    function readRefFromHash(){
+      const h = location.hash || "";
+      const m = h.match(/ref=([^&]+)/i);
+      if(!m) return null;
+      const ref = decodeURIComponent(m[1]);
+      if(ref && ref.startsWith("ICE-") && ref.length <= 20) return ref;
+      return null;
+    }
+
+    /***********************
+     *  UI: render perfil
+     ***********************/
+    function renderPerfil(){
+      if(!ME) return;
+
+      $("#myIdTop").textContent = ME.id;
+      $("#myId").textContent = ME.id;
+      $("#myRef").textContent = ME.ref || "nenhum";
+
+      const pill = $("#myRolePill");
+      pill.className = "pill " + rolePillClass(ME.role);
+      pill.textContent = roleLabel(ME.role);
+
+      $("#meTitle").textContent = ME.name || "Seu Perfil";
+
+      const star = (ME.role === "mod") ? ` <span class="mod-star">★</span>` : "";
+      const adm = (ME.role === "admin") ? ` <span class="adm-badge">ADM</span>` : "";
+      $("#meNameHome").innerHTML = escapeHtml(ME.name || "Você") + star + adm;
+
+      const pic = ME.pic || avatarFallback(ME.name || "Você");
+      $("#mePic").src = pic;
+      $("#mePicHome").src = pic;
+
+      $("#admBox").style.display = (ME.role === "admin") ? "block" : "none";
+    }
+
+    /***********************
+     *  FEED (posts reais)
+     ***********************/
+    async function loadFeed(){
       const { data, error } = await supa
         .from("ice_posts")
-        .select("id, user_id, text, media, created_at")
-        .order("created_at", { ascending: false })
+        .select("id, text, media, created_at, user_id, ice_users(name, role, pic)")
+        .order("created_at", { ascending:false })
         .limit(50);
 
-      if(error){ console.log(error); toast("Erro ao carregar posts."); return []; }
-      return data || [];
-    }
+      if(error){
+        console.log(error);
+        $("#feed").innerHTML = `<div class="card">Erro ao carregar posts. Verifique policies da ice_posts.</div>`;
+        return;
+      }
 
-    async function fetchUsersMap(){
-      const { data, error } = await supa
-        .from("ice_users")
-        .select("id, name, pic, role");
-
-      if(error){ console.log(error); return new Map(); }
-      const map = new Map();
-      (data||[]).forEach(u => map.set(u.id, u));
-      return map;
-    }
-
-    async function renderFeed(){
-      const feed = $("#feed");
-      feed.innerHTML = `<div class="card muted">Carregando posts…</div>`;
-
-      const [posts, usersMap] = await Promise.all([fetchPosts(), fetchUsersMap()]);
-
-      feed.innerHTML = posts.map(p=>{
-        const u = usersMap.get(p.user_id) || { name:"Desconhecido", role:"member", pic:null };
-        const star = (u.role === "mod") ? `<span class="mod-star">★</span>` : "";
-        const adm = (u.role === "admin") ? `<span class="adm-badge">ADM</span>` : "";
-        const media = p.media ? renderMedia(p.media) : "";
+      $("#feed").innerHTML = (data || []).map(p=>{
+        const u = (p.ice_users || {});
+        const name = u.name || "Desconhecido";
+        const role = u.role || "member";
+        const pic = u.pic || avatarFallback(name);
+        const star = (role === "mod") ? `<span class="mod-star">★</span>` : "";
+        const adm = (role === "admin") ? `<span class="adm-badge">ADM</span>` : "";
         const when = new Date(p.created_at).toLocaleString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+        const media = p.media ? renderMedia(p.media) : "";
+
         return `
           <div class="card">
             <div class="post-head">
-              <img class="u-pic" src="${u.pic || avatarFallback(u.name)}" alt="foto" />
+              <img class="u-pic" src="${pic}" alt="foto" />
               <div>
-                <div class="u-name">${escapeHtml(u.name)} ${star} ${adm}</div>
-                <div class="u-sub muted">${when}</div>
+                <div class="u-name">${escapeHtml(name)} ${star} ${adm}</div>
+                <div class="u-sub muted">${when} • ${roleLabel(role)}</div>
               </div>
             </div>
             <div style="font-size:15px; line-height:1.35;">${escapeHtml(p.text || "")}</div>
             ${media ? `<div style="height:10px"></div>${media}` : ""}
           </div>
         `;
-      }).join("") || `<div class="card muted">Ainda não tem posts. Crie o primeiro.</div>`;
+      }).join("") || `<div class="card">Ainda não tem posts. Crie o primeiro.</div>`;
+    }
+
+    function openNewPost(){
+      $("#ovPost").style.display = "flex";
+      $("#postText").value = "";
+      $("#postFile").value = "";
     }
 
     async function publishPost(){
-      const me = getMeLocal();
+      if(!ME) return;
       const text = ($("#postText").value || "").trim();
       const media = await fileToDataURL($("#postFile").files[0]);
 
@@ -503,50 +574,40 @@
 
       const { error } = await supa
         .from("ice_posts")
-        .insert([{ user_id: me.id, text: text || "", media: media || null }]);
+        .insert([{ user_id: ME.id, text: text || "", media: media || null }]);
 
-      if(error){ console.log(error); toast("Erro ao publicar."); return; }
-
-      $("#ovPost").style.display = "none";
-      $("#postText").value = "";
-      $("#postFile").value = "";
-      toast("Post publicado!");
-      renderFeed();
-    }
-
-    // TROCAS (usa a linha id=1)
-    async function fetchTrade(){
-      const { data, error } = await supa
-        .from("ice_trades")
-        .select("id, a_media, a_desc, a_updated_at, b_media, b_desc, b_updated_at")
-        .eq("id", 1)
-        .maybeSingle();
-
-      if(error){ console.log(error); toast("Erro ao carregar troca."); return null; }
-      return data;
-    }
-
-    function tradeBoxHTML(media, desc){
-      const m = media ? renderMedia(media) : "";
-      const t = desc ? `<div style="margin-top:8px">${escapeHtml(desc)}</div>` : "";
-      const out = (m || t) ? (m + t) : `<span class="muted">Vazio.</span>`;
-      return out;
-    }
-
-    async function renderTrade(){
-      const t = await fetchTrade();
-      if(!t){
-        $("#previewA").innerHTML = "Sem dados.";
-        $("#previewB").innerHTML = "Sem dados.";
-        $("#badgeTroca").style.display = "none";
+      if(error){
+        console.log(error);
+        toast("Erro ao publicar (policy posts).");
         return;
       }
 
-      $("#previewA").innerHTML = tradeBoxHTML(t.a_media, t.a_desc);
-      $("#previewB").innerHTML = tradeBoxHTML(t.b_media, t.b_desc);
+      $("#ovPost").style.display = "none";
+      toast("Post publicado!");
+      await loadFeed();
+    }
 
-      const hasB = !!(t.b_media || (t.b_desc && t.b_desc.trim()));
-      $("#badgeTroca").style.display = hasB ? "inline-block" : "none";
+    /***********************
+     *  TRADES (update id=1) - isso resolve seu “Erro ao salvar troca”
+     ***********************/
+    async function loadTrade(){
+      const { data, error } = await supa
+        .from("ice_trades")
+        .select("*")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if(error){
+        console.log(error);
+        toast("Erro ao carregar troca (RLS trades).");
+        return;
+      }
+
+      const t = data || {};
+      $("#previewA").innerHTML = (t.a_media || t.a_desc) ? (renderMedia(t.a_media||"") + (t.a_desc?`<div style="margin-top:8px">${escapeHtml(t.a_desc)}</div>`:"")) : "Sem dados.";
+      $("#previewB").innerHTML = (t.b_media || t.b_desc) ? (renderMedia(t.b_media||"") + (t.b_desc?`<div style="margin-top:8px">${escapeHtml(t.b_desc)}</div>`:"")) : "Sem dados.";
+
+      $("#badgeTroca").style.display = (t.b_media || t.b_desc) ? "inline-block" : "none";
     }
 
     async function saveTrade(side){
@@ -560,198 +621,256 @@
         return;
       }
 
-      const patch = {};
-      if(side === "A"){
-        if(dataUrl) patch.a_media = dataUrl;
-        patch.a_desc = desc;
-        patch.a_updated_at = new Date().toISOString();
-      }else{
-        if(dataUrl) patch.b_media = dataUrl;
-        patch.b_desc = desc;
-        patch.b_updated_at = new Date().toISOString();
-      }
+      const patch = (side === "A")
+        ? { a_media: dataUrl || null, a_desc: desc || "", a_updated_at: new Date().toISOString() }
+        : { b_media: dataUrl || null, b_desc: desc || "", b_updated_at: new Date().toISOString() };
 
       const { error } = await supa
         .from("ice_trades")
         .update(patch)
         .eq("id", 1);
 
-      if(error){ console.log(error); toast("Erro ao salvar troca."); return; }
+      if(error){
+        console.log(error);
+        toast("Erro ao salvar troca. Confere policy UPDATE da ice_trades.");
+        return;
+      }
 
       fileEl.value = "";
-      toast("Troca salva!");
-      renderTrade();
+      toast(side === "A" ? "Seu item salvo!" : "Outro usuário publicou!");
+      await loadTrade();
     }
 
     async function clearTrade(){
       const { error } = await supa
         .from("ice_trades")
-        .update({
-          a_media: null, a_desc: "", a_updated_at: new Date().toISOString(),
-          b_media: null, b_desc: "", b_updated_at: new Date().toISOString()
-        })
+        .update({ a_media:null, a_desc:"", b_media:null, b_desc:"" })
         .eq("id", 1);
 
-      if(error){ console.log(error); toast("Erro ao limpar."); return; }
+      if(error){
+        console.log(error);
+        toast("Erro ao limpar troca.");
+        return;
+      }
       $("#descA").value = "";
       $("#descB").value = "";
       $("#fileA").value = "";
       $("#fileB").value = "";
       toast("Troca limpa!");
-      renderTrade();
+      await loadTrade();
     }
 
-    // CHAT
-    async function fetchMessages(){
-      const { data, error } = await supa
-        .from("ice_messages")
-        .select("id, user_id, text, created_at")
-        .order("created_at", { ascending: true })
-        .limit(60);
-
-      if(error){ console.log(error); return []; }
-      return data || [];
+    /***********************
+     *  PERFIL: share/copy + foto
+     ***********************/
+    function buildMyLink(){
+      return location.href.split("#")[0] + "#ref=" + encodeURIComponent(ME.id);
     }
 
-    async function renderChat(){
-      const box = $("#chatBox");
-      box.innerHTML = `<div class="li"><div class="left"><div><div class="who">Carregando…</div><div class="meta muted">Aguarde</div></div></div><span class="tag mem">…</span></div>`;
-      const [msgs, usersMap] = await Promise.all([fetchMessages(), fetchUsersMap()]);
-      const me = getMeLocal();
-
-      box.innerHTML = msgs.map(m=>{
-        const u = usersMap.get(m.user_id) || { name:"Desconhecido", role:"member" };
-        const when = new Date(m.created_at).toLocaleString("pt-BR", {hour:"2-digit", minute:"2-digit"});
-        const mine = (m.user_id === me.id);
-        return `
-          <div class="li" style="${mine ? "background:rgba(0,212,255,.10)" : ""}">
-            <div class="left">
-              <div>
-                <div class="who">${escapeHtml(u.name)} <span class="tag mem">${when}</span></div>
-                <div class="meta muted">${escapeHtml(m.text)}</div>
-              </div>
-            </div>
-            <span class="tag ${mine ? "mod" : "mem"}">${mine ? "VOCÊ" : "OK"}</span>
-          </div>
-        `;
-      }).join("") || `<div class="li"><div class="left"><div><div class="who">Sem mensagens</div><div class="meta muted">Seja o primeiro a falar.</div></div></div><span class="tag mem">—</span></div>`;
-
-      box.scrollTop = box.scrollHeight;
+    async function doShare(){
+      if(!ME) return;
+      const link = buildMyLink();
+      if(navigator.share){
+        try{
+          await navigator.share({ title:"ICE BLUE", text:"Meu link ICE BLUE:", url: link });
+          return;
+        }catch(e){}
+      }
+      // fallback
+      await doCopy();
+      toast("Seu celular não abre o compartilhar. Copiei o link.");
     }
 
-    async function sendChat(){
-      const me = getMeLocal();
-      const text = ($("#chatText").value || "").trim();
-      if(!text){ toast("Digite uma mensagem."); return; }
-
-      const { error } = await supa
-        .from("ice_messages")
-        .insert([{ user_id: me.id, text }]);
-
-      if(error){ console.log(error); toast("Erro ao enviar."); return; }
-
-      $("#chatText").value = "";
-      renderChat();
-    }
-
-    // Realtime subscriptions
-    function startRealtime(){
-      // Posts
-      supa.channel("rt_posts")
-        .on("postgres_changes", { event:"*", schema:"public", table:"ice_posts" }, () => renderFeed())
-        .subscribe();
-
-      // Trades
-      supa.channel("rt_trades")
-        .on("postgres_changes", { event:"*", schema:"public", table:"ice_trades" }, () => renderTrade())
-        .subscribe();
-
-      // Messages
-      supa.channel("rt_messages")
-        .on("postgres_changes", { event:"*", schema:"public", table:"ice_messages" }, () => {
-          if($("#ovChat").style.display === "flex") renderChat();
-        })
-        .subscribe();
-    }
-
-    // Binds UI
-    function bindUI(){
-      $("#btnNovoPost").addEventListener("click", ()=>{
-        $("#ovPost").style.display = "flex";
-        $("#postText").value = "";
-        $("#postFile").value = "";
-      });
-      $("#closePost").addEventListener("click", ()=> $("#ovPost").style.display="none");
-      $("#publishPost").addEventListener("click", publishPost);
-
-      $("#btnAbrirChat").addEventListener("click", async ()=>{
-        $("#ovChat").style.display = "flex";
-        await renderChat();
-      });
-      $("#closeChat").addEventListener("click", ()=> $("#ovChat").style.display="none");
-      $("#sendChat").addEventListener("click", sendChat);
-
-      $("#saveA").addEventListener("click", ()=> saveTrade("A"));
-      $("#saveB").addEventListener("click", ()=> saveTrade("B"));
-      $("#clearTroca").addEventListener("click", clearTrade);
-
-      $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
-      $("#fileFoto").addEventListener("change", async (e)=>{
-        const file = e.target.files[0];
-        const data = await fileToDataURL(file);
-        if(!data) return;
-        const me = setMeLocal({ pic: data });
-        await supa.from("ice_users").upsert({ id: me.id, name: me.name, pic: me.pic, role: me.role }, { onConflict:"id" });
-        toast("Foto atualizada!");
-        await ensureUser();
-        await renderFeed();
-      });
-
-      $("#btnSaveName").addEventListener("click", async ()=>{
-        const n = ($("#nameInput").value || "").trim();
-        if(n.length < 2){ toast("Nome muito curto."); return; }
-        const me = setMeLocal({ name: n.slice(0,24) });
-        await supa.from("ice_users").upsert({ id: me.id, name: me.name, pic: me.pic, role: me.role }, { onConflict:"id" });
-        toast("Nome salvo!");
-        await ensureUser();
-        await renderFeed();
-      });
-
-      $("#btnReset").addEventListener("click", ()=>{
-        if(confirm("Quer apagar seu ID local? (vai virar outro usuário)")){
-          localStorage.removeItem(LS_ME);
-          location.reload();
-        }
-      });
-
-      // fechar modais clicando fora
-      $("#ovPost").addEventListener("click", (e)=>{ if(e.target.id==="ovPost") $("#ovPost").style.display="none"; });
-      $("#ovChat").addEventListener("click", (e)=>{ if(e.target.id==="ovChat") $("#ovChat").style.display="none"; });
-    }
-
-    // START
-    (async function start(){
+    async function doCopy(){
+      if(!ME) return;
+      const link = buildMyLink();
       try{
-        bindNav();
-        bindUI();
-        showTela("tHome");
+        await navigator.clipboard.writeText(link);
+        toast("Link copiado!");
+      }catch(e){
+        // fallback manual
+        prompt("Copie o link:", link);
+      }
+    }
 
-        // se não colou URL/KEY, avisa
-        if(!SUPABASE_URL.startsWith("http") || SUPABASE_KEY.startsWith("COLE_")){
-          toast("Cole sua SUPABASE_URL e SUPABASE_KEY no começo do script!");
+    async function changePhoto(file){
+      if(!ME) return;
+      const data = await fileToDataURL(file);
+      if(!data) return;
+
+      const { data: updated, error } = await supa
+        .from("ice_users")
+        .update({ pic: data })
+        .eq("id", ME.id)
+        .select("*")
+        .single();
+
+      if(error){
+        console.log(error);
+        toast("Erro ao salvar foto (RLS users).");
+        return;
+      }
+
+      ME = updated;
+      toast("Foto atualizada!");
+      renderPerfil();
+      await loadFeed();
+    }
+
+    /***********************
+     *  ADM: listar users e promover MOD
+     ***********************/
+    async function openAdm(){
+      if(!ME || ME.role !== "admin"){
+        toast("Apenas ADM.");
+        return;
+      }
+
+      const sess = JSON.parse(localStorage.getItem(LS.admSess) || "null");
+      const fresh = sess && sess.ok && (Date.now()-sess.t) < 1000*60*30;
+
+      if(!fresh){
+        const pin = prompt("PIN do ADM:");
+        if(pin !== ADMIN_PIN){
+          toast("PIN incorreto.");
           return;
         }
-
-        await ensureUser();
-        await renderFeed();
-        await renderTrade();
-        startRealtime();
-
-        toast("ICE BLUE online!");
-      }catch(err){
-        console.log(err);
-        toast("Deu erro no script. Veja o console.");
+        localStorage.setItem(LS.admSess, JSON.stringify({ ok:true, t:Date.now() }));
       }
+
+      $("#ovAdm").style.display = "flex";
+      await renderUsersList();
+    }
+
+    async function renderUsersList(){
+      const { data, error } = await supa
+        .from("ice_users")
+        .select("*")
+        .order("created_at", { ascending:false })
+        .limit(200);
+
+      if(error){
+        console.log(error);
+        $("#usersList").innerHTML = `<div class="li"><div class="left"><div><div class="who">Erro ao carregar users</div><div class="meta muted">Verifique policy select na ice_users.</div></div></div><span class="tag mem">—</span></div>`;
+        return;
+      }
+
+      const list = (data || []).filter(u => u.id !== ME.id);
+      if(!list.length){
+        $("#usersList").innerHTML = `<div class="li"><div class="left"><div><div class="who">Sem outros usuários</div><div class="meta muted">Quando outras pessoas abrirem, aparece aqui.</div></div></div><span class="tag mem">—</span></div>`;
+        return;
+      }
+
+      $("#usersList").innerHTML = list.map(u=>{
+        const roleTag = u.role === "admin" ? "adm" : (u.role === "mod" ? "mod" : "mem");
+        const roleText = roleLabel(u.role);
+        const canToggle = (u.role !== "admin");
+        const btn = canToggle
+          ? (u.role === "mod"
+              ? `<button class="btn-ghost" data-act="demote" data-id="${u.id}" style="margin-top:0;">Remover MOD</button>`
+              : `<button class="btn-blue" data-act="promote" data-id="${u.id}" style="margin-top:0;">Tornar MOD</button>`)
+          : `<button class="btn-ghost" disabled style="margin-top:0; opacity:.55;">Bloqueado</button>`;
+
+        const star = (u.role === "mod") ? `<span class="mod-star">★</span>` : "";
+        const pic = u.pic || avatarFallback(u.name||"U");
+        return `
+          <div class="li">
+            <div class="left">
+              <img class="u-pic" src="${pic}" alt="foto" />
+              <div>
+                <div class="who">${escapeHtml(u.name||"Sem nome")} ${star}</div>
+                <div class="meta muted mono">${escapeHtml(u.id)}</div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+              <span class="tag ${roleTag}">${roleText}</span>
+              ${btn}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      $$("#usersList button[data-act]").forEach(b=>{
+        b.addEventListener("click", async ()=>{
+          const id = b.getAttribute("data-id");
+          const act = b.getAttribute("data-act");
+          const role = (act === "promote") ? "mod" : "member";
+
+          const { error } = await supa
+            .from("ice_users")
+            .update({ role })
+            .eq("id", id);
+
+          if(error){
+            console.log(error);
+            toast("Erro ao atualizar role (policy update users não existe).");
+            return;
+          }
+
+          toast(role === "mod" ? "Promovido a MOD." : "MOD removido.");
+          await renderUsersList();
+          await loadFeed();
+        });
+      });
+    }
+
+    /***********************
+     *  binds
+     ***********************/
+    $("#btnNovoPost").addEventListener("click", openNewPost);
+    $("#closePost").addEventListener("click", ()=> $("#ovPost").style.display="none");
+    $("#publishPost").addEventListener("click", publishPost);
+
+    $("#saveA").addEventListener("click", ()=> saveTrade("A"));
+    $("#saveB").addEventListener("click", ()=> saveTrade("B"));
+    $("#clearTroca").addEventListener("click", clearTrade);
+
+    $("#btnShare").addEventListener("click", doShare);
+    $("#btnCopy").addEventListener("click", doCopy);
+
+    $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
+    $("#fileFoto").addEventListener("change", (e)=> changePhoto(e.target.files[0]));
+
+    $("#btnAbrirAdm").addEventListener("click", openAdm);
+    $("#closeAdm").addEventListener("click", ()=> $("#ovAdm").style.display="none");
+
+    $("#btnReset").addEventListener("click", ()=>{
+      if(confirm("Vai limpar só seu ID deste celular. Continuará no banco. Continuar?")){
+        localStorage.removeItem(LS.me);
+        localStorage.removeItem(LS.admSess);
+        toast("Limpo. Recarregando...");
+        setTimeout(()=> location.reload(), 600);
+      }
+    });
+
+    $("#ovPost").addEventListener("click", (e)=>{ if(e.target.id==="ovPost") $("#ovPost").style.display="none"; });
+    $("#ovAdm").addEventListener("click", (e)=>{ if(e.target.id==="ovAdm") $("#ovAdm").style.display="none"; });
+
+    /***********************
+     *  start
+     ***********************/
+    (async function start(){
+      showTela("tHome");
+      await ensureMe();
+      if(!ME) return;
+
+      // aplica ref só se ainda não tem
+      const ref = readRefFromHash();
+      if(ref && (!ME.ref || ME.ref === "nenhum")){
+        const { data: upd, error } = await supa
+          .from("ice_users")
+          .update({ ref })
+          .eq("id", ME.id)
+          .select("*")
+          .single();
+
+        if(!error && upd) ME = upd;
+      }
+
+      renderPerfil();
+      await loadFeed();
+      await loadTrade();
+      toast("Conectado no Supabase ✅");
     })();
   </script>
 </body>
