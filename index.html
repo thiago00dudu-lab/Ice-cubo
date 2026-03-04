@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ICE BLUE</title>
 
+  <!-- Supabase JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root{ --ice:#00d4ff; --glass:rgba(255,255,255,.10); --danger:#ff4d6d; --ok:#2ecc71; }
 
@@ -100,8 +103,8 @@
     }
     input[type="file"]{ color:#fff; width:100%; }
 
-    .row{ display:flex; gap:10px; }
-    .col{ flex:1; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .col{ flex:1; min-width:240px; }
 
     .nav{
       position:fixed; bottom:0; width:100%;
@@ -119,7 +122,6 @@
       padding:2px 6px; font-size:10px; display:none;
     }
 
-    /* MODAL */
     .overlay{
       position:fixed; inset:0; background:rgba(0,0,0,.65);
       display:none; z-index:2500;
@@ -159,11 +161,12 @@
     .tag.mod{ border-color:rgba(0,212,255,.55); color:#bff6ff; }
     .tag.mem{ border-color:rgba(255,255,255,.20); color:#fff; opacity:.85; }
     .tag.adm{ border-color:rgba(255,215,0,.45); color:#ffeaa7; }
+
     .linkbox{
       background:rgba(0,0,0,.25);
       border:1px solid rgba(255,255,255,.12);
       border-radius:12px; padding:10px;
-      word-break:break-all;
+      word-break:break-word;
     }
     .muted{ opacity:.85; }
     .center{ text-align:center; }
@@ -179,7 +182,7 @@
     <div class="mini">
       ID: <span class="mono" id="myIdTop">—</span><br/>
       Permissão:
-      <span class="pill ice" id="myRolePill">MEMBRO</span>
+      <span class="pill ok" id="myRolePill">MEMBRO</span>
     </div>
   </div>
 
@@ -190,11 +193,12 @@
         <img class="u-pic" id="mePicHome" alt="foto" />
         <div>
           <div class="u-name" id="meNameHome">Seu Perfil</div>
-          <div class="u-sub muted">Feed local (demo)</div>
+          <div class="u-sub muted">Feed REAL (Supabase)</div>
         </div>
       </div>
-      <div class="muted">Posts de exemplo (perfis fake) + destaque de MOD com estrela azul.</div>
+
       <button class="btn-blue" id="btnNovoPost">➕ Criar postagem</button>
+      <button class="btn-ghost" id="btnAbrirChat">💬 Abrir Chat Geral</button>
     </div>
 
     <div id="feed"></div>
@@ -203,8 +207,8 @@
   <!-- TROCAS -->
   <section id="tTrocas" class="tela">
     <div class="card">
-      <div style="font-weight:1000; font-size:18px;">🔁 Troca 1 vs 1</div>
-      <div class="mini muted">Dividido no meio: você posta de um lado, e o outro lado fica disponível pra outro usuário postar a troca dele.</div>
+      <div style="font-weight:1000; font-size:18px;">🔁 Troca 1 vs 1 (REAL)</div>
+      <div class="mini muted">Salva no Supabase. Todo mundo vê igual.</div>
       <div class="divider"></div>
 
       <div class="row">
@@ -216,7 +220,7 @@
           <textarea id="descA" rows="4" placeholder="Descreva o que você oferece..."></textarea>
           <button class="btn-blue" id="saveA">Salvar meu item</button>
           <div style="height:10px"></div>
-          <div id="previewA" class="linkbox muted">Nenhum item ainda.</div>
+          <div id="previewA" class="linkbox muted">Carregando…</div>
         </div>
 
         <div class="col">
@@ -227,7 +231,7 @@
           <textarea id="descB" rows="4" placeholder="O que você quer oferecer em troca?"></textarea>
           <button class="btn-ok" id="saveB">Publicar como outro usuário</button>
           <div style="height:10px"></div>
-          <div id="previewB" class="linkbox muted">Vazio (aguardando alguém).</div>
+          <div id="previewB" class="linkbox muted">Carregando…</div>
         </div>
       </div>
 
@@ -241,29 +245,22 @@
       <img class="u-pic" id="mePic" style="width:74px;height:74px;border-width:2px" alt="foto" />
       <div style="height:10px"></div>
       <div style="font-weight:1000; font-size:34px;">Seu Perfil</div>
+
       <div class="mini muted">
         Seu ID: <span class="mono" id="myId">—</span><br/>
-        Seu Pai (ref): <span class="mono" id="myRef">nenhum</span>
+        Nome: <span class="mono" id="myNameLabel">—</span>
       </div>
 
-      <button class="btn-blue" id="btnShare">📣 Compartilhar meu link</button>
-      <button class="btn-ghost" id="btnCopy">📎 Copiar link</button>
+      <div class="divider"></div>
+
+      <input type="text" id="nameInput" placeholder="Trocar nome (ex: Jessica)" />
+      <button class="btn-blue" id="btnSaveName">Salvar nome</button>
 
       <div style="height:10px"></div>
       <button class="btn-ghost" id="btnTrocarFoto">Trocar Foto</button>
       <input type="file" id="fileFoto" accept="image/*" style="display:none" />
-      <div style="height:10px"></div>
 
-      <div class="divider"></div>
-
-      <!-- ADM (NÃO MOSTRA SENHA AQUI) -->
-      <div id="admBox" class="card" style="margin:0; text-align:left; display:none;">
-        <div style="font-weight:1000; font-size:18px;">🛡️ Área ADM/MOD (local)</div>
-        <div class="mini muted">A área só aparece para ADM. A senha não fica visível pra ninguém.</div>
-        <button class="btn-blue" id="btnAbrirAdm">Entrar na Área ADM</button>
-      </div>
-
-      <button class="btn-danger" id="btnReset">Resetar (zerar) dados locais</button>
+      <button class="btn-danger" id="btnReset">Resetar (apagar seu ID local)</button>
     </div>
   </section>
 
@@ -273,7 +270,7 @@
       <div class="row" style="align-items:center;">
         <div class="col">
           <h3 style="margin:0;">➕ Nova postagem</h3>
-          <div class="small muted">Vai aparecer no feed local.</div>
+          <div class="small muted">Vai pro banco (Supabase) e aparece pra todo mundo.</div>
         </div>
         <div style="width:120px">
           <button class="btn-ghost" id="closePost" style="margin-top:0;">Fechar</button>
@@ -287,28 +284,27 @@
     </div>
   </div>
 
-  <!-- MODAL ADM -->
-  <div class="overlay" id="ovAdm">
+  <!-- MODAL CHAT -->
+  <div class="overlay" id="ovChat">
     <div class="sheet">
       <div class="row" style="align-items:center;">
         <div class="col">
-          <h3 style="margin:0;">🛡️ Painel ADM</h3>
-          <div class="small muted">Promover/rebaixar usuários pra MOD (estrela azul no nome).</div>
+          <h3 style="margin:0;">💬 Chat Geral</h3>
+          <div class="small muted">Tempo real (Supabase Realtime).</div>
         </div>
         <div style="width:120px">
-          <button class="btn-ghost" id="closeAdm" style="margin-top:0;">Fechar</button>
+          <button class="btn-ghost" id="closeChat" style="margin-top:0;">Fechar</button>
         </div>
       </div>
 
       <div class="divider"></div>
 
-      <div class="list" id="usersList"></div>
+      <div id="chatBox" class="list" style="max-height:45vh; overflow:auto;"></div>
 
       <div class="divider"></div>
 
-      <div class="small muted">
-        * Tudo local (localStorage). Se trocar de celular/navegador, não leva os dados.
-      </div>
+      <textarea id="chatText" rows="2" placeholder="Digite sua mensagem..."></textarea>
+      <button class="btn-blue" id="sendChat">Enviar</button>
     </div>
   </div>
 
@@ -320,18 +316,16 @@
   </nav>
 
   <script>
-    /***********************
-     *  UTIL / STORAGE
-     ***********************/
-    const LS = {
-      users: "ice_users_v1",
-      current: "ice_current_v1",
-      trade: "ice_trade_v1",
-      posts: "ice_posts_v1",
-      admSession: "ice_adm_session_v1"
-    };
+    /*****************************************************
+     * 1) COLE AQUI SEUS DADOS DO SUPABASE (2 LINHAS)
+     *****************************************************/
+    const SUPABASE_URL = "sb_publishable_nBUkmMoalAqB0Ki8sSMFnw_UCX4fnMu";
+    const SUPABASE_KEY = "whjomowgzoukmcaepbgv";
 
-    const ADMIN_PIN = "1533"; // não aparece na tela
+    /*****************************************************
+     * 2) APP
+     *****************************************************/
+    const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const $ = (q) => document.querySelector(q);
     const $$ = (q) => Array.from(document.querySelectorAll(q));
@@ -350,18 +344,6 @@
       s += "-";
       for(let i=0;i<4;i++) s += a[Math.floor(Math.random()*a.length)];
       return s;
-    }
-
-    function loadJSON(key, fallback){
-      try{
-        const v = localStorage.getItem(key);
-        if(!v) return fallback;
-        return JSON.parse(v);
-      }catch(e){ return fallback; }
-    }
-
-    function saveJSON(key, value){
-      localStorage.setItem(key, JSON.stringify(value));
     }
 
     function escapeHtml(str){
@@ -383,126 +365,6 @@
       });
     }
 
-    /***********************
-     *  INIT (USERS)
-     ***********************/
-    function seedIfEmpty(){
-      let users = loadJSON(LS.users, null);
-      if(users && Array.isArray(users) && users.length) return;
-
-      // cria usuários fake
-      users = [
-        { id: randId(), name:"Nina Ocean", role:"mod", pic:null },
-        { id: randId(), name:"Caio Drift", role:"member", pic:null },
-        { id: randId(), name:"Lua Neon", role:"mod", pic:null },
-        { id: randId(), name:"Rafa Blue", role:"member", pic:null },
-      ];
-
-      // cria seu usuário (se não existir current)
-      let current = loadJSON(LS.current, null);
-      if(!current){
-        const my = { id: randId(), name:"Você", role:"admin", pic:null, ref:"nenhum" };
-        users.unshift(my);
-        current = { id: my.id };
-        saveJSON(LS.current, current);
-      }
-
-      saveJSON(LS.users, users);
-
-      // posts demo
-      const posts = [
-        { id: "p1", uid: users[1].id, text:"Troco celular por bike 🚲", media:null, t: Date.now()-1000*60*50 },
-        { id: "p2", uid: users[2].id, text:"Tenho PS4, quero notebook.", media:null, t: Date.now()-1000*60*30 },
-        { id: "p3", uid: users[3].id, text:"Alguém troca drone por iPhone antigo?", media:null, t: Date.now()-1000*60*10 }
-      ];
-      saveJSON(LS.posts, posts);
-
-      // trade demo
-      saveJSON(LS.trade, { A:null, B:null });
-    }
-
-    function getUsers(){ return loadJSON(LS.users, []); }
-    function setUsers(users){ saveJSON(LS.users, users); }
-
-    function getMe(){
-      const cur = loadJSON(LS.current, null);
-      const users = getUsers();
-      let me = users.find(u => u.id === (cur && cur.id));
-      if(!me){
-        me = { id: randId(), name:"Você", role:"admin", pic:null, ref:"nenhum" };
-        users.unshift(me);
-        setUsers(users);
-        saveJSON(LS.current, { id: me.id });
-      }
-      return me;
-    }
-
-    function updateUser(id, patch){
-      const users = getUsers();
-      const idx = users.findIndex(u => u.id === id);
-      if(idx === -1) return;
-      users[idx] = { ...users[idx], ...patch };
-      setUsers(users);
-    }
-
-    function roleLabel(role){
-      if(role === "admin") return "ADM";
-      if(role === "mod") return "MOD";
-      return "MEMBRO";
-    }
-
-    function rolePillClass(role){
-      if(role === "admin") return "danger";
-      if(role === "mod") return "ice";
-      return "ok";
-    }
-
-    /***********************
-     *  UI NAV
-     ***********************/
-    function showTela(id){
-      $$(".tela").forEach(t => t.style.display = "none");
-      $("#"+id).style.display = "block";
-      $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.go === id));
-      window.scrollTo({top:0, behavior:"smooth"});
-      renderAll();
-    }
-
-    $$(".nav-item").forEach(n=>{
-      n.addEventListener("click", ()=> showTela(n.dataset.go));
-    });
-
-    /***********************
-     *  FEED
-     ***********************/
-    function renderFeed(){
-      const feed = $("#feed");
-      const users = getUsers();
-      const posts = loadJSON(LS.posts, []);
-      posts.sort((a,b)=> b.t - a.t);
-
-      feed.innerHTML = posts.map(p=>{
-        const u = users.find(x => x.id === p.uid) || {name:"Desconhecido", role:"member", pic:null};
-        const star = (u.role === "mod") ? `<span class="mod-star">★</span>` : "";
-        const adm = (u.role === "admin") ? `<span class="adm-badge">ADM</span>` : "";
-        const media = p.media ? renderMedia(p.media) : "";
-        const when = new Date(p.t).toLocaleString("pt-BR", {hour:"2-digit", minute:"2-digit"});
-        return `
-          <div class="card">
-            <div class="post-head">
-              <img class="u-pic" src="${u.pic || avatarFallback(u.name)}" alt="foto" />
-              <div>
-                <div class="u-name">${escapeHtml(u.name)} ${star} ${adm}</div>
-                <div class="u-sub muted">${when} • ${roleLabel(u.role)}</div>
-              </div>
-            </div>
-            <div style="font-size:15px; line-height:1.35;">${escapeHtml(p.text)}</div>
-            ${media ? `<div style="height:10px"></div>${media}` : ""}
-          </div>
-        `;
-      }).join("");
-    }
-
     function renderMedia(dataUrl){
       if(!dataUrl) return "";
       if(dataUrl.startsWith("data:video")){
@@ -514,7 +376,6 @@
     }
 
     function avatarFallback(name){
-      // mini avatar svg
       const bg = "001d3d";
       const fg = "bff6ff";
       const initials = (name||"U").trim().split(/\s+/).slice(0,2).map(s=>s[0].toUpperCase()).join("").slice(0,2) || "U";
@@ -525,11 +386,170 @@
       return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
     }
 
-    /***********************
-     *  TROCAS
-     ***********************/
+    // Identidade local (pra você ser "um usuário" sem login)
+    const LS_ME = "ice_me_v1";
+    function getMeLocal(){
+      try{
+        const v = localStorage.getItem(LS_ME);
+        if(v) return JSON.parse(v);
+      }catch(e){}
+      const me = { id: randId(), name: "Jessica", pic: null, role: "member" };
+      localStorage.setItem(LS_ME, JSON.stringify(me));
+      return me;
+    }
+    function setMeLocal(patch){
+      const me = getMeLocal();
+      const next = { ...me, ...patch };
+      localStorage.setItem(LS_ME, JSON.stringify(next));
+      return next;
+    }
+
+    // UI NAV
+    function showTela(id){
+      $$(".tela").forEach(t => t.style.display = "none");
+      const el = $("#"+id);
+      if(el) el.style.display = "block";
+      $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.go === id));
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+    function bindNav(){
+      $$(".nav-item").forEach(n=>{
+        n.addEventListener("click", ()=> showTela(n.dataset.go));
+      });
+    }
+
+    // SUPABASE: garante seu user no banco
+    async function ensureUser(){
+      const me = getMeLocal();
+      $("#myIdTop").textContent = me.id;
+      $("#myId").textContent = me.id;
+      $("#myNameLabel").textContent = me.name;
+
+      $("#mePic").src = me.pic || avatarFallback(me.name);
+      $("#mePicHome").src = me.pic || avatarFallback(me.name);
+      $("#meNameHome").textContent = me.name;
+
+      // upsert no banco
+      const { error } = await supa
+        .from("ice_users")
+        .upsert({ id: me.id, name: me.name, pic: me.pic, role: me.role }, { onConflict: "id" });
+
+      if(error){
+        console.log(error);
+        toast("Erro Supabase (users). Veja se colocou URL/KEY certo.");
+      }
+    }
+
+    // POSTS
+    async function fetchPosts(){
+      const { data, error } = await supa
+        .from("ice_posts")
+        .select("id, user_id, text, media, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if(error){ console.log(error); toast("Erro ao carregar posts."); return []; }
+      return data || [];
+    }
+
+    async function fetchUsersMap(){
+      const { data, error } = await supa
+        .from("ice_users")
+        .select("id, name, pic, role");
+
+      if(error){ console.log(error); return new Map(); }
+      const map = new Map();
+      (data||[]).forEach(u => map.set(u.id, u));
+      return map;
+    }
+
+    async function renderFeed(){
+      const feed = $("#feed");
+      feed.innerHTML = `<div class="card muted">Carregando posts…</div>`;
+
+      const [posts, usersMap] = await Promise.all([fetchPosts(), fetchUsersMap()]);
+
+      feed.innerHTML = posts.map(p=>{
+        const u = usersMap.get(p.user_id) || { name:"Desconhecido", role:"member", pic:null };
+        const star = (u.role === "mod") ? `<span class="mod-star">★</span>` : "";
+        const adm = (u.role === "admin") ? `<span class="adm-badge">ADM</span>` : "";
+        const media = p.media ? renderMedia(p.media) : "";
+        const when = new Date(p.created_at).toLocaleString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+        return `
+          <div class="card">
+            <div class="post-head">
+              <img class="u-pic" src="${u.pic || avatarFallback(u.name)}" alt="foto" />
+              <div>
+                <div class="u-name">${escapeHtml(u.name)} ${star} ${adm}</div>
+                <div class="u-sub muted">${when}</div>
+              </div>
+            </div>
+            <div style="font-size:15px; line-height:1.35;">${escapeHtml(p.text || "")}</div>
+            ${media ? `<div style="height:10px"></div>${media}` : ""}
+          </div>
+        `;
+      }).join("") || `<div class="card muted">Ainda não tem posts. Crie o primeiro.</div>`;
+    }
+
+    async function publishPost(){
+      const me = getMeLocal();
+      const text = ($("#postText").value || "").trim();
+      const media = await fileToDataURL($("#postFile").files[0]);
+
+      if(!text && !media){
+        toast("Escreva algo ou envie uma mídia.");
+        return;
+      }
+
+      const { error } = await supa
+        .from("ice_posts")
+        .insert([{ user_id: me.id, text: text || "", media: media || null }]);
+
+      if(error){ console.log(error); toast("Erro ao publicar."); return; }
+
+      $("#ovPost").style.display = "none";
+      $("#postText").value = "";
+      $("#postFile").value = "";
+      toast("Post publicado!");
+      renderFeed();
+    }
+
+    // TROCAS (usa a linha id=1)
+    async function fetchTrade(){
+      const { data, error } = await supa
+        .from("ice_trades")
+        .select("id, a_media, a_desc, a_updated_at, b_media, b_desc, b_updated_at")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if(error){ console.log(error); toast("Erro ao carregar troca."); return null; }
+      return data;
+    }
+
+    function tradeBoxHTML(media, desc){
+      const m = media ? renderMedia(media) : "";
+      const t = desc ? `<div style="margin-top:8px">${escapeHtml(desc)}</div>` : "";
+      const out = (m || t) ? (m + t) : `<span class="muted">Vazio.</span>`;
+      return out;
+    }
+
+    async function renderTrade(){
+      const t = await fetchTrade();
+      if(!t){
+        $("#previewA").innerHTML = "Sem dados.";
+        $("#previewB").innerHTML = "Sem dados.";
+        $("#badgeTroca").style.display = "none";
+        return;
+      }
+
+      $("#previewA").innerHTML = tradeBoxHTML(t.a_media, t.a_desc);
+      $("#previewB").innerHTML = tradeBoxHTML(t.b_media, t.b_desc);
+
+      const hasB = !!(t.b_media || (t.b_desc && t.b_desc.trim()));
+      $("#badgeTroca").style.display = hasB ? "inline-block" : "none";
+    }
+
     async function saveTrade(side){
-      const trade = loadJSON(LS.trade, {A:null, B:null});
       const fileEl = side === "A" ? $("#fileA") : $("#fileB");
       const descEl = side === "A" ? $("#descA") : $("#descB");
       const dataUrl = await fileToDataURL(fileEl.files[0]);
@@ -540,286 +560,199 @@
         return;
       }
 
-      trade[side] = {
-        media: dataUrl || (trade[side] && trade[side].media) || null,
-        desc: desc || (trade[side] && trade[side].desc) || "",
-        t: Date.now()
-      };
+      const patch = {};
+      if(side === "A"){
+        if(dataUrl) patch.a_media = dataUrl;
+        patch.a_desc = desc;
+        patch.a_updated_at = new Date().toISOString();
+      }else{
+        if(dataUrl) patch.b_media = dataUrl;
+        patch.b_desc = desc;
+        patch.b_updated_at = new Date().toISOString();
+      }
 
-      saveJSON(LS.trade, trade);
+      const { error } = await supa
+        .from("ice_trades")
+        .update(patch)
+        .eq("id", 1);
+
+      if(error){ console.log(error); toast("Erro ao salvar troca."); return; }
+
       fileEl.value = "";
-      toast(side === "A" ? "Seu item salvo!" : "Outro usuário publicou!");
+      toast("Troca salva!");
       renderTrade();
     }
 
-    function renderTrade(){
-      const trade = loadJSON(LS.trade, {A:null, B:null});
-      $("#previewA").innerHTML = trade.A ? tradeBoxHTML(trade.A) : "Nenhum item ainda.";
-      $("#previewB").innerHTML = trade.B ? tradeBoxHTML(trade.B) : "Vazio (aguardando alguém).";
+    async function clearTrade(){
+      const { error } = await supa
+        .from("ice_trades")
+        .update({
+          a_media: null, a_desc: "", a_updated_at: new Date().toISOString(),
+          b_media: null, b_desc: "", b_updated_at: new Date().toISOString()
+        })
+        .eq("id", 1);
 
-      const hasB = !!trade.B;
-      $("#badgeTroca").style.display = hasB ? "inline-block" : "none";
-    }
-
-    function tradeBoxHTML(item){
-      const media = item.media ? renderMedia(item.media) : "";
-      const text = item.desc ? `<div style="margin-top:8px">${escapeHtml(item.desc)}</div>` : "";
-      return `${media}${text}` || "—";
-    }
-
-    /***********************
-     *  PERFIL + ADM PANEL
-     ***********************/
-    function renderPerfil(){
-      const me = getMe();
-
-      $("#myIdTop").textContent = me.id;
-      $("#myId").textContent = me.id;
-      $("#myRef").textContent = me.ref || "nenhum";
-
-      const pill = $("#myRolePill");
-      pill.className = "pill " + rolePillClass(me.role);
-      pill.textContent = roleLabel(me.role);
-
-      const nameLine = document.createElement("div");
-      nameLine.className = "u-name";
-      nameLine.innerHTML = escapeHtml(me.name) + (me.role==="mod" ? ` <span class="mod-star">★</span>` : "") + (me.role==="admin" ? ` <span class="adm-badge">ADM</span>` : "");
-      $("#meNameHome").replaceWith(nameLine);
-      nameLine.id = "meNameHome";
-
-      $("#mePic").src = me.pic || avatarFallback(me.name);
-      $("#mePicHome").src = me.pic || avatarFallback(me.name);
-
-      // caixa ADM só aparece se você for admin
-      $("#admBox").style.display = (me.role === "admin") ? "block" : "none";
-    }
-
-    function openAdm(){
-      const me = getMe();
-      if(me.role !== "admin"){
-        toast("Apenas ADM.");
-        return;
-      }
-
-      // sessão ADM (evita pedir pin toda hora, mas pode pedir se quiser)
-      const sess = loadJSON(LS.admSession, {ok:false, t:0});
-      const fresh = sess.ok && (Date.now() - sess.t) < 1000*60*30; // 30min
-
-      let ok = fresh;
-      if(!ok){
-        const pin = prompt("PIN do ADM:");
-        if(pin !== ADMIN_PIN){
-          toast("PIN incorreto.");
-          return;
-        }
-        saveJSON(LS.admSession, {ok:true, t:Date.now()});
-      }
-
-      $("#ovAdm").style.display = "flex";
-      renderUsersList();
-    }
-
-    function renderUsersList(){
-      const me = getMe();
-      const users = getUsers().filter(u => u.id !== me.id); // lista sem você
-      const list = $("#usersList");
-
-      if(!users.length){
-        list.innerHTML = `<div class="li"><div class="left"><div><div class="who">Sem usuários</div><div class="meta muted">Crie posts pra aparecer mais gente.</div></div></div><span class="tag mem">—</span></div>`;
-        return;
-      }
-
-      list.innerHTML = users.map(u=>{
-        const roleTag = u.role === "admin" ? "adm" : (u.role === "mod" ? "mod" : "mem");
-        const roleText = roleLabel(u.role);
-        const canToggle = (u.role !== "admin"); // não mexe em outro admin (se existir)
-        const btn = canToggle
-          ? (u.role === "mod"
-              ? `<button class="btn-ghost" data-act="demote" data-id="${u.id}" style="margin-top:0;">Remover MOD</button>`
-              : `<button class="btn-blue" data-act="promote" data-id="${u.id}" style="margin-top:0;">Tornar MOD</button>`)
-          : `<button class="btn-ghost" disabled style="margin-top:0; opacity:.55;">Bloqueado</button>`;
-
-        const star = (u.role === "mod") ? `<span class="mod-star">★</span>` : "";
-        return `
-          <div class="li">
-            <div class="left">
-              <img class="u-pic" src="${u.pic || avatarFallback(u.name)}" alt="foto" />
-              <div>
-                <div class="who">${escapeHtml(u.name)} ${star}</div>
-                <div class="meta muted mono">${escapeHtml(u.id)}</div>
-              </div>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-              <span class="tag ${roleTag}">${roleText}</span>
-              ${btn}
-            </div>
-          </div>
-        `;
-      }).join("");
-
-      // binds
-      $$("#usersList button[data-act]").forEach(b=>{
-        b.addEventListener("click", ()=>{
-          const id = b.getAttribute("data-id");
-          const act = b.getAttribute("data-act");
-          if(act === "promote"){
-            updateUser(id, { role:"mod" });
-            toast("Usuário promovido a MOD.");
-          }else{
-            updateUser(id, { role:"member" });
-            toast("MOD removido.");
-          }
-          renderUsersList();
-          renderFeed(); // atualiza estrela no feed
-        });
-      });
-    }
-
-    /***********************
-     *  NOVO POST
-     ***********************/
-    function openNewPost(){
-      $("#ovPost").style.display = "flex";
-      $("#postText").value = "";
-      $("#postFile").value = "";
-    }
-
-    async function publishPost(){
-      const me = getMe();
-      const text = ($("#postText").value || "").trim();
-      const media = await fileToDataURL($("#postFile").files[0]);
-
-      if(!text && !media){
-        toast("Escreva algo ou envie uma mídia.");
-        return;
-      }
-
-      const posts = loadJSON(LS.posts, []);
-      posts.unshift({
-        id: "p_" + Math.random().toString(16).slice(2),
-        uid: me.id,
-        text: text || "",
-        media: media || null,
-        t: Date.now()
-      });
-      saveJSON(LS.posts, posts);
-      $("#ovPost").style.display = "none";
-      toast("Post publicado!");
-      renderFeed();
-    }
-
-    /***********************
-     *  ACTIONS
-     ***********************/
-    $("#btnNovoPost").addEventListener("click", openNewPost);
-    $("#closePost").addEventListener("click", ()=> $("#ovPost").style.display="none");
-    $("#publishPost").addEventListener("click", publishPost);
-
-    $("#saveA").addEventListener("click", ()=> saveTrade("A"));
-    $("#saveB").addEventListener("click", ()=> saveTrade("B"));
-    $("#clearTroca").addEventListener("click", ()=>{
-      saveJSON(LS.trade, {A:null, B:null});
+      if(error){ console.log(error); toast("Erro ao limpar."); return; }
       $("#descA").value = "";
       $("#descB").value = "";
       $("#fileA").value = "";
       $("#fileB").value = "";
       toast("Troca limpa!");
       renderTrade();
-    });
+    }
 
-    $("#btnShare").addEventListener("click", async ()=>{
-      const me = getMe();
-      const link = location.href.split("#")[0] + "#ref=" + encodeURIComponent(me.id);
-      if(navigator.share){
-        try{
-          await navigator.share({ title:"ICE BLUE", text:"Meu link ICE BLUE:", url: link });
-        }catch(e){}
-      }else{
-        toast("Compartilhar não disponível. Copie o link.");
-      }
-    });
+    // CHAT
+    async function fetchMessages(){
+      const { data, error } = await supa
+        .from("ice_messages")
+        .select("id, user_id, text, created_at")
+        .order("created_at", { ascending: true })
+        .limit(60);
 
-    $("#btnCopy").addEventListener("click", async ()=>{
-      const me = getMe();
-      const link = location.href.split("#")[0] + "#ref=" + encodeURIComponent(me.id);
+      if(error){ console.log(error); return []; }
+      return data || [];
+    }
+
+    async function renderChat(){
+      const box = $("#chatBox");
+      box.innerHTML = `<div class="li"><div class="left"><div><div class="who">Carregando…</div><div class="meta muted">Aguarde</div></div></div><span class="tag mem">…</span></div>`;
+      const [msgs, usersMap] = await Promise.all([fetchMessages(), fetchUsersMap()]);
+      const me = getMeLocal();
+
+      box.innerHTML = msgs.map(m=>{
+        const u = usersMap.get(m.user_id) || { name:"Desconhecido", role:"member" };
+        const when = new Date(m.created_at).toLocaleString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+        const mine = (m.user_id === me.id);
+        return `
+          <div class="li" style="${mine ? "background:rgba(0,212,255,.10)" : ""}">
+            <div class="left">
+              <div>
+                <div class="who">${escapeHtml(u.name)} <span class="tag mem">${when}</span></div>
+                <div class="meta muted">${escapeHtml(m.text)}</div>
+              </div>
+            </div>
+            <span class="tag ${mine ? "mod" : "mem"}">${mine ? "VOCÊ" : "OK"}</span>
+          </div>
+        `;
+      }).join("") || `<div class="li"><div class="left"><div><div class="who">Sem mensagens</div><div class="meta muted">Seja o primeiro a falar.</div></div></div><span class="tag mem">—</span></div>`;
+
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendChat(){
+      const me = getMeLocal();
+      const text = ($("#chatText").value || "").trim();
+      if(!text){ toast("Digite uma mensagem."); return; }
+
+      const { error } = await supa
+        .from("ice_messages")
+        .insert([{ user_id: me.id, text }]);
+
+      if(error){ console.log(error); toast("Erro ao enviar."); return; }
+
+      $("#chatText").value = "";
+      renderChat();
+    }
+
+    // Realtime subscriptions
+    function startRealtime(){
+      // Posts
+      supa.channel("rt_posts")
+        .on("postgres_changes", { event:"*", schema:"public", table:"ice_posts" }, () => renderFeed())
+        .subscribe();
+
+      // Trades
+      supa.channel("rt_trades")
+        .on("postgres_changes", { event:"*", schema:"public", table:"ice_trades" }, () => renderTrade())
+        .subscribe();
+
+      // Messages
+      supa.channel("rt_messages")
+        .on("postgres_changes", { event:"*", schema:"public", table:"ice_messages" }, () => {
+          if($("#ovChat").style.display === "flex") renderChat();
+        })
+        .subscribe();
+    }
+
+    // Binds UI
+    function bindUI(){
+      $("#btnNovoPost").addEventListener("click", ()=>{
+        $("#ovPost").style.display = "flex";
+        $("#postText").value = "";
+        $("#postFile").value = "";
+      });
+      $("#closePost").addEventListener("click", ()=> $("#ovPost").style.display="none");
+      $("#publishPost").addEventListener("click", publishPost);
+
+      $("#btnAbrirChat").addEventListener("click", async ()=>{
+        $("#ovChat").style.display = "flex";
+        await renderChat();
+      });
+      $("#closeChat").addEventListener("click", ()=> $("#ovChat").style.display="none");
+      $("#sendChat").addEventListener("click", sendChat);
+
+      $("#saveA").addEventListener("click", ()=> saveTrade("A"));
+      $("#saveB").addEventListener("click", ()=> saveTrade("B"));
+      $("#clearTroca").addEventListener("click", clearTrade);
+
+      $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
+      $("#fileFoto").addEventListener("change", async (e)=>{
+        const file = e.target.files[0];
+        const data = await fileToDataURL(file);
+        if(!data) return;
+        const me = setMeLocal({ pic: data });
+        await supa.from("ice_users").upsert({ id: me.id, name: me.name, pic: me.pic, role: me.role }, { onConflict:"id" });
+        toast("Foto atualizada!");
+        await ensureUser();
+        await renderFeed();
+      });
+
+      $("#btnSaveName").addEventListener("click", async ()=>{
+        const n = ($("#nameInput").value || "").trim();
+        if(n.length < 2){ toast("Nome muito curto."); return; }
+        const me = setMeLocal({ name: n.slice(0,24) });
+        await supa.from("ice_users").upsert({ id: me.id, name: me.name, pic: me.pic, role: me.role }, { onConflict:"id" });
+        toast("Nome salvo!");
+        await ensureUser();
+        await renderFeed();
+      });
+
+      $("#btnReset").addEventListener("click", ()=>{
+        if(confirm("Quer apagar seu ID local? (vai virar outro usuário)")){
+          localStorage.removeItem(LS_ME);
+          location.reload();
+        }
+      });
+
+      // fechar modais clicando fora
+      $("#ovPost").addEventListener("click", (e)=>{ if(e.target.id==="ovPost") $("#ovPost").style.display="none"; });
+      $("#ovChat").addEventListener("click", (e)=>{ if(e.target.id==="ovChat") $("#ovChat").style.display="none"; });
+    }
+
+    // START
+    (async function start(){
       try{
-        await navigator.clipboard.writeText(link);
-        toast("Link copiado!");
-      }catch(e){
-        toast("Não deu pra copiar. Selecione e copie manual.");
-      }
-    });
+        bindNav();
+        bindUI();
+        showTela("tHome");
 
-    $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
-    $("#fileFoto").addEventListener("change", async (e)=>{
-      const file = e.target.files[0];
-      const data = await fileToDataURL(file);
-      if(!data) return;
-      const me = getMe();
-      updateUser(me.id, { pic: data });
-      toast("Foto atualizada!");
-      renderPerfil();
-      renderFeed();
-    });
-
-    $("#btnAbrirAdm").addEventListener("click", openAdm);
-    $("#closeAdm").addEventListener("click", ()=> $("#ovAdm").style.display="none");
-
-    $("#btnReset").addEventListener("click", ()=>{
-      if(confirm("Tem certeza que quer zerar tudo (local)?")){
-        Object.values(LS).forEach(k => localStorage.removeItem(k));
-        toast("Zerado. Recarregando...");
-        setTimeout(()=> location.reload(), 700);
-      }
-    });
-
-    // fechar modais clicando fora
-    $("#ovPost").addEventListener("click", (e)=>{ if(e.target.id==="ovPost") $("#ovPost").style.display="none"; });
-    $("#ovAdm").addEventListener("click", (e)=>{ if(e.target.id==="ovAdm") $("#ovAdm").style.display="none"; });
-
-    /***********************
-     *  REF (PAI) via hash
-     ***********************/
-    function applyRefFromHash(){
-      const me = getMe();
-      const h = location.hash || "";
-      const m = h.match(/ref=([^&]+)/i);
-      if(m && !me.ref || me.ref === "nenhum"){
-        const ref = decodeURIComponent(m[1]);
-        if(ref && ref.startsWith("ICE-") && ref.length <= 20){
-          updateUser(me.id, { ref });
-          toast("Ref aplicado!");
+        // se não colou URL/KEY, avisa
+        if(!SUPABASE_URL.startsWith("http") || SUPABASE_KEY.startsWith("COLE_")){
+          toast("Cole sua SUPABASE_URL e SUPABASE_KEY no começo do script!");
+          return;
         }
-      }
-    }
 
-    /***********************
-     *  RENDER ALL
-     ***********************/
-    function renderAll(){
-      renderPerfil();
-      renderTrade();
-      renderFeed();
-    }
+        await ensureUser();
+        await renderFeed();
+        await renderTrade();
+        startRealtime();
 
-    /***********************
-     *  START
-     ***********************/
-    seedIfEmpty();
-    applyRefFromHash();
-
-    // garante nome do usuário (se quiser mudar, pode alterar aqui)
-    (function ensureName(){
-      const me = getMe();
-      if(!me.name || me.name === "Você"){
-        const n = prompt("Seu nome (aparece no app):", "Jessica");
-        if(n && n.trim().length >= 2){
-          updateUser(me.id, { name: n.trim().slice(0,24) });
-        }
+        toast("ICE BLUE online!");
+      }catch(err){
+        console.log(err);
+        toast("Deu erro no script. Veja o console.");
       }
     })();
-
-    showTela("tHome");
   </script>
 </body>
 </html>
