@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ice Cubo 🧊</title>
 
-    <!-- CORREÇÃO: carregar a biblioteca do Supabase corretamente -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- BIBLIOTECA DO SUPABASE -->
+    <script src="https://cdn.jsdelivr.net"></script>
 
     <style>
         :root { --ice: #bff6ff; --dark: #001d3d; }
@@ -23,7 +23,7 @@
             justify-content: space-around; padding: 15px 0;
             border-top: 1px solid var(--ice); z-index: 999;
         }
-        .btn-nav { background: none; border: none; font-size: 30px; cursor: pointer; -webkit-tap-highlight-color: transparent; color:white; }
+        .btn-nav { background: none; border: none; font-size: 30px; cursor: pointer; color:white; }
 
         .card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #333; }
         #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--ice); color: var(--dark); padding: 10px 20px; border-radius: 20px; transition: 0.5s; font-weight: bold; z-index: 1000; }
@@ -34,13 +34,13 @@
 
 <div id="notif"></div>
 
-<!-- TELA 1 -->
+<!-- TELA 1: HOME -->
 <section id="Home" class="tela active">
     <h2>Ice Feed 🏠</h2>
     <div id="feed" class="card">Carregando posts...</div>
 </section>
 
-<!-- TELA 2 -->
+<!-- TELA 2: POSTAR -->
 <section id="Postar" class="tela">
     <h2>Nova Postagem ➕</h2>
     <div class="card">
@@ -49,7 +49,7 @@
     </div>
 </section>
 
-<!-- TELA 3 -->
+<!-- TELA 3: PERFIL -->
 <section id="Perfil" class="tela">
     <h2>Seu Perfil 👤</h2>
     <div class="card">
@@ -66,20 +66,19 @@
 </nav>
 
 <script>
-
-    // CONFIGURAÇÃO SUPABASE
+    // CONFIGURAÇÃO SUPABASE (CHAVES REAIS COLOCADAS)
     const URL = "https://whjomowgzoukmcaepbgv.supabase.co";
-    const KEY = "COLE_AQUI_SUA_PUBLISHABLE_KEY"; 
+    const KEY = "sb_publishable_nBUkmMcaIAqB0Ki8sSMFnw_UCX4fnMu"; 
 
     let supa = null;
 
     try {
         supa = supabase.createClient(URL, KEY);
-        console.log("Supabase conectado");
     } catch(e) {
         console.log("Erro biblioteca Supabase");
     }
 
+    // FUNÇÃO PARA TROCAR TELA
     function ir(id){
         const telas = document.querySelectorAll('.tela');
         telas.forEach(t => t.classList.remove('active'));
@@ -97,26 +96,11 @@
     // CARREGAR POSTS
     async function carregar(){
         if(!supa) return;
-
         try{
-            const {data,error} = await supa
-                .from('ice_posts')
-                .select('*')
-                .order('id',{ascending:false});
-
+            const {data,error} = await supa.from('ice_posts').select('*').order('id',{ascending:false});
             const f = document.getElementById('feed');
-
             if(error) throw error;
-
-            if(!data.length){
-                f.innerHTML = "Nenhum post ainda.";
-                return;
-            }
-
-            f.innerHTML = data.map(p =>
-                `<div style="border-bottom:1px solid #333;padding:15px;text-align:left;">${p.text}</div>`
-            ).join("");
-
+            f.innerHTML = data.length ? data.map(p => `<div style="border-bottom:1px solid #333;padding:15px;text-align:left;">${p.text}</div>`).join("") : "Nenhum post ainda.";
         }catch(e){
             document.getElementById('feed').innerText = "Erro ao carregar posts.";
         }
@@ -125,36 +109,20 @@
     // POSTAR
     async function postar(){
         const t = document.getElementById('txt').value.trim();
-
-        if(!t){
-            aviso("Escreva algo!");
-            return;
-        }
-
+        if(!t) return aviso("Escreva algo!");
         try{
-
-            const {error} = await supa
-                .from('ice_posts')
-                .insert([{text:t}]);
-
+            const {error} = await supa.from('ice_posts').insert();
             if(error) throw error;
-
             aviso("Publicado! 🧊");
-
             document.getElementById('txt').value="";
-
             ir('Home');
-
             carregar();
-
         }catch(e){
             aviso("Erro ao salvar!");
-            console.log(e);
         }
     }
 
     window.onload = carregar;
-
 </script>
 
 </body>
