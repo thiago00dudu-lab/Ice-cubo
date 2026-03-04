@@ -3,230 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ice Cubo 🧊</title>
-    <!-- Biblioteca do Supabase -->
+    <title>Ice Cubo</title>
     <script src="https://cdn.jsdelivr.net"></script>
     <style>
-        :root {
-            --root-ice: #bff6ff;
-            --glass: rgba(255, 255, 255, 0.1);
-            --dark: #001d3d;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--dark);
-            color: white;
-            overflow-x: hidden;
-        }
-
-        /* Notificação (Toast) */
-        #notif {
-            position: fixed;
-            top: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--root-ice);
-            color: var(--dark);
-            padding: 12px 25px;
-            border-radius: 30px;
-            font-weight: bold;
-            transition: 0.4s ease;
-            z-index: 9999;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        /* Telas */
-        .tela { display: none; padding: 20px; padding-bottom: 90px; min-height: 100vh; }
-        .tela.active { display: block; }
-
-        /* Menu Inferior */
-        .nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: rgba(0, 29, 61, 0.95);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            padding: 15px 0;
-            border-top: 1px solid var(--root-ice);
-            z-index: 100;
-        }
-
-        .nav-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            filter: grayscale(1);
-            transition: 0.3s;
-        }
-
-        .nav-btn.active-link { filter: grayscale(0) scale(1.2); }
-
-        /* Estilo de Cards */
-        .card {
-            background: var(--glass);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .center { text-align: center; }
-        .btn {
-            background: var(--root-ice);
-            color: var(--dark);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-weight: 800;
-            width: 100%;
-            cursor: pointer;
-        }
-
-        /* Modais */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            align-items: flex-end;
-        }
-
-        .sheet {
-            background: var(--dark);
-            width: 100%;
-            padding: 25px;
-            border-top: 2px solid var(--root-ice);
-            border-radius: 20px 20px 0 0;
-        }
+        :root { --ice: #bff6ff; --dark: #001d3d; }
+        body { margin: 0; background: var(--dark); color: white; font-family: sans-serif; }
+        #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--ice); color: var(--dark); padding: 10px 20px; border-radius: 20px; transition: 0.5s; z-index: 1000; }
+        .tela { display: none; padding: 20px; }
+        .active { display: block; }
+        .nav { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; background: #00152e; padding: 15px 0; border-top: 1px solid var(--ice); }
+        .btn-nav { background: none; border: none; font-size: 25px; cursor: pointer; }
+        .card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
+    <div id="notif"></div>
 
-    <div id="notif">Notificação</div>
-
-    <!-- TELA HOME -->
     <section id="Home" class="tela active">
-        <h2 class="center">Ice Feed</h2>
-        <div id="feedList" class="center">Carregando posts...</div>
+        <h2 style="text-align:center">Ice Feed</h2>
+        <div id="feed">Carregando...</div>
     </section>
 
-    <!-- TELA TROCAS -->
-    <section id="Trocas" class="tela">
-        <h2 class="center">Trocas</h2>
-        <div id="tradeList" class="center">Nenhuma troca ativa.</div>
-    </section>
-
-    <!-- TELA PERFIL -->
     <section id="Perfil" class="tela">
-        <h2 class="center">Meu Perfil</h2>
-        <div class="card center">
-            <div id="perfilNome">Carregando...</div>
-            <br>
-            <button class="btn" onclick="toast('Link de convite copiado!')">Convidar Amigos</button>
-        </div>
+        <h2 style="text-align:center">Perfil</h2>
+        <p>Bem-vindo ao seu espaço Ice.</p>
     </section>
 
-    <!-- MODAL DE POSTAGEM -->
-    <div id="ovPost" class="overlay">
-        <div class="sheet">
-            <h3>Nova Postagem</h3>
-            <textarea id="postText" placeholder="O que está pensando?" style="width:100%; height:100px; background:#111; color:#fff; border:1px solid #333; border-radius:10px; padding:10px;"></textarea>
-            <br><br>
-            <button class="btn" id="btnPublicar">Publicar</button>
-            <button onclick="fecharModal()" style="background:none; border:none; color:white; width:100%; margin-top:10px;">Cancelar</button>
-        </div>
-    </div>
-
-    <!-- MENU INFERIOR -->
     <nav class="nav">
-        <button class="nav-btn active-link" onclick="irPara('Home', this)">🏠</button>
-        <button class="nav-btn" onclick="irPara('Trocas', this)">🔄</button>
-        <button class="nav-btn" onclick="abrirModal()">➕</button>
-        <button class="nav-btn" onclick="irPara('Perfil', this)">👤</button>
+        <button class="btn-nav" onclick="ir('Home')">🏠</button>
+        <button class="btn-nav" onclick="ir('Perfil')">👤</button>
     </nav>
 
     <script>
-        // --- CONFIGURAÇÃO SUPABASE (Suas chaves reais) ---
         const SUPABASE_URL = "https://whjomowgzoukmcaepbgv.supabase.co";
         const SUPABASE_KEY = "sb_publishable_nBUkmMcaIAqB0Ki8sSMFnw_UCX4fnMu";
         const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- SISTEMA DE NAVEGAÇÃO ---
-        function irPara(idTela, botao) {
-            // Esconde todas as telas
+        function ir(id) {
             document.querySelectorAll('.tela').forEach(t => t.classList.remove('active'));
-            // Desativa todos os ícones
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-link'));
-            
-            // Mostra a tela escolhida e ativa o ícone
-            document.getElementById(idTela).classList.add('active');
-            if(botao) botao.classList.add('active-link');
+            document.getElementById(id).classList.add('active');
         }
 
-        // --- MODAIS ---
-        function abrirModal() { document.getElementById('ovPost').style.display = 'flex'; }
-        function fecharModal() { document.getElementById('ovPost').style.display = 'none'; }
-
-        // --- NOTIFICAÇÃO ---
-        function toast(msg) {
-            const n = document.getElementById('notif');
-            n.innerText = msg;
-            n.style.top = '20px';
-            setTimeout(() => { n.style.top = '-100px'; }, 3000);
-        }
-
-        // --- CARREGAR DADOS ---
-        async function carregarFeed() {
-            try {
-                const { data, error } = await supa.from('ice_posts').select('*').order('id', { ascending: false });
-                const feed = document.getElementById('feedList');
-                
-                if (error) throw error;
-
-                if (data && data.length > 0) {
-                    feed.innerHTML = data.map(post => `
-                        <div class="card">
-                            <p>${post.text}</p>
-                        </div>
-                    `).join('');
-                } else {
-                    feed.innerHTML = "Ainda não há postagens. Seja o primeiro!";
-                }
-            } catch (err) {
-                console.error(err);
-                document.getElementById('feedList').innerHTML = "Erro ao carregar o feed. Verifique as tabelas no Supabase.";
+        async function carregar() {
+            const { data, error } = await supa.from('ice_posts').select('*');
+            const feed = document.getElementById('feed');
+            if (error) {
+                feed.innerText = "Crie a tabela 'ice_posts' no Supabase.";
+                return;
             }
+            feed.innerHTML = data.length ? data.map(p => `<div class="card">${p.text}</div>`).join('') : "Nenhum post.";
         }
 
-        // --- PUBLICAR POST ---
-        document.getElementById('btnPublicar').onclick = async () => {
-            const txt = document.getElementById('postText').value;
-            if(!txt) return toast("Escreva algo primeiro!");
-
-            const { error } = await supa.from('ice_posts').insert();
-            
-            if(error) {
-                toast("Erro ao publicar. Verifique o banco!");
-            } else {
-                toast("Publicado com sucesso!");
-                document.getElementById('postText').value = "";
-                fecharModal();
-                carregarFeed();
-            }
-        };
-
-        // Inicialização
-        window.onload = () => {
-            carregarFeed();
-            document.getElementById('perfilNome').innerText = "Usuário Ice";
-        };
+        window.onload = carregar;
     </script>
 </body>
 </html>
