@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ice Cubo 🧊</title>
 
-    <!-- BIBLIOTECA DO SUPABASE -->
+    <!-- BIBLIOTECA DO SUPABASE (A PEÇA QUE FALTAVA) -->
     <script src="https://cdn.jsdelivr.net"></script>
 
     <style>
         :root { --ice: #bff6ff; --dark: #001d3d; }
         body { margin: 0; background: var(--dark); color: white; font-family: sans-serif; overflow-x: hidden; padding-bottom: 80px; }
         
-        /* Telas */
+        /* Sistema de Telas - Forçado para funcionar no celular */
         .tela { display: none; padding: 20px; min-height: 100vh; text-align: center; }
         .tela.active { display: block !important; }
 
@@ -23,18 +23,19 @@
             justify-content: space-around; padding: 15px 0;
             border-top: 1px solid var(--ice); z-index: 999;
         }
-        .btn-nav { background: none; border: none; font-size: 30px; cursor: pointer; color:white; }
+        .btn-nav { background: none; border: none; font-size: 30px; cursor: pointer; color: white; -webkit-tap-highlight-color: transparent; }
 
-        .card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #333; }
+        .card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #333; text-align: left; }
         #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--ice); color: var(--dark); padding: 10px 20px; border-radius: 20px; transition: 0.5s; font-weight: bold; z-index: 1000; }
         textarea { width: 100%; height: 100px; border-radius: 10px; padding: 10px; margin-bottom: 10px; background: #111; color: white; border: 1px solid #444; box-sizing: border-box; font-size: 16px; }
+        .btn-pub { width:100%; padding:15px; background:var(--ice); border:none; border-radius:10px; font-weight:bold; cursor:pointer; color:#000; }
     </style>
 </head>
 <body>
 
 <div id="notif"></div>
 
-<!-- TELA 1: HOME -->
+<!-- TELA 1: FEED -->
 <section id="Home" class="tela active">
     <h2>Ice Feed 🏠</h2>
     <div id="feed" class="card">Carregando posts...</div>
@@ -45,20 +46,20 @@
     <h2>Nova Postagem ➕</h2>
     <div class="card">
         <textarea id="txt" placeholder="O que você está pensando?"></textarea>
-        <button onclick="postar()" style="width:100%; padding:15px; background:var(--ice); border:none; border-radius:10px; font-weight:bold; cursor:pointer; color:#000;">PUBLICAR NO FEED</button>
+        <button class="btn-pub" onclick="postar()">PUBLICAR NO FEED</button>
     </div>
 </section>
 
 <!-- TELA 3: PERFIL -->
 <section id="Perfil" class="tela">
     <h2>Seu Perfil 👤</h2>
-    <div class="card">
+    <div class="card" style="text-align:center">
         <p>Bem-vindo ao Ice Cubo!</p>
         <button onclick="location.reload()" style="color:var(--ice); background:none; border:1px solid var(--ice); padding:10px; border-radius:10px; width:100%;">Atualizar Aplicativo</button>
     </div>
 </section>
 
-<!-- MENU -->
+<!-- MENU DE NAVEGAÇÃO -->
 <nav class="nav">
     <button class="btn-nav" onclick="ir('Home')">🏠</button>
     <button class="btn-nav" onclick="ir('Postar')">➕</button>
@@ -66,58 +67,66 @@
 </nav>
 
 <script>
-    // CONFIGURAÇÃO SUPABASE (CHAVES REAIS COLOCADAS)
+    // CONFIGURAÇÃO SUPABASE COM SUAS CHAVES REAIS DO PRINT
     const URL = "https://whjomowgzoukmcaepbgv.supabase.co";
-    const KEY = "sb_publishable_nBUkmMcaIAqB0Ki8sSMFnw_UCX4fnMu"; 
+    const KEY = "sb_publishable_nBUkmMoalAqB0Ki8sSMFnw_UCX4fnMu"; 
 
     let supa = null;
 
+    // Inicializa o banco de dados
     try {
         supa = supabase.createClient(URL, KEY);
+        console.log("Conectado ao Supabase!");
     } catch(e) {
-        console.log("Erro biblioteca Supabase");
+        console.log("Erro ao carregar Supabase. Verifique a internet.");
     }
 
-    // FUNÇÃO PARA TROCAR TELA
+    // FUNÇÃO QUE DESTRAVA OS ÍCONES
     function ir(id){
+        // Esconde todas as telas
         const telas = document.querySelectorAll('.tela');
         telas.forEach(t => t.classList.remove('active'));
+        
+        // Mostra a tela que você clicou
         const alvo = document.getElementById(id);
         if(alvo) alvo.classList.add('active');
+        window.scrollTo(0,0);
     }
 
     function aviso(msg){
         const n = document.getElementById('notif');
         n.innerText = msg;
         n.style.top = '20px';
-        setTimeout(()=>{n.style.top='-100px'},3000);
+        setTimeout(() => { n.style.top = '-100px' }, 3000);
     }
 
-    // CARREGAR POSTS
+    // CARREGAR POSTS DO BANCO
     async function carregar(){
         if(!supa) return;
-        try{
-            const {data,error} = await supa.from('ice_posts').select('*').order('id',{ascending:false});
+        try {
+            const { data, error } = await supa.from('ice_posts').select('*').order('id', { ascending: false });
             const f = document.getElementById('feed');
             if(error) throw error;
-            f.innerHTML = data.length ? data.map(p => `<div style="border-bottom:1px solid #333;padding:15px;text-align:left;">${p.text}</div>`).join("") : "Nenhum post ainda.";
-        }catch(e){
-            document.getElementById('feed').innerText = "Erro ao carregar posts.";
+            f.innerHTML = data.length ? data.map(p => `<div style="border-bottom:1px solid #333;padding:15px;">${p.text}</div>`).join("") : "Nenhum post ainda. Seja o primeiro! 🧊";
+        } catch(e) {
+            document.getElementById('feed').innerText = "Erro ao carregar posts. Verifique a tabela no Supabase.";
         }
     }
 
-    // POSTAR
+    // PUBLICAR POSTAGEM
     async function postar(){
         const t = document.getElementById('txt').value.trim();
-        if(!t) return aviso("Escreva algo!");
-        try{
-            const {error} = await supa.from('ice_posts').insert();
+        if(!t) { aviso("Escreva algo!"); return; }
+        
+        try {
+            const { error } = await supa.from('ice_posts').insert();
             if(error) throw error;
-            aviso("Publicado! 🧊");
-            document.getElementById('txt').value="";
+            
+            aviso("Publicado com sucesso! 🧊");
+            document.getElementById('txt').value = "";
             ir('Home');
             carregar();
-        }catch(e){
+        } catch(e) {
             aviso("Erro ao salvar!");
         }
     }
