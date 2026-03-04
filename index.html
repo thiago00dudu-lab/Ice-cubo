@@ -1,60 +1,825 @@
--- USERS
-create table if not exists public.ice_users (
-  id text primary key,
-  name text not null,
-  pic text,
-  role text default 'member',
-  created_at timestamp with time zone default now()
-);
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICE BLUE</title>
 
--- POSTS
-create table if not exists public.ice_posts (
-  id bigserial primary key,
-  user_id text references public.ice_users(id) on delete cascade,
-  text text,
-  media text,
-  created_at timestamp with time zone default now()
-);
+  <style>
+    :root{ --ice:#00d4ff; --glass:rgba(255,255,255,.10); --danger:#ff4d6d; --ok:#2ecc71; }
 
--- TRADES (A e B)
-create table if not exists public.ice_trades (
-  id int primary key default 1,
-  a_media text,
-  a_desc text,
-  a_updated_at timestamp with time zone,
-  b_media text,
-  b_desc text,
-  b_updated_at timestamp with time zone
-);
+    body{
+      margin:0; color:#fff; font-family:sans-serif;
+      min-height:100vh; padding-bottom:90px; overflow-x:hidden;
+      background: linear-gradient(180deg, #001b2e 0%, #003b66 45%, #00121f 100%);
+    }
 
-insert into public.ice_trades (id) values (1)
-on conflict (id) do nothing;
+    .header-ice{
+      background:rgba(0,0,0,.70); backdrop-filter:blur(10px);
+      padding:10px; border-bottom:2px solid var(--ice);
+      position:sticky; top:0; z-index:1001; text-align:center;
+    }
+    .title{ font-weight:1000; font-size:28px; letter-spacing:1px; }
+    .mini{ font-size:12px; opacity:.85; margin-top:6px; line-height:1.3; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.35);
+      font-size:12px;
+    }
+    .pill.ice{ border-color:rgba(0,212,255,.45); color:#bff6ff; }
+    .pill.ok{ border-color:rgba(46,204,113,.45); color:#c9ffe0; }
+    .pill.danger{ border-color:rgba(255,77,109,.55); color:#ffd1da; }
 
--- CHAT
-create table if not exists public.ice_messages (
-  id bigserial primary key,
-  user_id text references public.ice_users(id) on delete cascade,
-  text text not null,
-  created_at timestamp with time zone default now()
-);
+    #notif{
+      position:fixed; top:-120px; left:50%; transform:translateX(-50%);
+      background:var(--ice); color:#000; padding:12px 14px; border-radius:14px;
+      z-index:3000; transition:.45s; font-weight:900; width:86%; text-align:center;
+      box-shadow:0 10px 40px rgba(0,0,0,.35);
+    }
 
--- RLS (segurança)
-alter table public.ice_users enable row level security;
-alter table public.ice_posts enable row level security;
-alter table public.ice_trades enable row level security;
-alter table public.ice_messages enable row level security;
+    .card{
+      background:var(--glass); backdrop-filter:blur(12px);
+      border-radius:15px; margin:15px; padding:15px;
+      border:1px solid rgba(255,255,255,.12);
+      position:relative; z-index:2;
+    }
 
--- POLICIES (demo aberto: qualquer um lê/escreve)
--- Se quiser fechar depois, eu te ajudo.
-create policy "read users" on public.ice_users for select using (true);
-create policy "write users" on public.ice_users for insert with check (true);
-create policy "update users" on public.ice_users for update using (true);
+    .post-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .u-pic{ width:40px; height:40px; border-radius:50%; border:1.5px solid var(--ice); object-fit:cover; background:rgba(0,0,0,.25); }
+    .u-name{ font-weight:900; display:flex; align-items:center; gap:8px; }
+    .u-sub{ font-size:12px; opacity:.8; margin-top:2px; }
 
-create policy "read posts" on public.ice_posts for select using (true);
-create policy "write posts" on public.ice_posts for insert with check (true);
+    .mod-star{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:18px; height:18px; border-radius:999px;
+      border:1px solid rgba(0,212,255,.55);
+      color:#bff6ff; font-weight:900; font-size:12px;
+      background:rgba(0,0,0,.28);
+      transform:translateY(-1px);
+    }
+    .adm-badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:2px 8px; border-radius:999px;
+      border:1px solid rgba(255,215,0,.45);
+      color:#ffeaa7; font-weight:900; font-size:11px;
+      background:rgba(0,0,0,.28);
+    }
 
-create policy "read trades" on public.ice_trades for select using (true);
-create policy "write trades" on public.ice_trades for update using (true);
+    .tela{ display:none; animation:fade .35s; }
+    @keyframes fade{ from{opacity:0} to{opacity:1} }
 
-create policy "read messages" on public.ice_messages for select using (true);
-create policy "write messages" on public.ice_messages for insert with check (true);
+    .btn-blue{
+      background:var(--ice); color:#000; font-weight:1000;
+      border:none; padding:12px; border-radius:10px;
+      width:100%; cursor:pointer; margin-top:10px;
+    }
+    .btn-ghost{
+      background:rgba(255,255,255,.12); color:#fff;
+      border:1px solid rgba(255,255,255,.20);
+      padding:12px; border-radius:10px;
+      width:100%; cursor:pointer; margin-top:10px;
+    }
+    .btn-danger{
+      background:rgba(255,77,109,.18); color:#fff; font-weight:1000;
+      border:1px solid rgba(255,77,109,.45);
+      padding:12px; border-radius:10px; width:100%; cursor:pointer; margin-top:10px;
+    }
+    .btn-ok{
+      background:rgba(46,204,113,.22); color:#fff; font-weight:1000;
+      border:1px solid rgba(46,204,113,.50);
+      padding:12px; border-radius:10px; width:100%; cursor:pointer; margin-top:10px;
+    }
+
+    textarea, input[type="text"]{
+      background:rgba(0,0,0,.35); color:#fff;
+      border:1px solid rgba(255,255,255,.15);
+      border-radius:10px; padding:10px; outline:none;
+      width:100%;
+      box-sizing:border-box;
+    }
+    input[type="file"]{ color:#fff; width:100%; }
+
+    .row{ display:flex; gap:10px; }
+    .col{ flex:1; }
+
+    .nav{
+      position:fixed; bottom:0; width:100%;
+      background:rgba(0,0,0,.92);
+      display:flex; justify-content:space-around;
+      padding:12px 0; border-top:1px solid var(--ice);
+      z-index:1000;
+    }
+    .nav-item{ color:#8ef; text-align:center; font-size:10px; cursor:pointer; flex:1; position:relative; user-select:none; }
+    .nav-item span{ font-size:22px; display:block; }
+    .nav-item.active{ color:#fff; }
+    .badge{
+      position:absolute; top:-5px; right:25%;
+      background:red; color:#fff; border-radius:50%;
+      padding:2px 6px; font-size:10px; display:none;
+    }
+
+    /* MODAL */
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.65);
+      display:none; z-index:2500;
+      align-items:flex-end; justify-content:center;
+      backdrop-filter:blur(8px);
+    }
+    .sheet{
+      width:100%; max-width:680px;
+      background:rgba(0,0,0,.88);
+      border-top:1px solid rgba(0,212,255,.35);
+      border-radius:16px 16px 0 0;
+      padding:14px; box-sizing:border-box;
+    }
+    .sheet h3{ margin:6px 0 10px; }
+    .sheet .small{ font-size:12px; opacity:.85; margin-top:6px; }
+    .list{
+      margin-top:10px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px; overflow:hidden;
+    }
+    .li{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px; border-top:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+    }
+    .li:first-child{ border-top:none; }
+    .li .left{ display:flex; align-items:center; gap:10px; }
+    .li .left .who{ font-weight:900; }
+    .li .left .meta{ font-size:12px; opacity:.85; margin-top:2px; }
+    .tag{
+      font-size:11px; font-weight:900;
+      padding:4px 8px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.25);
+      white-space:nowrap;
+    }
+    .tag.mod{ border-color:rgba(0,212,255,.55); color:#bff6ff; }
+    .tag.mem{ border-color:rgba(255,255,255,.20); color:#fff; opacity:.85; }
+    .tag.adm{ border-color:rgba(255,215,0,.45); color:#ffeaa7; }
+    .linkbox{
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px; padding:10px;
+      word-break:break-all;
+    }
+    .muted{ opacity:.85; }
+    .center{ text-align:center; }
+    .divider{ height:1px; background:rgba(255,255,255,.12); margin:12px 0; }
+  </style>
+</head>
+
+<body>
+  <div id="notif">OK</div>
+
+  <div class="header-ice">
+    <div class="title">ICE BLUE</div>
+    <div class="mini">
+      ID: <span class="mono" id="myIdTop">—</span><br/>
+      Permissão:
+      <span class="pill ice" id="myRolePill">MEMBRO</span>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <section id="tHome" class="tela">
+    <div class="card">
+      <div class="post-head">
+        <img class="u-pic" id="mePicHome" alt="foto" />
+        <div>
+          <div class="u-name" id="meNameHome">Seu Perfil</div>
+          <div class="u-sub muted">Feed local (demo)</div>
+        </div>
+      </div>
+      <div class="muted">Posts de exemplo (perfis fake) + destaque de MOD com estrela azul.</div>
+      <button class="btn-blue" id="btnNovoPost">➕ Criar postagem</button>
+    </div>
+
+    <div id="feed"></div>
+  </section>
+
+  <!-- TROCAS -->
+  <section id="tTrocas" class="tela">
+    <div class="card">
+      <div style="font-weight:1000; font-size:18px;">🔁 Troca 1 vs 1</div>
+      <div class="mini muted">Dividido no meio: você posta de um lado, e o outro lado fica disponível pra outro usuário postar a troca dele.</div>
+      <div class="divider"></div>
+
+      <div class="row">
+        <div class="col">
+          <div class="pill ice">Seu lado</div>
+          <div style="height:10px"></div>
+          <input type="file" id="fileA" accept="image/*,video/*" />
+          <div style="height:10px"></div>
+          <textarea id="descA" rows="4" placeholder="Descreva o que você oferece..."></textarea>
+          <button class="btn-blue" id="saveA">Salvar meu item</button>
+          <div style="height:10px"></div>
+          <div id="previewA" class="linkbox muted">Nenhum item ainda.</div>
+        </div>
+
+        <div class="col">
+          <div class="pill ok">Outro usuário</div>
+          <div style="height:10px"></div>
+          <input type="file" id="fileB" accept="image/*,video/*" />
+          <div style="height:10px"></div>
+          <textarea id="descB" rows="4" placeholder="O que você quer oferecer em troca?"></textarea>
+          <button class="btn-ok" id="saveB">Publicar como outro usuário</button>
+          <div style="height:10px"></div>
+          <div id="previewB" class="linkbox muted">Vazio (aguardando alguém).</div>
+        </div>
+      </div>
+
+      <button class="btn-ghost" id="clearTroca">🧹 Limpar Troca</button>
+    </div>
+  </section>
+
+  <!-- PERFIL -->
+  <section id="tPerfil" class="tela">
+    <div class="card center">
+      <img class="u-pic" id="mePic" style="width:74px;height:74px;border-width:2px" alt="foto" />
+      <div style="height:10px"></div>
+      <div style="font-weight:1000; font-size:34px;">Seu Perfil</div>
+      <div class="mini muted">
+        Seu ID: <span class="mono" id="myId">—</span><br/>
+        Seu Pai (ref): <span class="mono" id="myRef">nenhum</span>
+      </div>
+
+      <button class="btn-blue" id="btnShare">📣 Compartilhar meu link</button>
+      <button class="btn-ghost" id="btnCopy">📎 Copiar link</button>
+
+      <div style="height:10px"></div>
+      <button class="btn-ghost" id="btnTrocarFoto">Trocar Foto</button>
+      <input type="file" id="fileFoto" accept="image/*" style="display:none" />
+      <div style="height:10px"></div>
+
+      <div class="divider"></div>
+
+      <!-- ADM (NÃO MOSTRA SENHA AQUI) -->
+      <div id="admBox" class="card" style="margin:0; text-align:left; display:none;">
+        <div style="font-weight:1000; font-size:18px;">🛡️ Área ADM/MOD (local)</div>
+        <div class="mini muted">A área só aparece para ADM. A senha não fica visível pra ninguém.</div>
+        <button class="btn-blue" id="btnAbrirAdm">Entrar na Área ADM</button>
+      </div>
+
+      <button class="btn-danger" id="btnReset">Resetar (zerar) dados locais</button>
+    </div>
+  </section>
+
+  <!-- MODAL NOVO POST -->
+  <div class="overlay" id="ovPost">
+    <div class="sheet">
+      <div class="row" style="align-items:center;">
+        <div class="col">
+          <h3 style="margin:0;">➕ Nova postagem</h3>
+          <div class="small muted">Vai aparecer no feed local.</div>
+        </div>
+        <div style="width:120px">
+          <button class="btn-ghost" id="closePost" style="margin-top:0;">Fechar</button>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <input type="file" id="postFile" accept="image/*,video/*" />
+      <div style="height:10px"></div>
+      <textarea id="postText" rows="4" placeholder="Escreva algo..."></textarea>
+      <button class="btn-blue" id="publishPost">Publicar</button>
+    </div>
+  </div>
+
+  <!-- MODAL ADM -->
+  <div class="overlay" id="ovAdm">
+    <div class="sheet">
+      <div class="row" style="align-items:center;">
+        <div class="col">
+          <h3 style="margin:0;">🛡️ Painel ADM</h3>
+          <div class="small muted">Promover/rebaixar usuários pra MOD (estrela azul no nome).</div>
+        </div>
+        <div style="width:120px">
+          <button class="btn-ghost" id="closeAdm" style="margin-top:0;">Fechar</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="list" id="usersList"></div>
+
+      <div class="divider"></div>
+
+      <div class="small muted">
+        * Tudo local (localStorage). Se trocar de celular/navegador, não leva os dados.
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-item" data-go="tHome"><span>🏠</span>Home</div>
+    <div class="nav-item" data-go="tTrocas"><span>🔁</span>Trocas <span class="badge" id="badgeTroca">1</span></div>
+    <div class="nav-item" data-go="tPerfil"><span>👤</span>Perfil</div>
+  </nav>
+
+  <script>
+    /***********************
+     *  UTIL / STORAGE
+     ***********************/
+    const LS = {
+      users: "ice_users_v1",
+      current: "ice_current_v1",
+      trade: "ice_trade_v1",
+      posts: "ice_posts_v1",
+      admSession: "ice_adm_session_v1"
+    };
+
+    const ADMIN_PIN = "1533"; // não aparece na tela
+
+    const $ = (q) => document.querySelector(q);
+    const $$ = (q) => Array.from(document.querySelectorAll(q));
+
+    function toast(msg){
+      const n = $("#notif");
+      n.textContent = msg;
+      n.style.top = "14px";
+      setTimeout(()=> n.style.top = "-120px", 1900);
+    }
+
+    function randId(){
+      const a = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+      let s = "ICE-";
+      for(let i=0;i<4;i++) s += a[Math.floor(Math.random()*a.length)];
+      s += "-";
+      for(let i=0;i<4;i++) s += a[Math.floor(Math.random()*a.length)];
+      return s;
+    }
+
+    function loadJSON(key, fallback){
+      try{
+        const v = localStorage.getItem(key);
+        if(!v) return fallback;
+        return JSON.parse(v);
+      }catch(e){ return fallback; }
+    }
+
+    function saveJSON(key, value){
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function escapeHtml(str){
+      return (str||"")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function fileToDataURL(file){
+      return new Promise((res, rej)=>{
+        if(!file) return res(null);
+        const r = new FileReader();
+        r.onload = ()=> res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+
+    /***********************
+     *  INIT (USERS)
+     ***********************/
+    function seedIfEmpty(){
+      let users = loadJSON(LS.users, null);
+      if(users && Array.isArray(users) && users.length) return;
+
+      // cria usuários fake
+      users = [
+        { id: randId(), name:"Nina Ocean", role:"mod", pic:null },
+        { id: randId(), name:"Caio Drift", role:"member", pic:null },
+        { id: randId(), name:"Lua Neon", role:"mod", pic:null },
+        { id: randId(), name:"Rafa Blue", role:"member", pic:null },
+      ];
+
+      // cria seu usuário (se não existir current)
+      let current = loadJSON(LS.current, null);
+      if(!current){
+        const my = { id: randId(), name:"Você", role:"admin", pic:null, ref:"nenhum" };
+        users.unshift(my);
+        current = { id: my.id };
+        saveJSON(LS.current, current);
+      }
+
+      saveJSON(LS.users, users);
+
+      // posts demo
+      const posts = [
+        { id: "p1", uid: users[1].id, text:"Troco celular por bike 🚲", media:null, t: Date.now()-1000*60*50 },
+        { id: "p2", uid: users[2].id, text:"Tenho PS4, quero notebook.", media:null, t: Date.now()-1000*60*30 },
+        { id: "p3", uid: users[3].id, text:"Alguém troca drone por iPhone antigo?", media:null, t: Date.now()-1000*60*10 }
+      ];
+      saveJSON(LS.posts, posts);
+
+      // trade demo
+      saveJSON(LS.trade, { A:null, B:null });
+    }
+
+    function getUsers(){ return loadJSON(LS.users, []); }
+    function setUsers(users){ saveJSON(LS.users, users); }
+
+    function getMe(){
+      const cur = loadJSON(LS.current, null);
+      const users = getUsers();
+      let me = users.find(u => u.id === (cur && cur.id));
+      if(!me){
+        me = { id: randId(), name:"Você", role:"admin", pic:null, ref:"nenhum" };
+        users.unshift(me);
+        setUsers(users);
+        saveJSON(LS.current, { id: me.id });
+      }
+      return me;
+    }
+
+    function updateUser(id, patch){
+      const users = getUsers();
+      const idx = users.findIndex(u => u.id === id);
+      if(idx === -1) return;
+      users[idx] = { ...users[idx], ...patch };
+      setUsers(users);
+    }
+
+    function roleLabel(role){
+      if(role === "admin") return "ADM";
+      if(role === "mod") return "MOD";
+      return "MEMBRO";
+    }
+
+    function rolePillClass(role){
+      if(role === "admin") return "danger";
+      if(role === "mod") return "ice";
+      return "ok";
+    }
+
+    /***********************
+     *  UI NAV
+     ***********************/
+    function showTela(id){
+      $$(".tela").forEach(t => t.style.display = "none");
+      $("#"+id).style.display = "block";
+      $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.go === id));
+      window.scrollTo({top:0, behavior:"smooth"});
+      renderAll();
+    }
+
+    $$(".nav-item").forEach(n=>{
+      n.addEventListener("click", ()=> showTela(n.dataset.go));
+    });
+
+    /***********************
+     *  FEED
+     ***********************/
+    function renderFeed(){
+      const feed = $("#feed");
+      const users = getUsers();
+      const posts = loadJSON(LS.posts, []);
+      posts.sort((a,b)=> b.t - a.t);
+
+      feed.innerHTML = posts.map(p=>{
+        const u = users.find(x => x.id === p.uid) || {name:"Desconhecido", role:"member", pic:null};
+        const star = (u.role === "mod") ? `<span class="mod-star">★</span>` : "";
+        const adm = (u.role === "admin") ? `<span class="adm-badge">ADM</span>` : "";
+        const media = p.media ? renderMedia(p.media) : "";
+        const when = new Date(p.t).toLocaleString("pt-BR", {hour:"2-digit", minute:"2-digit"});
+        return `
+          <div class="card">
+            <div class="post-head">
+              <img class="u-pic" src="${u.pic || avatarFallback(u.name)}" alt="foto" />
+              <div>
+                <div class="u-name">${escapeHtml(u.name)} ${star} ${adm}</div>
+                <div class="u-sub muted">${when} • ${roleLabel(u.role)}</div>
+              </div>
+            </div>
+            <div style="font-size:15px; line-height:1.35;">${escapeHtml(p.text)}</div>
+            ${media ? `<div style="height:10px"></div>${media}` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderMedia(dataUrl){
+      if(!dataUrl) return "";
+      if(dataUrl.startsWith("data:video")){
+        return `<video controls playsinline style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:#000;">
+          <source src="${dataUrl}">
+        </video>`;
+      }
+      return `<img src="${dataUrl}" style="width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.12);" alt="midia" />`;
+    }
+
+    function avatarFallback(name){
+      // mini avatar svg
+      const bg = "001d3d";
+      const fg = "bff6ff";
+      const initials = (name||"U").trim().split(/\s+/).slice(0,2).map(s=>s[0].toUpperCase()).join("").slice(0,2) || "U";
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'>
+        <rect width='100%' height='100%' rx='40' ry='40' fill='#${bg}'/>
+        <text x='50%' y='56%' text-anchor='middle' font-size='28' font-family='sans-serif' fill='#${fg}' font-weight='900'>${initials}</text>
+      </svg>`;
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    }
+
+    /***********************
+     *  TROCAS
+     ***********************/
+    async function saveTrade(side){
+      const trade = loadJSON(LS.trade, {A:null, B:null});
+      const fileEl = side === "A" ? $("#fileA") : $("#fileB");
+      const descEl = side === "A" ? $("#descA") : $("#descB");
+      const dataUrl = await fileToDataURL(fileEl.files[0]);
+      const desc = (descEl.value || "").trim();
+
+      if(!dataUrl && !desc){
+        toast("Coloque foto/vídeo ou descrição.");
+        return;
+      }
+
+      trade[side] = {
+        media: dataUrl || (trade[side] && trade[side].media) || null,
+        desc: desc || (trade[side] && trade[side].desc) || "",
+        t: Date.now()
+      };
+
+      saveJSON(LS.trade, trade);
+      fileEl.value = "";
+      toast(side === "A" ? "Seu item salvo!" : "Outro usuário publicou!");
+      renderTrade();
+    }
+
+    function renderTrade(){
+      const trade = loadJSON(LS.trade, {A:null, B:null});
+      $("#previewA").innerHTML = trade.A ? tradeBoxHTML(trade.A) : "Nenhum item ainda.";
+      $("#previewB").innerHTML = trade.B ? tradeBoxHTML(trade.B) : "Vazio (aguardando alguém).";
+
+      const hasB = !!trade.B;
+      $("#badgeTroca").style.display = hasB ? "inline-block" : "none";
+    }
+
+    function tradeBoxHTML(item){
+      const media = item.media ? renderMedia(item.media) : "";
+      const text = item.desc ? `<div style="margin-top:8px">${escapeHtml(item.desc)}</div>` : "";
+      return `${media}${text}` || "—";
+    }
+
+    /***********************
+     *  PERFIL + ADM PANEL
+     ***********************/
+    function renderPerfil(){
+      const me = getMe();
+
+      $("#myIdTop").textContent = me.id;
+      $("#myId").textContent = me.id;
+      $("#myRef").textContent = me.ref || "nenhum";
+
+      const pill = $("#myRolePill");
+      pill.className = "pill " + rolePillClass(me.role);
+      pill.textContent = roleLabel(me.role);
+
+      const nameLine = document.createElement("div");
+      nameLine.className = "u-name";
+      nameLine.innerHTML = escapeHtml(me.name) + (me.role==="mod" ? ` <span class="mod-star">★</span>` : "") + (me.role==="admin" ? ` <span class="adm-badge">ADM</span>` : "");
+      $("#meNameHome").replaceWith(nameLine);
+      nameLine.id = "meNameHome";
+
+      $("#mePic").src = me.pic || avatarFallback(me.name);
+      $("#mePicHome").src = me.pic || avatarFallback(me.name);
+
+      // caixa ADM só aparece se você for admin
+      $("#admBox").style.display = (me.role === "admin") ? "block" : "none";
+    }
+
+    function openAdm(){
+      const me = getMe();
+      if(me.role !== "admin"){
+        toast("Apenas ADM.");
+        return;
+      }
+
+      // sessão ADM (evita pedir pin toda hora, mas pode pedir se quiser)
+      const sess = loadJSON(LS.admSession, {ok:false, t:0});
+      const fresh = sess.ok && (Date.now() - sess.t) < 1000*60*30; // 30min
+
+      let ok = fresh;
+      if(!ok){
+        const pin = prompt("PIN do ADM:");
+        if(pin !== ADMIN_PIN){
+          toast("PIN incorreto.");
+          return;
+        }
+        saveJSON(LS.admSession, {ok:true, t:Date.now()});
+      }
+
+      $("#ovAdm").style.display = "flex";
+      renderUsersList();
+    }
+
+    function renderUsersList(){
+      const me = getMe();
+      const users = getUsers().filter(u => u.id !== me.id); // lista sem você
+      const list = $("#usersList");
+
+      if(!users.length){
+        list.innerHTML = `<div class="li"><div class="left"><div><div class="who">Sem usuários</div><div class="meta muted">Crie posts pra aparecer mais gente.</div></div></div><span class="tag mem">—</span></div>`;
+        return;
+      }
+
+      list.innerHTML = users.map(u=>{
+        const roleTag = u.role === "admin" ? "adm" : (u.role === "mod" ? "mod" : "mem");
+        const roleText = roleLabel(u.role);
+        const canToggle = (u.role !== "admin"); // não mexe em outro admin (se existir)
+        const btn = canToggle
+          ? (u.role === "mod"
+              ? `<button class="btn-ghost" data-act="demote" data-id="${u.id}" style="margin-top:0;">Remover MOD</button>`
+              : `<button class="btn-blue" data-act="promote" data-id="${u.id}" style="margin-top:0;">Tornar MOD</button>`)
+          : `<button class="btn-ghost" disabled style="margin-top:0; opacity:.55;">Bloqueado</button>`;
+
+        const star = (u.role === "mod") ? `<span class="mod-star">★</span>` : "";
+        return `
+          <div class="li">
+            <div class="left">
+              <img class="u-pic" src="${u.pic || avatarFallback(u.name)}" alt="foto" />
+              <div>
+                <div class="who">${escapeHtml(u.name)} ${star}</div>
+                <div class="meta muted mono">${escapeHtml(u.id)}</div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+              <span class="tag ${roleTag}">${roleText}</span>
+              ${btn}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // binds
+      $$("#usersList button[data-act]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          const id = b.getAttribute("data-id");
+          const act = b.getAttribute("data-act");
+          if(act === "promote"){
+            updateUser(id, { role:"mod" });
+            toast("Usuário promovido a MOD.");
+          }else{
+            updateUser(id, { role:"member" });
+            toast("MOD removido.");
+          }
+          renderUsersList();
+          renderFeed(); // atualiza estrela no feed
+        });
+      });
+    }
+
+    /***********************
+     *  NOVO POST
+     ***********************/
+    function openNewPost(){
+      $("#ovPost").style.display = "flex";
+      $("#postText").value = "";
+      $("#postFile").value = "";
+    }
+
+    async function publishPost(){
+      const me = getMe();
+      const text = ($("#postText").value || "").trim();
+      const media = await fileToDataURL($("#postFile").files[0]);
+
+      if(!text && !media){
+        toast("Escreva algo ou envie uma mídia.");
+        return;
+      }
+
+      const posts = loadJSON(LS.posts, []);
+      posts.unshift({
+        id: "p_" + Math.random().toString(16).slice(2),
+        uid: me.id,
+        text: text || "",
+        media: media || null,
+        t: Date.now()
+      });
+      saveJSON(LS.posts, posts);
+      $("#ovPost").style.display = "none";
+      toast("Post publicado!");
+      renderFeed();
+    }
+
+    /***********************
+     *  ACTIONS
+     ***********************/
+    $("#btnNovoPost").addEventListener("click", openNewPost);
+    $("#closePost").addEventListener("click", ()=> $("#ovPost").style.display="none");
+    $("#publishPost").addEventListener("click", publishPost);
+
+    $("#saveA").addEventListener("click", ()=> saveTrade("A"));
+    $("#saveB").addEventListener("click", ()=> saveTrade("B"));
+    $("#clearTroca").addEventListener("click", ()=>{
+      saveJSON(LS.trade, {A:null, B:null});
+      $("#descA").value = "";
+      $("#descB").value = "";
+      $("#fileA").value = "";
+      $("#fileB").value = "";
+      toast("Troca limpa!");
+      renderTrade();
+    });
+
+    $("#btnShare").addEventListener("click", async ()=>{
+      const me = getMe();
+      const link = location.href.split("#")[0] + "#ref=" + encodeURIComponent(me.id);
+      if(navigator.share){
+        try{
+          await navigator.share({ title:"ICE BLUE", text:"Meu link ICE BLUE:", url: link });
+        }catch(e){}
+      }else{
+        toast("Compartilhar não disponível. Copie o link.");
+      }
+    });
+
+    $("#btnCopy").addEventListener("click", async ()=>{
+      const me = getMe();
+      const link = location.href.split("#")[0] + "#ref=" + encodeURIComponent(me.id);
+      try{
+        await navigator.clipboard.writeText(link);
+        toast("Link copiado!");
+      }catch(e){
+        toast("Não deu pra copiar. Selecione e copie manual.");
+      }
+    });
+
+    $("#btnTrocarFoto").addEventListener("click", ()=> $("#fileFoto").click());
+    $("#fileFoto").addEventListener("change", async (e)=>{
+      const file = e.target.files[0];
+      const data = await fileToDataURL(file);
+      if(!data) return;
+      const me = getMe();
+      updateUser(me.id, { pic: data });
+      toast("Foto atualizada!");
+      renderPerfil();
+      renderFeed();
+    });
+
+    $("#btnAbrirAdm").addEventListener("click", openAdm);
+    $("#closeAdm").addEventListener("click", ()=> $("#ovAdm").style.display="none");
+
+    $("#btnReset").addEventListener("click", ()=>{
+      if(confirm("Tem certeza que quer zerar tudo (local)?")){
+        Object.values(LS).forEach(k => localStorage.removeItem(k));
+        toast("Zerado. Recarregando...");
+        setTimeout(()=> location.reload(), 700);
+      }
+    });
+
+    // fechar modais clicando fora
+    $("#ovPost").addEventListener("click", (e)=>{ if(e.target.id==="ovPost") $("#ovPost").style.display="none"; });
+    $("#ovAdm").addEventListener("click", (e)=>{ if(e.target.id==="ovAdm") $("#ovAdm").style.display="none"; });
+
+    /***********************
+     *  REF (PAI) via hash
+     ***********************/
+    function applyRefFromHash(){
+      const me = getMe();
+      const h = location.hash || "";
+      const m = h.match(/ref=([^&]+)/i);
+      if(m && !me.ref || me.ref === "nenhum"){
+        const ref = decodeURIComponent(m[1]);
+        if(ref && ref.startsWith("ICE-") && ref.length <= 20){
+          updateUser(me.id, { ref });
+          toast("Ref aplicado!");
+        }
+      }
+    }
+
+    /***********************
+     *  RENDER ALL
+     ***********************/
+    function renderAll(){
+      renderPerfil();
+      renderTrade();
+      renderFeed();
+    }
+
+    /***********************
+     *  START
+     ***********************/
+    seedIfEmpty();
+    applyRefFromHash();
+
+    // garante nome do usuário (se quiser mudar, pode alterar aqui)
+    (function ensureName(){
+      const me = getMe();
+      if(!me.name || me.name === "Você"){
+        const n = prompt("Seu nome (aparece no app):", "Jessica");
+        if(n && n.trim().length >= 2){
+          updateUser(me.id, { name: n.trim().slice(0,24) });
+        }
+      }
+    })();
+
+    showTela("tHome");
+  </script>
+</body>
+</html>
