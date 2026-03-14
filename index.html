@@ -7,111 +7,109 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         :root { --bg: #f4f7f9; --sea: #0f3452; --blue: #1877f2; --white: #fff; --gold: #FFD700; }
-        body { margin:0; font-family: sans-serif; background: var(--bg); padding-bottom: 120px; overflow-x: hidden; }
+        body { margin:0; font-family: sans-serif; background: var(--bg); padding-bottom: 120px; }
         
-        /* HEADER E RODAPÉ GIGANTE */
+        /* HEADER E NAV */
         header { padding:15px; background: var(--white); display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--sea); display: flex; justify-content: space-around; padding: 25px 0; z-index: 3000; border-radius: 25px 25px 0 0; }
         .nav i { color: white; font-size: 40px; cursor: pointer; } 
         .nav i.especial { font-size: 55px; color: var(--blue); margin-top: -10px; }
 
+        /* CARDS DO FEED */
+        .card { background: white; border-radius: 15px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .card img { width: 100%; height: 300px; object-fit: cover; cursor: pointer; }
+
         /* TELAS */
         #telaLogin { position: fixed; inset: 0; background: var(--sea); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 25px; width: 85%; max-width: 350px; text-align: center; }
-        #videoFace { width: 180px; height: 180px; background: #000; border-radius: 50%; object-fit: cover; display: none; margin: 15px auto; border: 4px solid var(--blue); }
+        #videoFace { width: 150px; height: 150px; background: #000; border-radius: 50%; object-fit: cover; display: none; margin: 15px auto; border: 4px solid var(--blue); }
         
-        .btn-adm { background: var(--sea); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
-        input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-
-        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding-top: 60px; }
+        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; }
         .wrap { max-width: 500px; margin: auto; padding: 15px; }
+        
+        input, .btn-adm { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; font-weight: bold; }
+        .btn-adm { background: var(--sea); color: white; border: none; cursor: pointer; }
 
-        /* CHAT E MODAL */
-        #chatContainer { height: 250px; overflow-y: auto; background: #e5e5e5; border-radius: 15px; padding: 10px; margin: 15px 0; display: flex; flex-direction: column; }
-        .msg { padding: 10px; margin: 5px; border-radius: 12px; max-width: 80%; font-size: 14px; }
+        /* CHAT */
+        #chatBox { height: 200px; overflow-y: auto; background: #eee; border-radius: 10px; padding: 10px; margin: 10px 0; display: flex; flex-direction: column; }
+        .msg { padding: 8px 12px; margin: 4px; border-radius: 10px; max-width: 70%; font-size: 14px; }
         .msg.me { align-self: flex-end; background: var(--blue); color: white; }
-        .msg.them { align-self: flex-start; background: white; color: #333; }
+        .msg.them { align-self: flex-start; background: #ddd; }
 
-        .janela-float { display: none; position: fixed; bottom: 130px; right: 20px; width: 220px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 4000; padding: 15px; border: 2px solid var(--gold); }
+        /* JANELA FLUTUANTE */
+        .janela-f { display: none; position: fixed; bottom: 130px; right: 20px; width: 200px; background: white; border-radius: 20px; padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); z-index: 4000; }
     </style>
 </head>
 <body>
 
 <div id="telaLogin">
     <div class="login-box">
-        <h2 style="color:var(--sea)">ICE TROCAS</h2>
+        <h2>ICE TROCAS</h2>
         <div id="etapa1">
             <input type="email" id="emailLog" placeholder="E-mail">
             <input type="password" id="passLog" placeholder="Senha">
-            <button class="btn-adm" onclick="iniciarLogin()">ENTRAR / CADASTRAR</button>
+            <button class="btn-adm" onclick="iniciarLogin()">ENTRAR</button>
         </div>
         <div id="etapaFace" style="display:none;">
-            <p>Validando Rosto...</p>
             <video id="videoFace" autoplay muted playsinline></video>
-            <div id="scanBar" style="width:0%; height:5px; background:var(--blue); transition: 2.5s linear; margin-top: 10px;"></div>
+            <div id="scanBar" style="width:0%; height:4px; background:var(--blue); transition: 2.5s linear; margin-top:10px;"></div>
         </div>
     </div>
 </div>
 
 <div id="app" style="display:none;">
     <header>
-        <div style="color:var(--sea); font-weight:bold;">ICE TROCAS</div>
-        <i class="fas fa-sign-out-alt" onclick="deslogar()" style="color:red; font-size:20px;"></i>
+        <b>ICE TROCAS</b>
+        <i class="fas fa-sign-out-alt" onclick="location.reload()" style="color:red;"></i>
     </header>
 
-    <div class="wrap" id="feed">
-        <div onclick="abrirPerfilPublico('id_exemplo', 'post_exemplo')" style="background:white; padding:15px; border-radius:15px; margin-bottom:15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-            <div style="height:200px; background:#ddd; border-radius:10px; display:flex; align-items:center; justify-content:center;">Foto da Troca</div>
-            <p><b>Clique para negociar esta troca</b></p>
-        </div>
-    </div>
+    <div class="wrap" id="feed"></div>
 
-    <div id="janelaFloat" class="janela-float">
-        <p style="margin-top:0;"><b>Opções Rápidas</b></p>
-        <button class="btn-adm" style="background:#25d366;"><i class="fas fa-share"></i> Compartilhar</button>
-        <button class="btn-adm" style="background:var(--gold); color:#333;"><i class="fas fa-crown"></i> Comprar MASTER</button>
+    <div class="janela-f" id="janelaF">
+        <p><b>Opções</b></p>
+        <button class="btn-adm" style="background:#25d366;">Compartilhar</button>
+        <button class="btn-adm" style="background:gold; color:black;">Comprar VIP</button>
     </div>
-    <i class="fas fa-plus-square" onclick="toggleFloat()" style="position:fixed; bottom:135px; right:25px; font-size:35px; color:var(--sea); z-index:4001;"></i>
 
     <div class="nav">
         <i class="fas fa-home" onclick="fecharTelas()"></i>
-        <i class="fas fa-plus-circle especial"></i>
-        <i class="fas fa-wallet" onclick="abrirCarteira()"></i>
-        <i class="fas fa-user-circle" onclick="abrirPerfilMaster()"></i>
+        <i class="fas fa-plus-circle especial" onclick="abrirPostar()"></i>
+        <i class="fas fa-wallet" onclick="abrirCarteira()" style="color:var(--gold);"></i>
+        <i class="fas fa-user-circle" onclick="abrirMeuPerfil()"></i>
     </div>
 </div>
 
-<div id="telaPerfil" class="tela-full">
-    <div class="wrap">
-        <div style="background:white; padding:20px; border-radius:20px; text-align:center;">
-            <h2 id="nomePerfil">Usuário</h2>
-            <p>Saldo: <b id="saldoPerfil">0</b> BLUE</p>
+<div id="telaPostar" class="tela-full"><div class="wrap">
+    <h3>Nova Troca</h3>
+    <input type="file" id="filePost" accept="image/*">
+    <input type="text" id="descPost" placeholder="O que você está trocando?">
+    <button class="btn-adm" onclick="enviarPost()">PUBLICAR</button>
+    <button class="btn-adm" onclick="fecharTelas()" style="background:none; color:red;">Cancelar</button>
+</div></div>
 
-            <div id="areaAdm" style="display:none; padding:15px; background:#f0f7ff; border-radius:15px; margin:15px 0; border: 1px dashed var(--blue);">
-                <p style="font-size:12px; margin-bottom:10px;"><b>PAINEL MASTER</b></p>
-                <button onclick="mudarSaldo(5)" style="background:#25d366; color:white; border:none; padding:10px; border-radius:8px; width:45%;">+5</button>
-                <button onclick="mudarSaldo(-5)" style="background:#ff4d4d; color:white; border:none; padding:10px; border-radius:8px; width:45%;">-5</button>
-            </div>
-
-            <hr>
-            <p><b>Conversar sobre a Troca</b></p>
-            <div id="chatContainer"></div>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="inputMsg" placeholder="Sua mensagem..." style="margin:0;">
-                <button onclick="enviarMensagem()" style="background:var(--blue); color:white; border:none; border-radius:10px; width:60px;"><i class="fas fa-paper-plane"></i></button>
-            </div>
-
-            <button onclick="fecharTelas()" class="btn-adm" style="margin-top:30px;">VOLTAR</button>
+<div id="telaPerfil" class="tela-full"><div class="wrap">
+    <div style="background:white; padding:20px; border-radius:20px; text-align:center;">
+        <h2 id="nomePerf">Usuário</h2>
+        <p>Saldo Blue: <b id="saldoPerf">0</b></p>
+        <div id="areaAdm" style="display:none; background:#f0f4f8; padding:10px; border-radius:10px; margin-bottom:15px;">
+            <button onclick="mudarSaldo(5)" style="width:45%; background:green; color:white; border:none; padding:10px; border-radius:5px;">+5</button>
+            <button onclick="mudarSaldo(-5)" style="width:45%; background:red; color:white; border:none; padding:10px; border-radius:5px;">-5</button>
         </div>
+        <hr>
+        <div id="chatBox"></div>
+        <div style="display:flex; gap:5px;">
+            <input type="text" id="msgInput" placeholder="Sua mensagem..." style="margin:0;">
+            <button onclick="enviarMsg()" style="width:50px; background:var(--blue); color:white; border:none; border-radius:10px;"><i class="fas fa-paper-plane"></i></button>
+        </div>
+        <button onclick="fecharTelas()" class="btn-adm" style="margin-top:20px;">VOLTAR</button>
     </div>
-</div>
+</div></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, set, push, runTransaction, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Configuração do seu projeto 'icek'
     const firebaseConfig = {
         apiKey: "AIzaSyDM5M1_O-wfcBDGYJIiYgiHVbqhiKC-0dw",
         authDomain: "icek-9cdd7.firebaseapp.com",
@@ -124,70 +122,72 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    window.idUsuarioVisto = ""; 
+    window.user = null;
+    window.idVisto = "";
 
-    // LOGIN FACIAL SIMULADO
-    window.iniciarLogin = async () => {
-        const e = document.getElementById('emailLog').value;
-        const p = document.getElementById('passLog').value;
-        if(!e || p.length < 6) return alert("E-mail ou senha curta!");
-
-        document.getElementById('etapa1').style.display='none';
-        document.getElementById('etapaFace').style.display='block';
-        const v = document.getElementById('videoFace'); v.style.display='block';
-
-        try {
-            const s = await navigator.mediaDevices.getUserMedia({video:true});
-            v.srcObject = s;
-            document.getElementById('scanBar').style.width='100%';
-            setTimeout(async () => {
-                s.getTracks().forEach(t=>t.stop());
-                try { await signInWithEmailAndPassword(auth, e, p); }
-                catch { await createUserWithEmailAndPassword(auth, e, p); }
-            }, 2500);
-        } catch { alert("Câmera obrigatória!"); location.reload(); }
-    };
-
-    // CONTROLE DE TELAS E DADOS
     onAuthStateChanged(auth, u => {
         if(u) {
             onValue(ref(db, `usuarios/${u.uid}`), s => {
-                window.user = s.val() || { nome: u.email.split('@')[0], moedasBlue: 0, cargo: 'user', uid: u.uid, email: u.email };
+                window.user = s.val() || { nome: u.email.split('@')[0], moedasBlue: 0, cargo: 'user', uid: u.uid };
                 if(!s.val()) set(ref(db, `usuarios/${u.uid}`), window.user);
-                document.getElementById('telaLogin').style.display='none';
-                document.getElementById('app').style.display='block';
+                document.getElementById('telaLogin').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
             });
         }
     });
 
-    window.abrirPerfilPublico = (idDono, idPost) => {
-        window.idUsuarioVisto = idDono;
+    onValue(ref(db, 'posts'), snap => {
+        const feed = document.getElementById('feed'); feed.innerHTML = "";
+        snap.forEach(c => {
+            const p = c.val();
+            const div = document.createElement('div');
+            div.className = "card";
+            div.innerHTML = `<img src="${p.img}" onclick="abrirPerfil('${p.uid}')"><div style="padding:10px;"><b>${p.autor}</b><br>${p.desc}</div>`;
+            feed.prepend(div);
+        });
+    });
+
+    window.iniciarLogin = async () => {
+        const e = document.getElementById('emailLog').value;
+        const p = document.getElementById('passLog').value;
+        document.getElementById('etapa1').style.display='none';
+        document.getElementById('etapaFace').style.display='block';
+        const v = document.getElementById('videoFace'); v.style.display='block';
+        const stream = await navigator.mediaDevices.getUserMedia({video:true});
+        v.srcObject = stream;
+        document.getElementById('scanBar').style.width='100%';
+        setTimeout(async () => {
+            stream.getTracks().forEach(t=>t.stop());
+            try { await signInWithEmailAndPassword(auth, e, p); } catch { await createUserWithEmailAndPassword(auth, e, p); }
+        }, 2500);
+    };
+
+    window.abrirPerfil = (uid) => {
+        window.idVisto = uid;
         fecharTelas();
-        onValue(ref(db, `usuarios/${idDono}`), s => {
+        onValue(ref(db, `usuarios/${uid}`), s => {
             const d = s.val();
-            document.getElementById('nomePerfil').innerText = d.nome;
-            document.getElementById('saldoPerfil').innerText = d.moedasBlue;
+            document.getElementById('nomePerf').innerText = d.nome;
+            document.getElementById('saldoPerf').innerText = d.moedasBlue;
             document.getElementById('areaAdm').style.display = (window.user.cargo === 'ADM1') ? 'block' : 'none';
-            document.getElementById('telaPerfil').style.display='block';
-            carregarChat(idDono);
+            document.getElementById('telaPerfil').style.display = 'block';
+            carregarChat(uid);
         });
     };
 
-    // CHAT REALTIME
-    window.enviarMensagem = () => {
-        const t = document.getElementById('inputMsg').value;
-        if(!t || !window.idUsuarioVisto) return;
-        const chatId = window.user.uid < window.idUsuarioVisto ? window.user.uid+window.idUsuarioVisto : window.idUsuarioVisto+window.user.uid;
-        push(ref(db, `chats/${chatId}`), { sender: window.user.uid, texto: t });
-        document.getElementById('inputMsg').value = "";
+    window.enviarMsg = () => {
+        const t = document.getElementById('msgInput').value;
+        if(!t) return;
+        const cid = window.user.uid < window.idVisto ? window.user.uid+window.idVisto : window.idVisto+window.user.uid;
+        push(ref(db, `chats/${cid}`), { sender: window.user.uid, texto: t });
+        document.getElementById('msgInput').value = "";
     };
 
-    function carregarChat(idDono) {
-        const chatId = window.user.uid < idDono ? window.user.uid+idDono : idDono+window.user.uid;
-        const box = document.getElementById('chatContainer');
-        box.innerHTML = "";
-        onChildAdded(ref(db, `chats/${chatId}`), (data) => {
-            const m = data.val();
+    function carregarChat(uid) {
+        const cid = window.user.uid < uid ? window.user.uid+uid : uid+window.user.uid;
+        const box = document.getElementById('chatBox'); box.innerHTML = "";
+        onChildAdded(ref(db, `chats/${cid}`), d => {
+            const m = d.val();
             const div = document.createElement('div');
             div.className = m.sender === window.user.uid ? 'msg me' : 'msg them';
             div.innerText = m.texto;
@@ -196,16 +196,22 @@
         });
     }
 
-    // FUNÇÕES GERAIS
-    window.mudarSaldo = (q) => {
-        runTransaction(ref(db, `usuarios/${window.idUsuarioVisto}/moedasBlue`), v => (v || 0) + q);
+    window.enviarPost = () => {
+        const f = document.getElementById('filePost').files[0];
+        const d = document.getElementById('descPost').value;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            push(ref(db, 'posts'), { autor: window.user.nome, uid: window.user.uid, img: e.target.result, desc: d });
+            fecharTelas();
+        };
+        reader.readAsDataURL(f);
     };
-    window.toggleFloat = () => {
-        const j = document.getElementById('janelaFloat');
-        j.style.display = j.style.display === 'block' ? 'none' : 'block';
-    };
-    window.fecharTelas = () => { document.getElementById('telaPerfil').style.display='none'; };
-    window.deslogar = () => { signOut(auth); location.reload(); };
+
+    window.mudarSaldo = (q) => runTransaction(ref(db, `usuarios/${window.idVisto}/moedasBlue`), v => (v || 0) + q);
+    window.abrirPostar = () => { fecharTelas(); document.getElementById('telaPostar').style.display='block'; };
+    window.abrirMeuPerfil = () => abrirPerfil(window.user.uid);
+    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t=>t.style.display='none'); };
+    window.abrirCarteira = () => { document.getElementById('janelaF').style.display = 'block'; };
 </script>
 </body>
 </html>
