@@ -9,41 +9,53 @@
         :root { --bg: #0d1117; --sea: #0f3452; --blue: #1877f2; --gold: #FFD700; --white: #fff; --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; }
         body { margin:0; font-family: sans-serif; background: var(--bg); color: white; padding-bottom: 90px; overflow-x: hidden; }
         
+        /* LOGIN */
         #telaLogin { position: fixed; inset: 0; background: var(--sea); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
 
+        /* ESTRELAS */
         .badge-star { font-size: 14px; display: flex; gap: 4px; align-items: center; justify-content: center; margin-bottom: 5px; }
         .star-mod { color: var(--mod-blue); }
         .star-adm2 { color: var(--red); }
         .star-adm1 { color: var(--gold); }
 
-        .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 4000; }
-        .btn-float { width: 45px; height: 45px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 18px; }
+        /* MENU LATERAL */
+        .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 4000; }
+        .btn-float { width: 42px; height: 42px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 16px; }
 
-        header { padding:15px; background: #161b22; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #30363d; }
+        /* HEADER & FEED */
+        header { padding:15px; background: #161b22; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #30363d; position: sticky; top:0; z-index:100; }
         .card-timeline { background: #161b22; border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid #30363d; }
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
         .card-info { padding: 15px; }
 
+        /* NAV */
         .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: #161b22; border: 1px solid #30363d; display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; }
         .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
         .nav i.active { color: var(--blue); }
 
-        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; }
+        /* TELAS */
+        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
         
         .grid-postagens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
-        .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; background: #161b22; }
+        .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; }
         
-        .painel-adm { background: rgba(255, 215, 0, 0.1); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px; }
+        .painel-adm { background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px; }
+        .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--blue); margin-bottom: 10px; background: #161b22; }
+        
+        /* ESTILO INPUT FILE CUSTOMIZADO */
+        .file-label { display: block; background: #30363d; color: white; padding: 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-size: 12px; text-align: center; }
+        .file-label:hover { background: #444; }
     </style>
 </head>
 <body>
 
 <div class="side-menu" id="menuFlutuante" style="display:none;">
+    <button class="btn-float" style="background: var(--gold); color:black;" onclick="comprar('ADM1 SUPREMO', 'R$ 22.000.000')"><i class="fas fa-crown"></i></button>
+    <button class="btn-float" style="background: var(--red);" onclick="comprar('ADM2', 'R$ 50')"><i class="fas fa-shield-alt"></i></button>
     <button class="btn-float" style="background: var(--mod-blue);" onclick="comprar('MOD', 'R$ 20')"><i class="fas fa-star"></i></button>
-    <button class="btn-float" style="background: var(--red);" onclick="comprar('ADM2', 'R$ 50')"><i class="fas fa-crown"></i></button>
     <button class="btn-float" style="background: var(--green);" onclick="window.open('https://wa.me/5511983602504')"><i class="fab fa-whatsapp"></i></button>
 </div>
 
@@ -67,24 +79,50 @@
 </div>
 
 <div id="telaPerfil" class="tela-full">
-    <div id="perfilConteudo"></div>
+    <div id="perfilConteudo" style="text-align:center;"></div>
     
+    <div id="areaEditarPerfil" style="display:none; margin-top:15px; background: #161b22; padding: 15px; border-radius: 15px; text-align: left;">
+        <h5 style="margin-top:0;">Editar Perfil</h5>
+        
+        <label for="editFotoFile" class="file-label"><i class="fas fa-image"></i> Alterar Foto da Galeria</label>
+        <input type="file" id="editFotoFile" accept="image/*" style="display:none;" onchange="prepararFotoPerfil(this)">
+        
+        <img id="previewFotoPerfil" src="" style="width:50px; height:50px; border-radius:50%; object-fit:cover; display:none; margin-bottom:10px;">
+
+        <input type="text" id="editBio" placeholder="Sua Bio (Frase curta)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none; box-sizing:border-box;">
+        
+        <button class="btn-action" style="background:var(--green); font-size:12px; margin-top:0;" onclick="salvarPerfil()">SALVAR ALTERAÇÕES</button>
+    </div>
+
     <div id="painelAdmControle" class="painel-adm" style="display:none;">
-        <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 CONTROLE MASTER</h4>
+        <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
         <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            <button class="btn-action" style="background:var(--gold); color:black; flex:1; font-size:10px;" onclick="mudarCargo('ADM1')">DAR ADM1</button>
-            <button class="btn-action" style="background:var(--red); flex:1; font-size:10px;" onclick="mudarCargo('ADM2')">DAR ADM2</button>
-            <button class="btn-action" style="background:var(--mod-blue); flex:1; font-size:10px;" onclick="mudarCargo('MOD')">DAR MOD</button>
+            <button class="btn-action" style="background:var(--gold); color:black; flex:1; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
+            <button class="btn-action" style="background:var(--red); flex:1; font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
+            <button class="btn-action" style="background:var(--mod-blue); flex:1; font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
         </div>
         <div style="display:flex; gap:5px; margin-top:10px;">
-            <button class="btn-action" style="background:var(--green); flex:1;" onclick="addMoedas(true)"><i class="fas fa-plus"></i> BLUE</button>
-            <button class="btn-action" style="background:var(--red); flex:1;" onclick="addMoedas(false)"><i class="fas fa-minus"></i> BLUE</button>
+            <button class="btn-action" style="background:var(--green); flex:1;" onclick="addMoedas(true)">+ BLUE</button>
+            <button class="btn-action" style="background:var(--red); flex:1;" onclick="addMoedas(false)">- BLUE</button>
         </div>
     </div>
 
-    <h4>Postagens do Usuário</h4>
+    <h4>Postagens</h4>
     <div id="gridUser" class="grid-postagens"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
+<div id="telaChat" class="tela-full">
+    <h2 id="chatTitle">Chat</h2>
+    <div id="chatBox" style="height:350px; background:#161b22; border-radius:15px; padding:15px; margin-bottom:10px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+        <div style="align-self: flex-start; background:#30363d; padding:10px; border-radius:10px; max-width:80%;">Olá! Vi sua postagem...</div>
+        <div style="align-self: flex-end; background:var(--blue); padding:10px; border-radius:10px; max-width:80%;">Oi! O que você oferece?</div>
+    </div>
+    <div style="display:flex; gap:5px;">
+        <input type="text" placeholder="Digite sua proposta..." style="flex:1; padding:12px; border-radius:8px; border:none;">
+        <button class="btn-action" style="width:auto; margin:0;" onclick="alert('Mensagem enviada!')">ENVIAR</button>
+    </div>
+    <button class="btn-action" style="background:var(--gray); margin-top:15px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaCarteira" class="tela-full">
@@ -97,7 +135,10 @@
 
 <div id="telaPostar" class="tela-full">
     <h2>Nova Postagem</h2>
-    <input type="file" id="filePost" accept="image/*">
+    <label for="filePost" class="file-label"><i class="fas fa-camera"></i> Escolher Foto da Troca</label>
+    <input type="file" id="filePost" accept="image/*" style="display:none;" onchange="prepararFotoPost(this)">
+    <img id="previewFotoPost" src="" style="width:100px; height:100px; object-fit:cover; display:none; border-radius:10px; margin-bottom:10px;">
+    
     <input type="text" id="descPost" placeholder="O que você quer trocar?">
     <button class="btn-action" onclick="enviarPost()">POSTAR</button>
     <button class="btn-action" style="background:none" onclick="fecharTelas()">CANCELAR</button>
@@ -115,6 +156,8 @@
 
     window.user = null;
     let targetUid = null;
+    let fotoPerfilBase64 = null; // Guarda temporariamente a foto escolhida da galeria
+    let fotoPostBase64 = null; // Guarda temporariamente a foto do post
 
     function getBadge(cargo) {
         if(cargo === 'ADM1') return '<div class="badge-star star-adm1"><i class="fas fa-star"></i><i class="fas fa-crown"></i></div>';
@@ -123,18 +166,19 @@
         return '';
     }
 
+    // LOGIN MASTER SUPREMO (ADM / 1533)
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value;
         const p = document.getElementById('passIn').value;
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000 };
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "" };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user', JSON.stringify(m));
             location.reload(); return;
         }
         try { await signInWithEmailAndPassword(auth, u, p); } catch (e) { 
             const res = await createUserWithEmailAndPassword(auth, u, p);
-            await set(ref(db, `usuarios/${res.user.uid}`), { nome: u.split('@')[0], cargo: 'user', uid: res.user.uid, moedasBlue: 0 });
+            await set(ref(db, `usuarios/${res.user.uid}`), { nome: u.split('@')[0], cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto:"", bio:"" });
         }
     };
 
@@ -160,7 +204,7 @@
                     <img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')">
                     <div class="card-info">
                         ${getBadge(pt.cargo)} <b>${pt.u1}</b><br><small>${pt.d1}</small>
-                        <button class="btn-action" onclick="abrirPerfil('${pt.uid}')">NEGOCIAR</button>
+                        <button class="btn-action" onclick="abrirChat('${pt.u1}')">NEGOCIAR</button>
                     </div>
                 </div>` + f.innerHTML;
             });
@@ -172,18 +216,28 @@
         targetUid = uid;
         const s = await get(ref(db, `usuarios/${uid}`));
         const t = s.val();
+        const souEu = window.user.uid === uid;
         
-        document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && window.user.uid !== uid) ? 'block' : 'none';
+        // PAINEL MASTER (SÓ APARECE P/ ADM1 OLHANDO OUTRO PERFIL)
+        document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && !souEu) ? 'block' : 'none';
+        // ÁREA EDITAR (SÓ APARECE NO PRÓPRIO)
+        document.getElementById('areaEditarPerfil').style.display = souEu ? 'block' : 'none';
 
+        // Carregar Foto (Base64 do Banco ou Placeholder)
+        const fotoUrl = t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        
         document.getElementById('perfilConteudo').innerHTML = `
-            <div style="text-align:center; padding:20px;">
-                <i class="fas fa-user-circle" style="font-size:60px; color:var(--blue);"></i>
-                ${getBadge(t.cargo)} <h2>${t.nome}</h2>
-                <div style="background:#161b22; padding:10px; border-radius:10px; border:1px solid #30363d;">
-                    <b>SALDO: ${t.moedasBlue || 0} BLUE</b>
-                </div>
+            <img src="${fotoUrl}" class="user-photo">
+            ${getBadge(t.cargo)} <h2>${t.nome}</h2>
+            <p style="color:#aaa; font-style:italic; margin: 5px 0 10px 0;">${t.bio || 'Sem bio...'}</p>
+            <div style="background:#161b22; padding:10px; border-radius:10px; display:inline-block; border:1px solid #30363d;">
+                <b>SALDO: ${t.moedasBlue || 0} BLUE</b>
             </div>`;
 
+        // Preencher Bio se for o próprio perfil
+        if(souEu) { document.getElementById('editBio').value = t.bio || ''; }
+
+        // Carregar Grade de Postagens
         const grid = document.getElementById('gridUser'); grid.innerHTML = "";
         const allPosts = await get(ref(db, 'posts'));
         allPosts.forEach(p => { if(p.val().uid === uid) grid.innerHTML += `<img src="${p.val().i1}">`; });
@@ -191,8 +245,80 @@
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
+    // --- FUNÇÕES DE GALERIA P/ PERFIL ---
+    window.prepararFotoPerfil = (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            fotoPerfilBase64 = e.target.result; // Imagem convertida p/ texto p/ salvar no banco
+            const preview = document.getElementById('previewFotoPerfil');
+            preview.src = fotoPerfilBase64;
+            preview.style.display = 'inline-block';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.salvarPerfil = async () => {
+        const nBio = document.getElementById('editBio').value;
+        const updates = { bio: nBio };
+        
+        if(fotoPerfilBase64) {
+            updates.foto = fotoPerfilBase64; // Salva a foto real (Base64) no Firebase
+        }
+        
+        await update(ref(db, `usuarios/${window.user.uid}`), updates);
+        
+        // Limpar preview e input
+        fotoPerfilBase64 = null;
+        document.getElementById('previewFotoPerfil').style.display = 'none';
+        document.getElementById('editFotoFile').value = '';
+        
+        alert("Perfil Atualizado!"); 
+        abrirPerfil(window.user.uid);
+    };
+
+    // --- FUNÇÕES DE GALERIA P/ POSTS (MANTIDAS) ---
+    window.prepararFotoPost = (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            fotoPostBase64 = e.target.result;
+            const preview = document.getElementById('previewFotoPost');
+            preview.src = fotoPostBase64;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.enviarPost = async () => {
+        const desc = document.getElementById('descPost').value;
+        if(!fotoPostBase64 || !desc) { alert("Escolha uma foto e escreva a descrição!"); return; }
+        
+        await push(ref(db, 'posts'), { 
+            u1: window.user.nome, 
+            uid: window.user.uid, 
+            cargo: window.user.cargo, 
+            i1: fotoPostBase64, // Salva a foto real
+            d1: desc 
+        });
+        
+        // Limpar campos
+        fotoPostBase64 = null;
+        document.getElementById('previewFotoPost').style.display = 'none';
+        document.getElementById('filePost').value = '';
+        document.getElementById('descPost').value = '';
+        
+        fecharTelas();
+    };
+
+    // OUTRAS FUNÇÕES (Intocadas)
+    window.abrirChat = (nome) => {
+        document.getElementById('chatTitle').innerText = "Negociar com " + nome;
+        document.getElementById('telaChat').style.display = 'block';
+    };
     window.mudarCargo = async (c) => { await update(ref(db, `usuarios/${targetUid}`), { cargo: c }); alert("Cargo OK"); abrirPerfil(targetUid); };
-    
     window.addMoedas = async (somar) => {
         const v = prompt("Quanto?"); if(!v) return;
         const s = await get(ref(db, `usuarios/${targetUid}`));
@@ -200,18 +326,7 @@
         await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, novo) });
         abrirPerfil(targetUid);
     };
-
-    window.enviarPost = () => {
-        const f = document.getElementById('filePost').files[0];
-        const r = new FileReader();
-        r.onload = (e) => {
-            push(ref(db, 'posts'), { u1: window.user.nome, uid: window.user.uid, cargo: window.user.cargo, i1: e.target.result, d1: document.getElementById('descPost').value });
-            fecharTelas();
-        };
-        r.readAsDataURL(f);
-    };
-
-    window.comprar = (cargo, valor) => alert(`PIX: thiago00dudu@gmail.com\nValor: ${valor}\nEnvie comprovante no Zap: 11983602504`);
+    window.comprar = (cargo, valor) => alert(`PIX: thiago00dudu@gmail.com\nValor: ${valor}\nZap p/ Comprovante: 11983602504`);
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t=>t.style.display='none'); };
     window.abrirMeuPerfil = () => abrirPerfil(window.user.uid);
     window.abrirPostar = () => document.getElementById('telaPostar').style.display='block';
