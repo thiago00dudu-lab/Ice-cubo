@@ -94,6 +94,7 @@
             <button class="btn-action" style="background:var(--green); flex:1;" onclick="addMoedas(true)">+ BLUE</button>
             <button class="btn-action" style="background:var(--red); flex:1;" onclick="addMoedas(false)">- BLUE</button>
         </div>
+        <button class="btn-action" style="background:var(--gray); width:100%; margin-top:10px; color:var(--red);" onclick="bloquearUsuario()"><i class="fas fa-ban"></i> BLOQUEAR USUÁRIO</button>
     </div>
 
     <h4>Postagens</h4>
@@ -203,7 +204,6 @@
         onValue(ref(db, 'posts'), snap => {
             const f = document.getElementById('feed'); f.innerHTML = "";
             snap.forEach(p => { const pt = p.val();
-                // O BOTÃO DE NEGOCIAR AGORA PASSA O UID TAMBÉM (pt.uid)
                 f.innerHTML = `<div class="card-timeline"><img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')"><div class="card-info">${getBadge(pt.cargo)} <b>${pt.u1}</b><br><small>${pt.d1}</small><button class="btn-action" onclick="abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button></div></div>` + f.innerHTML;
             });
         });
@@ -215,7 +215,11 @@
         const s = await get(ref(db, `usuarios/${uid}`));
         const t = s.val();
         const souEu = window.user.uid === uid;
-        document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && !souEu) ? 'block' : 'none';
+        
+        // PERMISSÃO LIBERADA PARA ADM1, ADM2 E MOD VEREM O PAINEL DE CONTROLE
+        const temPermissao = window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2' || window.user.cargo === 'MOD';
+        document.getElementById('painelAdmControle').style.display = (temPermissao && !souEu) ? 'block' : 'none';
+        
         document.getElementById('areaEditarPerfil').style.display = souEu ? 'block' : 'none';
         const fotoUrl = t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         document.getElementById('perfilConteudo').innerHTML = `<img src="${fotoUrl}" class="user-photo">${getBadge(t.cargo)}<h2>${t.nome}</h2><p style="color:#aaa;">${t.bio || 'Sem bio...'}</p><p style="color:var(--green); font-weight:bold;">🧔 Pai de: ${t.filhos || 0} pessoas</p><div style="background:#161b22; padding:10px; border-radius:10px;"><b>SALDO: ${t.moedasBlue || 0} BLUE</b></div>`;
@@ -245,11 +249,7 @@
         fecharTelas();
     };
 
-    // ==========================================
-    // NOVA LÓGICA DE CHAT (SEM REMOVER NADA)
-    // ==========================================
-    
-    // 1. Abrir Chat e ler histórico
+    // Lógica do Chat
     window.abrirChat = (alvoUid, n) => { 
         if(alvoUid === window.user.uid) {
             alert("Você não pode negociar consigo mesmo!");
@@ -259,11 +259,9 @@
         document.getElementById('chatTitle').innerText = "Chat com " + n; 
         document.getElementById('telaChat').style.display='block'; 
         
-        // Cria um ID único juntando os dois UIDs
         const meuUid = window.user.uid;
         idDoChatAtual = meuUid < alvoUid ? meuUid + "_" + alvoUid : alvoUid + "_" + meuUid;
 
-        // Monitorar mensagens no banco
         onValue(ref(db, `chats/${idDoChatAtual}`), snap => {
             const cb = document.getElementById('chatBox');
             cb.innerHTML = "";
@@ -288,25 +286,23 @@
                         ${conteudoHTML}
                     </div>`;
                 });
-                cb.scrollTop = cb.scrollHeight; // Rola pra baixo
+                cb.scrollTop = cb.scrollHeight; 
             } else {
                 cb.innerHTML = "<p style='text-align:center; color:#8b949e; width:100%;'>Envie a primeira mensagem para negociar.</p>";
             }
         });
     };
 
-    // 2. Preparar foto e enviar na mesma hora
     window.prepararFotoChat = async (i) => { 
         if(!i.files[0]) return;
         const r = new FileReader(); 
         r.onload = async (e) => { 
             fotoChatBase64 = e.target.result; 
-            await enviarMensagem(); // Envia direto quando seleciona a foto
+            await enviarMensagem(); 
         }; 
         r.readAsDataURL(i.files[0]); 
     };
 
-    // 3. Enviar mensagem (Texto ou Foto)
     window.enviarMensagem = async () => {
         const textoIn = document.getElementById('chatMsg').value;
         if(!textoIn.trim() && !fotoChatBase64) return;
@@ -323,9 +319,18 @@
         fotoChatBase64 = null;
         document.getElementById('fileChat').value = "";
     };
-    // ==========================================
 
     window.mudarCargo = async (c) => { await update(ref(db, `usuarios/${targetUid}`), { cargo: c }); abrirPerfil(targetUid); };
+    
+    // FUNÇÃO DE BLOQUEAR ADICIONADA AQUI
+    window.bloquearUsuario = async () => { 
+        if(confirm("Tem certeza que deseja bloquear este usuário?")) { 
+            await update(ref(db, `usuarios/${targetUid}`), { cargo: 'BLOQUEADO' }); 
+            alert("Usuário bloqueado com sucesso!");
+            abrirPerfil(targetUid); 
+        } 
+    };
+
     window.addMoedas = async (s) => { const v = prompt("Qtd?"); const sn = await get(ref(db, `usuarios/${targetUid}`)); const n = s ? (sn.val().moedasBlue + parseInt(v)) : (sn.val().moedasBlue - parseInt(v)); await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, n) }); abrirPerfil(targetUid); };
     window.comprar = (c, v) => alert(`PIX: thiago00dudu@gmail.com\nValor: ${v}\nZap: 11983602504`);
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t=>t.style.display='none'); };
