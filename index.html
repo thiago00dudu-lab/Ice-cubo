@@ -9,52 +9,50 @@
         :root { --bg: #0d1117; --sea: #0f3452; --blue: #1877f2; --gold: #FFD700; --white: #fff; --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; }
         body { margin:0; font-family: sans-serif; background: var(--bg); color: white; padding-bottom: 90px; overflow-x: hidden; }
         
-        /* LOGIN */
         #telaLogin { position: fixed; inset: 0; background: var(--sea); z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
 
-        /* ESTRELAS */
-        .badge-star { font-size: 14px; margin-bottom: 2px; display: flex; gap: 4px; align-items: center; }
+        .badge-star { font-size: 14px; display: flex; gap: 4px; align-items: center; justify-content: center; margin-bottom: 5px; }
         .star-mod { color: var(--mod-blue); }
         .star-adm2 { color: var(--red); }
         .star-adm1 { color: var(--gold); }
 
-        /* MENU LATERAL COMPRAS */
         .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 4000; }
         .btn-float { width: 45px; height: 45px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 18px; }
 
-        /* INTERFACE */
-        header { padding:15px; background: #161b22; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; border-bottom: 1px solid #30363d; }
+        header { padding:15px; background: #161b22; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #30363d; }
         .card-timeline { background: #161b22; border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid #30363d; }
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
         .card-info { padding: 15px; }
 
-        .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: #161b22; border: 1px solid #30363d; display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: #161b22; border: 1px solid #30363d; display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; }
         .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
         .nav i.active { color: var(--blue); }
 
-        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        
         .grid-postagens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
         .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; background: #161b22; }
+        
+        .painel-adm { background: rgba(255, 215, 0, 0.1); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <div class="side-menu" id="menuFlutuante" style="display:none;">
-    <button class="btn-float" style="background: var(--mod-blue);" title="Comprar Moderador" onclick="comprarCargo('MODERADOR', 'R$ 20,00')"><i class="fas fa-star"></i></button>
-    <button class="btn-float" style="background: var(--red);" title="Comprar ADM2" onclick="comprarCargo('ADM 2', 'R$ 50,00')"><i class="fas fa-crown"></i></button>
-    <button class="btn-float" style="background: var(--gold); color:black;" onclick="alert('Market Cap: R$ 22M')"><i class="fas fa-chart-line"></i></button>
-    <button class="btn-float" style="background: var(--green);" onclick="alert('Link copiado!')"><i class="fas fa-share-alt"></i></button>
+    <button class="btn-float" style="background: var(--mod-blue);" onclick="comprar('MOD', 'R$ 20')"><i class="fas fa-star"></i></button>
+    <button class="btn-float" style="background: var(--red);" onclick="comprar('ADM2', 'R$ 50')"><i class="fas fa-crown"></i></button>
+    <button class="btn-float" style="background: var(--green);" onclick="window.open('https://wa.me/5511983602504')"><i class="fab fa-whatsapp"></i></button>
 </div>
 
 <div id="telaLogin">
     <div class="login-box">
-        <h2 style="margin-bottom:20px;">ICE TROCAS</h2>
-        <input type="text" id="userIn" placeholder="E-mail ou ADM">
+        <h2>ICE TROCAS</h2>
+        <input type="text" id="userIn" placeholder="Login">
         <input type="password" id="passIn" placeholder="Senha">
-        <button class="btn-action" onclick="fazerLogin()">ACESSAR</button>
+        <button class="btn-action" onclick="fazerLogin()">ENTRAR</button>
     </div>
 </div>
 
@@ -71,41 +69,37 @@
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo"></div>
     
-    <div id="painelAdmControle" style="display:none; background:rgba(255,215,0,0.1); border:2px solid var(--gold); padding:15px; border-radius:15px; margin-top:15px;">
-        <h3 style="margin:0 0 10px 0; text-align:center; color: var(--gold);"><i class="fas fa-tools"></i> PAINEL MASTER</h3>
-        
-        <p style="font-size:12px; margin-bottom:5px;">Gerenciar Cargo:</p>
+    <div id="painelAdmControle" class="painel-adm" style="display:none;">
+        <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 CONTROLE MASTER</h4>
         <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            <button class="btn-action" style="font-size:10px; width:48%; background:var(--gold); color:black;" onclick="setCargo('ADM1')">DAR ADM1</button>
-            <button class="btn-action" style="font-size:10px; width:48%; background:var(--red);" onclick="setCargo('ADM2')">DAR ADM2</button>
-            <button class="btn-action" style="font-size:10px; width:48%; background:var(--mod-blue);" onclick="setCargo('MOD')">DAR MOD</button>
-            <button class="btn-action" style="font-size:10px; width:48%; background:#444;" onclick="setCargo('user')">REBAIXAR</button>
+            <button class="btn-action" style="background:var(--gold); color:black; flex:1; font-size:10px;" onclick="mudarCargo('ADM1')">DAR ADM1</button>
+            <button class="btn-action" style="background:var(--red); flex:1; font-size:10px;" onclick="mudarCargo('ADM2')">DAR ADM2</button>
+            <button class="btn-action" style="background:var(--mod-blue); flex:1; font-size:10px;" onclick="mudarCargo('MOD')">DAR MOD</button>
         </div>
-
-        <p style="font-size:12px; margin-top:15px; margin-bottom:5px;">Moedas BLUE:</p>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-action" style="background:var(--green); flex:1;" onclick="setMoedas(true)">+ DAR BLUE</button>
-            <button class="btn-action" style="background:var(--red); flex:1;" onclick="setMoedas(false)">- TIRAR</button>
+        <div style="display:flex; gap:5px; margin-top:10px;">
+            <button class="btn-action" style="background:var(--green); flex:1;" onclick="addMoedas(true)"><i class="fas fa-plus"></i> BLUE</button>
+            <button class="btn-action" style="background:var(--red); flex:1;" onclick="addMoedas(false)"><i class="fas fa-minus"></i> BLUE</button>
         </div>
     </div>
 
-    <button class="btn-action" style="background:var(--gray); margin-top:30px;" onclick="fecharTelas()">VOLTAR</button>
+    <h4>Postagens do Usuário</h4>
+    <div id="gridUser" class="grid-postagens"></div>
+    <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaCarteira" class="tela-full">
-    <div style="background:linear-gradient(135deg, var(--sea), var(--blue)); padding:40px; border-radius:20px; text-align:center;">
-        <p>Meu Saldo</p>
+    <div style="background:var(--sea); padding:30px; border-radius:20px; text-align:center;">
+        <p>Saldo BLUE</p>
         <h1 id="saldoBlue">0</h1>
-        <small>BLUE COINS</small>
     </div>
-    <button class="btn-action" style="margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
+    <button class="btn-action" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaPostar" class="tela-full">
-    <h2>Postar Troca</h2>
-    <input type="file" id="filePost" accept="image/*" style="margin-bottom:15px;">
-    <input type="text" id="descPost" placeholder="O que você está trocando?">
-    <button class="btn-action" onclick="enviarPost()">PUBLICAR</button>
+    <h2>Nova Postagem</h2>
+    <input type="file" id="filePost" accept="image/*">
+    <input type="text" id="descPost" placeholder="O que você quer trocar?">
+    <button class="btn-action" onclick="enviarPost()">POSTAR</button>
     <button class="btn-action" style="background:none" onclick="fecharTelas()">CANCELAR</button>
 </div>
 
@@ -122,14 +116,6 @@
     window.user = null;
     let targetUid = null;
 
-    // COMPRA COM SEUS DADOS
-    window.comprarCargo = (cargo, preco) => {
-        const pix = "thiago00dudu@gmail.com";
-        const zap = "5511983602504";
-        alert(`INFO DE COMPRA:\n\nCargo: ${cargo}\nValor: ${preco}\nPIX: ${pix}\n\nApós pagar, você será levado ao WhatsApp para enviar o comprovante.`);
-        window.open(`https://wa.me/${zap}?text=Fiz o PIX de ${preco} para o cargo ${cargo}. Meu ID: ${window.user.uid}`, '_blank');
-    };
-
     function getBadge(cargo) {
         if(cargo === 'ADM1') return '<div class="badge-star star-adm1"><i class="fas fa-star"></i><i class="fas fa-crown"></i></div>';
         if(cargo === 'ADM2') return '<div class="badge-star star-adm2"><i class="fas fa-star"></i></div>';
@@ -141,9 +127,9 @@
         const u = document.getElementById('userIn').value;
         const p = document.getElementById('passIn').value;
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            const master = { nome: "ADMIN MASTER", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000 };
-            await set(ref(db, `usuarios/master_ice`), master);
-            localStorage.setItem('ice_session', JSON.stringify(master));
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000 };
+            await set(ref(db, `usuarios/master_ice`), m);
+            localStorage.setItem('ice_user', JSON.stringify(m));
             location.reload(); return;
         }
         try { await signInWithEmailAndPassword(auth, u, p); } catch (e) { 
@@ -153,69 +139,65 @@
     };
 
     onAuthStateChanged(auth, async (u) => {
-        const local = localStorage.getItem('ice_session');
-        if (local) { window.user = JSON.parse(local); startApp(); }
+        const local = localStorage.getItem('ice_user');
+        if (local) { window.user = JSON.parse(local); showApp(); }
         else if (u) {
-            const snap = await get(ref(db, `usuarios/${u.uid}`));
-            window.user = snap.val(); startApp();
+            const s = await get(ref(db, `usuarios/${u.uid}`));
+            window.user = s.val(); showApp();
         }
     });
 
-    function startApp() {
+    function showApp() {
         document.getElementById('telaLogin').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         document.getElementById('menuFlutuante').style.display = 'flex';
-
+        
         onValue(ref(db, 'posts'), snap => {
-            const feed = document.getElementById('feed'); feed.innerHTML = "";
+            const f = document.getElementById('feed'); f.innerHTML = "";
             snap.forEach(p => {
-                const post = p.val();
-                feed.innerHTML = `<div class="card-timeline">
-                    <img src="${post.i1}" onclick="abrirPerfil('${post.uid}')">
+                const pt = p.val();
+                f.innerHTML = `<div class="card-timeline">
+                    <img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')">
                     <div class="card-info">
-                        <div class="badge-container">${getBadge(post.cargo)}<b>${post.u1}</b></div>
-                        <small>${post.d1}</small>
-                        <button class="btn-action" onclick="abrirPerfil('${post.uid}')">NEGOCIAR / PERFIL</button>
+                        ${getBadge(pt.cargo)} <b>${pt.u1}</b><br><small>${pt.d1}</small>
+                        <button class="btn-action" onclick="abrirPerfil('${pt.uid}')">NEGOCIAR</button>
                     </div>
-                </div>` + feed.innerHTML;
+                </div>` + f.innerHTML;
             });
         });
-        onValue(ref(db, `usuarios/${window.user.uid}`), s => { if(s.exists()){ window.user = s.val(); document.getElementById('saldoBlue').innerText = s.val().moedasBlue || 0; } });
+        onValue(ref(db, `usuarios/${window.user.uid}`), s => { if(s.exists()){ window.user = s.val(); document.getElementById('saldoBlue').innerText = s.val().moedasBlue; }});
     }
 
     window.abrirPerfil = async (uid) => {
         targetUid = uid;
-        const snap = await get(ref(db, `usuarios/${uid}`));
-        const t = snap.val();
+        const s = await get(ref(db, `usuarios/${uid}`));
+        const t = s.val();
         
-        // MOSTRAR PAINEL APENAS SE VOCÊ FOR ADM1 E O PERFIL NÃO FOR O SEU
-        const painel = document.getElementById('painelAdmControle');
-        painel.style.display = (window.user.cargo === 'ADM1' && window.user.uid !== uid) ? 'block' : 'none';
+        document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && window.user.uid !== uid) ? 'block' : 'none';
 
         document.getElementById('perfilConteudo').innerHTML = `
             <div style="text-align:center; padding:20px;">
-                <i class="fas fa-user-circle" style="font-size:80px; color:var(--blue);"></i>
-                <div style="display:flex; justify-content:center; margin-top:10px;">${getBadge(t.cargo)}</div>
-                <h2>${t.nome}</h2>
-                <div style="background:#161b22; padding:15px; border-radius:15px; margin-top:10px; border:1px solid #30363d;">
-                    <span style="color:#8b949e;">SALDO ATUAL:</span><br>
-                    <b style="font-size:24px; color:var(--blue);">${t.moedasBlue || 0} BLUE</b>
+                <i class="fas fa-user-circle" style="font-size:60px; color:var(--blue);"></i>
+                ${getBadge(t.cargo)} <h2>${t.nome}</h2>
+                <div style="background:#161b22; padding:10px; border-radius:10px; border:1px solid #30363d;">
+                    <b>SALDO: ${t.moedasBlue || 0} BLUE</b>
                 </div>
             </div>`;
+
+        const grid = document.getElementById('gridUser'); grid.innerHTML = "";
+        const allPosts = await get(ref(db, 'posts'));
+        allPosts.forEach(p => { if(p.val().uid === uid) grid.innerHTML += `<img src="${p.val().i1}">`; });
+
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    window.setCargo = async (c) => {
-        await update(ref(db, `usuarios/${targetUid}`), { cargo: c });
-        alert("Cargo Atualizado!"); abrirPerfil(targetUid);
-    };
-
-    window.setMoedas = async (somar) => {
-        const qtd = prompt("Quantidade de moedas:");
-        if(!qtd) return;
-        const snap = await get(ref(db, `usuarios/${targetUid}`));
-        let novoSaldo = somar ? (snap.val().moedasBlue + parseInt(qtd)) : (snap.val().moedasBlue - parseInt(qtd));
-        await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, novoSaldo) });
+    window.mudarCargo = async (c) => { await update(ref(db, `usuarios/${targetUid}`), { cargo: c }); alert("Cargo OK"); abrirPerfil(targetUid); };
+    
+    window.addMoedas = async (somar) => {
+        const v = prompt("Quanto?"); if(!v) return;
+        const s = await get(ref(db, `usuarios/${targetUid}`));
+        const novo = somar ? (s.val().moedasBlue + parseInt(v)) : (s.val().moedasBlue - parseInt(v));
+        await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, novo) });
         abrirPerfil(targetUid);
     };
 
@@ -229,6 +211,7 @@
         r.readAsDataURL(f);
     };
 
+    window.comprar = (cargo, valor) => alert(`PIX: thiago00dudu@gmail.com\nValor: ${valor}\nEnvie comprovante no Zap: 11983602504`);
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t=>t.style.display='none'); };
     window.abrirMeuPerfil = () => abrirPerfil(window.user.uid);
     window.abrirPostar = () => document.getElementById('telaPostar').style.display='block';
