@@ -24,18 +24,15 @@
         .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 4000; }
         .btn-float { width: 42px; height: 42px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 16px; }
 
-        /* HEADER & FEED */
         header { padding:15px; background: #161b22; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #30363d; position: sticky; top:0; z-index:100; }
         .card-timeline { background: #161b22; border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid #30363d; }
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
         .card-info { padding: 15px; }
 
-        /* NAV */
         .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: #161b22; border: 1px solid #30363d; display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; }
         .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
         .nav i.active { color: var(--blue); }
 
-        /* TELAS */
         .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
         
@@ -44,10 +41,7 @@
         
         .painel-adm { background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px; }
         .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--blue); margin-bottom: 10px; background: #161b22; }
-        
-        /* ESTILO INPUT FILE CUSTOMIZADO */
         .file-label { display: block; background: #30363d; color: white; padding: 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-size: 12px; text-align: center; }
-        .file-label:hover { background: #444; }
     </style>
 </head>
 <body>
@@ -81,25 +75,20 @@
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align:center;"></div>
     
-    <div id="areaEditarPerfil" style="display:none; margin-top:15px; background: #161b22; padding: 15px; border-radius: 15px; text-align: left;">
-        <h5 style="margin-top:0;">Editar Perfil</h5>
-        
+    <div id="areaEditarPerfil" style="display:none; margin-top:15px; background: #161b22; padding: 15px; border-radius: 15px;">
         <label for="editFotoFile" class="file-label"><i class="fas fa-image"></i> Alterar Foto da Galeria</label>
         <input type="file" id="editFotoFile" accept="image/*" style="display:none;" onchange="prepararFotoPerfil(this)">
-        
-        <img id="previewFotoPerfil" src="" style="width:50px; height:50px; border-radius:50%; object-fit:cover; display:none; margin-bottom:10px;">
-
-        <input type="text" id="editBio" placeholder="Sua Bio (Frase curta)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none; box-sizing:border-box;">
-        
-        <button class="btn-action" style="background:var(--green); font-size:12px; margin-top:0;" onclick="salvarPerfil()">SALVAR ALTERAÇÕES</button>
+        <input type="text" id="editBio" placeholder="Sua Bio" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none; box-sizing:border-box;">
+        <button class="btn-action" style="background:var(--green); margin-bottom:10px;" onclick="salvarPerfil()">SALVAR PERFIL</button>
+        <button class="btn-action" style="background:var(--blue);" onclick="compartilharID()"><i class="fas fa-share-alt"></i> CONVIDAR AMIGOS</button>
     </div>
 
     <div id="painelAdmControle" class="painel-adm" style="display:none;">
         <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
-        <div style="display:flex; flex-wrap:wrap; gap:5px;">
-            <button class="btn-action" style="background:var(--gold); color:black; flex:1; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
-            <button class="btn-action" style="background:var(--red); flex:1; font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
-            <button class="btn-action" style="background:var(--mod-blue); flex:1; font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-action" style="background:var(--gold); color:black; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
+            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
+            <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
         </div>
         <div style="display:flex; gap:5px; margin-top:10px;">
             <button class="btn-action" style="background:var(--green); flex:1;" onclick="addMoedas(true)">+ BLUE</button>
@@ -113,33 +102,23 @@
 </div>
 
 <div id="telaChat" class="tela-full">
-    <h2 id="chatTitle">Chat</h2>
-    <div id="chatBox" style="height:350px; background:#161b22; border-radius:15px; padding:15px; margin-bottom:10px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
-        <div style="align-self: flex-start; background:#30363d; padding:10px; border-radius:10px; max-width:80%;">Olá! Vi sua postagem...</div>
-        <div style="align-self: flex-end; background:var(--blue); padding:10px; border-radius:10px; max-width:80%;">Oi! O que você oferece?</div>
-    </div>
-    <div style="display:flex; gap:5px;">
-        <input type="text" placeholder="Digite sua proposta..." style="flex:1; padding:12px; border-radius:8px; border:none;">
-        <button class="btn-action" style="width:auto; margin:0;" onclick="alert('Mensagem enviada!')">ENVIAR</button>
-    </div>
-    <button class="btn-action" style="background:var(--gray); margin-top:15px;" onclick="fecharTelas()">VOLTAR</button>
+    <h2 id="chatTitle">Negociação</h2>
+    <div id="chatBox" style="height:350px; background:#161b22; border-radius:15px; padding:15px; overflow-y:auto;"></div>
+    <button class="btn-action" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaCarteira" class="tela-full">
     <div style="background:var(--sea); padding:30px; border-radius:20px; text-align:center;">
-        <p>Saldo BLUE</p>
-        <h1 id="saldoBlue">0</h1>
+        <p>Saldo BLUE</p><h1 id="saldoBlue">0</h1>
     </div>
     <button class="btn-action" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaPostar" class="tela-full">
     <h2>Nova Postagem</h2>
-    <label for="filePost" class="file-label"><i class="fas fa-camera"></i> Escolher Foto da Troca</label>
+    <label for="filePost" class="file-label">Escolher Foto</label>
     <input type="file" id="filePost" accept="image/*" style="display:none;" onchange="prepararFotoPost(this)">
-    <img id="previewFotoPost" src="" style="width:100px; height:100px; object-fit:cover; display:none; border-radius:10px; margin-bottom:10px;">
-    
-    <input type="text" id="descPost" placeholder="O que você quer trocar?">
+    <input type="text" id="descPost" placeholder="Descrição">
     <button class="btn-action" onclick="enviarPost()">POSTAR</button>
     <button class="btn-action" style="background:none" onclick="fecharTelas()">CANCELAR</button>
 </div>
@@ -156,8 +135,12 @@
 
     window.user = null;
     let targetUid = null;
-    let fotoPerfilBase64 = null; // Guarda temporariamente a foto escolhida da galeria
-    let fotoPostBase64 = null; // Guarda temporariamente a foto do post
+    let fotoPerfilBase64 = null;
+    let fotoPostBase64 = null;
+
+    // PEGAR PAI PELA URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const idPai = urlParams.get('ref');
 
     function getBadge(cargo) {
         if(cargo === 'ADM1') return '<div class="badge-star star-adm1"><i class="fas fa-star"></i><i class="fas fa-crown"></i></div>';
@@ -166,19 +149,23 @@
         return '';
     }
 
-    // LOGIN MASTER SUPREMO (ADM / 1533)
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value;
         const p = document.getElementById('passIn').value;
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "" };
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "", pai: "", filhos: 0 };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user', JSON.stringify(m));
             location.reload(); return;
         }
         try { await signInWithEmailAndPassword(auth, u, p); } catch (e) { 
             const res = await createUserWithEmailAndPassword(auth, u, p);
-            await set(ref(db, `usuarios/${res.user.uid}`), { nome: u.split('@')[0], cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto:"", bio:"" });
+            const novoUser = { nome: u.split('@')[0], cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto:"", bio:"", pai: idPai || "", filhos: 0 };
+            await set(ref(db, `usuarios/${res.user.uid}`), novoUser);
+            if(idPai) {
+                const sPai = await get(ref(db, `usuarios/${idPai}`));
+                if(sPai.exists()) update(ref(db, `usuarios/${idPai}`), { filhos: (sPai.val().filhos || 0) + 1 });
+            }
         }
     };
 
@@ -195,18 +182,10 @@
         document.getElementById('telaLogin').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         document.getElementById('menuFlutuante').style.display = 'flex';
-        
         onValue(ref(db, 'posts'), snap => {
             const f = document.getElementById('feed'); f.innerHTML = "";
-            snap.forEach(p => {
-                const pt = p.val();
-                f.innerHTML = `<div class="card-timeline">
-                    <img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')">
-                    <div class="card-info">
-                        ${getBadge(pt.cargo)} <b>${pt.u1}</b><br><small>${pt.d1}</small>
-                        <button class="btn-action" onclick="abrirChat('${pt.u1}')">NEGOCIAR</button>
-                    </div>
-                </div>` + f.innerHTML;
+            snap.forEach(p => { const pt = p.val();
+                f.innerHTML = `<div class="card-timeline"><img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')"><div class="card-info">${getBadge(pt.cargo)} <b>${pt.u1}</b><br><small>${pt.d1}</small><button class="btn-action" onclick="abrirChat('${pt.u1}')">NEGOCIAR</button></div></div>` + f.innerHTML;
             });
         });
         onValue(ref(db, `usuarios/${window.user.uid}`), s => { if(s.exists()){ window.user = s.val(); document.getElementById('saldoBlue').innerText = s.val().moedasBlue; }});
@@ -217,116 +196,40 @@
         const s = await get(ref(db, `usuarios/${uid}`));
         const t = s.val();
         const souEu = window.user.uid === uid;
-        
-        // PAINEL MASTER (SÓ APARECE P/ ADM1 OLHANDO OUTRO PERFIL)
         document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && !souEu) ? 'block' : 'none';
-        // ÁREA EDITAR (SÓ APARECE NO PRÓPRIO)
         document.getElementById('areaEditarPerfil').style.display = souEu ? 'block' : 'none';
-
-        // Carregar Foto (Base64 do Banco ou Placeholder)
         const fotoUrl = t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-        
-        document.getElementById('perfilConteudo').innerHTML = `
-            <img src="${fotoUrl}" class="user-photo">
-            ${getBadge(t.cargo)} <h2>${t.nome}</h2>
-            <p style="color:#aaa; font-style:italic; margin: 5px 0 10px 0;">${t.bio || 'Sem bio...'}</p>
-            <div style="background:#161b22; padding:10px; border-radius:10px; display:inline-block; border:1px solid #30363d;">
-                <b>SALDO: ${t.moedasBlue || 0} BLUE</b>
-            </div>`;
-
-        // Preencher Bio se for o próprio perfil
-        if(souEu) { document.getElementById('editBio').value = t.bio || ''; }
-
-        // Carregar Grade de Postagens
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${fotoUrl}" class="user-photo">${getBadge(t.cargo)}<h2>${t.nome}</h2><p style="color:#aaa;">${t.bio || 'Sem bio...'}</p><p style="color:var(--green); font-weight:bold;">🧔 Pai de: ${t.filhos || 0} pessoas</p><div style="background:#161b22; padding:10px; border-radius:10px;"><b>SALDO: ${t.moedasBlue || 0} BLUE</b></div>`;
         const grid = document.getElementById('gridUser'); grid.innerHTML = "";
         const allPosts = await get(ref(db, 'posts'));
         allPosts.forEach(p => { if(p.val().uid === uid) grid.innerHTML += `<img src="${p.val().i1}">`; });
-
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    // --- FUNÇÕES DE GALERIA P/ PERFIL ---
-    window.prepararFotoPerfil = (input) => {
-        const file = input.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            fotoPerfilBase64 = e.target.result; // Imagem convertida p/ texto p/ salvar no banco
-            const preview = document.getElementById('previewFotoPerfil');
-            preview.src = fotoPerfilBase64;
-            preview.style.display = 'inline-block';
-        };
-        reader.readAsDataURL(file);
+    window.compartilharID = () => {
+        const link = window.location.origin + window.location.pathname + "?ref=" + window.user.uid;
+        navigator.clipboard.writeText(link);
+        alert("Link de convite copiado! Envie para seus amigos e torne-se Pai deles no ICE.");
     };
 
+    window.prepararFotoPerfil = (i) => { const r = new FileReader(); r.onload=(e)=>{ fotoPerfilBase64=e.target.result; }; r.readAsDataURL(i.files[0]); };
     window.salvarPerfil = async () => {
-        const nBio = document.getElementById('editBio').value;
-        const updates = { bio: nBio };
-        
-        if(fotoPerfilBase64) {
-            updates.foto = fotoPerfilBase64; // Salva a foto real (Base64) no Firebase
-        }
-        
-        await update(ref(db, `usuarios/${window.user.uid}`), updates);
-        
-        // Limpar preview e input
-        fotoPerfilBase64 = null;
-        document.getElementById('previewFotoPerfil').style.display = 'none';
-        document.getElementById('editFotoFile').value = '';
-        
-        alert("Perfil Atualizado!"); 
-        abrirPerfil(window.user.uid);
+        const up = { bio: document.getElementById('editBio').value };
+        if(fotoPerfilBase64) up.foto = fotoPerfilBase64;
+        await update(ref(db, `usuarios/${window.user.uid}`), up);
+        alert("Salvo!"); abrirPerfil(window.user.uid);
     };
 
-    // --- FUNÇÕES DE GALERIA P/ POSTS (MANTIDAS) ---
-    window.prepararFotoPost = (input) => {
-        const file = input.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            fotoPostBase64 = e.target.result;
-            const preview = document.getElementById('previewFotoPost');
-            preview.src = fotoPostBase64;
-            preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    };
-
+    window.prepararFotoPost = (i) => { const r = new FileReader(); r.onload=(e)=>{ fotoPostBase64=e.target.result; }; r.readAsDataURL(i.files[0]); };
     window.enviarPost = async () => {
-        const desc = document.getElementById('descPost').value;
-        if(!fotoPostBase64 || !desc) { alert("Escolha uma foto e escreva a descrição!"); return; }
-        
-        await push(ref(db, 'posts'), { 
-            u1: window.user.nome, 
-            uid: window.user.uid, 
-            cargo: window.user.cargo, 
-            i1: fotoPostBase64, // Salva a foto real
-            d1: desc 
-        });
-        
-        // Limpar campos
-        fotoPostBase64 = null;
-        document.getElementById('previewFotoPost').style.display = 'none';
-        document.getElementById('filePost').value = '';
-        document.getElementById('descPost').value = '';
-        
+        await push(ref(db, 'posts'), { u1: window.user.nome, uid: window.user.uid, cargo: window.user.cargo, i1: fotoPostBase64, d1: document.getElementById('descPost').value });
         fecharTelas();
     };
 
-    // OUTRAS FUNÇÕES (Intocadas)
-    window.abrirChat = (nome) => {
-        document.getElementById('chatTitle').innerText = "Negociar com " + nome;
-        document.getElementById('telaChat').style.display = 'block';
-    };
-    window.mudarCargo = async (c) => { await update(ref(db, `usuarios/${targetUid}`), { cargo: c }); alert("Cargo OK"); abrirPerfil(targetUid); };
-    window.addMoedas = async (somar) => {
-        const v = prompt("Quanto?"); if(!v) return;
-        const s = await get(ref(db, `usuarios/${targetUid}`));
-        const novo = somar ? (s.val().moedasBlue + parseInt(v)) : (s.val().moedasBlue - parseInt(v));
-        await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, novo) });
-        abrirPerfil(targetUid);
-    };
-    window.comprar = (cargo, valor) => alert(`PIX: thiago00dudu@gmail.com\nValor: ${valor}\nZap p/ Comprovante: 11983602504`);
+    window.abrirChat = (n) => { document.getElementById('chatTitle').innerText = "Chat com " + n; document.getElementById('telaChat').style.display='block'; };
+    window.mudarCargo = async (c) => { await update(ref(db, `usuarios/${targetUid}`), { cargo: c }); abrirPerfil(targetUid); };
+    window.addMoedas = async (s) => { const v = prompt("Qtd?"); const sn = await get(ref(db, `usuarios/${targetUid}`)); const n = s ? (sn.val().moedasBlue + parseInt(v)) : (sn.val().moedasBlue - parseInt(v)); await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, n) }); abrirPerfil(targetUid); };
+    window.comprar = (c, v) => alert(`PIX: thiago00dudu@gmail.com\nValor: ${v}\nZap: 11983602504`);
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t=>t.style.display='none'); };
     window.abrirMeuPerfil = () => abrirPerfil(window.user.uid);
     window.abrirPostar = () => document.getElementById('telaPostar').style.display='block';
