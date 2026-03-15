@@ -102,11 +102,25 @@
 </div>
 
 <div id="telaChat" class="tela-full">
-    <h2 id="chatTitle">Negociação</h2>
+    <h2 id="chatTitle" style="margin-top:0;">Negociação</h2>
+    
     <div id="chatBox" style="height:350px; background:#161b22; border-radius:15px; padding:15px; overflow-y:auto;"></div>
-    <button class="btn-action" onclick="fecharTelas()">VOLTAR</button>
-</div>
+    
+    <div style="display:flex; gap:8px; margin-top:15px; align-items:center;">
+        <label for="fileChat" class="btn-action" style="width:auto; margin:0; padding:12px 15px; background:var(--gray); cursor:pointer;">
+            <i class="fas fa-camera"></i>
+        </label>
+        <input type="file" id="fileChat" accept="image/*" style="display:none;" onchange="prepararFotoChat(this)">
+        
+        <input type="text" id="chatMsg" placeholder="Digite uma mensagem..." style="flex:1; padding:12px; border-radius:8px; border:none; box-sizing:border-box;">
+        
+        <button class="btn-action" style="width:auto; margin:0; padding:12px 15px; background:var(--green);" onclick="enviarMensagem()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
 
+    <button class="btn-action" style="margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
+</div>
 <div id="telaCarteira" class="tela-full">
     <div style="background:var(--sea); padding:30px; border-radius:20px; text-align:center;">
         <p>Saldo BLUE</p><h1 id="saldoBlue">0</h1>
@@ -137,6 +151,10 @@
     let targetUid = null;
     let fotoPerfilBase64 = null;
     let fotoPostBase64 = null;
+    
+    // Variáveis do Chat
+    let idDoChatAtual = null;
+    let fotoChatBase64 = null;
 
     // PEGAR PAI PELA URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -185,7 +203,8 @@
         onValue(ref(db, 'posts'), snap => {
             const f = document.getElementById('feed'); f.innerHTML = "";
             snap.forEach(p => { const pt = p.val();
-                f.innerHTML = `<div class="card-timeline"><img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')"><div class="card-info">${getBadge(pt.cargo)} <b>${pt.u1}</b><br><small>${pt.d1}</small><button class="btn-action" onclick="abrirChat('${pt.u1}')">NEGOCIAR</button></div></div>` + f.innerHTML;
+                // O BOTÃO DE NEGOCIAR AGORA PASSA O UID TAMBÉM (pt.uid)
+                f.innerHTML = `<div class="card-timeline"><img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')"><div class="card-info">${getBadge(pt.cargo)} <b>${pt.u1}</b><br><small>${pt.d1}</small><button class="btn-action" onclick="abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button></div></div>` + f.innerHTML;
             });
         });
         onValue(ref(db, `usuarios/${window.user.uid}`), s => { if(s.exists()){ window.user = s.val(); document.getElementById('saldoBlue').innerText = s.val().moedasBlue; }});
@@ -226,7 +245,86 @@
         fecharTelas();
     };
 
-    window.abrirChat = (n) => { document.getElementById('chatTitle').innerText = "Chat com " + n; document.getElementById('telaChat').style.display='block'; };
+    // ==========================================
+    // NOVA LÓGICA DE CHAT (SEM REMOVER NADA)
+    // ==========================================
+    
+    // 1. Abrir Chat e ler histórico
+    window.abrirChat = (alvoUid, n) => { 
+        if(alvoUid === window.user.uid) {
+            alert("Você não pode negociar consigo mesmo!");
+            return;
+        }
+
+        document.getElementById('chatTitle').innerText = "Chat com " + n; 
+        document.getElementById('telaChat').style.display='block'; 
+        
+        // Cria um ID único juntando os dois UIDs
+        const meuUid = window.user.uid;
+        idDoChatAtual = meuUid < alvoUid ? meuUid + "_" + alvoUid : alvoUid + "_" + meuUid;
+
+        // Monitorar mensagens no banco
+        onValue(ref(db, `chats/${idDoChatAtual}`), snap => {
+            const cb = document.getElementById('chatBox');
+            cb.innerHTML = "";
+            cb.style.display = "flex";
+            cb.style.flexDirection = "column";
+            cb.style.gap = "10px";
+
+            if(snap.exists()){
+                snap.forEach(m => {
+                    const msg = m.val();
+                    const souEu = msg.remetente === window.user.uid;
+                    const align = souEu ? "flex-end" : "flex-start";
+                    const bg = souEu ? "var(--sea)" : "var(--gray)";
+                    
+                    let conteudoHTML = "";
+                    if(msg.texto) conteudoHTML += `<p style="margin:0; word-wrap:break-word;">${msg.texto}</p>`;
+                    if(msg.imagem) conteudoHTML += `<img src="${msg.imagem}" style="width:100%; max-width:200px; border-radius:8px; margin-top:5px;">`;
+
+                    cb.innerHTML += `
+                    <div style="align-self:${align}; background:${bg}; padding:10px; border-radius:12px; max-width:80%;">
+                        <small style="color:var(--gold); font-size:10px; display:block; margin-bottom:5px;">${msg.nomeRemetente}</small>
+                        ${conteudoHTML}
+                    </div>`;
+                });
+                cb.scrollTop = cb.scrollHeight; // Rola pra baixo
+            } else {
+                cb.innerHTML = "<p style='text-align:center; color:#8b949e; width:100%;'>Envie a primeira mensagem para negociar.</p>";
+            }
+        });
+    };
+
+    // 2. Preparar foto e enviar na mesma hora
+    window.prepararFotoChat = async (i) => { 
+        if(!i.files[0]) return;
+        const r = new FileReader(); 
+        r.onload = async (e) => { 
+            fotoChatBase64 = e.target.result; 
+            await enviarMensagem(); // Envia direto quando seleciona a foto
+        }; 
+        r.readAsDataURL(i.files[0]); 
+    };
+
+    // 3. Enviar mensagem (Texto ou Foto)
+    window.enviarMensagem = async () => {
+        const textoIn = document.getElementById('chatMsg').value;
+        if(!textoIn.trim() && !fotoChatBase64) return;
+
+        await push(ref(db, `chats/${idDoChatAtual}`), {
+            remetente: window.user.uid,
+            nomeRemetente: window.user.nome,
+            texto: textoIn,
+            imagem: fotoChatBase64 || null,
+            timestamp: Date.now()
+        });
+
+        document.getElementById('chatMsg').value = "";
+        fotoChatBase64 = null;
+        document.getElementById('fileChat').value = "";
+    };
+    // ==========================================
+
     window.mudarCargo = async (c) => { await update(ref(db, `usuarios/${targetUid}`), { cargo: c }); abrirPerfil(targetUid); };
     window.addMoedas = async (s) => { const v = prompt("Qtd?"); const sn = await get(ref(db, `usuarios/${targetUid}`)); const n = s ? (sn.val().moedasBlue + parseInt(v)) : (sn.val().moedasBlue - parseInt(v)); await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, n) }); abrirPerfil(targetUid); };
     window.comprar = (c, v) => alert(`PIX: thiago00dudu@gmail.com\nValor: ${v}\nZap: 11983602504`);
