@@ -14,18 +14,17 @@
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
 
-        /* ESTRELAS E ICONES */
-        .badge-container { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+        /* ESTRELAS */
         .badge-star { font-size: 14px; margin-bottom: 2px; display: flex; gap: 4px; align-items: center; }
         .star-mod { color: var(--mod-blue); }
         .star-adm2 { color: var(--red); }
         .star-adm1 { color: var(--gold); }
 
-        /* MENU FLUTUANTE */
+        /* MENU LATERAL COMPRAS */
         .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 4000; }
-        .btn-float { width: 45px; height: 45px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 18px; transition: 0.3s; }
-        
-        /* FEED */
+        .btn-float { width: 45px; height: 45px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 18px; }
+
+        /* INTERFACE */
         header { padding:15px; background: #161b22; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; border-bottom: 1px solid #30363d; }
         .card-timeline { background: #161b22; border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid #30363d; }
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
@@ -37,11 +36,6 @@
 
         .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        
-        #chatBox { height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
-        .msg { padding: 10px; border-radius: 10px; max-width: 85%; }
-        .msg-me { background: var(--blue); align-self: flex-end; }
-        .msg-them { background: var(--gray); align-self: flex-start; }
         .grid-postagens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
         .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; background: #161b22; }
     </style>
@@ -49,26 +43,23 @@
 <body>
 
 <div class="side-menu" id="menuFlutuante" style="display:none;">
-    <button class="btn-float" style="background: var(--mod-blue);" onclick="instrucaoCompra('MOD', '20 Blues')"><i class="fas fa-star"></i></button>
-    <button class="btn-float" style="background: var(--red);" onclick="instrucaoCompra('ADM2', '1000 Blues')"><i class="fas fa-crown"></i></button>
-    <button class="btn-float" style="background: var(--gold); color:black;" onclick="verBolsa()"><i class="fas fa-chart-line"></i></button>
-    <button class="btn-float" style="background: var(--green);" onclick="compartilharLink()"><i class="fas fa-share-alt"></i></button>
+    <button class="btn-float" style="background: var(--mod-blue);" title="Comprar Moderador" onclick="comprarCargo('MODERADOR', 'R$ 20,00')"><i class="fas fa-star"></i></button>
+    <button class="btn-float" style="background: var(--red);" title="Comprar ADM2" onclick="comprarCargo('ADM 2', 'R$ 50,00')"><i class="fas fa-crown"></i></button>
+    <button class="btn-float" style="background: var(--gold); color:black;" onclick="alert('Market Cap: R$ 22M')"><i class="fas fa-chart-line"></i></button>
+    <button class="btn-float" style="background: var(--green);" onclick="alert('Link copiado!')"><i class="fas fa-share-alt"></i></button>
 </div>
 
 <div id="telaLogin">
     <div class="login-box">
-        <h2>ICE TROCAS</h2>
-        <input type="text" id="userIn" placeholder="E-mail">
+        <h2 style="margin-bottom:20px;">ICE TROCAS</h2>
+        <input type="text" id="userIn" placeholder="E-mail ou ADM">
         <input type="password" id="passIn" placeholder="Senha">
-        <button class="btn-action" onclick="fazerLogin()">ENTRAR / CADASTRAR</button>
+        <button class="btn-action" onclick="fazerLogin()">ACESSAR</button>
     </div>
 </div>
 
 <div id="app" style="display:none;">
-    <header>
-        <b>ICE TROCAS</b>
-        <div onclick="abrirMeuPerfil()"><i class="fas fa-user-circle" style="font-size:26px; color:var(--blue);"></i></div>
-    </header>
+    <header><b>ICE TROCAS</b> <i class="fas fa-user-circle" onclick="abrirMeuPerfil()" style="font-size:26px; color:var(--blue);"></i></header>
     <div id="feed"></div>
     <div class="nav">
         <i class="fas fa-home active" onclick="fecharTelas()"></i>
@@ -80,46 +71,25 @@
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo"></div>
     
-    <div id="painelAdmControle" style="display:none; background:rgba(255,255,255,0.05); border:1px solid var(--gray); padding:15px; border-radius:15px; margin-top:15px;">
-        <h4 id="admPanelTitle" style="margin:0 0 10px 0; text-align:center; font-size: 14px;">PAINEL DE CONTROLE</h4>
+    <div id="painelAdmControle" style="display:none; background:rgba(255,215,0,0.1); border:2px solid var(--gold); padding:15px; border-radius:15px; margin-top:15px;">
+        <h3 style="margin:0 0 10px 0; text-align:center; color: var(--gold);"><i class="fas fa-tools"></i> PAINEL MASTER</h3>
         
-        <div id="areaCargos" style="display:none;">
-            <p style="font-size:11px; color:#aaa; margin-bottom:5px;">Gerenciar Cargos:</p>
-            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
-                <button id="btnDarAdm1" class="btn-action" style="font-size:10px; width:48%; padding:8px; margin:0; background:var(--gold); color:black;" onclick="admAlterarCargo('ADM1')">DAR ADM1</button>
-                <button id="btnDarAdm2" class="btn-action" style="font-size:10px; width:48%; padding:8px; margin:0; background:var(--red);" onclick="admAlterarCargo('ADM2')">DAR ADM2</button>
-                <button id="btnDarMod" class="btn-action" style="font-size:10px; width:48%; padding:8px; margin:0; background:var(--mod-blue);" onclick="admAlterarCargo('MOD')">DAR MOD</button>
-                <button class="btn-action" style="font-size:10px; width:48%; padding:8px; margin:0; background:#444;" onclick="admAlterarCargo('user')">REBAIXAR</button>
-            </div>
+        <p style="font-size:12px; margin-bottom:5px;">Gerenciar Cargo:</p>
+        <div style="display:flex; flex-wrap:wrap; gap:5px;">
+            <button class="btn-action" style="font-size:10px; width:48%; background:var(--gold); color:black;" onclick="setCargo('ADM1')">DAR ADM1</button>
+            <button class="btn-action" style="font-size:10px; width:48%; background:var(--red);" onclick="setCargo('ADM2')">DAR ADM2</button>
+            <button class="btn-action" style="font-size:10px; width:48%; background:var(--mod-blue);" onclick="setCargo('MOD')">DAR MOD</button>
+            <button class="btn-action" style="font-size:10px; width:48%; background:#444;" onclick="setCargo('user')">REBAIXAR</button>
         </div>
 
-        <div id="areaMoedas" style="display:none;">
-            <p style="font-size:11px; color:#aaa; margin-bottom:5px;">Economia (BLUE):</p>
-            <div style="display:flex; gap:5px; margin-bottom:10px;">
-                <button class="btn-action" style="font-size:10px; padding:8px; margin:0; background:var(--green);" onclick="admAdicionarSaldo()">+ MOEDAS</button>
-                <button class="btn-action" style="font-size:10px; padding:8px; margin:0; background:var(--red);" onclick="admRetirarSaldo()">- MOEDAS</button>
-            </div>
-        </div>
-
-        <div id="areaModeracao" style="display:none;">
-            <p style="font-size:11px; color:#aaa; margin-bottom:5px;">Segurança:</p>
-            <button class="btn-action" style="font-size:10px; padding:8px; margin:0; background:var(--red); width:100%;" onclick="admBanir()">BANIR USUÁRIO</button>
+        <p style="font-size:12px; margin-top:15px; margin-bottom:5px;">Moedas BLUE:</p>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-action" style="background:var(--green); flex:1;" onclick="setMoedas(true)">+ DAR BLUE</button>
+            <button class="btn-action" style="background:var(--red); flex:1;" onclick="setMoedas(false)">- TIRAR</button>
         </div>
     </div>
 
-    <h4 style="margin:20px 0 10px 0; border-bottom:1px solid #30363d; padding-bottom:5px;">Postagens</h4>
-    <div id="minhasPostagens" class="grid-postagens"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:30px;" onclick="fecharTelas()">VOLTAR</button>
-</div>
-
-<div id="telaChat" class="tela-full">
-    <h3 id="chatTitle">Chat</h3>
-    <div id="chatBox"></div>
-    <div style="display:flex; gap:8px; margin-top:10px;">
-        <input type="text" id="msgIn" placeholder="Digite..." style="flex:1; padding:12px; border-radius:8px; border:none; background:#161b22; color:white;">
-        <button onclick="enviarMensagem()" style="background:var(--blue); border:none; color:white; width:50px; border-radius:8px;"><i class="fas fa-paper-plane"></i></button>
-    </div>
-    <button class="btn-action" style="background:none" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaCarteira" class="tela-full">
@@ -127,15 +97,14 @@
         <p>Meu Saldo</p>
         <h1 id="saldoBlue">0</h1>
         <small>BLUE COINS</small>
-        <p style="margin-top:20px; font-size:12px;">ID:<br><span id="userIdDisplay">---</span></p>
     </div>
     <button class="btn-action" style="margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaPostar" class="tela-full">
-    <h2>Nova Troca</h2>
-    <input type="file" id="filePost" accept="image/*">
-    <input type="text" id="descPost" placeholder="O que quer trocar?" style="width:100%; padding:15px; margin-top:10px; background:#161b22; color:white; border:1px solid #30363d;">
+    <h2>Postar Troca</h2>
+    <input type="file" id="filePost" accept="image/*" style="margin-bottom:15px;">
+    <input type="text" id="descPost" placeholder="O que você está trocando?">
     <button class="btn-action" onclick="enviarPost()">PUBLICAR</button>
     <button class="btn-action" style="background:none" onclick="fecharTelas()">CANCELAR</button>
 </div>
@@ -151,8 +120,15 @@
     const auth = getAuth(app);
 
     window.user = null;
-    let targetUidGlobal = null;
-    let chatAtivoId = null;
+    let targetUid = null;
+
+    // COMPRA COM SEUS DADOS
+    window.comprarCargo = (cargo, preco) => {
+        const pix = "thiago00dudu@gmail.com";
+        const zap = "5511983602504";
+        alert(`INFO DE COMPRA:\n\nCargo: ${cargo}\nValor: ${preco}\nPIX: ${pix}\n\nApós pagar, você será levado ao WhatsApp para enviar o comprovante.`);
+        window.open(`https://wa.me/${zap}?text=Fiz o PIX de ${preco} para o cargo ${cargo}. Meu ID: ${window.user.uid}`, '_blank');
+    };
 
     function getBadge(cargo) {
         if(cargo === 'ADM1') return '<div class="badge-star star-adm1"><i class="fas fa-star"></i><i class="fas fa-crown"></i></div>';
@@ -165,44 +141,41 @@
         const u = document.getElementById('userIn').value;
         const p = document.getElementById('passIn').value;
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            window.user = { nome: "ADM MASTER", cargo: "ADM1", uid: "master", moedasBlue: 1000000 };
-            localStorage.setItem('ice_master', JSON.stringify(window.user));
+            const master = { nome: "ADMIN MASTER", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000 };
+            await set(ref(db, `usuarios/master_ice`), master);
+            localStorage.setItem('ice_session', JSON.stringify(master));
             location.reload(); return;
         }
         try { await signInWithEmailAndPassword(auth, u, p); } catch (e) { 
             const res = await createUserWithEmailAndPassword(auth, u, p);
-            // Novos usuários sempre começam com 0 moedas
             await set(ref(db, `usuarios/${res.user.uid}`), { nome: u.split('@')[0], cargo: 'user', uid: res.user.uid, moedasBlue: 0 });
         }
     };
 
     onAuthStateChanged(auth, async (u) => {
-        const local = localStorage.getItem('ice_master');
-        if (local) { window.user = JSON.parse(local); entrarNoApp(); } 
+        const local = localStorage.getItem('ice_session');
+        if (local) { window.user = JSON.parse(local); startApp(); }
         else if (u) {
             const snap = await get(ref(db, `usuarios/${u.uid}`));
-            window.user = snap.val();
-            if(window.user && window.user.banido) { alert("Sua conta foi banida."); auth.signOut(); location.reload(); return; }
-            entrarNoApp();
+            window.user = snap.val(); startApp();
         }
     });
 
-    function entrarNoApp() {
+    function startApp() {
         document.getElementById('telaLogin').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         document.getElementById('menuFlutuante').style.display = 'flex';
-        document.getElementById('userIdDisplay').innerText = window.user.uid;
-        
+
         onValue(ref(db, 'posts'), snap => {
             const feed = document.getElementById('feed'); feed.innerHTML = "";
             snap.forEach(p => {
                 const post = p.val();
                 feed.innerHTML = `<div class="card-timeline">
-                    <img src="${post.i1}" onclick="abrirPerfilAlheio('${post.uid}')">
+                    <img src="${post.i1}" onclick="abrirPerfil('${post.uid}')">
                     <div class="card-info">
                         <div class="badge-container">${getBadge(post.cargo)}<b>${post.u1}</b></div>
                         <small>${post.d1}</small>
-                        <button class="btn-action" onclick="abrirChat('${post.uid}', '${post.u1}')">NEGOCIAR</button>
+                        <button class="btn-action" onclick="abrirPerfil('${post.uid}')">NEGOCIAR / PERFIL</button>
                     </div>
                 </div>` + feed.innerHTML;
             });
@@ -210,116 +183,40 @@
         onValue(ref(db, `usuarios/${window.user.uid}`), s => { if(s.exists()){ window.user = s.val(); document.getElementById('saldoBlue').innerText = s.val().moedasBlue || 0; } });
     }
 
-    window.abrirPerfilAlheio = async (uid) => {
-        targetUidGlobal = uid;
+    window.abrirPerfil = async (uid) => {
+        targetUid = uid;
         const snap = await get(ref(db, `usuarios/${uid}`));
         const t = snap.val();
-        const eMeu = window.user.uid === uid;
         
-        // --- LOGICA DO PAINEL DE CONTROLE ---
+        // MOSTRAR PAINEL APENAS SE VOCÊ FOR ADM1 E O PERFIL NÃO FOR O SEU
         const painel = document.getElementById('painelAdmControle');
-        const areaCargos = document.getElementById('areaCargos');
-        const areaMoedas = document.getElementById('areaMoedas');
-        const areaModeracao = document.getElementById('areaModeracao');
-        
-        painel.style.display = 'none'; 
-        areaCargos.style.display = 'none';
-        areaMoedas.style.display = 'none';
-        areaModeracao.style.display = 'none';
-
-        // ADM1 É INTOCÁVEL (Ninguém mexe nele, exceto ele mesmo)
-        const alvoEhAdm1 = t.cargo === 'ADM1';
-
-        if(!eMeu && !alvoEhAdm1) {
-            if(window.user.cargo === 'ADM1') {
-                painel.style.display = 'block';
-                areaCargos.style.display = 'block';
-                areaMoedas.style.display = 'block';
-                areaModeracao.style.display = 'block';
-                document.getElementById('btnDarAdm1').style.display = 'inline-block';
-                document.getElementById('admPanelTitle').innerHTML = "👑 PAINEL MASTER";
-            } else if(window.user.cargo === 'ADM2') {
-                painel.style.display = 'block';
-                areaCargos.style.display = 'block';
-                areaModeracao.style.display = 'block';
-                document.getElementById('btnDarAdm1').style.display = 'none'; // ADM2 não dá ADM1
-                document.getElementById('admPanelTitle').innerHTML = "🛡️ PAINEL ADM2";
-            } else if(window.user.cargo === 'MOD') {
-                painel.style.display = 'block';
-                areaCargos.style.display = 'block'; // Apenas para subir moderador
-                document.getElementById('btnDarAdm1').style.display = 'none';
-                document.getElementById('btnDarAdm2').style.display = 'none';
-                document.getElementById('admPanelTitle').innerHTML = "🔍 PAINEL MODERADOR";
-            }
-        }
+        painel.style.display = (window.user.cargo === 'ADM1' && window.user.uid !== uid) ? 'block' : 'none';
 
         document.getElementById('perfilConteudo').innerHTML = `
             <div style="text-align:center; padding:20px;">
-                <img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--blue); object-fit:cover;">
-                <div style="display:flex; flex-direction:column; align-items:center; margin-top:10px;">
-                    ${getBadge(t.cargo)}
-                    <h2 style="margin:0;">${t.nome}</h2>
-                </div>
-                <div style="display:flex; justify-content:space-around; margin:20px 0;">
-                    <div><b>${t.moedasBlue || 0}</b><br><small>BLUE</small></div>
-                    <div><b>${t.cargo || 'membro'}</b><br><small>RANK</small></div>
+                <i class="fas fa-user-circle" style="font-size:80px; color:var(--blue);"></i>
+                <div style="display:flex; justify-content:center; margin-top:10px;">${getBadge(t.cargo)}</div>
+                <h2>${t.nome}</h2>
+                <div style="background:#161b22; padding:15px; border-radius:15px; margin-top:10px; border:1px solid #30363d;">
+                    <span style="color:#8b949e;">SALDO ATUAL:</span><br>
+                    <b style="font-size:24px; color:var(--blue);">${t.moedasBlue || 0} BLUE</b>
                 </div>
             </div>`;
-
-        const grid = document.getElementById('minhasPostagens'); grid.innerHTML = "";
-        const allPosts = await get(ref(db, 'posts'));
-        allPosts.forEach(p => { if(p.val().uid === uid) grid.innerHTML += `<img src="${p.val().i1}">`; });
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    // FUNÇÕES DE PODER
-    window.admAlterarCargo = async (c) => {
-        await update(ref(db, `usuarios/${targetUidGlobal}`), { cargo: c });
-        alert("Cargo alterado!");
-        abrirPerfilAlheio(targetUidGlobal);
+    window.setCargo = async (c) => {
+        await update(ref(db, `usuarios/${targetUid}`), { cargo: c });
+        alert("Cargo Atualizado!"); abrirPerfil(targetUid);
     };
 
-    window.admAdicionarSaldo = async () => {
-        const v = prompt("Quanto adicionar?");
-        if(!v) return;
-        const s = await get(ref(db, `usuarios/${targetUidGlobal}`));
-        await update(ref(db, `usuarios/${targetUidGlobal}`), { moedasBlue: (s.val().moedasBlue || 0) + parseInt(v) });
-        abrirPerfilAlheio(targetUidGlobal);
-    };
-
-    window.admRetirarSaldo = async () => {
-        const v = prompt("Quanto retirar?");
-        if(!v) return;
-        const s = await get(ref(db, `usuarios/${targetUidGlobal}`));
-        await update(ref(db, `usuarios/${targetUidGlobal}`), { moedasBlue: Math.max(0, (s.val().moedasBlue || 0) - parseInt(v)) });
-        abrirPerfilAlheio(targetUidGlobal);
-    };
-
-    window.admBanir = async () => {
-        if(confirm("Banir este usuário permanentemente?")) {
-            await update(ref(db, `usuarios/${targetUidGlobal}`), { banido: true });
-            alert("Usuário Banido!");
-            fecharTelas();
-        }
-    };
-
-    // CHAT E POSTS (Mantidos conforme original)
-    window.abrirChat = (uid, nome) => {
-        chatAtivoId = [window.user.uid, uid].sort().join("_");
-        document.getElementById('chatTitle').innerText = nome;
-        document.getElementById('telaChat').style.display = 'block';
-        onValue(ref(db, `chats/${chatAtivoId}`), s => {
-            const b = document.getElementById('chatBox'); b.innerHTML = "";
-            s.forEach(m => { const msg = m.val(); b.innerHTML += `<div class="msg ${msg.uid === window.user.uid ? 'msg-me':'msg-them'}"><b>${msg.u}:</b><br>${msg.t}</div>`; });
-            b.scrollTop = b.scrollHeight;
-        });
-    };
-
-    window.enviarMensagem = () => {
-        const t = document.getElementById('msgIn').value;
-        if(!t) return;
-        push(ref(db, `chats/${chatAtivoId}`), { uid: window.user.uid, u: window.user.nome, t: t });
-        document.getElementById('msgIn').value = "";
+    window.setMoedas = async (somar) => {
+        const qtd = prompt("Quantidade de moedas:");
+        if(!qtd) return;
+        const snap = await get(ref(db, `usuarios/${targetUid}`));
+        let novoSaldo = somar ? (snap.val().moedasBlue + parseInt(qtd)) : (snap.val().moedasBlue - parseInt(qtd));
+        await update(ref(db, `usuarios/${targetUid}`), { moedasBlue: Math.max(0, novoSaldo) });
+        abrirPerfil(targetUid);
     };
 
     window.enviarPost = () => {
@@ -333,11 +230,9 @@
     };
 
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t=>t.style.display='none'); };
-    window.abrirMeuPerfil = () => abrirPerfilAlheio(window.user.uid);
+    window.abrirMeuPerfil = () => abrirPerfil(window.user.uid);
     window.abrirPostar = () => document.getElementById('telaPostar').style.display='block';
     window.abrirCarteira = () => document.getElementById('telaCarteira').style.display='block';
-    window.verBolsa = () => alert("Market Cap Ice: R$ 22.000.000");
-    window.compartilharLink = () => prompt("Seu link:", window.location.origin + "?ref=" + window.user.uid);
 </script>
 </body>
 </html>
