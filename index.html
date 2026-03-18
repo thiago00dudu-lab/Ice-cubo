@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -113,7 +112,12 @@
         .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; background: #161b22; }
         .file-label { display: block; background: #30363d; color: white; padding: 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-size: 12px; text-align: center; }
 
-        /* ESTILOS LEILÃO */
+        .card-troca-concluida { background: #1c2128; border: 1px solid var(--green); border-radius: 10px; padding: 10px; margin-top: 10px; text-align: left; position: relative; }
+        .card-troca-concluida img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 5px; }
+        .stars-display { color: var(--gold); font-size: 12px; }
+        .badge-concluido { position: absolute; top: 5px; right: 5px; background: var(--green); font-size: 10px; padding: 2px 6px; border-radius: 5px; }
+
+        /* ESTILOS PARA O LEILÃO */
         .input-leilao { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; box-sizing: border-box; background: #30363d; color: white; }
         .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.15); }
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
@@ -147,6 +151,7 @@
         <b style="color: var(--mod-blue);">ICE TROCAS</b> 
         <div class="header-icons">
             <i class="fas fa-share-nodes" style="font-size:22px; color:white; cursor:pointer;" onclick="compartilharSite()"></i>
+            
             <div class="perfil-icon-container" onclick="abrirMeuPerfil()">
                 <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue);"></i>
                 <div id="balaoAlerta" class="notificacao-balao"></div>
@@ -155,8 +160,8 @@
     </header>
     
     <div id="feed-leiloes"></div>
+    
     <div id="feed"></div>
-
     <div class="nav">
         <i class="fas fa-home active" onclick="fecharTelas()"></i>
         <i class="fas fa-plus-circle" onclick="abrirPostar()" style="color:var(--mod-blue); font-size: 28px;"></i>
@@ -177,6 +182,28 @@
         <div id="listaConversas"></div>
     </div>
 
+    <div id="secaoTrocasConcluidas" style="margin-top:20px;">
+        <h4 style="color:var(--green); border-bottom: 1px solid #333; padding-bottom: 5px;"><i class="fas fa-check-double"></i> Trocas Realizadas</h4>
+        <div id="gridTrocasConcluidas" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;"></div>
+    </div>
+
+    <div id="areaEditarPerfil" style="display:none; margin-top:15px; background: #161b22; padding: 15px; border-radius: 15px;">
+        <label for="editFotoFile" class="file-label"><i class="fas fa-image"></i> Alterar Foto da Galeria</label>
+        <input type="file" id="editFotoFile" accept="image/*" style="display:none;" onchange="prepararFotoPerfil(this)">
+        <input type="text" id="editBio" placeholder="Sua Bio" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none; box-sizing:border-box; background:#30363d; color:white;">
+        <button class="btn-action" style="background:var(--green); margin-bottom:10px;" onclick="salvarPerfil()">SALVAR PERFIL</button>
+    </div>
+
+    <div id="painelAdmControle" class="painel-adm" style="display:none;">
+        <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-action" style="background:var(--gold); color:black; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
+            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
+            <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
+        </div>
+        <button class="btn-action" style="background:var(--gray); width:100%; margin-top:10px; color:var(--red);" onclick="bloquearUsuario()"><i class="fas fa-ban"></i> BLOQUEAR USUÁRIO</button>
+    </div>
+
     <h4>Postagens</h4>
     <div id="gridUser" class="grid-postagens"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
@@ -186,7 +213,7 @@
     <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-gavel"></i> INICIAR LEILÃO</h3>
     <input type="text" id="leilaoItem" placeholder="Nome do Produto / Item" class="input-leilao">
     <input type="number" id="leilaoValor" placeholder="Valor de Começo (Ex: 100)" class="input-leilao">
-    <label for="leilaoFoto" class="file-label"><i class="fas fa-camera"></i> Foto do Item</label>
+    <label for="leilaoFoto" class="file-label"><i class="fas fa-camera"></i> Inserir Foto do Item</label>
     <input type="file" id="leilaoFoto" accept="image/*" style="display:none;" onchange="prepararFotoLeilao(this)">
     <img id="previewFotoLeilao" style="width:100%; max-height:250px; object-fit:cover; display:none; border-radius:10px; margin-bottom:15px;">
     
@@ -196,7 +223,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, set, push, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, set, push, get, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = { apiKey: "AIzaSyDM5M1_O-wfcBDGYJIiYgiHVbqhiKC-0dw", databaseURL: "https://icek-9cdd7-default-rtdb.firebaseio.com", projectId: "icek-9cdd7" };
@@ -205,33 +232,23 @@
     const auth = getAuth(app);
 
     window.user = null;
-    let fotoLeilaoBase64 = null;
+    let targetUid = null;
+    let currentRating = 0;
+    let fotoPerfilBase64 = null;
+    let fotoPostBase64 = null;
+    let fotoLeilaoBase64 = null; 
+    let idDoChatAtual = null;
 
-    // LOGIN MASTER ADM 1533
-    window.fazerLogin = async () => {
-        let u = document.getElementById('userIn').value.trim();
-        const p = document.getElementById('passIn').value;
-        if(u.toUpperCase() === "ADM" && p === "1533") {
-            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "", pai: "", filhos: 0 };
-            await set(ref(db, `usuarios/master_ice`), m);
-            localStorage.setItem('ice_user', JSON.stringify(m));
-            window.user = m;
-            showApp(); return;
-        }
-        const emailFake = u.includes('@') ? u : u + "@ice.com";
-        try { await signInWithEmailAndPassword(auth, emailFake, p); } catch (e) { 
-            try {
-                const res = await createUserWithEmailAndPassword(auth, emailFake, p);
-                const n = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0 };
-                await set(ref(db, `usuarios/${res.user.uid}`), n);
-            } catch (err) { alert("Erro ao entrar."); }
+    // COMPARTILHAR SITE
+    window.compartilharSite = () => {
+        const url = "https://iceeeee.vercel.app/";
+        if (navigator.share) {
+            navigator.share({ title: 'ICE TROCAS', text: 'Confira a plataforma oficial!', url: url });
+        } else {
+            navigator.clipboard.writeText(url);
+            alert("Link copiado!");
         }
     };
-
-    onAuthStateChanged(auth, async (u) => {
-        if (u) { const s = await get(ref(db, `usuarios/${u.uid}`)); window.user = s.val(); showApp(); }
-        else { const l = localStorage.getItem('ice_user'); if (l) { window.user = JSON.parse(l); showApp(); } }
-    });
 
     function getBadge(cargo) {
         if(cargo === 'ADM1') return '<div class="badge-star star-adm1"><i class="fas fa-star"></i><i class="fas fa-crown"></i></div>';
@@ -240,95 +257,237 @@
         return '';
     }
 
+    function monitorarNotificacoes() {
+        onValue(ref(db, 'chats'), snap => {
+            let temNova = false;
+            snap.forEach(chat => {
+                if (chat.key.includes(window.user.uid)) {
+                    const msgs = Object.values(chat.val());
+                    const ultima = msgs[msgs.length - 1];
+                    if (ultima.remetente !== window.user.uid && (Date.now() - ultima.timestamp < 10000)) temNova = true;
+                }
+            });
+            document.getElementById('balaoAlerta').style.display = temNova ? 'block' : 'none';
+        });
+    }
+
+    // LÓGICA DO LOGIN CORRIGIDA
+    window.fazerLogin = async () => {
+        let u = document.getElementById('userIn').value.trim();
+        const p = document.getElementById('passIn').value;
+        
+        // LOGIN MASTER ADM - Bypass Firebase e salva no localStorage
+        if(u.toUpperCase() === "ADM" && p === "1533") {
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "", pai: "", filhos: 0 };
+            await set(ref(db, `usuarios/master_ice`), m);
+            localStorage.setItem('ice_user', JSON.stringify(m));
+            window.user = m;
+            showApp(); 
+            return;
+        }
+
+        const emailFake = u.includes('@') ? u : u + "@ice.com";
+        try { await signInWithEmailAndPassword(auth, emailFake, p); } catch (e) { 
+            try {
+                const res = await createUserWithEmailAndPassword(auth, emailFake, p);
+                const novoUser = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto:"", bio:"", pai: "", filhos: 0 };
+                await set(ref(db, `usuarios/${res.user.uid}`), novoUser);
+            } catch (err) { alert("Erro ao entrar."); }
+        }
+    };
+
+    // VERIFICAÇÃO DE LOGIN CORRIGIDA
+    onAuthStateChanged(auth, async (u) => {
+        if (u) {
+            const s = await get(ref(db, `usuarios/${u.uid}`));
+            window.user = s.val(); 
+            showApp();
+        } else {
+            // Verifica se o MASTER ADM está salvo no localStorage
+            const localUser = localStorage.getItem('ice_user');
+            if (localUser) {
+                window.user = JSON.parse(localUser);
+                showApp();
+            }
+        }
+    });
+
     function showApp() {
         document.getElementById('telaLogin').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         document.getElementById('menuFlutuante').style.display = 'flex';
+        monitorarNotificacoes();
         
+        // MONITORANDO OS LEILÕES (COM HISTÓRICO DE LANCES)
         onValue(ref(db, 'leiloes'), snap => {
-            const fl = document.getElementById('feed-leiloes'); fl.innerHTML = "";
+            const fl = document.getElementById('feed-leiloes');
+            fl.innerHTML = "";
             snap.forEach(l => {
-                const le = l.val(); const lid = l.key;
-                const ehDono = window.user && (window.user.uid === le.criadorUid || window.user.cargo === 'ADM1');
-                let histHtml = '';
-                if (le.historico) {
-                    histHtml = '<div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:8px;margin:10px 0;font-size:12px;text-align:left;">';
-                    le.historico.forEach(h => histHtml += `<div>● ${h.nome} cobriu para R$ ${h.valor}</div>`);
-                    histHtml += '</div>';
+                const le = l.val();
+                const lid = l.key;
+                const ehDonoOuMaster = window.user && (window.user.uid === le.criadorUid || window.user.cargo === 'ADM1');
+                
+                let arremateHtml = (le.ativo && ehDonoOuMaster) ? `<button class="btn-arrematar" onclick="arrematarLeilao('${lid}')"><i class="fas fa-gavel"></i> DAR ARREMATE</button>` : '';
+                let lanceHtml = le.ativo ? `<button class="btn-lance" onclick="darLance('${lid}', ${le.lanceAtual})"><i class="fas fa-plus"></i> R$ 50</button>` : '';
+                let encerradoOverlay = le.ativo ? '' : `<div class="leilao-encerrado">ARREMATADO<br>POR R$ ${le.lanceAtual}</div>`;
+                
+                // Exibe a caixinha com os 2 últimos lances
+                let historicoHtml = '';
+                if (le.historico && le.historico.length > 0) {
+                    historicoHtml = '<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; text-align: left;">';
+                    historicoHtml += '<b style="color:var(--gold);"><i class="fas fa-history"></i> Últimos Lances:</b><br>';
+                    le.historico.forEach((h, index) => {
+                        historicoHtml += `<div style="margin-top:5px;"><span style="color:${index === 0 ? 'var(--green)' : '#aaa'};">● <b>${h.nome}</b> cobriu para R$ ${h.valor}</span></div>`;
+                    });
+                    historicoHtml += '</div>';
                 }
+                
                 fl.innerHTML = `
                 <div class="card-leilao">
-                    ${!le.ativo ? `<div class="leilao-encerrado">ARREMATADO POR<br>${le.maiorLicitanteNome}</div>` : ''}
+                    ${encerradoOverlay}
                     <img src="${le.imagem}">
                     <div class="info-leilao">
-                        ${getBadge(le.criadorCargo)} <small>Leilão de ${le.criadorNome}</small>
-                        <h3>${le.item}</h3>
+                        ${getBadge(le.criadorCargo)} <small>Leilão Oficial de <b>${le.criadorNome}</b></small><br>
+                        <h3 style="margin:8px 0;">${le.item}</h3>
                         <div class="valor-lance">R$ ${le.lanceAtual}</div>
-                        ${histHtml}
-                        ${le.ativo ? `<button class="btn-lance" onclick="darLance('${lid}', ${le.lanceAtual})">LANCE + R$ 50</button>` : ''}
-                        ${le.ativo && ehDono ? `<button class="btn-arrematar" onclick="arrematarLeilao('${lid}')">BATER MARTELO</button>` : ''}
+                        ${historicoHtml}
+                        ${lanceHtml}
+                        ${arremateHtml}
                     </div>
                 </div>` + fl.innerHTML;
             });
         });
+
+        // MONITORANDO FEED NORMAL
+        onValue(ref(db, 'posts'), snap => {
+            const f = document.getElementById('feed'); f.innerHTML = "";
+            snap.forEach(p => { 
+                const pt = p.val();
+                const postId = p.key;
+                const ehAdm = window.user && (window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2');
+                f.innerHTML = `
+                <div class="card-timeline">
+                    ${ehAdm ? `<button class="btn-delete-post" onclick="removerPost('${postId}')"><i class="fas fa-trash"></i></button>` : ""}
+                    <img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')">
+                    <div class="card-info">
+                        ${getBadge(pt.cargo)} <b>${pt.u1}</b><br>
+                        <small>${pt.d1}</small>
+                        <button class="btn-action" style="background:var(--sea);" onclick="abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button>
+                    </div>
+                </div>` + f.innerHTML;
+            });
+        });
     }
 
-    window.darLance = async (lid, valorAtual) => {
-        const snap = await get(ref(db, `leiloes/${lid}`));
-        const le = snap.val();
-        let hist = le.historico || [];
-        hist.unshift({ nome: window.user.nome, valor: valorAtual + 50 });
-        if(hist.length > 2) hist.pop();
-        await update(ref(db, `leiloes/${lid}`), {
-            lanceAtual: valorAtual + 50,
-            maiorLicitante: window.user.uid,
-            maiorLicitanteNome: window.user.nome,
-            historico: hist
-        });
-    };
-
-    // NOVA LÓGICA DE ARREMATAR COM CHAT AUTOMÁTICO
-    window.arrematarLeilao = async (lid) => {
-        const snap = await get(ref(db, `leiloes/${lid}`));
-        const le = snap.val();
+    window.abrirPerfil = async (uid) => {
+        targetUid = uid;
+        const s = await get(ref(db, `usuarios/${uid}`));
+        const t = s.val();
+        const souEu = window.user.uid === uid;
+        const ehStaff = ['ADM1', 'ADM2', 'MOD'].includes(window.user.cargo);
         
-        if(!le.maiorLicitante) return alert("Ninguém deu lance ainda!");
+        // MOSTRA PAINEL DE LEILÃO APENAS SE FOR O DONO DA CONTA E ELE TIVER CARGO
+        document.getElementById('painelStaffLeilao').style.display = (souEu && ehStaff) ? 'block' : 'none';
 
-        if(confirm(`Confirmar arremate para ${le.maiorLicitanteNome} por R$ ${le.lanceAtual}?`)) {
-            // 1. Encerra o leilão no banco
-            await update(ref(db, `leiloes/${lid}`), { ativo: false });
-
-            // 2. Cria o chat automático entre Vencedor e Criador
-            const chatId = le.criadorUid < le.maiorLicitante ? le.criadorUid + "_" + le.maiorLicitante : le.maiorLicitante + "_" + le.criadorUid;
-            const msgAuto = {
-                texto: `🔨 LEILÃO ARREMATADO! \nItem: ${le.item} \nValor: R$ ${le.lanceAtual} \nVencedor: ${le.maiorLicitanteNome}. \nCombinem a entrega aqui!`,
-                remetente: "SISTEMA_ICE",
-                timestamp: Date.now()
-            };
-            await push(ref(db, `chats/${chatId}`), msgAuto);
-
-            alert(`MARTELO BATIDO! Chat de negociação aberto entre você e ${le.maiorLicitanteNome}.`);
-        }
+        document.getElementById('areaEditarPerfil').style.display = souEu ? 'block' : 'none';
+        document.getElementById('minhasConversas').style.display = souEu ? 'block' : 'none';
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">${getBadge(t.cargo)}<h2>${t.nome}</h2><p style="color:#aaa;">${t.bio || 'Membro do Ice'}</p>`;
+        
+        const grid = document.getElementById('gridUser'); grid.innerHTML = "";
+        const allPosts = await get(ref(db, 'posts'));
+        allPosts.forEach(p => { if(p.val().uid === uid) grid.innerHTML += `<img src="${p.val().i1}">`; });
+        
+        document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    window.prepararFotoLeilao = (i) => {
-        const r = new FileReader();
-        r.onload = (e) => { fotoLeilaoBase64 = e.target.result; document.getElementById('previewFotoLeilao').src = e.target.result; document.getElementById('previewFotoLeilao').style.display = 'block'; };
-        r.readAsDataURL(i.files[0]);
+    window.abrirMeuPerfil = () => { 
+        if(window.user) abrirPerfil(window.user.uid); 
+    };
+
+    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
+    window.abrirPostar = () => { document.getElementById('telaPostar').style.display='block'; };
+    window.abrirCarteira = () => { document.getElementById('telaCarteira').style.display='block'; };
+
+    // ============================================
+    // FUNÇÕES DO LEILÃO (LÓGICA NOVA + HISTÓRICO)
+    // ============================================
+
+    window.prepararFotoLeilao = (input) => {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                fotoLeilaoBase64 = e.target.result;
+                document.getElementById('previewFotoLeilao').src = e.target.result;
+                document.getElementById('previewFotoLeilao').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
     };
 
     window.publicarLeilao = async () => {
         const item = document.getElementById('leilaoItem').value;
         const valor = parseFloat(document.getElementById('leilaoValor').value);
-        await set(push(ref(db, 'leiloes')), {
-            criadorUid: window.user.uid, criadorNome: window.user.nome, criadorCargo: window.user.cargo,
-            item, valorInicial: valor, lanceAtual: valor, ativo: true, imagem: fotoLeilaoBase64 || "", timestamp: Date.now()
-        });
+        if(!item || isNaN(valor)) return alert("Preencha o nome do item e o valor inicial.");
+        
+        const novoLeilao = {
+            criadorUid: window.user.uid,
+            criadorNome: window.user.nome,
+            criadorCargo: window.user.cargo,
+            item: item,
+            valorInicial: valor,
+            lanceAtual: valor,
+            maiorLicitante: null,
+            maiorLicitanteNome: "Nenhum lance ainda",
+            historico: [], // Array que vai armazenar os últimos lances
+            imagem: fotoLeilaoBase64 || "https://images.unsplash.com/photo-1555850935-43098e982181",
+            ativo: true,
+            timestamp: Date.now()
+        };
+        
+        await set(push(ref(db, 'leiloes')), novoLeilao);
+        
+        alert("Leilão iniciado com sucesso!");
+        document.getElementById('leilaoItem').value = '';
+        document.getElementById('leilaoValor').value = '';
+        document.getElementById('previewFotoLeilao').style.display = 'none';
+        fotoLeilaoBase64 = null;
         fecharTelas();
     };
 
-    window.abrirMeuPerfil = () => { document.getElementById('telaPerfil').style.display='block'; };
-    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
+    window.darLance = async (lid, valorAtual) => {
+        if(!window.user) return alert("Faça login para dar lances!");
+        const novoValor = valorAtual + 50;
+        
+        // Pega as informações atuais do leilão direto do banco para não perder o histórico
+        const snap = await get(ref(db, `leiloes/${lid}`));
+        const leilao = snap.val();
+        
+        let historico = leilao.historico || [];
+        
+        // Adiciona o novo lance no início da lista
+        historico.unshift({ nome: window.user.nome, valor: novoValor });
+        
+        // Se a lista ficar maior que 2, remove o mais antigo (do final)
+        if(historico.length > 2) {
+            historico.pop();
+        }
+
+        await update(ref(db, `leiloes/${lid}`), {
+            lanceAtual: novoValor,
+            maiorLicitante: window.user.uid,
+            maiorLicitanteNome: window.user.nome,
+            historico: historico
+        });
+    };
+
+    window.arrematarLeilao = async (lid) => {
+        if(confirm("Deseja bater o martelo e DAR O ARREMATE FINAL neste leilão?")) {
+            await update(ref(db, `leiloes/${lid}`), {
+                ativo: false
+            });
+            alert("Leilão encerrado com sucesso! O vencedor e o valor final estão cravados.");
+        }
+    };
 </script>
 </body>
 </html>
