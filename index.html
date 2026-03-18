@@ -81,8 +81,6 @@
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
         .card-info { padding: 15px; }
 
-        .btn-delete-post { position: absolute; top: 10px; right: 10px; background: rgba(255, 77, 77, 0.8); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 14px; }
-
         .nav { 
             position: fixed; 
             bottom: 15px; 
@@ -103,35 +101,31 @@
         .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
         
-        /* ESTILO CHAT */
         .chat-box { background: rgba(255,255,255,0.05); height: 300px; overflow-y: auto; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
         .msg { padding: 8px 12px; border-radius: 15px; max-width: 80%; font-size: 14px; }
         .msg-eu { background: var(--blue); align-self: flex-end; }
         .msg-ele { background: var(--gray); align-self: flex-start; }
+        .conversa-item { background: var(--ice); padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;}
 
         .grid-postagens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
         .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; }
         
-        .painel-adm { background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px; }
         .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; background: #161b22; }
-        .file-label { display: block; background: #30363d; color: white; padding: 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-size: 12px; text-align: center; }
 
-        /* ESTILOS LEILÃO */
+        /* ESTILOS LEILÃO MANTIDOS */
         .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; }
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
         .info-leilao { padding: 15px; text-align: center; }
         .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; }
-        .btn-lance { background: var(--green); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-arrematar { background: var(--gold); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top:5px;}
         .leilao-encerrado { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 24px; font-weight: bold; z-index: 10; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="side-menu" id="menuFlutuante" style="display:none;">
-    <button class="btn-float" style="background: var(--gold); color:black;" onclick="comprar('ADM1 SUPREMO', 'R$ 22.000.000')"><i class="fas fa-crown"></i></button>
-    <button class="btn-float" style="background: var(--red);" onclick="comprar('ADM2', 'R$ 50')"><i class="fas fa-shield-alt"></i></button>
-    <button class="btn-float" style="background: var(--mod-blue);" onclick="comprar('MOD', 'R$ 20')"><i class="fas fa-star"></i></button>
+    <button class="btn-float" style="background: var(--gold); color:black;"><i class="fas fa-crown"></i></button>
+    <button class="btn-float" style="background: var(--red);"><i class="fas fa-shield-alt"></i></button>
+    <button class="btn-float" style="background: var(--mod-blue);"><i class="fas fa-star"></i></button>
     <button class="btn-float" style="background: var(--green);" onclick="window.open('https://wa.me/5511983602504')"><i class="fab fa-whatsapp"></i></button>
 </div>
 
@@ -170,21 +164,22 @@
     <h3 id="chatNome" style="color: var(--mod-blue); text-align: center;">Negociação</h3>
     <div id="caixaMensagens" class="chat-box"></div>
     <div style="display: flex; gap: 5px;">
-        <input type="text" id="msgInput" placeholder="Digite sua proposta..." style="flex:1; padding: 12px; border-radius: 8px; border:none; background:#30363d; color:white;">
+        <input type="text" id="msgInput" placeholder="Sua proposta..." style="flex:1; padding: 12px; border-radius: 8px; border:none; background:#30363d; color:white;">
         <button class="btn-action" style="width: 60px; margin:0;" onclick="enviarMensagem()"><i class="fas fa-paper-plane"></i></button>
     </div>
     <button class="btn-action" style="background:var(--gray); margin-top:15px;" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaPerfil" class="tela-full">
-    <div id="perfilConteudo" style="text-align:center;"></div>
+    <div id="perfilConteudo" style="text-align:center;">
+        </div>
     
-    <div id="minhasConversas" style="margin-top: 20px; display:none;">
+    <div id="minhasConversas" style="margin-top: 20px;">
         <h4 style="color:var(--mod-blue); border-bottom: 1px solid #333; padding-bottom: 5px;"><i class="fas fa-comments"></i> Conversas Ativas</h4>
         <div id="listaConversas"></div>
     </div>
 
-    <h4>Postagens</h4>
+    <h4>Minhas Postagens</h4>
     <div id="gridUser" class="grid-postagens"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
@@ -202,12 +197,11 @@
     window.user = null;
     let idChatAtivo = null;
 
-    // LOGIN MANTIDO
     window.fazerLogin = async () => {
         let u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000 };
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "Administrador Geral" };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user', JSON.stringify(m));
             window.user = m;
@@ -217,8 +211,8 @@
         try { await signInWithEmailAndPassword(auth, emailFake, p); } catch (e) { 
             try {
                 const res = await createUserWithEmailAndPassword(auth, emailFake, p);
-                const novo = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0 };
-                await set(ref(db, `usuarios/${res.user.uid}`), novo);
+                const n = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto:"", bio:"Membro Ice" };
+                await set(ref(db, `usuarios/${res.user.uid}`), n);
             } catch (err) { alert("Erro ao entrar."); }
         }
     };
@@ -228,22 +222,25 @@
         else { const l = localStorage.getItem('ice_user'); if (l) { window.user = JSON.parse(l); showApp(); } }
     });
 
+    function getBadge(cargo) {
+        if(cargo === 'ADM1') return '<div class="badge-star star-adm1"><i class="fas fa-star"></i><i class="fas fa-crown"></i></div>';
+        if(cargo === 'ADM2') return '<div class="badge-star star-adm2"><i class="fas fa-star"></i></div>';
+        if(cargo === 'MOD') return '<div class="badge-star star-mod"><i class="fas fa-star"></i></div>';
+        return '';
+    }
+
     function showApp() {
         document.getElementById('telaLogin').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         document.getElementById('menuFlutuante').style.display = 'flex';
         
-        // FEED DE POSTS (ARRUMADO COM FUNÇÕES)
         onValue(ref(db, 'posts'), snap => {
             const f = document.getElementById('feed'); f.innerHTML = "";
             snap.forEach(p => { 
                 const pt = p.val();
-                const pid = p.key;
-                const ehAdm = window.user && (window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2');
                 f.innerHTML = `
                 <div class="card-timeline">
-                    ${ehAdm ? `<button class="btn-delete-post" onclick="removerPost('${pid}')"><i class="fas fa-trash"></i></button>` : ""}
-                    <img src="${pt.i1}" onclick="abrirPerfil('${pt.uid}')">
+                    <img src="${pt.i1}">
                     <div class="card-info">
                         <b>${pt.u1}</b><br><small>${pt.d1}</small>
                         <button class="btn-action" style="background:var(--sea);" onclick="abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button>
@@ -252,76 +249,88 @@
             });
         });
 
-        // LEILÕES MANTIDOS
         onValue(ref(db, 'leiloes'), snap => {
             const fl = document.getElementById('feed-leiloes'); fl.innerHTML = "";
             snap.forEach(l => {
-                const le = l.val(); const lid = l.key;
+                const le = l.val();
                 fl.innerHTML = `
                 <div class="card-leilao">
                     ${!le.ativo ? `<div class="leilao-encerrado">ARREMATADO POR R$ ${le.lanceAtual}</div>` : ''}
                     <img src="${le.imagem}">
-                    <div class="info-leilao">
-                        <h3>${le.item}</h3>
-                        <div class="valor-lance">R$ ${le.lanceAtual}</div>
-                        ${le.ativo ? `<button class="btn-lance" onclick="darLance('${lid}', ${le.lanceAtual})">LANCE + R$ 50</button>` : ''}
-                    </div>
+                    <div class="info-leilao"><h3>${le.item}</h3><div class="valor-lance">R$ ${le.lanceAtual}</div></div>
                 </div>` + fl.innerHTML;
             });
         });
     }
 
-    // --- FUNÇÕES DE CHAT (AQUI ESTAVA O ERRO) ---
+    // --- FUNÇÕES DE PERFIL E CHAT CORRIGIDAS ---
+
+    window.abrirMeuPerfil = async () => {
+        if (!window.user) return;
+        
+        // 1. Carrega dados do perfil (Foto e Nome)
+        const perf = document.getElementById('perfilConteudo');
+        perf.innerHTML = `
+            <img src="${window.user.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
+            ${getBadge(window.user.cargo)}
+            <h2>${window.user.nome}</h2>
+            <p style="color:#aaa;">${window.user.bio || ''}</p>
+        `;
+
+        // 2. Carrega lista de conversas
+        const lista = document.getElementById('listaConversas');
+        lista.innerHTML = "";
+        onValue(ref(db, 'chats'), snap => {
+            lista.innerHTML = "";
+            snap.forEach(chat => {
+                if (chat.key.includes(window.user.uid)) {
+                    // Aqui você poderia buscar o nome do outro user, mas para simplificar:
+                    lista.innerHTML += `<div class="conversa-item" onclick="abrirChatPorId('${chat.key}')">
+                        <span><i class="fas fa-user"></i> Conversa Ativa</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>`;
+                }
+            });
+        });
+
+        document.getElementById('telaPerfil').style.display = 'block';
+    };
 
     window.abrirChat = (outroUid, outroNome) => {
-        if (!window.user) return alert("Faça login primeiro!");
-        if (window.user.uid === outroUid) return alert("Você não pode negociar com você mesmo.");
-        
-        // Criar ID único para a conversa
+        if (window.user.uid === outroUid) return;
         idChatAtivo = window.user.uid < outroUid ? window.user.uid + "_" + outroUid : outroUid + "_" + window.user.uid;
-        
-        document.getElementById('chatNome').innerText = "Negociando com " + outroNome;
+        document.getElementById('chatNome').innerText = outroNome;
+        iniciarEscutaChat();
+    };
+
+    window.abrirChatPorId = (id) => {
+        idChatAtivo = id;
+        document.getElementById('chatNome').innerText = "Chat";
+        iniciarEscutaChat();
+    };
+
+    function iniciarEscutaChat() {
         document.getElementById('telaChat').style.display = 'block';
-        
-        // Carregar mensagens em tempo real
-        onValue(ref(db, `chats/${idChatAtivo}`), (snap) => {
+        onValue(ref(db, `chats/${idChatAtivo}`), snap => {
             const box = document.getElementById('caixaMensagens');
             box.innerHTML = "";
             snap.forEach(m => {
                 const msg = m.val();
-                const classe = msg.remetente === window.user.uid ? "msg-eu" : "msg-ele";
-                box.innerHTML += `<div class="msg ${classe}">${msg.texto}</div>`;
+                const cl = msg.remetente === window.user.uid ? "msg-eu" : "msg-ele";
+                box.innerHTML += `<div class="msg ${cl}">${msg.texto}</div>`;
             });
             box.scrollTop = box.scrollHeight;
         });
-    };
+    }
 
     window.enviarMensagem = async () => {
         const txt = document.getElementById('msgInput').value;
         if (!txt || !idChatAtivo) return;
-        
-        await push(ref(db, `chats/${idChatAtivo}`), {
-            texto: txt,
-            remetente: window.user.uid,
-            timestamp: Date.now()
-        });
+        await push(ref(db, `chats/${idChatAtivo}`), { texto: txt, remetente: window.user.uid, timestamp: Date.now() });
         document.getElementById('msgInput').value = "";
     };
 
-    window.removerPost = async (id) => {
-        if(confirm("Deseja apagar este post?")) {
-            await remove(ref(db, `posts/${id}`));
-        }
-    };
-
-    window.fecharTelas = () => {
-        document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
-    };
-
-    window.abrirMeuPerfil = () => {
-        document.getElementById('minhasConversas').style.display = 'block';
-        document.getElementById('telaPerfil').style.display = 'block';
-    };
+    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
 
 </script>
 </body>
