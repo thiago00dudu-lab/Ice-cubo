@@ -116,6 +116,16 @@
         .card-troca-concluida img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 5px; }
         .stars-display { color: var(--gold); font-size: 12px; }
         .badge-concluido { position: absolute; top: 5px; right: 5px; background: var(--green); font-size: 10px; padding: 2px 6px; border-radius: 5px; }
+
+        /* NOVOS ESTILOS PARA O LEILÃO */
+        .input-leilao { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; box-sizing: border-box; background: #30363d; color: white; }
+        .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.15); }
+        .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
+        .info-leilao { padding: 15px; text-align: center; }
+        .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .btn-lance { background: var(--green); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 18px; width: 100%; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);}
+        .btn-arrematar { background: var(--gold); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top:5px;}
+        .leilao-encerrado { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 24px; font-weight: bold; z-index: 10; pointer-events: none; text-align: center; padding: 20px; box-sizing: border-box;}
     </style>
 </head>
 <body>
@@ -148,6 +158,9 @@
             </div>
         </div>
     </header>
+    
+    <div id="feed-leiloes"></div>
+    
     <div id="feed"></div>
     <div class="nav">
         <i class="fas fa-home active" onclick="fecharTelas()"></i>
@@ -159,6 +172,11 @@
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align:center;"></div>
     
+    <div id="painelStaffLeilao" class="painel-adm" style="display:none; border-color: var(--mod-blue);">
+        <h4 style="color:var(--mod-blue); text-align:center; margin-top:0;"><i class="fas fa-gavel"></i> PAINEL STAFF</h4>
+        <button class="btn-action" style="background:var(--mod-blue);" onclick="document.getElementById('telaCriarLeilao').style.display='block'">ABRIR NOVO LEILÃO</button>
+    </div>
+
     <div id="minhasConversas" style="margin-top: 20px; display:none;">
         <h4 style="color:var(--mod-blue); border-bottom: 1px solid #333; padding-bottom: 5px;"><i class="fas fa-comments"></i> Minhas Negociações</h4>
         <div id="listaConversas"></div>
@@ -191,6 +209,18 @@
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
+<div id="telaCriarLeilao" class="tela-full">
+    <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-gavel"></i> INICIAR LEILÃO</h3>
+    <input type="text" id="leilaoItem" placeholder="Nome do Produto / Item" class="input-leilao">
+    <input type="number" id="leilaoValor" placeholder="Valor de Começo (Ex: 100)" class="input-leilao">
+    <label for="leilaoFoto" class="file-label"><i class="fas fa-camera"></i> Inserir Foto do Item</label>
+    <input type="file" id="leilaoFoto" accept="image/*" style="display:none;" onchange="prepararFotoLeilao(this)">
+    <img id="previewFotoLeilao" style="width:100%; max-height:250px; object-fit:cover; display:none; border-radius:10px; margin-bottom:15px;">
+    
+    <button class="btn-action" style="background:var(--gold); color:black;" onclick="publicarLeilao()">PUBLICAR LEILÃO</button>
+    <button class="btn-action" style="background:var(--gray); margin-top:10px;" onclick="fecharTelas()">CANCELAR</button>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, update, set, push, get, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -206,6 +236,7 @@
     let currentRating = 0;
     let fotoPerfilBase64 = null;
     let fotoPostBase64 = null;
+    let fotoLeilaoBase64 = null; // Variável para o leilão
     let idDoChatAtual = null;
 
     // COMPARTILHAR SITE
@@ -272,6 +303,36 @@
         document.getElementById('menuFlutuante').style.display = 'flex';
         monitorarNotificacoes();
         
+        // MONITORANDO OS LEILÕES (NOVO CÓDIGO)
+        onValue(ref(db, 'leiloes'), snap => {
+            const fl = document.getElementById('feed-leiloes');
+            fl.innerHTML = "";
+            snap.forEach(l => {
+                const le = l.val();
+                const lid = l.key;
+                const ehDonoOuMaster = window.user && (window.user.uid === le.criadorUid || window.user.cargo === 'ADM1');
+                
+                let arremateHtml = (le.ativo && ehDonoOuMaster) ? `<button class="btn-arrematar" onclick="arrematarLeilao('${lid}')"><i class="fas fa-gavel"></i> DAR ARREMATE</button>` : '';
+                let lanceHtml = le.ativo ? `<button class="btn-lance" onclick="darLance('${lid}', ${le.lanceAtual})"><i class="fas fa-plus"></i> R$ 50</button>` : '';
+                let encerradoOverlay = le.ativo ? '' : `<div class="leilao-encerrado">ARREMATADO<br>POR R$ ${le.lanceAtual}</div>`;
+                
+                fl.innerHTML = `
+                <div class="card-leilao">
+                    ${encerradoOverlay}
+                    <img src="${le.imagem}">
+                    <div class="info-leilao">
+                        ${getBadge(le.criadorCargo)} <small>Leilão Oficial de <b>${le.criadorNome}</b></small><br>
+                        <h3 style="margin:8px 0;">${le.item}</h3>
+                        <div class="valor-lance">R$ ${le.lanceAtual}</div>
+                        <small style="color:var(--gray);">Maior lance: <b>${le.maiorLicitanteNome}</b></small><br><br>
+                        ${lanceHtml}
+                        ${arremateHtml}
+                    </div>
+                </div>` + fl.innerHTML;
+            });
+        });
+
+        // MONITORANDO FEED NORMAL
         onValue(ref(db, 'posts'), snap => {
             const f = document.getElementById('feed'); f.innerHTML = "";
             snap.forEach(p => { 
@@ -297,7 +358,11 @@
         const s = await get(ref(db, `usuarios/${uid}`));
         const t = s.val();
         const souEu = window.user.uid === uid;
+        const ehStaff = ['ADM1', 'ADM2', 'MOD'].includes(window.user.cargo);
         
+        // MOSTRA PAINEL DE LEILÃO APENAS SE FOR O DONO DA CONTA E ELE TIVER CARGO
+        document.getElementById('painelStaffLeilao').style.display = (souEu && ehStaff) ? 'block' : 'none';
+
         document.getElementById('areaEditarPerfil').style.display = souEu ? 'block' : 'none';
         document.getElementById('minhasConversas').style.display = souEu ? 'block' : 'none';
         document.getElementById('perfilConteudo').innerHTML = `<img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">${getBadge(t.cargo)}<h2>${t.nome}</h2><p style="color:#aaa;">${t.bio || 'Membro do Ice'}</p>`;
@@ -316,6 +381,70 @@
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
     window.abrirPostar = () => { document.getElementById('telaPostar').style.display='block'; };
     window.abrirCarteira = () => { document.getElementById('telaCarteira').style.display='block'; };
+
+    // ============================================
+    // FUNÇÕES DO LEILÃO (LÓGICA NOVA)
+    // ============================================
+
+    window.prepararFotoLeilao = (input) => {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                fotoLeilaoBase64 = e.target.result;
+                document.getElementById('previewFotoLeilao').src = e.target.result;
+                document.getElementById('previewFotoLeilao').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    };
+
+    window.publicarLeilao = async () => {
+        const item = document.getElementById('leilaoItem').value;
+        const valor = parseFloat(document.getElementById('leilaoValor').value);
+        if(!item || isNaN(valor)) return alert("Preencha o nome do item e o valor inicial.");
+        
+        const novoLeilao = {
+            criadorUid: window.user.uid,
+            criadorNome: window.user.nome,
+            criadorCargo: window.user.cargo,
+            item: item,
+            valorInicial: valor,
+            lanceAtual: valor,
+            maiorLicitante: null,
+            maiorLicitanteNome: "Nenhum lance ainda",
+            imagem: fotoLeilaoBase64 || "https://images.unsplash.com/photo-1555850935-43098e982181",
+            ativo: true,
+            timestamp: Date.now()
+        };
+        
+        await set(push(ref(db, 'leiloes')), novoLeilao);
+        
+        alert("Leilão iniciado com sucesso!");
+        document.getElementById('leilaoItem').value = '';
+        document.getElementById('leilaoValor').value = '';
+        document.getElementById('previewFotoLeilao').style.display = 'none';
+        fotoLeilaoBase64 = null;
+        fecharTelas();
+    };
+
+    window.darLance = async (lid, valorAtual) => {
+        if(!window.user) return alert("Faça login para dar lances!");
+        const novoValor = valorAtual + 50;
+        await update(ref(db, `leiloes/${lid}`), {
+            lanceAtual: novoValor,
+            maiorLicitante: window.user.uid,
+            maiorLicitanteNome: window.user.nome
+        });
+    };
+
+    window.arrematarLeilao = async (lid) => {
+        if(confirm("Deseja bater o martelo e DAR O ARREMATE FINAL neste leilão?")) {
+            await update(ref(db, `leiloes/${lid}`), {
+                ativo: false
+            });
+            alert("Leilão encerrado com sucesso! O vencedor e o valor final estão cravados.");
+        }
+    };
 </script>
 </body>
 </html>
