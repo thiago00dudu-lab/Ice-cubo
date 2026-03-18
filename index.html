@@ -117,7 +117,7 @@
         .stars-display { color: var(--gold); font-size: 12px; }
         .badge-concluido { position: absolute; top: 5px; right: 5px; background: var(--green); font-size: 10px; padding: 2px 6px; border-radius: 5px; }
 
-        /* NOVOS ESTILOS PARA O LEILÃO */
+        /* ESTILOS PARA O LEILÃO */
         .input-leilao { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none; box-sizing: border-box; background: #30363d; color: white; }
         .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.15); }
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
@@ -236,7 +236,7 @@
     let currentRating = 0;
     let fotoPerfilBase64 = null;
     let fotoPostBase64 = null;
-    let fotoLeilaoBase64 = null; // Variável para o leilão
+    let fotoLeilaoBase64 = null; 
     let idDoChatAtual = null;
 
     // COMPARTILHAR SITE
@@ -271,15 +271,21 @@
         });
     }
 
+    // LÓGICA DO LOGIN CORRIGIDA
     window.fazerLogin = async () => {
         let u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
+        
+        // LOGIN MASTER ADM - Bypass Firebase e salva no localStorage
         if(u.toUpperCase() === "ADM" && p === "1533") {
             const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "", pai: "", filhos: 0 };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user', JSON.stringify(m));
-            location.reload(); return;
+            window.user = m;
+            showApp(); 
+            return;
         }
+
         const emailFake = u.includes('@') ? u : u + "@ice.com";
         try { await signInWithEmailAndPassword(auth, emailFake, p); } catch (e) { 
             try {
@@ -290,10 +296,19 @@
         }
     };
 
+    // VERIFICAÇÃO DE LOGIN CORRIGIDA
     onAuthStateChanged(auth, async (u) => {
         if (u) {
             const s = await get(ref(db, `usuarios/${u.uid}`));
-            window.user = s.val(); showApp();
+            window.user = s.val(); 
+            showApp();
+        } else {
+            // Verifica se o MASTER ADM está salvo no localStorage
+            const localUser = localStorage.getItem('ice_user');
+            if (localUser) {
+                window.user = JSON.parse(localUser);
+                showApp();
+            }
         }
     });
 
@@ -303,7 +318,7 @@
         document.getElementById('menuFlutuante').style.display = 'flex';
         monitorarNotificacoes();
         
-        // MONITORANDO OS LEILÕES (NOVO CÓDIGO)
+        // MONITORANDO OS LEILÕES (COM HISTÓRICO DE LANCES)
         onValue(ref(db, 'leiloes'), snap => {
             const fl = document.getElementById('feed-leiloes');
             fl.innerHTML = "";
@@ -316,6 +331,17 @@
                 let lanceHtml = le.ativo ? `<button class="btn-lance" onclick="darLance('${lid}', ${le.lanceAtual})"><i class="fas fa-plus"></i> R$ 50</button>` : '';
                 let encerradoOverlay = le.ativo ? '' : `<div class="leilao-encerrado">ARREMATADO<br>POR R$ ${le.lanceAtual}</div>`;
                 
+                // Exibe a caixinha com os 2 últimos lances
+                let historicoHtml = '';
+                if (le.historico && le.historico.length > 0) {
+                    historicoHtml = '<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; text-align: left;">';
+                    historicoHtml += '<b style="color:var(--gold);"><i class="fas fa-history"></i> Últimos Lances:</b><br>';
+                    le.historico.forEach((h, index) => {
+                        historicoHtml += `<div style="margin-top:5px;"><span style="color:${index === 0 ? 'var(--green)' : '#aaa'};">● <b>${h.nome}</b> cobriu para R$ ${h.valor}</span></div>`;
+                    });
+                    historicoHtml += '</div>';
+                }
+                
                 fl.innerHTML = `
                 <div class="card-leilao">
                     ${encerradoOverlay}
@@ -324,7 +350,7 @@
                         ${getBadge(le.criadorCargo)} <small>Leilão Oficial de <b>${le.criadorNome}</b></small><br>
                         <h3 style="margin:8px 0;">${le.item}</h3>
                         <div class="valor-lance">R$ ${le.lanceAtual}</div>
-                        <small style="color:var(--gray);">Maior lance: <b>${le.maiorLicitanteNome}</b></small><br><br>
+                        ${historicoHtml}
                         ${lanceHtml}
                         ${arremateHtml}
                     </div>
@@ -383,7 +409,7 @@
     window.abrirCarteira = () => { document.getElementById('telaCarteira').style.display='block'; };
 
     // ============================================
-    // FUNÇÕES DO LEILÃO (LÓGICA NOVA)
+    // FUNÇÕES DO LEILÃO (LÓGICA NOVA + HISTÓRICO)
     // ============================================
 
     window.prepararFotoLeilao = (input) => {
@@ -412,6 +438,7 @@
             lanceAtual: valor,
             maiorLicitante: null,
             maiorLicitanteNome: "Nenhum lance ainda",
+            historico: [], // Array que vai armazenar os últimos lances
             imagem: fotoLeilaoBase64 || "https://images.unsplash.com/photo-1555850935-43098e982181",
             ativo: true,
             timestamp: Date.now()
@@ -430,10 +457,26 @@
     window.darLance = async (lid, valorAtual) => {
         if(!window.user) return alert("Faça login para dar lances!");
         const novoValor = valorAtual + 50;
+        
+        // Pega as informações atuais do leilão direto do banco para não perder o histórico
+        const snap = await get(ref(db, `leiloes/${lid}`));
+        const leilao = snap.val();
+        
+        let historico = leilao.historico || [];
+        
+        // Adiciona o novo lance no início da lista
+        historico.unshift({ nome: window.user.nome, valor: novoValor });
+        
+        // Se a lista ficar maior que 2, remove o mais antigo (do final)
+        if(historico.length > 2) {
+            historico.pop();
+        }
+
         await update(ref(db, `leiloes/${lid}`), {
             lanceAtual: novoValor,
             maiorLicitante: window.user.uid,
-            maiorLicitanteNome: window.user.nome
+            maiorLicitanteNome: window.user.nome,
+            historico: historico
         });
     };
 
