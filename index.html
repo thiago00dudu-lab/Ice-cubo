@@ -15,7 +15,6 @@
     <title>ICE TROCAS - Oficial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
-        /* TEMA ANTÁRTIDA (GELO) - MANTIDO INTEGRALMENTE */
         :root { 
             --bg: #050a0f; 
             --sea: rgba(15, 52, 82, 0.7); 
@@ -64,9 +63,7 @@
         }
         
         .header-icons { display: flex; align-items: center; gap: 18px; }
-
         .perfil-icon-container { position: relative; cursor: pointer; z-index: 101; }
-        .notificacao-balao { position: absolute; top: -5px; right: -5px; background: var(--red); width: 12px; height: 12px; border-radius: 50%; border: 2px solid #161b22; display: none; }
 
         .card-timeline { 
             background: var(--ice); 
@@ -105,13 +102,9 @@
         .msg-eu { background: var(--blue); align-self: flex-end; }
         .msg-ele { background: var(--gray); align-self: flex-start; }
         .conversa-item { background: var(--ice); padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;}
-
-        .grid-postagens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
-        .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; }
         
         .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; background: #161b22; }
 
-        /* ESTILOS LEILÃO MANTIDOS */
         .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; }
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
         .info-leilao { padding: 15px; text-align: center; }
@@ -120,13 +113,6 @@
     </style>
 </head>
 <body>
-
-<div class="side-menu" id="menuFlutuante" style="display:none;">
-    <button class="btn-float" style="background: var(--gold); color:black;"><i class="fas fa-crown"></i></button>
-    <button class="btn-float" style="background: var(--red);"><i class="fas fa-shield-alt"></i></button>
-    <button class="btn-float" style="background: var(--mod-blue);"><i class="fas fa-star"></i></button>
-    <button class="btn-float" style="background: var(--green);" onclick="window.open('https://wa.me/5511983602504')"><i class="fab fa-whatsapp"></i></button>
-</div>
 
 <div id="telaLogin">
     <div class="login-box">
@@ -144,7 +130,6 @@
             <i class="fas fa-share-nodes" style="font-size:22px; color:white; cursor:pointer;" onclick="compartilharSite()"></i>
             <div class="perfil-icon-container" onclick="abrirMeuPerfil()">
                 <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue);"></i>
-                <div id="balaoAlerta" class="notificacao-balao"></div>
             </div>
         </div>
     </header>
@@ -154,44 +139,40 @@
 
     <div class="nav">
         <i class="fas fa-home active" onclick="fecharTelas()"></i>
-        <i class="fas fa-plus-circle" onclick="abrirPostar()" style="color:var(--mod-blue); font-size: 28px;"></i>
+        <i class="fas fa-plus-circle" onclick="alert('Funcionalidade de postar em breve!')" style="color:var(--mod-blue); font-size: 28px;"></i>
         <i class="fas fa-wallet" onclick="abrirCarteira()"></i>
     </div>
-</div>
-
-<div id="telaChat" class="tela-full">
-    <h3 id="chatNome" style="color: var(--mod-blue); text-align: center;">Negociação</h3>
-    <div id="caixaMensagens" class="chat-box"></div>
-    <div style="display: flex; gap: 5px;">
-        <input type="text" id="msgInput" placeholder="Sua proposta..." style="flex:1; padding: 12px; border-radius: 8px; border:none; background:#30363d; color:white;">
-        <button class="btn-action" style="width: 60px; margin:0;" onclick="enviarMensagem()"><i class="fas fa-paper-plane"></i></button>
-    </div>
-    <button class="btn-action" style="background:var(--gray); margin-top:15px;" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align:center;"></div>
     
     <div id="editarPerfil" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-top: 15px;">
-        <h4 style="margin-top:0; color:var(--mod-blue);">Editar Perfil</h4>
-        <input type="text" id="editFoto" placeholder="Link da Foto (URL)" style="width:100%; padding:10px; margin-bottom:10px; background:#161b22; color:white; border:1px solid #333; border-radius:5px;">
+        <h4 style="margin-top:0; color:var(--mod-blue);">Configurar Perfil</h4>
+        <label style="display:block; margin-bottom:5px; font-size:12px; color:#aaa;">Alterar Foto da Galeria:</label>
+        <input type="file" id="editFotoFile" accept="image/*" style="width:100%; margin-bottom:10px; color:white;">
         <input type="text" id="editBio" placeholder="Sua Bio..." style="width:100%; padding:10px; margin-bottom:10px; background:#161b22; color:white; border:1px solid #333; border-radius:5px;">
         <button class="btn-action" onclick="window.salvarPerfil()">SALVAR ALTERAÇÕES</button>
     </div>
     
-    <div id="minhasConversas" style="margin-top: 20px;">
-        <h4 style="color:var(--mod-blue); border-bottom: 1px solid #333; padding-bottom: 5px;"><i class="fas fa-comments"></i> Conversas Ativas</h4>
-        <div id="listaConversas"></div>
-    </div>
-
-    <h4>Minhas Postagens</h4>
-    <div id="gridUser" class="grid-postagens"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
+<div id="telaCarteira" class="tela-full" style="text-align: center;">
+    <i class="fas fa-wallet" style="font-size: 50px; color: var(--mod-blue); margin-top: 40px;"></i>
+    <h2 style="margin-bottom: 5px;">Minha Carteira</h2>
+    <p style="color: #aaa; margin-top: 0;">ICE BLUE COINS</p>
+    
+    <div style="background: var(--ice); padding: 30px; border-radius: 20px; border: 1px solid var(--mod-blue); margin: 20px 0;">
+        <span style="font-size: 14px; color: var(--mod-blue); font-weight: bold; letter-spacing: 2px;">SALDO ATUAL</span>
+        <h1 id="saldoCarteira" style="font-size: 45px; margin: 10px 0; color: var(--white);">0</h1>
+    </div>
+    
+    <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaVerPerfil" class="tela-full">
     <div id="outroPerfilConteudo" style="text-align:center;"></div>
-    
     <div id="painelGerencia" style="display:none; margin-top:20px; border-top: 1px solid #444; padding-top:15px;">
         <h4 style="color:var(--red);">GERENCIAR USUÁRIO</h4>
         <select id="novoCargo" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px;">
@@ -201,7 +182,6 @@
             <option value="ADM1">Administrador Master (ADM1)</option>
         </select>
         <button class="btn-action" style="background:var(--red); margin-bottom:15px;" onclick="alterarCargo()">ALTERAR CARGO</button>
-        
         <input type="number" id="qtdBlues" placeholder="Quantidade de Blues" style="width:100%; padding:10px; margin-bottom:5px;">
         <div style="display:flex; gap:5px;">
             <button class="btn-action" style="background:var(--green);" onclick="mudarBlues(true)">DAR BLUES</button>
@@ -222,14 +202,13 @@
     const auth = getAuth(app);
 
     window.user = null;
-    let idChatAtivo = null;
     let uidSendoVisto = null; 
 
     window.fazerLogin = async () => {
         let u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000, foto: "", bio: "Administrador Geral" };
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 999999999, foto: "", bio: "Administrador Geral" };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user', JSON.stringify(m));
             window.user = m;
@@ -246,8 +225,12 @@
     };
 
     onAuthStateChanged(auth, async (u) => {
-        if (u) { const s = await get(ref(db, `usuarios/${u.uid}`)); window.user = s.val(); showApp(); }
-        else { const l = localStorage.getItem('ice_user'); if (l) { window.user = JSON.parse(l); showApp(); } }
+        if (u) { 
+            onValue(ref(db, `usuarios/${u.uid}`), (s) => {
+                window.user = s.val();
+                showApp();
+            });
+        }
     });
 
     function getBadge(cargo) {
@@ -260,7 +243,6 @@
     function showApp() {
         document.getElementById('telaLogin').style.display = 'none';
         document.getElementById('app').style.display = 'block';
-        document.getElementById('menuFlutuante').style.display = 'flex';
         
         onValue(ref(db, 'posts'), snap => {
             const f = document.getElementById('feed'); f.innerHTML = "";
@@ -271,22 +253,9 @@
                     <img src="${pt.i1}">
                     <div class="card-info">
                         <b onclick="verPerfilOutro('${pt.uid}')" style="cursor:pointer; color:var(--mod-blue);">${pt.u1}</b><br><small>${pt.d1}</small>
-                        <button class="btn-action" style="background:var(--sea);" onclick="abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button>
+                        <button class="btn-action" style="background:var(--sea);" onclick="alert('Chat em manutenção')">NEGOCIAR</button>
                     </div>
                 </div>` + f.innerHTML;
-            });
-        });
-
-        onValue(ref(db, 'leiloes'), snap => {
-            const fl = document.getElementById('feed-leiloes'); fl.innerHTML = "";
-            snap.forEach(l => {
-                const le = l.val();
-                fl.innerHTML = `
-                <div class="card-leilao">
-                    ${!le.ativo ? `<div class="leilao-encerrado">ARREMATADO POR R$ ${le.lanceAtual}</div>` : ''}
-                    <img src="${le.imagem}">
-                    <div class="info-leilao"><h3>${le.item}</h3><div class="valor-lance">R$ ${le.lanceAtual}</div></div>
-                </div>` + fl.innerHTML;
             });
         });
     }
@@ -300,52 +269,58 @@
             <h2>${window.user.nome}</h2>
             <p style="color:#aaa;">${window.user.bio || ''}</p>
         `;
-        
-        // Preenche os campos de edição com o que já existe
-        document.getElementById('editFoto').value = window.user.foto || "";
         document.getElementById('editBio').value = window.user.bio || "";
-
-        const lista = document.getElementById('listaConversas');
-        lista.innerHTML = "";
-        onValue(ref(db, 'chats'), snap => {
-            lista.innerHTML = "";
-            snap.forEach(chat => {
-                if (chat.key.includes(window.user.uid)) {
-                    lista.innerHTML += `<div class="conversa-item" onclick="abrirChatPorId('${chat.key}')">
-                        <span><i class="fas fa-user"></i> Conversa Ativa</span>
-                        <i class="fas fa-chevron-right"></i>
-                    </div>`;
-                }
-            });
-        });
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    // FUNÇÃO PARA SALVAR A FOTO E BIO
     window.salvarPerfil = async () => {
-        const novaFoto = document.getElementById('editFoto').value;
+        const fileInput = document.getElementById('editFotoFile');
         const novaBio = document.getElementById('editBio').value;
-        await update(ref(db, `usuarios/${window.user.uid}`), { foto: novaFoto, bio: novaBio });
-        
-        // Atualiza o objeto local para refletir na hora
-        window.user.foto = novaFoto;
-        window.user.bio = novaBio;
-        
-        alert("Perfil atualizado com sucesso!");
-        abrirMeuPerfil(); // Recarrega a tela de perfil
-    }
+        let fotoBase64 = window.user.foto || "";
+
+        if (fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                fotoBase64 = e.target.result;
+                await update(ref(db, `usuarios/${window.user.uid}`), { foto: fotoBase64, bio: novaBio });
+                alert("Perfil atualizado!");
+                abrirMeuPerfil();
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            await update(ref(db, `usuarios/${window.user.uid}`), { bio: novaBio });
+            alert("Bio atualizada!");
+            abrirMeuPerfil();
+        }
+    };
+
+    window.abrirCarteira = () => {
+        if (!window.user) return;
+        const saldoElemento = document.getElementById('saldoCarteira');
+        // Regra ADM1: Moedas Infinitas
+        if (window.user.cargo === 'ADM1') {
+            saldoElemento.innerText = "∞";
+            saldoElemento.style.color = "var(--gold)";
+        } else {
+            saldoElemento.innerText = window.user.moedasBlue || 0;
+            saldoElemento.style.color = "var(--white)";
+        }
+        document.getElementById('telaCarteira').style.display = 'block';
+    };
 
     window.verPerfilOutro = async (uid) => {
         uidSendoVisto = uid;
         const s = await get(ref(db, `usuarios/${uid}`));
         const u = s.val();
         const cont = document.getElementById('outroPerfilConteudo');
+        const displayMoedas = u.cargo === 'ADM1' ? "∞" : (u.moedasBlue || 0);
+        
         cont.innerHTML = `
             <img src="${u.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
             ${getBadge(u.cargo)}
             <h2>${u.nome}</h2>
             <p>${u.bio || ''}</p>
-            <h3 style="color:var(--mod-blue);">Blues: ${u.moedasBlue || 0}</h3>
+            <h3 style="color:var(--mod-blue);">Blues: ${displayMoedas}</h3>
         `;
         
         if(window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2') {
@@ -374,56 +349,16 @@
         verPerfilOutro(uidSendoVisto);
     }
 
-    window.abrirChat = (outroUid, outroNome) => {
-        if (window.user.uid === outroUid) return;
-        idChatAtivo = window.user.uid < outroUid ? window.user.uid + "_" + outroUid : outroUid + "_" + window.user.uid;
-        document.getElementById('chatNome').innerText = outroNome;
-        iniciarEscutaChat();
-    };
-
-    window.abrirChatPorId = (id) => {
-        idChatAtivo = id;
-        document.getElementById('chatNome').innerText = "Chat";
-        iniciarEscutaChat();
-    };
-
-    function iniciarEscutaChat() {
-        document.getElementById('telaChat').style.display = 'block';
-        onValue(ref(db, `chats/${idChatAtivo}`), snap => {
-            const box = document.getElementById('caixaMensagens');
-            box.innerHTML = "";
-            snap.forEach(m => {
-                const msg = m.val();
-                const cl = msg.remetente === window.user.uid ? "msg-eu" : "msg-ele";
-                box.innerHTML += `<div class="msg ${cl}">${msg.texto}</div>`;
-            });
-            box.scrollTop = box.scrollHeight;
-        });
-    }
-
-    window.enviarMensagem = async () => {
-        const txt = document.getElementById('msgInput').value;
-        if (!txt || !idChatAtivo) return;
-        await push(ref(db, `chats/${idChatAtivo}`), { texto: txt, remetente: window.user.uid, timestamp: Date.now() });
-        document.getElementById('msgInput').value = "";
-    };
-
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
 
-    window.compartilharSite = async () => {
-        const dadosComp = {
-            title: 'ICE TROCAS - Oficial',
-            text: 'Entre na plataforma oficial de trocas e moedas BLUE!',
-            url: window.location.href
-        };
+    window.compartilharSite = () => {
         if (navigator.share) {
-            try { await navigator.share(dadosComp); } catch (e) { console.log("Compartilhamento cancelado"); }
+            navigator.share({ title: 'ICE TROCAS', url: window.location.href });
         } else {
             navigator.clipboard.writeText(window.location.href);
-            alert("Link do site copiado!");
+            alert("Link copiado!");
         }
     };
-
 </script>
 </body>
 </html>
