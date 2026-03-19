@@ -144,7 +144,7 @@
 
 <div id="telaPostar" class="tela-full">
     <h3>NOVA TROCA</h3>
-    <label class="file-label"><i class="fas fa-camera"></i> Escolher Foto</label>
+    <label class="file-label" for="postFoto"><i class="fas fa-camera"></i> Escolher Foto</label>
     <input type="file" id="postFoto" accept="image/*" style="display:none;" onchange="prepararPost(this)">
     <img id="previewPost" style="width:100%; display:none; border-radius:10px; margin-bottom:10px;">
     <button class="btn-action" onclick="publicarPost()">POSTAR</button>
@@ -165,9 +165,9 @@
 
 <div id="telaCriarLeilao" class="tela-full">
     <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-gavel"></i> INICIAR LEILÃO</h3>
-    <input type="text" id="leilaoItem" placeholder="Nome do Item" class="input-leilao">
-    <input type="number" id="leilaoValor" placeholder="Valor Inicial" class="input-leilao">
-    <label class="file-label"><i class="fas fa-camera"></i> Foto do Item</label>
+    <input type="text" id="leilaoItem" placeholder="Nome do Item" class="input-leilao" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black;">
+    <input type="number" id="leilaoValor" placeholder="Valor Inicial" class="input-leilao" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black;">
+    <label class="file-label" for="leilaoFoto"><i class="fas fa-camera"></i> Foto do Item</label>
     <input type="file" id="leilaoFoto" accept="image/*" style="display:none;" onchange="prepararFotoLeilao(this)">
     <img id="previewFotoLeilao" style="width:100%; display:none; border-radius:10px; margin-bottom:15px;">
     <button class="btn-action" style="background:var(--gold); color:black;" onclick="publicarLeilao()">PUBLICAR</button>
@@ -197,7 +197,8 @@
         if(!u || !p) return alert("Preencha tudo!");
 
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 1000000 };
+            // Valor de 22.000.000 Blues corrigido aqui
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 22000000 };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user', JSON.stringify(m));
             window.user = m;
@@ -281,18 +282,23 @@
     };
 
     // --- AJUSTE DE BLUES (ADM) ---
+    // Atualizado para atualizar a tela automaticamente
     window.ajustarBlues = async (quantidade) => {
         const s = await get(ref(db, `usuarios/${window.targetUid}`));
-        const atual = s.val().moedasBlue || 0;
+        const val = s.val() || {};
+        const atual = val.moedasBlue || 0;
         await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: atual + quantidade });
         alert("Blues atualizados!");
+        window.abrirPerfil(window.targetUid); // Atualiza a tela para ver o novo saldo
     };
 
+    // Atualizado para atualizar a tela automaticamente
     window.definirBlues = async () => {
         const val = parseInt(document.getElementById('valorPersonalizadoBlues').value);
         if(isNaN(val)) return alert("Digite um número válido");
         await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: val });
         alert("Saldo definido!");
+        window.abrirPerfil(window.targetUid); // Atualiza a tela para ver o novo saldo
     };
 
     // --- FUNÇÕES GLOBAIS ---
@@ -356,7 +362,7 @@
             document.getElementById('previewPost').src = e.target.result;
             document.getElementById('previewPost').style.display = 'block';
         };
-        reader.readAsDataURL(input.files[0]);
+        if(input.files[0]) reader.readAsDataURL(input.files[0]);
     };
 
     window.publicarPost = async () => {
@@ -366,6 +372,47 @@
     };
 
     window.abrirPostar = () => document.getElementById('telaPostar').style.display = 'block';
+    
+    // --- FUNÇÕES FALTANTES DO LEILÃO ADICIONADAS ---
+    window.prepararFotoLeilao = (input) => {
+        const reader = new FileReader();
+        reader.onload = e => { 
+            fotoLeilaoBase64 = e.target.result; 
+            document.getElementById('previewFotoLeilao').src = e.target.result;
+            document.getElementById('previewFotoLeilao').style.display = 'block';
+        };
+        if(input.files[0]) reader.readAsDataURL(input.files[0]);
+    };
+
+    window.publicarLeilao = async () => {
+        const nomeItem = document.getElementById('leilaoItem').value.trim();
+        const valorInicial = parseInt(document.getElementById('leilaoValor').value);
+
+        if(!fotoLeilaoBase64) return alert("Selecione uma foto para o leilão!");
+        if(!nomeItem || isNaN(valorInicial)) return alert("Preencha o nome do item e o valor inicial!");
+
+        await push(ref(db, 'leiloes'), { 
+            item: nomeItem, 
+            valorInicial: valorInicial, 
+            lanceAtual: valorInicial, 
+            imagem: fotoLeilaoBase64, 
+            criadorUid: window.user.uid, 
+            criadorNome: window.user.nome,
+            ativo: true,
+            maiorLicitante: null
+        });
+
+        // Limpa os campos após postar
+        document.getElementById('leilaoItem').value = '';
+        document.getElementById('leilaoValor').value = '';
+        document.getElementById('previewFotoLeilao').style.display = 'none';
+        fotoLeilaoBase64 = null;
+        
+        fecharTelas();
+        alert("Leilão criado com sucesso!");
+    };
+    // ----------------------------------------------
+
     window.mudarCargo = async (novo) => {
         await update(ref(db, `usuarios/${window.targetUid}`), { cargo: novo });
         alert("Cargo alterado!");
