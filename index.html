@@ -50,12 +50,15 @@
         .btn-arrematar { background: var(--gold); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top:5px;}
         .leilao-encerrado { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 24px; font-weight: bold; z-index: 10; text-align: center; }
         
-        /* ESTILO DO CHAT QUE FALTAVA */
         #chatConteudo { display: flex; flex-direction: column; height: 80vh; }
         #mensagensChat { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         .msg { padding: 10px; border-radius: 10px; max-width: 80%; }
         .msg-me { background: var(--blue); align-self: flex-end; }
         .msg-them { background: var(--gray); align-self: flex-start; }
+
+        /* ESTILO DA CARTEIRA */
+        .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        .blue-amount { font-size: 36px; font-weight: bold; color: #00BFFF; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
     </style>
 </head>
 <body>
@@ -108,16 +111,35 @@
 
     <div id="painelAdmControle" class="painel-adm" style="display:none;">
         <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
-        <div style="display:flex; gap:5px;">
+        <div style="display:flex; gap:5px; margin-bottom: 15px;">
             <button class="btn-action" style="background:var(--gold); color:black; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
             <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
             <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
         </div>
+        <hr style="opacity: 0.2;">
+        <p style="text-align: center; font-size: 12px; color: var(--gold);">GERENCIAR BLUE COINS</p>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-action" style="background:var(--green); font-size:10px;" onclick="ajustarBlues(100)">+100 BLUES</button>
+            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="ajustarBlues(-100)">-100 BLUES</button>
+        </div>
+        <input type="number" id="valorPersonalizadoBlues" placeholder="Valor exato" style="width:100%; margin-top:10px; padding:8px; border-radius:5px; background:#161b22; color:white; border:1px solid var(--gray);">
+        <button class="btn-action" style="background:var(--blue); font-size:10px;" onclick="definirBlues()">DEFINIR SALDO</button>
     </div>
 
     <h4>Postagens</h4>
     <div id="gridUser" class="grid-postagens"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
+<div id="telaCarteira" class="tela-full">
+    <h3 style="text-align: center;"><i class="fas fa-wallet" style="color: var(--mod-blue);"></i> MINHA CARTEIRA</h3>
+    <div class="wallet-card">
+        <p style="margin: 0; opacity: 0.8; font-size: 14px;">Saldo Disponível</p>
+        <div class="blue-amount" id="saldoCarteira">0</div>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #00BFFF;">BLUE COINS</p>
+    </div>
+    <button class="btn-action" style="background: var(--green);" onclick="comprar('BLUE COINS', 'PIX')"><i class="fas fa-plus-circle"></i> RECARREGAR BLUES</button>
+    <button class="btn-action" style="background: var(--gray); margin-top: 15px;" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaPostar" class="tela-full">
@@ -163,6 +185,7 @@
     const auth = getAuth(app);
 
     window.user = null;
+    window.targetUid = null;
     let fotoPostBase64 = null;
     let fotoLeilaoBase64 = null;
     let chatAtivoId = null;
@@ -196,9 +219,13 @@
 
     onAuthStateChanged(auth, async (u) => {
         if(u) {
-            const s = await get(ref(db, `usuarios/${u.uid}`));
-            window.user = s.val();
-            iniciarApp();
+            onValue(ref(db, `usuarios/${u.uid}`), (s) => {
+                window.user = s.val();
+                if(window.user) {
+                    document.getElementById('saldoCarteira').innerText = window.user.moedasBlue || 0;
+                    iniciarApp();
+                }
+            });
         } else {
             const local = localStorage.getItem('ice_user');
             if(local) { window.user = JSON.parse(local); iniciarApp(); }
@@ -248,7 +275,27 @@
         });
     }
 
-    // --- FUNÇÕES GLOBAIS (CORRIGIDAS) ---
+    // --- CARTEIRA ---
+    window.abrirCarteira = () => {
+        document.getElementById('telaCarteira').style.display = 'block';
+    };
+
+    // --- AJUSTE DE BLUES (ADM) ---
+    window.ajustarBlues = async (quantidade) => {
+        const s = await get(ref(db, `usuarios/${window.targetUid}`));
+        const atual = s.val().moedasBlue || 0;
+        await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: atual + quantidade });
+        alert("Blues atualizados!");
+    };
+
+    window.definirBlues = async () => {
+        const val = parseInt(document.getElementById('valorPersonalizadoBlues').value);
+        if(isNaN(val)) return alert("Digite um número válido");
+        await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: val });
+        alert("Saldo definido!");
+    };
+
+    // --- FUNÇÕES GLOBAIS ---
     window.abrirPerfil = async (uid) => {
         const s = await get(ref(db, `usuarios/${uid}`));
         const t = s.val();
@@ -257,7 +304,8 @@
 
         document.getElementById('perfilConteudo').innerHTML = `
             <img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-            <h2>${t.nome}</h2><p>${t.cargo}</p>`;
+            <h2>${t.nome}</h2><p>${t.cargo}</p>
+            <p style="color:var(--mod-blue); font-weight:bold;">Saldo: ${t.moedasBlue || 0} Blues</p>`;
         
         document.getElementById('painelStaffLeilao').style.display = (souEu && t.cargo !== 'user') ? 'block' : 'none';
         document.getElementById('painelAdmControle').style.display = (ehMaster && !souEu) ? 'block' : 'none';
@@ -270,10 +318,9 @@
     window.fecharTelas = () => document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
     
     window.comprar = (tipo, valor) => {
-        window.open(`https://wa.me/5511983602504?text=Quero comprar o cargo ${tipo} por ${valor}`);
+        window.open(`https://wa.me/5511983602504?text=Quero comprar ${tipo} - Valor: ${valor}`);
     };
 
-    // --- SISTEMA DE CHAT ---
     window.abrirChat = (outroUid, outroNome) => {
         if(outroUid === window.user.uid) return alert("Você não pode negociar consigo mesmo!");
         chatAtivoId = window.user.uid < outroUid ? window.user.uid + outroUid : outroUid + window.user.uid;
@@ -298,7 +345,6 @@
         document.getElementById('msgInput').value = "";
     };
 
-    // --- LEILÃO E POSTS ---
     window.darLance = async (lid, atual) => {
         await update(ref(db, `leiloes/${lid}`), { lanceAtual: atual + 50, maiorLicitante: window.user.uid });
     };
