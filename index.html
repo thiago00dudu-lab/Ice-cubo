@@ -217,7 +217,7 @@
 
     window.user = null;
     let idChatAtivo = null;
-    let uidSendoVisto = null; // Para saber quem o ADM está editando
+    let uidSendoVisto = null; 
 
     window.fazerLogin = async () => {
         let u = document.getElementById('userIn').value.trim();
@@ -260,7 +260,6 @@
             const f = document.getElementById('feed'); f.innerHTML = "";
             snap.forEach(p => { 
                 const pt = p.val();
-                // ALTERAÇÃO: Nome agora é clicável para abrir o perfil
                 f.innerHTML = `
                 <div class="card-timeline">
                     <img src="${pt.i1}">
@@ -285,8 +284,6 @@
             });
         });
     }
-
-    // --- FUNÇÕES DE PERFIL E CHAT MANTIDAS ---
 
     window.abrirMeuPerfil = async () => {
         if (!window.user) return;
@@ -313,7 +310,6 @@
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    // ACRESCENTADO: Função para ver perfil de outro e gerenciar
     window.verPerfilOutro = async (uid) => {
         uidSendoVisto = uid;
         const s = await get(ref(db, `usuarios/${uid}`));
@@ -327,7 +323,6 @@
             <h3 style="color:var(--mod-blue);">Blues: ${u.moedasBlue || 0}</h3>
         `;
         
-        // Se quem está olhando for ADM1 ou ADM2, mostra o painel
         if(window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2') {
             document.getElementById('painelGerencia').style.display = 'block';
             document.getElementById('novoCargo').value = u.cargo;
@@ -337,7 +332,6 @@
         document.getElementById('telaVerPerfil').style.display = 'block';
     }
 
-    // ACRESCENTADO: Funções de ADM para alterar cargo e moedas
     window.alterarCargo = async () => {
         const c = document.getElementById('novoCargo').value;
         await update(ref(db, `usuarios/${uidSendoVisto}`), { cargo: c });
@@ -390,6 +384,22 @@
     };
 
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
+
+    // --- FUNÇÃO DE COMPARTILHAMENTO ACRESCENTADA ---
+    window.compartilharSite = async () => {
+        const dadosComp = {
+            title: 'ICE TROCAS - Oficial',
+            text: 'Entre na plataforma oficial de trocas e moedas BLUE!',
+            url: window.location.href
+        };
+        if (navigator.share) {
+            try { await navigator.share(dadosComp); } catch (e) { console.log("Compartilhamento cancelado"); }
+        } else {
+            // Caso o navegador não suporte, apenas copia o link
+            navigator.clipboard.writeText(window.location.href);
+            alert("Link do site copiado para a área de transferência!");
+        }
+    };
 
 </script>
 </body>
