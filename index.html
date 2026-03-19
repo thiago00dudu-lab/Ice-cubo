@@ -183,29 +183,25 @@
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
-<div id="telaPerfilUsuario" class="tela-full">
-    <div id="perfilOutroConteudo" style="text-align:center;"></div>
+<div id="telaVerPerfil" class="tela-full">
+    <div id="outroPerfilConteudo" style="text-align:center;"></div>
     
-    <div id="painelAdmin" style="display:none; margin-top: 20px; padding: 15px; background: rgba(255,0,0,0.1); border: 1px solid var(--red); border-radius: 10px;">
-        <h4 style="color:var(--red); text-align:center; margin-top:0;"><i class="fas fa-crown"></i> Painel de Administração</h4>
-        
-        <label style="font-size: 14px; color: #ccc;">Alterar Cargo:</label>
-        <select id="selectCargo" style="width:100%; padding:12px; margin-bottom:10px; background:var(--gray); color:white; border:none; border-radius:5px; margin-top:5px;">
+    <div id="painelGerencia" style="display:none; margin-top:20px; border-top: 1px solid #444; padding-top:15px;">
+        <h4 style="color:var(--red);">GERENCIAR USUÁRIO</h4>
+        <select id="novoCargo" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px;">
             <option value="user">Usuário Comum</option>
             <option value="MOD">Moderador (MOD)</option>
             <option value="ADM2">Administrador 2 (ADM2)</option>
-            <option value="ADM1">Master (ADM1)</option>
+            <option value="ADM1">Administrador Master (ADM1)</option>
         </select>
-        <button class="btn-action" style="background:var(--red); margin-bottom:15px;" onclick="salvarCargo()">Salvar Cargo</button>
+        <button class="btn-action" style="background:var(--red); margin-bottom:15px;" onclick="alterarCargo()">ALTERAR CARGO</button>
         
-        <label style="font-size: 14px; color: #ccc;">Gerenciar Blues:</label>
-        <input type="number" id="inputBlues" placeholder="Quantidade" style="width:100%; padding:12px; margin-bottom:10px; background:var(--gray); color:white; border:none; border-radius:5px; box-sizing:border-box; margin-top:5px;">
-        <div style="display:flex; gap:10px;">
-            <button class="btn-action" style="background:var(--green); margin:0;" onclick="modificarBlues(true)">+ Adicionar</button>
-            <button class="btn-action" style="background:var(--red); margin:0;" onclick="modificarBlues(false)">- Remover</button>
+        <input type="number" id="qtdBlues" placeholder="Quantidade de Blues" style="width:100%; padding:10px; margin-bottom:5px;">
+        <div style="display:flex; gap:5px;">
+            <button class="btn-action" style="background:var(--green);" onclick="mudarBlues(true)">DAR BLUES</button>
+            <button class="btn-action" style="background:var(--red);" onclick="mudarBlues(false)">TIRAR BLUES</button>
         </div>
     </div>
-
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
@@ -221,7 +217,7 @@
 
     window.user = null;
     let idChatAtivo = null;
-    let uidPerfilAberto = null; // Variável para rastrear o perfil que o ADM está editando
+    let uidSendoVisto = null; // Para saber quem o ADM está editando
 
     window.fazerLogin = async () => {
         let u = document.getElementById('userIn').value.trim();
@@ -264,12 +260,12 @@
             const f = document.getElementById('feed'); f.innerHTML = "";
             snap.forEach(p => { 
                 const pt = p.val();
-                // AQUI FOI ALTERADO: adicionei a função onclick e cursor pointer no nome do usuário
+                // ALTERAÇÃO: Nome agora é clicável para abrir o perfil
                 f.innerHTML = `
                 <div class="card-timeline">
                     <img src="${pt.i1}">
                     <div class="card-info">
-                        <b style="cursor:pointer; color:var(--mod-blue);" onclick="abrirPerfilUsuario('${pt.uid}')">${pt.u1}</b><br><small>${pt.d1}</small>
+                        <b onclick="verPerfilOutro('${pt.uid}')" style="cursor:pointer; color:var(--mod-blue);">${pt.u1}</b><br><small>${pt.d1}</small>
                         <button class="btn-action" style="background:var(--sea);" onclick="abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button>
                     </div>
                 </div>` + f.innerHTML;
@@ -290,9 +286,10 @@
         });
     }
 
+    // --- FUNÇÕES DE PERFIL E CHAT MANTIDAS ---
+
     window.abrirMeuPerfil = async () => {
         if (!window.user) return;
-        
         const perf = document.getElementById('perfilConteudo');
         perf.innerHTML = `
             <img src="${window.user.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
@@ -300,7 +297,6 @@
             <h2>${window.user.nome}</h2>
             <p style="color:#aaa;">${window.user.bio || ''}</p>
         `;
-
         const lista = document.getElementById('listaConversas');
         lista.innerHTML = "";
         onValue(ref(db, 'chats'), snap => {
@@ -314,9 +310,50 @@
                 }
             });
         });
-
         document.getElementById('telaPerfil').style.display = 'block';
     };
+
+    // ACRESCENTADO: Função para ver perfil de outro e gerenciar
+    window.verPerfilOutro = async (uid) => {
+        uidSendoVisto = uid;
+        const s = await get(ref(db, `usuarios/${uid}`));
+        const u = s.val();
+        const cont = document.getElementById('outroPerfilConteudo');
+        cont.innerHTML = `
+            <img src="${u.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
+            ${getBadge(u.cargo)}
+            <h2>${u.nome}</h2>
+            <p>${u.bio || ''}</p>
+            <h3 style="color:var(--mod-blue);">Blues: ${u.moedasBlue || 0}</h3>
+        `;
+        
+        // Se quem está olhando for ADM1 ou ADM2, mostra o painel
+        if(window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2') {
+            document.getElementById('painelGerencia').style.display = 'block';
+            document.getElementById('novoCargo').value = u.cargo;
+        } else {
+            document.getElementById('painelGerencia').style.display = 'none';
+        }
+        document.getElementById('telaVerPerfil').style.display = 'block';
+    }
+
+    // ACRESCENTADO: Funções de ADM para alterar cargo e moedas
+    window.alterarCargo = async () => {
+        const c = document.getElementById('novoCargo').value;
+        await update(ref(db, `usuarios/${uidSendoVisto}`), { cargo: c });
+        alert("Cargo atualizado!");
+        verPerfilOutro(uidSendoVisto);
+    }
+
+    window.mudarBlues = async (somar) => {
+        const qtd = parseInt(document.getElementById('qtdBlues').value);
+        if(!qtd) return;
+        const s = await get(ref(db, `usuarios/${uidSendoVisto}/moedasBlue`));
+        let total = (s.val() || 0) + (somar ? qtd : -qtd);
+        await update(ref(db, `usuarios/${uidSendoVisto}`), { moedasBlue: total < 0 ? 0 : total });
+        alert("Saldo atualizado!");
+        verPerfilOutro(uidSendoVisto);
+    }
 
     window.abrirChat = (outroUid, outroNome) => {
         if (window.user.uid === outroUid) return;
@@ -353,76 +390,6 @@
     };
 
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
-
-    // =========================================================
-    // NOVAS FUNÇÕES: PERFIL E ADMINISTRAÇÃO SEM QUEBRAR O RESTO
-    // =========================================================
-
-    window.abrirPerfilUsuario = async (uidOutro) => {
-        uidPerfilAberto = uidOutro;
-        
-        // Pega as informações do usuário clicado no banco
-        const snap = await get(ref(db, `usuarios/${uidOutro}`));
-        if (!snap.exists()) {
-            alert("Usuário não encontrado!");
-            return;
-        }
-        const outroUser = snap.val();
-
-        // Monta o visual do perfil
-        const perf = document.getElementById('perfilOutroConteudo');
-        perf.innerHTML = `
-            <img src="${outroUser.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-            ${getBadge(outroUser.cargo)}
-            <h2>${outroUser.nome}</h2>
-            <p style="color:#aaa;">${outroUser.bio || 'Sem bio'}</p>
-            <h3 style="color:var(--mod-blue); margin-top: 15px;"><i class="fas fa-coins"></i> Blues: ${outroUser.moedasBlue || 0}</h3>
-        `;
-
-        // Verifica se o usuário logado é ADM para mostrar o painel
-        const painelAdmin = document.getElementById('painelAdmin');
-        if (window.user && (window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2')) {
-            painelAdmin.style.display = 'block';
-            document.getElementById('selectCargo').value = outroUser.cargo || 'user';
-        } else {
-            painelAdmin.style.display = 'none';
-        }
-
-        fecharTelas();
-        document.getElementById('telaPerfilUsuario').style.display = 'block';
-    };
-
-    window.salvarCargo = async () => {
-        if (!uidPerfilAberto) return;
-        const novoCargo = document.getElementById('selectCargo').value;
-        await update(ref(db, `usuarios/${uidPerfilAberto}`), { cargo: novoCargo });
-        alert("Cargo do usuário atualizado!");
-        abrirPerfilUsuario(uidPerfilAberto); // Recarrega a tela para atualizar o badge
-    };
-
-    window.modificarBlues = async (adicionar) => {
-        if (!uidPerfilAberto) return;
-        
-        const qtdStr = document.getElementById('inputBlues').value;
-        const qtd = parseInt(qtdStr);
-        if (isNaN(qtd) || qtd <= 0) {
-            alert("Por favor, digite um valor válido maior que zero.");
-            return;
-        }
-
-        // Busca o saldo atual
-        const snap = await get(ref(db, `usuarios/${uidPerfilAberto}/moedasBlue`));
-        let saldoAtual = snap.val() || 0;
-        
-        let novoSaldo = adicionar ? saldoAtual + qtd : saldoAtual - qtd;
-        if (novoSaldo < 0) novoSaldo = 0; // Impede saldo negativo
-
-        // Atualiza no banco
-        await update(ref(db, `usuarios/${uidPerfilAberto}`), { moedasBlue: novoSaldo });
-        alert(`Blues ${adicionar ? 'adicionados' : 'removidos'} com sucesso!`);
-        document.getElementById('inputBlues').value = ""; // limpa o input
-        abrirPerfilUsuario(uidPerfilAberto); // Recarrega a tela para atualizar o saldo na view
-    };
 
 </script>
 </body>
