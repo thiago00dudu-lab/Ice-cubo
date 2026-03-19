@@ -170,8 +170,14 @@
 </div>
 
 <div id="telaPerfil" class="tela-full">
-    <div id="perfilConteudo" style="text-align:center;">
-        </div>
+    <div id="perfilConteudo" style="text-align:center;"></div>
+    
+    <div id="editarPerfil" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-top: 15px;">
+        <h4 style="margin-top:0; color:var(--mod-blue);">Editar Perfil</h4>
+        <input type="text" id="editFoto" placeholder="Link da Foto (URL)" style="width:100%; padding:10px; margin-bottom:10px; background:#161b22; color:white; border:1px solid #333; border-radius:5px;">
+        <input type="text" id="editBio" placeholder="Sua Bio..." style="width:100%; padding:10px; margin-bottom:10px; background:#161b22; color:white; border:1px solid #333; border-radius:5px;">
+        <button class="btn-action" onclick="window.salvarPerfil()">SALVAR ALTERAÇÕES</button>
+    </div>
     
     <div id="minhasConversas" style="margin-top: 20px;">
         <h4 style="color:var(--mod-blue); border-bottom: 1px solid #333; padding-bottom: 5px;"><i class="fas fa-comments"></i> Conversas Ativas</h4>
@@ -294,6 +300,11 @@
             <h2>${window.user.nome}</h2>
             <p style="color:#aaa;">${window.user.bio || ''}</p>
         `;
+        
+        // Preenche os campos de edição com o que já existe
+        document.getElementById('editFoto').value = window.user.foto || "";
+        document.getElementById('editBio').value = window.user.bio || "";
+
         const lista = document.getElementById('listaConversas');
         lista.innerHTML = "";
         onValue(ref(db, 'chats'), snap => {
@@ -309,6 +320,20 @@
         });
         document.getElementById('telaPerfil').style.display = 'block';
     };
+
+    // FUNÇÃO PARA SALVAR A FOTO E BIO
+    window.salvarPerfil = async () => {
+        const novaFoto = document.getElementById('editFoto').value;
+        const novaBio = document.getElementById('editBio').value;
+        await update(ref(db, `usuarios/${window.user.uid}`), { foto: novaFoto, bio: novaBio });
+        
+        // Atualiza o objeto local para refletir na hora
+        window.user.foto = novaFoto;
+        window.user.bio = novaBio;
+        
+        alert("Perfil atualizado com sucesso!");
+        abrirMeuPerfil(); // Recarrega a tela de perfil
+    }
 
     window.verPerfilOutro = async (uid) => {
         uidSendoVisto = uid;
@@ -385,7 +410,6 @@
 
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
 
-    // --- FUNÇÃO DE COMPARTILHAMENTO ACRESCENTADA ---
     window.compartilharSite = async () => {
         const dadosComp = {
             title: 'ICE TROCAS - Oficial',
@@ -395,9 +419,8 @@
         if (navigator.share) {
             try { await navigator.share(dadosComp); } catch (e) { console.log("Compartilhamento cancelado"); }
         } else {
-            // Caso o navegador não suporte, apenas copia o link
             navigator.clipboard.writeText(window.location.href);
-            alert("Link do site copiado para a área de transferência!");
+            alert("Link do site copiado!");
         }
     };
 
