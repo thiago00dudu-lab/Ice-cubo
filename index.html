@@ -197,7 +197,6 @@
         if(!u || !p) return alert("Preencha tudo!");
 
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            // Valor de 22.000.000 Blues corrigido aqui
             const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 22000000 };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user', JSON.stringify(m));
@@ -264,8 +263,13 @@
             const div = document.getElementById('feed'); div.innerHTML = "";
             snap.forEach(p => {
                 const pt = p.val();
+                // ADICIONADO: Lógica para exibir o botão de apagar post para o dono ou ADM1
+                const podeApagar = window.user && (window.user.uid === pt.uid || window.user.cargo === 'ADM1');
+                const btnApagar = podeApagar ? `<button class="btn-delete-post" onclick="window.apagarPost('${p.key}')"><i class="fas fa-trash"></i></button>` : '';
+
                 div.innerHTML = `
                 <div class="card-timeline">
+                    ${btnApagar}
                     <img src="${pt.i1}" onclick="window.abrirPerfil('${pt.uid}')">
                     <div class="card-info">
                         <b>${pt.u1}</b>
@@ -276,29 +280,38 @@
         });
     }
 
+    // ADICIONADO: Função para deletar o post no banco de dados
+    window.apagarPost = async (pid) => {
+        if(confirm("Deseja realmente apagar esta postagem?")) {
+            await remove(ref(db, `posts/${pid}`));
+            alert("Postagem apagada!");
+        }
+    };
+
     // --- CARTEIRA ---
     window.abrirCarteira = () => {
         document.getElementById('telaCarteira').style.display = 'block';
     };
 
     // --- AJUSTE DE BLUES (ADM) ---
-    // Atualizado para atualizar a tela automaticamente
     window.ajustarBlues = async (quantidade) => {
         const s = await get(ref(db, `usuarios/${window.targetUid}`));
         const val = s.val() || {};
         const atual = val.moedasBlue || 0;
         await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: atual + quantidade });
         alert("Blues atualizados!");
-        window.abrirPerfil(window.targetUid); // Atualiza a tela para ver o novo saldo
+        window.abrirPerfil(window.targetUid); 
     };
 
-    // Atualizado para atualizar a tela automaticamente
+    // CORRIGIDO: Função Definir Blues agora lê o valor de forma segura e limpa o campo
     window.definirBlues = async () => {
-        const val = parseInt(document.getElementById('valorPersonalizadoBlues').value);
-        if(isNaN(val)) return alert("Digite um número válido");
+        const inputElement = document.getElementById('valorPersonalizadoBlues');
+        const val = parseInt(inputElement.value);
+        if(isNaN(val)) return alert("Por favor, digite um número válido.");
         await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: val });
-        alert("Saldo definido!");
-        window.abrirPerfil(window.targetUid); // Atualiza a tela para ver o novo saldo
+        inputElement.value = ''; 
+        alert("Saldo definido com sucesso!");
+        window.abrirPerfil(window.targetUid); 
     };
 
     // --- FUNÇÕES GLOBAIS ---
@@ -373,7 +386,6 @@
 
     window.abrirPostar = () => document.getElementById('telaPostar').style.display = 'block';
     
-    // --- FUNÇÕES FALTANTES DO LEILÃO ADICIONADAS ---
     window.prepararFotoLeilao = (input) => {
         const reader = new FileReader();
         reader.onload = e => { 
@@ -402,7 +414,6 @@
             maiorLicitante: null
         });
 
-        // Limpa os campos após postar
         document.getElementById('leilaoItem').value = '';
         document.getElementById('leilaoValor').value = '';
         document.getElementById('previewFotoLeilao').style.display = 'none';
@@ -411,7 +422,6 @@
         fecharTelas();
         alert("Leilão criado com sucesso!");
     };
-    // ----------------------------------------------
 
     window.mudarCargo = async (novo) => {
         await update(ref(db, `usuarios/${window.targetUid}`), { cargo: novo });
