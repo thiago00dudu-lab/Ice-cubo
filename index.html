@@ -59,6 +59,9 @@
         /* ESTILO DA CARTEIRA */
         .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; }
         .blue-amount { font-size: 36px; font-weight: bold; color: #00BFFF; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
+        
+        /* ESTILO BIO */
+        .bio-text { font-size: 14px; color: #aaa; margin: 5px 0 15px 0; font-style: italic; padding: 0 15px; }
     </style>
 </head>
 <body>
@@ -131,6 +134,18 @@
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
+<div id="telaEditarPerfil" class="tela-full">
+    <h3 style="text-align: center; color: var(--mod-blue);"><i class="fas fa-user-edit"></i> EDITAR PERFIL</h3>
+    <label class="file-label" for="editFotoPerfil"><i class="fas fa-camera"></i> Escolher Foto da Galeria</label>
+    <input type="file" id="editFotoPerfil" accept="image/*" style="display:none;" onchange="prepararFotoPerfil(this)">
+    <img id="previewFotoPerfil" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin: 0 auto 15px auto; border: 2px solid var(--mod-blue);">
+    
+    <textarea id="editBio" placeholder="Escreva algo sobre você ou sua loja..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black; margin-bottom: 10px; resize: none; font-family:sans-serif;" rows="3"></textarea>
+    
+    <button class="btn-action" style="background:var(--green);" onclick="salvarPerfil()">SALVAR ALTERAÇÕES</button>
+    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
+</div>
+
 <div id="telaCarteira" class="tela-full">
     <h3 style="text-align: center;"><i class="fas fa-wallet" style="color: var(--mod-blue);"></i> MINHA CARTEIRA</h3>
     <div class="wallet-card">
@@ -188,6 +203,7 @@
     window.targetUid = null;
     let fotoPostBase64 = null;
     let fotoLeilaoBase64 = null;
+    let fotoPerfilBase64 = null;
     let chatAtivoId = null;
 
     // --- LOGIN ---
@@ -254,6 +270,7 @@
                         <h3>${le.item}</h3>
                         <div class="valor-lance">R$ ${le.lanceAtual}</div>
                         ${le.ativo ? `<button class="btn-lance" onclick="window.darLance('${l.key}', ${le.lanceAtual})">LANCE + R$ 50</button>` : ''}
+                        ${le.ativo && window.user && window.user.uid === le.criadorUid ? `<button class="btn-arrematar" onclick="window.finalizarLeilao('${l.key}', '${le.maiorLicitante}')"><i class="fas fa-gavel"></i> FINALIZAR E VENDER</button>` : ''}
                     </div>
                 </div>` + div.innerHTML;
             });
@@ -263,7 +280,6 @@
             const div = document.getElementById('feed'); div.innerHTML = "";
             snap.forEach(p => {
                 const pt = p.val();
-                // ADICIONADO: Lógica para exibir o botão de apagar post para o dono ou ADM1
                 const podeApagar = window.user && (window.user.uid === pt.uid || window.user.cargo === 'ADM1');
                 const btnApagar = podeApagar ? `<button class="btn-delete-post" onclick="window.apagarPost('${p.key}')"><i class="fas fa-trash"></i></button>` : '';
 
@@ -280,7 +296,6 @@
         });
     }
 
-    // ADICIONADO: Função para deletar o post no banco de dados
     window.apagarPost = async (pid) => {
         if(confirm("Deseja realmente apagar esta postagem?")) {
             await remove(ref(db, `posts/${pid}`));
@@ -303,7 +318,6 @@
         window.abrirPerfil(window.targetUid); 
     };
 
-    // CORRIGIDO: Função Definir Blues agora lê o valor de forma segura e limpa o campo
     window.definirBlues = async () => {
         const inputElement = document.getElementById('valorPersonalizadoBlues');
         const val = parseInt(inputElement.value);
@@ -323,8 +337,11 @@
 
         document.getElementById('perfilConteudo').innerHTML = `
             <img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-            <h2>${t.nome}</h2><p>${t.cargo}</p>
-            <p style="color:var(--mod-blue); font-weight:bold;">Saldo: ${t.moedasBlue || 0} Blues</p>`;
+            <h2>${t.nome}</h2>
+            <p style="margin:0;">${t.cargo}</p>
+            ${t.bio ? `<p class="bio-text">"${t.bio}"</p>` : ''}
+            <p style="color:var(--mod-blue); font-weight:bold;">Saldo: ${t.moedasBlue || 0} Blues</p>
+            ${souEu ? `<button class="btn-action" style="background:var(--gray); width:auto; padding:8px 15px; font-size:12px; margin-bottom:15px;" onclick="window.abrirEditarPerfil()"><i class="fas fa-edit"></i> EDITAR PERFIL</button>` : ''}`;
         
         document.getElementById('painelStaffLeilao').style.display = (souEu && t.cargo !== 'user') ? 'block' : 'none';
         document.getElementById('painelAdmControle').style.display = (ehMaster && !souEu) ? 'block' : 'none';
@@ -336,6 +353,41 @@
     window.abrirMeuPerfil = () => window.abrirPerfil(window.user.uid);
     window.fecharTelas = () => document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
     
+    // --- EDIÇÃO DE PERFIL ---
+    window.abrirEditarPerfil = () => {
+        document.getElementById('telaEditarPerfil').style.display = 'block';
+        document.getElementById('editBio').value = window.user.bio || '';
+        if(window.user.foto) {
+            document.getElementById('previewFotoPerfil').src = window.user.foto;
+            document.getElementById('previewFotoPerfil').style.display = 'block';
+            fotoPerfilBase64 = window.user.foto;
+        }
+    };
+
+    window.prepararFotoPerfil = (input) => {
+        const reader = new FileReader();
+        reader.onload = e => { 
+            fotoPerfilBase64 = e.target.result; 
+            document.getElementById('previewFotoPerfil').src = e.target.result;
+            document.getElementById('previewFotoPerfil').style.display = 'block';
+        };
+        if(input.files[0]) reader.readAsDataURL(input.files[0]);
+    };
+
+    window.salvarPerfil = async () => {
+        const bio = document.getElementById('editBio').value.trim();
+        const updates = {};
+        if(fotoPerfilBase64) updates.foto = fotoPerfilBase64;
+        updates.bio = bio;
+        
+        await update(ref(db, `usuarios/${window.user.uid}`), updates);
+        window.user.foto = fotoPerfilBase64 || window.user.foto;
+        window.user.bio = bio;
+        
+        fecharTelas();
+        window.abrirMeuPerfil();
+    };
+
     window.comprar = (tipo, valor) => {
         window.open(`https://wa.me/5511983602504?text=Quero comprar ${tipo} - Valor: ${valor}`);
     };
@@ -366,6 +418,21 @@
 
     window.darLance = async (lid, atual) => {
         await update(ref(db, `leiloes/${lid}`), { lanceAtual: atual + 50, maiorLicitante: window.user.uid });
+    };
+
+    // --- FINALIZAR LEILÃO ---
+    window.finalizarLeilao = async (lid, maiorLicitanteId) => {
+        if(confirm("Deseja arrematar este item e finalizar o leilão para o último lance?")) {
+            await update(ref(db, `leiloes/${lid}`), { ativo: false });
+            alert("Leilão finalizado com sucesso!");
+            
+            // Verifica se alguém deu lance antes de abrir o chat
+            if(maiorLicitanteId && maiorLicitanteId !== 'undefined' && maiorLicitanteId !== 'null') {
+                window.abrirChat(maiorLicitanteId, "Ganhador do Leilão");
+            } else {
+                alert("O leilão foi encerrado sem que ninguém desse lances.");
+            }
+        }
     };
 
     window.prepararPost = (input) => {
