@@ -47,8 +47,7 @@
         .info-leilao { padding: 15px; text-align: center; }
         .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; }
         .btn-lance { background: var(--green); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        .btn-arrematar { background: var(--gold); color: black; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top:5px;}
-        .leilao-encerrado { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 24px; font-weight: bold; z-index: 10; text-align: center; }
+        .leilao-encerrado { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 24px; font-weight: bold; text-align: center; }
         
         #chatConteudo { display: flex; flex-direction: column; height: 80vh; }
         #mensagensChat { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
@@ -261,16 +260,35 @@
             const div = document.getElementById('feed-leiloes'); div.innerHTML = "";
             snap.forEach(l => {
                 const le = l.val();
+                const ehCriador = window.user && window.user.uid === le.criadorUid;
+                const ehGanhador = window.user && window.user.uid === le.maiorLicitante;
+                
+                // Ícone de finalizar flutuante (Aparece só pro criador enquanto o leilão está ativo)
+                const iconeFinalizar = (le.ativo && ehCriador) ? 
+                    `<button class="btn-delete-post" style="background: var(--gold); color: black; z-index: 20;" onclick="window.finalizarLeilao('${l.key}', '${le.maiorLicitante}')" title="Finalizar Leilão"><i class="fas fa-gavel"></i></button>` : '';
+
+                let acoesExtra = '';
+                if(le.ativo) {
+                    acoesExtra = `<button class="btn-lance" onclick="window.darLance('${l.key}', ${le.lanceAtual})">LANCE + R$ 50</button>`;
+                } else {
+                    // Após encerrado, cria um botão para o ganhador chamar o criador, ou pro criador chamar o ganhador
+                    if(ehGanhador && !ehCriador) {
+                        acoesExtra = `<button class="btn-action" style="background: var(--blue); position: relative; z-index: 10;" onclick="window.abrirChat('${le.criadorUid}', '${le.criadorNome}')"><i class="fas fa-comments"></i> FALAR COM VENDEDOR</button>`;
+                    } else if(ehCriador && le.maiorLicitante) {
+                        acoesExtra = `<button class="btn-action" style="background: var(--blue); position: relative; z-index: 10;" onclick="window.abrirChat('${le.maiorLicitante}', 'Ganhador do Leilão')"><i class="fas fa-comments"></i> FALAR COM GANHADOR</button>`;
+                    }
+                }
+
                 div.innerHTML = `
                 <div class="card-leilao">
-                    ${!le.ativo ? '<div class="leilao-encerrado">ARREMATADO</div>' : ''}
+                    ${!le.ativo ? '<div class="leilao-encerrado" style="pointer-events: none; z-index: 5;">ARREMATADO</div>' : ''}
+                    ${iconeFinalizar}
                     <img src="${le.imagem}">
                     <div class="info-leilao">
                         <small>Leilão de ${le.criadorNome}</small>
-                        <h3>${le.item}</h3>
-                        <div class="valor-lance">R$ ${le.lanceAtual}</div>
-                        ${le.ativo ? `<button class="btn-lance" onclick="window.darLance('${l.key}', ${le.lanceAtual})">LANCE + R$ 50</button>` : ''}
-                        ${le.ativo && window.user && window.user.uid === le.criadorUid ? `<button class="btn-arrematar" onclick="window.finalizarLeilao('${l.key}', '${le.maiorLicitante}')"><i class="fas fa-gavel"></i> FINALIZAR E VENDER</button>` : ''}
+                        <h3 style="position: relative; z-index: 10;">${le.item}</h3>
+                        <div class="valor-lance" style="position: relative; z-index: 10;">R$ ${le.lanceAtual}</div>
+                        ${acoesExtra}
                     </div>
                 </div>` + div.innerHTML;
             });
