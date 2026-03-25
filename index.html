@@ -7,11 +7,11 @@
     <title>ICE TROCAS - Oficial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
-        :root {
-            --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2;
-            --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff;
-            --verde: #25d366; --vermelho: #ff4d4d; --azul-modificado: #00BFFF; --cinza: #30363d;
-            --roxo: #a333c8;
+        :root { 
+            --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
+            --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
+            --verde: #25d366; --vermelho: #ff4d4d; --azul-modificado: #00BFFF; --cinza: #30363d; 
+            --roxo: #a333c8; 
         }
 
         body { 
@@ -21,9 +21,9 @@
             color: white; 
             padding-bottom: 90px; 
             overflow-x: hidden; 
-        }
+        } 
 
-        /* CABEÇALHO */
+        /* CABEÇALHO E LOGOTIPO (SEU CÓDIGO ORIGINAL) */
         header { 
             padding: 10px 15px; 
             background: rgba(10, 20, 30, 0.95); 
@@ -34,13 +34,13 @@
             position: fixed; 
             top: 0; 
             width: 100%;
-            box-sizing: border-box;
             z-index: 100; 
-        }
+            box-sizing: border-box;
+        } 
 
-        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .logo-ice { font-size: 24px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 15px rgba(0, 191, 255, 0.6); }
-        .logo-ice span { color: var(--azul-modificado); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; } 
+        .logo-ice { font-size: 24px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 15px rgba(0, 191, 255, 0.6); } 
+        .logo-ice span { color: var(--azul-modificado); } 
 
         .adm1-ticker { 
             background: rgba(0, 0, 0, 0.3); 
@@ -52,212 +52,217 @@
             gap: 10px; 
             margin-top: 5px; 
             border-top: 1px solid rgba(255, 255, 255, 0.05); 
+        } 
+
+        .quote-up { color: var(--verde); } 
+        .quote-down { color: var(--vermelho); } 
+
+        #telaLogin { 
+            position: fixed; 
+            inset: 0; 
+            background: var(--bg); 
+            z-index: 5000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        } 
+
+        .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; } 
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; } 
+
+        .side-menu { 
+            position: fixed; 
+            right: 15px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            z-index: 4000; 
         }
 
-        /* ÁREA DE LEILÃO */
-        .container { margin-top: 120px; padding: 15px; }
-        
-        .card-leilao {
+        .side-btn {
             background: var(--ice);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .ultimo-lance-box {
-            background: rgba(0, 191, 255, 0.1);
-            border-left: 4px solid var(--azul-modificado);
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-
-        .ultimo-lance-box span { display: block; font-size: 0.85em; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .ultimo-lance-box strong { font-size: 1.3em; color: var(--azul-modificado); display: block; margin-top: 5px; }
-
-        .btn-lance {
-            background: var(--blue);
+            border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            border: none;
-            padding: 15px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            font-size: 16px;
-            transition: 0.3s;
-        }
-
-        .btn-lance:active { transform: scale(0.98); }
-
-        /* BOTÃO DE FINALIZAR (MARTELO) */
-        .btn-finalizar {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: var(--vermelho);
-            color: white;
-            border: none;
             width: 45px;
             height: 45px;
             border-radius: 50%;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
-            z-index: 10;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
         }
 
-        /* LOGIN E MENUS */
-        #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; box-shadow: 0 0 40px rgba(0,191,255,0.3); }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        /* ESTILO DO LEILÃO (ADAPTADO AO SEU DESIGN) */
+        .conteudo-principal { margin-top: 110px; padding: 20px; }
         
-        .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 4000; }
-        .side-btn { background: var(--ice); border: 1px solid rgba(255,255,255,0.2); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; backdrop-filter: blur(10px); }
+        .card-leilao {
+            background: var(--ice);
+            border: 1px solid rgba(0, 191, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+        }
 
-        /* BANNER DE VENCEDOR */
-        .vencedor-overlay {
-            background: linear-gradient(45deg, #000, #1a1a1a);
+        .info-ultimo-lance {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid var(--azul-modificado);
+        }
+
+        .btn-martelo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: var(--gold);
+            font-size: 22px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .input-lance {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--cinza);
+            border-radius: 8px;
+            color: white;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        .btn-enviar-lance {
+            width: 100%;
+            padding: 12px;
+            background: var(--blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .arrematado-aviso {
             color: var(--gold);
             font-weight: bold;
             text-align: center;
-            padding: 20px;
             border: 2px solid var(--gold);
-            border-radius: 10px;
+            padding: 10px;
+            border-radius: 8px;
             margin-top: 10px;
-            animation: appear 0.5s ease-out;
         }
-        @keyframes appear { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div id="telaLogin">
         <div class="login-box">
-            <h2 style="margin-top:0; color: #050a0f;">ICE LOGIN</h2>
-            <p style="font-size: 14px; color: #666;">Entre para participar dos leilões</p>
-            <input type="text" id="userInput" placeholder="Seu Nome ou Usuário">
-            <button onclick="logar()" class="btn-lance" style="background: #050a0f;">ACESSAR AGORA</button>
+            <h2>ICE LOGIN</h2>
+            <input type="text" id="nomeUsuario" placeholder="Digite seu nome">
+            <button onclick="fazerLogin()" style="width:100%; padding:12px; background:var(--bg); color:white; border-radius:8px; border:none; cursor:pointer;">ENTRAR</button>
         </div>
     </div>
 
     <header>
         <div class="header-top">
             <div class="logo-ice">ICE<span>TROCAS</span></div>
-            <div style="font-size: 18px;"><i class="fas fa-wallet" style="color: var(--azul-modificado);"></i> <span id="saldoBlue">1,250.00</span></div>
+            <div style="font-size: 14px;"><i class="fas fa-coins" style="color:var(--gold)"></i> BLUE</div>
         </div>
         <div class="adm1-ticker">
-            <span>BLUE/USDT <span class="quote-up">+12.5%</span></span>
-            <span>ICE/CUB <span class="quote-down">-2.1%</span></span>
+            <span>BLUE/USDT <span class="quote-up">▲ $1.24</span></span>
+            <span>ADM1/ICE <span class="quote-down">▼ $0.85</span></span>
         </div>
     </header>
 
     <div class="side-menu">
         <a href="#" class="side-btn"><i class="fas fa-home"></i></a>
-        <a href="#" class="side-btn"><i class="fas fa-exchange-alt"></i></a>
-        <a href="#" class="side-btn"><i class="fas fa-user"></i></a>
+        <a href="#" class="side-btn"><i class="fas fa-gavel"></i></a>
+        <a href="#" class="side-btn"><i class="fas fa-wallet"></i></a>
     </div>
 
-    <main class="container">
-        <h3 style="border-left: 3px solid var(--azul-modificado); padding-left: 10px; margin-bottom: 20px;">LEILÕES ATIVOS</h3>
-        
-        <div class="card-leilao" id="leilao01">
-            <button class="btn-finalizar" title="Finalizar Leilão" onclick="finalizarLeilao()">
+    <main class="conteudo-principal">
+        <div class="card-leilao" id="leilaoContainer">
+            <button class="btn-martelo" id="btnFinalizar" onclick="finalizarLeilao()" title="Finalizar Leilão">
                 <i class="fas fa-gavel"></i>
             </button>
+
+            <h3 style="margin-top:0">Leilão: Item Exclusivo BLUE</h3>
             
-            <h2 style="margin:0">Cubo de Gelo Premium #001</h2>
-            <p style="color: #888; font-size: 0.9em; margin-bottom: 20px;">Status: <span style="color: var(--verde);">Aberto para Lances</span></p>
-
-            <div class="ultimo-lance-box" id="displayLance">
-                <span>Último Licitante:</span>
-                <strong id="infoLance">Aguardando lance inicial...</strong>
+            <div class="info-ultimo-lance">
+                <span style="font-size: 12px; color: #aaa; text-transform: uppercase;">Último Lance:</span>
+                <div id="dadosLance" style="font-size: 18px; font-weight: bold; margin-top:5px;">
+                    Aguardando lance...
+                </div>
             </div>
 
-            <div id="acaoLeilao">
-                <input type="number" id="valorLance" placeholder="Valor em BLUE" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box;">
-                <button class="btn-lance" onclick="darLance()">DAR MEU LANCE</button>
+            <div id="controlesLeilao">
+                <input type="number" id="valorLance" class="input-lance" placeholder="Valor do lance">
+                <button class="btn-enviar-lance" onclick="darLance()">DAR LANCE</button>
             </div>
-
-            <div id="vencedorBanner"></div>
+            
+            <div id="resultadoFinal"></div>
         </div>
     </main>
 
     <script>
-        let usuarioLogado = "";
-        let ultimoLicitante = "Ninguém";
+        let usuarioAtual = "";
+        let ultimoNome = "";
         let ultimoValor = 0;
 
-        // Função para Logar
-        function logar() {
-            const user = document.getElementById('userInput').value;
-            if (user.trim() !== "") {
-                usuarioLogado = user;
+        function fazerLogin() {
+            const nome = document.getElementById('nomeUsuario').value;
+            if(nome.trim() !== "") {
+                usuarioAtual = nome;
                 document.getElementById('telaLogin').style.display = 'none';
-            } else {
-                alert("Por favor, digite seu nome para entrar.");
             }
         }
 
-        // Função para dar lance (Substitui o anterior)
         function darLance() {
-            const valorInput = document.getElementById('valorLance');
-            const valor = parseFloat(valorInput.value);
+            const input = document.getElementById('valorLance');
+            const valor = parseFloat(input.value);
 
             if (isNaN(valor) || valor <= ultimoValor) {
-                alert("Seu lance deve ser maior que o valor atual: BLUE " + ultimoValor);
+                alert("O lance deve ser maior que o anterior!");
                 return;
             }
 
-            // Define os novos dados (O antigo é "esquecido")
-            ultimoLicitante = usuarioLogado;
+            // Atualiza as variáveis com o ÚLTIMO lance apenas
+            ultimoNome = usuarioAtual;
             ultimoValor = valor;
 
-            // Atualiza o painel visual
-            const infoLance = document.getElementById('infoLance');
-            infoLance.innerHTML = `<i class="fas fa-user-circle"></i> ${ultimoLicitante} <br> <span style="color:var(--gold)">BLUE ${ultimoValor.toFixed(2)}</span>`;
+            // Atualiza a tela (substituindo o que estava lá)
+            document.getElementById('dadosLance').innerHTML = `
+                <i class="fas fa-user-circle"></i> ${ultimoNome} <br>
+                <span style="color: var(--azul-modificado)">BLUE ${ultimoValor.toFixed(2)}</span>
+            `;
             
-            // Limpa o campo
-            valorInput.value = "";
-            
-            // Feedback visual de sucesso
-            const box = document.getElementById('displayLance');
-            box.style.borderColor = "var(--verde)";
-            setTimeout(() => { box.style.borderColor = "var(--azul-modificado)"; }, 600);
+            input.value = "";
         }
 
-        // Função para Finalizar o Leilão (Ícone do Martelo)
         function finalizarLeilao() {
             if (ultimoValor === 0) {
-                alert("Não há lances para finalizar este leilão.");
+                alert("Ninguém deu lance ainda!");
                 return;
             }
 
-            if (confirm(`Encerrar agora? O vencedor será ${ultimoLicitante} por BLUE ${ultimoValor.toFixed(2)}`)) {
-                // Remove os controles de lance
-                document.getElementById('acaoLeilao').style.display = 'none';
-                document.getElementById('displayLance').style.display = 'none';
+            if (confirm("Deseja finalizar o leilão e declarar o vencedor?")) {
+                // Esconde controles
+                document.getElementById('controlesLeilao').style.display = 'none';
+                document.getElementById('btnFinalizar').style.display = 'none';
                 
-                // Exibe o banner de vitória
-                const banner = document.getElementById('vencedorBanner');
-                banner.innerHTML = `
-                    <div class="vencedor-overlay">
-                        <i class="fas fa-trophy" style="font-size: 2em; margin-bottom: 10px;"></i><br>
-                        LEILÃO ARREMATADO!<br>
-                        <span style="color: white; font-size: 0.9em;">Vencedor:</span> ${ultimoLicitante}<br>
-                        <span style="color: white; font-size: 0.9em;">Valor:</span> BLUE ${ultimoValor.toFixed(2)}
+                // Mostra quem arrematou
+                document.getElementById('resultadoFinal').innerHTML = `
+                    <div class="arrematado-aviso">
+                        <i class="fas fa-trophy"></i> LEILÃO ENCERRADO!<br>
+                        Vencedor: ${ultimoNome}<br>
+                        Valor: BLUE ${ultimoValor.toFixed(2)}
                     </div>
                 `;
-                
-                // Esconde o botão de martelo após finalizar
-                document.querySelector('.btn-finalizar').style.display = 'none';
             }
         }
     </script>
