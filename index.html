@@ -72,6 +72,9 @@
         .badge-privado { position: absolute; top: 10px; left: 10px; background: var(--purple); color: white; padding: 5px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 20; display: flex; align-items: center; gap: 5px; }
         .btn-voz { position: absolute; top: 10px; right: 10px; background: var(--mod-blue); width: 40px; height: 40px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; box-shadow: 0 0 10px var(--mod-blue); z-index: 100; }
         .room-voice-ui { background: rgba(0,0,0,0.9); padding: 15px; border-radius: 15px; margin-top: 10px; border: 1px solid var(--mod-blue); display: none; }
+        
+        /* ESTILO PARA O BOTÃO DE UPLOAD (Adicionado para organizar a postagem) */
+        .file-label { display: block; background: #30363d; color: white; padding: 15px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; font-size: 16px; text-align: center; border: 1px dashed var(--mod-blue); }
     </style>
 </head>
 <body>
@@ -169,6 +172,34 @@
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
+<div id="telaCarteira" class="tela-full">
+    <h3 style="text-align: center;"><i class="fas fa-wallet" style="color: var(--mod-blue);"></i> MINHA CARTEIRA</h3>
+    <div class="wallet-card">
+        <p style="margin: 0; opacity: 0.8; font-size: 14px;">Saldo Disponível</p>
+        <div class="blue-amount" id="saldoCarteira">0</div>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #00BFFF;">BLUE COINS</p>
+    </div>
+    <button class="btn-action" style="background: var(--green);" onclick="comprar('BLUE COINS', 'PIX')"><i class="fas fa-plus-circle"></i> RECARREGAR BLUES</button>
+    <button class="btn-action" style="background: var(--gray); margin-top: 15px;" onclick="fecharTelas()">FECHAR</button>
+</div>
+
+<div id="telaPostar" class="tela-full">
+    <h3 style="text-align: center; color: var(--mod-blue);"><i class="fas fa-plus-circle"></i> NOVA POSTAGEM</h3>
+    
+    <textarea id="postDescricao" placeholder="Adicione uma descrição para sua troca ou venda..." style="width:100%; height:80px; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #30363d; box-sizing:border-box; background:#161b22; color:white; resize:none; font-family: sans-serif;"></textarea>
+    
+    <label class="file-label" for="postMidia">
+        <i class="fas fa-image"></i> / <i class="fas fa-video"></i> Abrir Galeria
+    </label>
+    <input type="file" id="postMidia" accept="image/*,video/*" style="display:none;" onchange="prepararPost(this)">
+    
+    <img id="previewPostImg" style="width:100%; display:none; border-radius:10px; margin-bottom:10px; border: 1px solid var(--mod-blue);">
+    <video id="previewPostVid" controls style="width:100%; display:none; border-radius:10px; margin-bottom:10px; border: 1px solid var(--mod-blue);"></video>
+    
+    <button class="btn-action" style="background:var(--blue);" onclick="publicarPost()">PUBLICAR</button>
+    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, update, set, push, get, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -187,7 +218,9 @@
     let chatAtivoId = null;
     let salaVozAtual = null;
     let mutado = false;
-    let fotoPostBase64, fotoLeilaoBase64, fotoPerfilBase64;
+    let fotoPostBase64 = null;
+    let tipoMidiaPost = null; // Para saber se é imagem ou vídeo
+    let fotoLeilaoBase64, fotoPerfilBase64;
 
     // --- TICKER DE COTAÇÃO REAL-TIME ---
     let precoBaseADM1 = 22000;
@@ -276,7 +309,7 @@
         document.getElementById('telaVozAtiva').style.display = 'none';
     };
 
-    // --- FEED COM PRESENÇA DE VOZ (ESTILO PUMP) ---
+    // --- FEED COM PRESENÇA DE VOZ E POSTAGENS COM VÍDEO/TEXTO ---
     function carregarFeeds() {
         onValue(ref(db, 'leiloes'), snap => {
             const div = document.getElementById('feed-leiloes'); div.innerHTML = "";
@@ -322,15 +355,80 @@
             });
         });
 
+        // ATUALIZADO PARA EXIBIR VÍDEO E DESCRIÇÃO
         onValue(ref(db, 'posts'), snap => {
             const div = document.getElementById('feed'); div.innerHTML = "";
             snap.forEach(p => {
                 const pt = p.val();
                 const btnApagar = (window.user && (window.user.uid === pt.uid || window.user.cargo === 'ADM1')) ? `<button class="btn-delete-post" style="position:absolute; top:10px; right:10px; background:rgba(255,77,77,0.8); border:none; border-radius:50%; width:30px; height:30px; color:white;" onclick="window.apagarPost('${p.key}')"><i class="fas fa-trash"></i></button>` : '';
-                div.innerHTML = `<div class="card-timeline">${btnApagar}<img src="${pt.i1}" onclick="window.abrirPerfil('${pt.uid}')"><div class="card-info" style="padding:15px;"><b>${pt.u1}</b><button class="btn-action" style="background:var(--sea);" onclick="window.abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button></div></div>` + div.innerHTML;
+                
+                const midiaRenderizada = pt.tipoMidia === 'video' 
+                    ? `<video src="${pt.i1}" controls style="width: 100%; max-height: 400px; background: black;"></video>`
+                    : `<img src="${pt.i1}" onclick="window.abrirPerfil('${pt.uid}')" style="width: 100%; height: 320px; object-fit: cover;">`;
+
+                const descRenderizada = pt.descricao ? `<p style="font-size: 14px; margin: 10px 0; color: #ddd; word-wrap: break-word;">${pt.descricao}</p>` : '';
+
+                div.innerHTML = `
+                <div class="card-timeline">
+                    ${btnApagar}
+                    ${midiaRenderizada}
+                    <div class="card-info" style="padding:15px;">
+                        <b>${pt.u1}</b>
+                        ${descRenderizada}
+                        <button class="btn-action" style="background:var(--sea);" onclick="window.abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button>
+                    </div>
+                </div>` + div.innerHTML;
             });
         });
     }
+
+    // --- NOVA LÓGICA DE POSTAGEM (FOTO/VÍDEO + DESCRIÇÃO) ---
+    window.prepararPost = (input) => {
+        const file = input.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = e => { 
+            fotoPostBase64 = e.target.result; 
+            
+            if(file.type.startsWith('video/')) {
+                tipoMidiaPost = 'video';
+                document.getElementById('previewPostVid').src = e.target.result;
+                document.getElementById('previewPostVid').style.display = 'block';
+                document.getElementById('previewPostImg').style.display = 'none';
+            } else {
+                tipoMidiaPost = 'image';
+                document.getElementById('previewPostImg').src = e.target.result;
+                document.getElementById('previewPostImg').style.display = 'block';
+                document.getElementById('previewPostVid').style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.publicarPost = async () => {
+        const desc = document.getElementById('postDescricao').value.trim();
+        if(!fotoPostBase64) return alert("Selecione uma foto ou vídeo na galeria!");
+        
+        await push(ref(db, 'posts'), { 
+            u1: window.user.nome, 
+            uid: window.user.uid, 
+            i1: fotoPostBase64, 
+            tipoMidia: tipoMidiaPost,
+            descricao: desc,
+            cargo: window.user.cargo,
+            timestamp: Date.now()
+        });
+        
+        fecharTelas();
+        alert("Sua postagem foi publicada no feed!");
+    };
+
+    window.apagarPost = async (pid) => {
+        if(confirm("Deseja apagar esta postagem?")) {
+            await remove(ref(db, `posts/${pid}`));
+        }
+    };
 
     // --- ICE DROP COM ÁUDIO ---
     window.girarBau = async () => {
@@ -345,7 +443,6 @@
         icone.classList.add('animar-bau');
         resDiv.innerText = "Sorteando...";
         
-        // Toca som de giro
         somGiro.currentTime = 0;
         somGiro.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
 
@@ -385,14 +482,29 @@
         }, 2000);
     };
 
-    // --- FUNÇÕES AUXILIARES ---
+    // --- FUNÇÕES GERAIS ---
     window.fecharTelas = () => { 
         document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
         document.getElementById('app').style.display = 'block';
     };
+    
+    // Funções de abrir telas consertadas para limpar formulários
     window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
     window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
+    
+    window.abrirPostar = () => { 
+        fecharTelas(); 
+        document.getElementById('telaPostar').style.display = 'block'; 
+        // Limpa formulário
+        document.getElementById('postDescricao').value = '';
+        document.getElementById('previewPostImg').style.display = 'none';
+        document.getElementById('previewPostVid').style.display = 'none';
+        fotoPostBase64 = null;
+        tipoMidiaPost = null;
+    };
+
     window.darLance = async (lid, atual) => await update(ref(db, `leiloes/${lid}`), { lanceAtual: atual + 50, maiorLicitante: window.user.uid });
+    
     window.abrirPerfil = async (uid) => {
         const s = await get(ref(db, `usuarios/${uid}`)); const t = s.val(); if(!t) return;
         const souEu = (window.user.uid === uid || (window.user.uid === "master_ice" && uid === "master_ice"));
@@ -403,6 +515,36 @@
     };
     window.abrirMeuPerfil = () => window.abrirPerfil(window.user.uid || "master_ice");
     window.compartilharSite = () => navigator.share ? navigator.share({title: 'ICE TROCAS', url: location.href}) : alert("Link copiado!");
+
+    // Funções faltantes de controle de cargos e blues
+    window.mudarCargo = async (novo) => {
+        await update(ref(db, `usuarios/${window.targetUid}`), { cargo: novo });
+        alert("Cargo alterado!");
+        window.abrirPerfil(window.targetUid);
+    };
+
+    window.ajustarBlues = async (quantidade) => {
+        const s = await get(ref(db, `usuarios/${window.targetUid}`));
+        const val = s.val() || {};
+        const atual = val.moedasBlue || 0;
+        await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: atual + quantidade });
+        alert("Blues atualizados!");
+        window.abrirPerfil(window.targetUid); 
+    };
+
+    window.definirBlues = async () => {
+        const inputElement = document.getElementById('valorPersonalizadoBlues');
+        const val = parseInt(inputElement.value);
+        if(isNaN(val)) return alert("Por favor, digite um número válido.");
+        await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: val });
+        inputElement.value = ''; 
+        alert("Saldo atualizado com sucesso!");
+        window.abrirPerfil(window.targetUid); 
+    };
+    
+    window.comprar = (tipo, valor) => {
+        window.open(`https://wa.me/5511983602504?text=Quero comprar ${tipo} - Valor: ${valor}`);
+    };
 
 </script>
 </body>
