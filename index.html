@@ -255,7 +255,7 @@
         } catch (e) { 
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, p);
-                const novo = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0 };
+                const novo = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, girosTotal: 0 };
                 await set(ref(db, `usuarios/${res.user.uid}`), novo);
             } catch (err) { alert("Erro: " + err.message); }
         }
@@ -290,52 +290,86 @@
         carregarFeeds();
     }
 
-    // --- SISTEMA ICE DROP (NOVO) ---
+    // --- SISTEMA ICE DROP (ATUALIZADO COM REGRAS DE BANCA E TRAVA) ---
     window.abrirIceDrop = () => {
         fecharTelas();
         document.getElementById('telaIceDrop').style.display = 'block';
     };
 
     window.girarBau = async () => {
-        if(window.user.moedasBlue < 5) return alert("Você precisa de pelo menos 5 Blues para girar!");
+        if (window.user.moedasBlue < 5) return alert("Você precisa de pelo menos 5 Blues para girar!");
         
         const btn = document.getElementById('btnGirarBau');
         const icone = document.getElementById('iconeBau');
         const resDiv = document.getElementById('resultadoDrop');
-        
+        const uid = window.user.uid || "master_ice";
+
         btn.disabled = true;
         icone.classList.add('animar-bau');
-        resDiv.innerText = "Abrindo o baú...";
+        resDiv.innerText = "Sorteando...";
 
-        // Desconta 5 Blues
-        const novoSaldo = window.user.moedasBlue - 5;
-        const uid = window.user.uid || "master_ice";
-        await update(ref(db, `usuarios/${uid}`), { moedasBlue: novoSaldo });
+        // Coleta dados da Banca (Pool) e Giros do Usuário
+        const snapshotPool = await get(ref(db, 'configuracoes/pool_bau'));
+        let bancaAtual = snapshotPool.val() || 0;
+        
+        const girosTotal = (window.user.girosTotal || 0) + 1;
+        const novoSaldoAposCusto = window.user.moedasBlue - 5;
+        
+        // Adiciona 90% do custo (4.5 Blues) para a banca
+        bancaAtual += 4.5;
 
         setTimeout(async () => {
             icone.classList.remove('animar-bau');
-            const sorte = Math.random() * 100;
-            let premio = "Tente novamente!";
-            let updates = {};
+            
+            let sorte = Math.random() * 100;
+            let premioNome = "Não foi dessa vez! Tente novamente.";
+            let valorPremioBlue = 0;
+            let novoCargo = null;
+            let bancaDescontar = 0;
 
-            if(sorte < 0.5) { 
-                premio = "🏆 ABSURDO! VOCÊ GANHOU ADM1!"; 
-                updates.cargo = "ADM1";
-            } else if(sorte < 2) { 
-                premio = "🛡️ INCRÍVEL! VOCÊ GANHOU ADM2!"; 
-                updates.cargo = "ADM2";
-            } else if(sorte < 7) { 
-                premio = "⭐ BOA! VOCÊ GANHOU MODERADOR!"; 
-                updates.cargo = "MOD";
-            } else if(sorte < 20) { 
-                premio = "💰 SORTE! GANHOU 1.000 BLUES!"; 
-                updates.moedasBlue = novoSaldo + 1000;
+            // --- LÓGICA DE PREMIAÇÃO ---
+            // Regra de Cargos: Só ganha se tiver MAIS de 4 giros
+            if (girosTotal > 4) {
+                if (sorte < 0.5) {
+                    premioNome = "🏆 ABSURDO! VOCÊ GANHOU ADM1!";
+                    novoCargo = "ADM1";
+                } else if (sorte < 1.5) {
+                    premioNome = "🛡️ INCRÍVEL! VOCÊ GANHOU ADM2!";
+                    novoCargo = "ADM2";
+                } else if (sorte < 4) {
+                    premioNome = "⭐ BOA! VOCÊ GANHOU MODERADOR!";
+                    novoCargo = "MOD";
+                }
             }
 
-            resDiv.innerHTML = `<span style="color:var(--gold)">${premio}</span>`;
-            if(Object.keys(updates).length > 0) {
-                await update(ref(db, `usuarios/${uid}`), updates);
+            // Regra de Blues: Só libera se a banca tiver o DOBRO do prêmio
+            if (!novoCargo && sorte > 5 && sorte < 15) {
+                if (bancaAtual >= 20) { 
+                    premioNome = "💰 SORTE! Ganhou 10 Blues!";
+                    valorPremioBlue = 10;
+                    bancaDescontar = 10;
+                }
+            } else if (!novoCargo && sorte >= 15 && sorte < 40) {
+                if (bancaAtual >= 10) { 
+                    premioNome = "💰 Ganhou 5 Blues!";
+                    valorPremioBlue = 5;
+                    bancaDescontar = 5;
+                }
             }
+
+            // Atualização Firebase
+            const updates = {};
+            updates[`usuarios/${uid}/moedasBlue`] = novoSaldoAposCusto + valorPremioBlue;
+            updates[`usuarios/${uid}/girosTotal`] = girosTotal;
+            updates[`configuracoes/pool_bau`] = bancaAtual - bancaDescontar;
+            
+            if (novoCargo) {
+                updates[`usuarios/${uid}/cargo`] = novoCargo;
+            }
+
+            await update(ref(db), updates);
+
+            resDiv.innerHTML = `<span style="color:${valorPremioBlue > 0 || novoCargo ? 'var(--gold)' : 'white'}">${premioNome}</span>`;
             btn.disabled = false;
         }, 2000);
     };
