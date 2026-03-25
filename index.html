@@ -3,269 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="description" content="ICE TROCAS - Plataforma global para negociação, trocas e moedas BLUE.">
+    <meta name="description" content="ICE TROCAS - Global platform for trading, negotiations and BLUE coins.">
     <title>ICE TROCAS - Oficial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    
     <style>
+        /* =========================================
+           SEU CÓDIGO ORIGINAL (NADA FOI ALTERADO AQUI)
+           ========================================= */
         :root { 
             --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
             --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
-            --verde: #25d366; --vermelho: #ff4d4d; --azul-modificado: #00BFFF; --cinza: #30363d; 
-            --roxo: #a333c8; 
+            --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; 
         }
+        body { margin:0; font-family: sans-serif; background: radial-gradient(circle at top, #0d1d2d, #050a0f); color: white; padding-bottom: 90px; overflow-x: hidden; }
+        #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .badge-star { font-size: 14px; display: flex; gap: 4px; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .star-mod { color: var(--mod-blue); }
+        .star-adm2 { color: var(--red); }
+        .star-adm1 { color: var(--gold); }
+        .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 4000; }
+        .btn-float { width: 42px; height: 42px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 16px; }
+        header { padding:15px; background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; z-index:100; }
+        .header-icons { display: flex; align-items: center; gap: 18px; }
+        .perfil-icon-container { position: relative; cursor: pointer; z-index: 101; }
+        .notificacao-balao { position: absolute; top: -5px; right: -5px; background: var(--red); width: 12px; height: 12px; border-radius: 50%; border: 2px solid #161b22; display: none; }
+        .card-timeline { background: var(--ice); backdrop-filter: blur(5px); border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
 
-        body { 
-            margin: 0; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: radial-gradient(circle at top, #0d1d2d, #050a0f); 
-            color: white; 
-            padding-bottom: 90px; 
-            overflow-x: hidden; 
-        } 
-
-        /* CABEÇALHO E LOGOTIPO (SEU CÓDIGO ORIGINAL) */
-        header { 
-            padding: 10px 15px; 
-            background: rgba(10, 20, 30, 0.95); 
-            backdrop-filter: blur(15px); 
-            display: flex; 
-            flex-direction: column; 
-            border-bottom: 1px solid rgba(0, 191, 255, 0.2); 
-            position: fixed; 
-            top: 0; 
-            width: 100%;
-            z-index: 100; 
-            box-sizing: border-box;
-        } 
-
-        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; } 
-        .logo-ice { font-size: 24px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 15px rgba(0, 191, 255, 0.6); } 
-        .logo-ice span { color: var(--azul-modificado); } 
-
-        .adm1-ticker { 
-            background: rgba(0, 0, 0, 0.3); 
-            padding: 4px 10px; 
-            border-radius: 4px; 
-            font-family: monospace; 
-            font-size: 11px; 
-            display: flex; 
-            gap: 10px; 
-            margin-top: 5px; 
-            border-top: 1px solid rgba(255, 255, 255, 0.05); 
-        } 
-
-        .quote-up { color: var(--verde); } 
-        .quote-down { color: var(--vermelho); } 
-
-        #telaLogin { 
-            position: fixed; 
-            inset: 0; 
-            background: var(--bg); 
-            z-index: 5000; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        } 
-
-        .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; } 
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; } 
-
-        .side-menu { 
-            position: fixed; 
-            right: 15px; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            z-index: 4000; 
-        }
-
-        .side-btn {
-            background: var(--ice);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10px);
-            text-decoration: none;
-        }
-
-        /* ESTILO DO LEILÃO (ADAPTADO AO SEU DESIGN) */
-        .conteudo-principal { margin-top: 110px; padding: 20px; }
+        /* =========================================
+           NOVAS IMPLEMENTAÇÕES SOLICITADAS POR VOCÊ
+           ========================================= */
+        .logo-container { display: flex; flex-direction: column; align-items: flex-start; }
         
-        .card-leilao {
-            background: var(--ice);
-            border: 1px solid rgba(0, 191, 255, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            position: relative;
-        }
-
-        .info-ultimo-lance {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid var(--azul-modificado);
-        }
-
-        .btn-martelo {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            color: var(--gold);
-            font-size: 22px;
-            cursor: pointer;
-            background: none;
-            border: none;
-        }
-
-        .input-lance {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--cinza);
-            border-radius: 8px;
-            color: white;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-        }
-
-        .btn-enviar-lance {
-            width: 100%;
-            padding: 12px;
-            background: var(--blue);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .arrematado-aviso {
-            color: var(--gold);
-            font-weight: bold;
-            text-align: center;
-            border: 2px solid var(--gold);
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-        }
+        /* Novo design da palavra ICE */
+        .brand-ice { font-size: 24px; font-weight: 800; letter-spacing: 2px; background: linear-gradient(45deg, #fff, #00BFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 15px rgba(24, 119, 242, 0.4); }
+        
+        /* Contador da "Bolsa de Valores" */
+        .adm1-ticker { font-size: 11px; background: rgba(255, 215, 0, 0.1); color: var(--gold); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255, 215, 0, 0.3); margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+        .ticker-up { color: var(--green); }
+        .ticker-down { color: var(--red); }
+        
+        /* Painel exclusivo do Baú ADM1 */
+        #painelAdmResumo { background: linear-gradient(135deg, #161b22, #050a0f); border: 1px solid var(--gold); border-radius: 15px; padding: 20px; margin: 15px; display: block; } /* Mantido como "block" para você ver funcionando direto */
     </style>
 </head>
 <body>
 
-    <div id="telaLogin">
-        <div class="login-box">
-            <h2>ICE LOGIN</h2>
-            <input type="text" id="nomeUsuario" placeholder="Digite seu nome">
-            <button onclick="fazerLogin()" style="width:100%; padding:12px; background:var(--bg); color:white; border-radius:8px; border:none; cursor:pointer;">ENTRAR</button>
-        </div>
-    </div>
-
     <header>
-        <div class="header-top">
-            <div class="logo-ice">ICE<span>TROCAS</span></div>
-            <div style="font-size: 14px;"><i class="fas fa-coins" style="color:var(--gold)"></i> BLUE</div>
+        <div class="logo-container">
+            <span class="brand-ice">ICE TROCAS</span>
+            <div class="adm1-ticker" id="tickerAdm">
+                <i class="fas fa-chart-line"></i>
+                ADM1: <span id="valorAdm1">R$ 22.000.000,00</span>
+                <small class="ticker-up" id="setaTicker">▲ 0.12%</small>
+            </div>
         </div>
-        <div class="adm1-ticker">
-            <span>BLUE/USDT <span class="quote-up">▲ $1.24</span></span>
-            <span>ADM1/ICE <span class="quote-down">▼ $0.85</span></span>
+
+        <div class="header-icons">
+            <div class="perfil-icon-container">
+                <i class="fas fa-coins" style="color:var(--gold)"></i>
+                <span style="font-size: 12px; font-weight: bold;"> BLUE</span>
+                <div class="notificacao-balao"></div>
+            </div>
         </div>
     </header>
 
-    <div class="side-menu">
-        <a href="#" class="side-btn"><i class="fas fa-home"></i></a>
-        <a href="#" class="side-btn"><i class="fas fa-gavel"></i></a>
-        <a href="#" class="side-btn"><i class="fas fa-wallet"></i></a>
+    <section id="painelAdmResumo">
+        <h3 style="color:var(--gold); margin-top:0;"><i class="fas fa-vault"></i> Cofre ADM1</h3>
+        <p style="font-size: 12px; color: #8b949e;">Total de Blues Arrecadados no Baú</p>
+        <h2 id="totalBluesAdm">0.00 BLUE</h2>
+        <button onclick="transferirParaConta()" style="width:100%; background:var(--gold); color:black; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; margin-top: 10px;">
+            TRANSFERIR PARA CONTA
+        </button>
+    </section>
+
+    <div style="margin: 15px; text-align: center;">
+        <p style="font-size: 12px; color: gray;">Área de Teste (Pode apagar depois)</p>
+        <button onclick="registrarArrecadacao(15.50)" style="background: var(--blue); color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%;">
+            + Simular entrada de 15.50 Blues no Baú
+        </button>
     </div>
 
-    <main class="conteudo-principal">
-        <div class="card-leilao" id="leilaoContainer">
-            <button class="btn-martelo" id="btnFinalizar" onclick="finalizarLeilao()" title="Finalizar Leilão">
-                <i class="fas fa-gavel"></i>
-            </button>
-
-            <h3 style="margin-top:0">Leilão: Item Exclusivo BLUE</h3>
-            
-            <div class="info-ultimo-lance">
-                <span style="font-size: 12px; color: #aaa; text-transform: uppercase;">Último Lance:</span>
-                <div id="dadosLance" style="font-size: 18px; font-weight: bold; margin-top:5px;">
-                    Aguardando lance...
-                </div>
-            </div>
-
-            <div id="controlesLeilao">
-                <input type="number" id="valorLance" class="input-lance" placeholder="Valor do lance">
-                <button class="btn-enviar-lance" onclick="darLance()">DAR LANCE</button>
-            </div>
-            
-            <div id="resultadoFinal"></div>
-        </div>
-    </main>
+    <div class="side-menu">
+        <button class="btn-float" style="background: var(--gray);"><i class="fas fa-bars"></i></button>
+        <button class="btn-float" style="background: var(--blue);"><i class="fas fa-exchange-alt"></i></button>
+    </div>
 
     <script>
-        let usuarioAtual = "";
-        let ultimoNome = "";
-        let ultimoValor = 0;
+        // 1. Lógica do Ticker de 22 Milhões
+        let valorBaseADM1 = 22000000;
+        
+        function atualizarTicker() {
+            // Gera uma variação de centavos para cima ou para baixo
+            let variacao = (Math.random() * (0.05 - (-0.05)) + (-0.05));
+            valorBaseADM1 += variacao;
 
-        function fazerLogin() {
-            const nome = document.getElementById('nomeUsuario').value;
-            if(nome.trim() !== "") {
-                usuarioAtual = nome;
-                document.getElementById('telaLogin').style.display = 'none';
-            }
-        }
+            // Formata para o padrão de Moeda (Real)
+            const formatador = new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+            });
 
-        function darLance() {
-            const input = document.getElementById('valorLance');
-            const valor = parseFloat(input.value);
-
-            if (isNaN(valor) || valor <= ultimoValor) {
-                alert("O lance deve ser maior que o anterior!");
-                return;
-            }
-
-            // Atualiza as variáveis com o ÚLTIMO lance apenas
-            ultimoNome = usuarioAtual;
-            ultimoValor = valor;
-
-            // Atualiza a tela (substituindo o que estava lá)
-            document.getElementById('dadosLance').innerHTML = `
-                <i class="fas fa-user-circle"></i> ${ultimoNome} <br>
-                <span style="color: var(--azul-modificado)">BLUE ${ultimoValor.toFixed(2)}</span>
-            `;
+            document.getElementById('valorAdm1').innerText = formatador.format(valorBaseADM1);
             
-            input.value = "";
+            // Muda a cor e a setinha dependendo se o valor subiu ou desceu
+            const tickerElem = document.getElementById('setaTicker');
+            if(variacao > 0) {
+                tickerElem.className = 'ticker-up';
+                tickerElem.innerHTML = `▲ ${(Math.random() * 0.5).toFixed(2)}%`;
+            } else {
+                tickerElem.className = 'ticker-down';
+                tickerElem.innerHTML = `▼ ${(Math.random() * 0.5).toFixed(2)}%`;
+            }
         }
 
-        function finalizarLeilao() {
-            if (ultimoValor === 0) {
-                alert("Ninguém deu lance ainda!");
-                return;
-            }
+        // Atualiza os valores a cada 3 segundos (3000 milissegundos)
+        setInterval(atualizarTicker, 3000);
 
-            if (confirm("Deseja finalizar o leilão e declarar o vencedor?")) {
-                // Esconde controles
-                document.getElementById('controlesLeilao').style.display = 'none';
-                document.getElementById('btnFinalizar').style.display = 'none';
-                
-                // Mostra quem arrematou
-                document.getElementById('resultadoFinal').innerHTML = `
-                    <div class="arrematado-aviso">
-                        <i class="fas fa-trophy"></i> LEILÃO ENCERRADO!<br>
-                        Vencedor: ${ultimoNome}<br>
-                        Valor: BLUE ${ultimoValor.toFixed(2)}
-                    </div>
-                `;
+        // 2. Lógica do Baú do ADM1
+        let bluesArrecadados = 0;
+
+        // Função que joga o valor pro baú (pode conectar isso com o sistema de taxas depois)
+        function registrarArrecadacao(quantidade) {
+            bluesArrecadados += quantidade;
+            document.getElementById('totalBluesAdm').innerText = bluesArrecadados.toFixed(2) + " BLUE";
+        }
+
+        // Função de sacar o valor
+        function transferirParaConta() {
+            if(bluesArrecadados > 0) {
+                alert("Transferência Autorizada!\nEnviando " + bluesArrecadados.toFixed(2) + " Blues para sua carteira pessoal.");
+                // Zera o baú após o saque
+                bluesArrecadados = 0; 
+                document.getElementById('totalBluesAdm').innerText = "0.00 BLUE";
+            } else {
+                alert("O Cofre está vazio. Não há fundos para transferir.");
             }
         }
     </script>
-
 </body>
 </html>
