@@ -36,7 +36,7 @@
         .notificacao-balao { position: absolute; top: -5px; right: -5px; background: var(--red); width: 12px; height: 12px; border-radius: 50%; border: 2px solid #161b22; display: none; }
         
         .card-timeline { background: var(--ice); backdrop-filter: blur(5px); border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
-        .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
+        .card-timeline img, .card-timeline video { width: 100%; height: 320px; object-fit: cover; }
         
         .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; }
         .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
@@ -49,16 +49,9 @@
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
         .leilao-encerrado { position: absolute; inset: 0; background: rgba(0,0,0,0.7); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; z-index: 50; }
 
-        .voice-participants-mini { background: rgba(0,0,0,0.6); padding: 8px; display: flex; gap: 5px; flex-wrap: wrap; border-top: 1px solid rgba(0,191,255,0.3); }
-        .voice-tag { font-size: 9px; background: var(--mod-blue); color: black; padding: 2px 6px; border-radius: 10px; font-weight: bold; animation: pulse-border 1.5s infinite; }
-        
-        .info-leilao { padding: 15px; text-align: center; }
-        .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; }
-        
         .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; }
         .blue-amount { font-size: 36px; font-weight: bold; color: #00BFFF; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
 
-        /* ESTILO CHAT */
         .msg-container { display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; }
         .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; line-height: 1.4; }
         .msg.me { align-self: flex-end; background: var(--blue); color: white; border-bottom-right-radius: 2px; }
@@ -75,7 +68,6 @@
         }
         .animar-bau { animation: tremer 0.5s ease-in-out infinite; color: var(--white) !important; text-shadow: 0 0 30px var(--mod-blue) !important; }
 
-        .badge-privado { position: absolute; top: 10px; left: 10px; background: var(--purple); color: white; padding: 5px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 20; display: flex; align-items: center; gap: 5px; }
         .btn-voz { position: absolute; top: 10px; right: 10px; background: var(--mod-blue); width: 40px; height: 40px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; box-shadow: 0 0 10px var(--mod-blue); z-index: 100; }
         .file-label { display: block; background: #30363d; color: white; padding: 15px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; font-size: 16px; text-align: center; border: 1px dashed var(--mod-blue); }
     </style>
@@ -104,7 +96,7 @@
             <div class="logo-ice">ICE<span>TROCAS</span></div> 
             <div class="header-icons">
                 <i class="fas fa-share-nodes" style="font-size:20px; color:white; cursor:pointer;" onclick="compartilharSite()"></i>
-                <div class="perfil-icon-container" onclick="abrirMeuPerfil()">
+                <div class="perfil-icon-container" onclick="abrirMeuPerfilProprio()">
                     <i class="fas fa-user-circle" style="font-size:24px; color:var(--mod-blue);"></i>
                     <div id="balaoAlerta" class="notificacao-balao"></div>
                 </div>
@@ -113,7 +105,7 @@
         <div class="adm1-ticker">
             <span>ADM1/BRL: <span id="valAdm1">R$ 22.000,00</span> <span id="percentAdm1" class="quote-up">▲ 0.00%</span></span>
             <span style="opacity: 0.5;">|</span>
-            <span>BLUES: <span style="color:var(--mod-blue)">1.00</span></span>
+            <span>BLUES: <span id="tickerBlues" style="color:var(--mod-blue)">0.00</span></span>
         </div>
     </header>
     
@@ -126,6 +118,27 @@
         <i class="fas fa-plus-circle" onclick="abrirPostar()" style="color:var(--mod-blue); font-size: 28px;"></i>
         <i class="fas fa-wallet" onclick="abrirCarteira()"></i>
     </div>
+</div>
+
+<div id="telaPerfil" class="tela-full">
+    <div id="perfilConteudo" style="text-align:center;"></div>
+    
+    <div id="painelAdmControle" class="painel-adm" style="display:none; background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px;">
+        <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
+        <div style="display:flex; gap:5px; margin-bottom: 15px;">
+            <button class="btn-action" style="background:var(--gold); color:black; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
+            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
+            <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
+        </div>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-action" style="background:var(--green); font-size:10px;" onclick="ajustarBlues(100)">+100 BLUES</button>
+            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="ajustarBlues(-100)">-100 BLUES</button>
+        </div>
+    </div>
+
+    <h4>Postagens</h4>
+    <div id="gridUser" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px;"></div>
+    <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaChat" class="tela-full" style="background: #050a0f;">
@@ -149,30 +162,6 @@
         <button id="btnGirarBau" class="btn-action" style="background:var(--gold); color:black; font-size: 18px; padding: 15px;" onclick="window.girarBau()"><i class="fas fa-sync"></i> ABRIR BAÚ</button>
     </div>
     <button class="btn-action" style="background:var(--gray); margin-top: 30px;" onclick="fecharTelas()">VOLTAR</button>
-</div>
-
-<div id="telaPerfil" class="tela-full">
-    <div id="perfilConteudo" style="text-align:center;"></div>
-    <div id="painelStaffLeilao" class="painel-adm" style="display:none; border: 2px solid var(--mod-blue); padding:15px; border-radius:15px; margin-top:15px;">
-        <h4 style="color:var(--mod-blue); text-align:center; margin-top:0;"><i class="fas fa-gavel"></i> PAINEL STAFF</h4>
-        <button class="btn-action" style="background:var(--mod-blue);" onclick="document.getElementById('telaCriarLeilao').style.display='block'">ABRIR NOVO LEILÃO</button>
-    </div>
-    <div id="painelAdmControle" class="painel-adm" style="display:none; background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px;">
-        <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
-        <div style="display:flex; gap:5px; margin-bottom: 15px;">
-            <button class="btn-action" style="background:var(--gold); color:black; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
-            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
-            <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
-        </div>
-        <div style="display:flex; gap:5px;">
-            <button class="btn-action" style="background:var(--green); font-size:10px;" onclick="ajustarBlues(100)">+100 BLUES</button>
-            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="ajustarBlues(-100)">-100 BLUES</button>
-        </div>
-        <button class="btn-action" style="background:var(--blue); font-size:10px;" onclick="definirBlues()">DEFINIR SALDO</button>
-    </div>
-    <h4>Postagens</h4>
-    <div id="gridUser" class="grid-postagens" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px;"></div>
-    <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaCarteira" class="tela-full">
@@ -199,7 +188,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, set, push, get, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, set, push, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = { apiKey: "AIzaSyDM5M1_O-wfcBDGYJIiYgiHVbqhiKC-0dw", databaseURL: "https://icek-9cdd7-default-rtdb.firebaseio.com", projectId: "icek-9cdd7" };
@@ -212,9 +201,9 @@
 
     window.user = null;
     let chatAtivoId = null;
-    let salaVozAtual = null;
     let fotoPostBase64 = null;
     let tipoMidiaPost = null;
+    let uidSendoVisualizado = null;
 
     // --- TICKER ---
     let precoBaseADM1 = 22000;
@@ -222,10 +211,13 @@
         const variacao = (Math.random() * 10 - 5);
         precoBaseADM1 += variacao;
         const perc = ((variacao / precoBaseADM1) * 100).toFixed(2);
-        document.getElementById('valAdm1').innerText = `R$ ${precoBaseADM1.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        const elVal = document.getElementById('valAdm1');
+        if(elVal) elVal.innerText = `R$ ${precoBaseADM1.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         const elPerc = document.getElementById('percentAdm1');
-        elPerc.innerText = `${perc > 0 ? '▲' : '▼'} ${Math.abs(perc)}%`;
-        elPerc.className = perc > 0 ? 'quote-up' : 'quote-down';
+        if(elPerc) {
+            elPerc.innerText = `${perc > 0 ? '▲' : '▼'} ${Math.abs(perc)}%`;
+            elPerc.className = perc > 0 ? 'quote-up' : 'quote-down';
+        }
     }, 3000);
 
     // --- LOGIN ---
@@ -243,7 +235,7 @@
         try { await signInWithEmailAndPassword(auth, email, p); } catch (e) { 
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, p);
-                const novo = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, girosTotal: 0 };
+                const novo = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0 };
                 await set(ref(db, `usuarios/${res.user.uid}`), novo);
             } catch (err) { alert("Erro: " + err.message); }
         }
@@ -253,11 +245,19 @@
         if(u) {
             onValue(ref(db, `usuarios/${u.uid}`), (s) => {
                 window.user = s.val();
-                if(window.user) iniciarApp();
+                if(window.user) {
+                    document.getElementById('tickerBlues').innerText = window.user.moedasBlue || 0;
+                    document.getElementById('saldoCarteira').innerText = window.user.moedasBlue || 0;
+                    iniciarApp();
+                }
             });
         } else {
             const local = localStorage.getItem('ice_user_master');
-            if(local) { window.user = JSON.parse(local); iniciarApp(); }
+            if(local) { 
+                window.user = JSON.parse(local); 
+                document.getElementById('tickerBlues').innerText = window.user.moedasBlue || 0;
+                iniciarApp(); 
+            }
         }
     });
 
@@ -266,80 +266,82 @@
         document.getElementById('app').style.display = 'block';
         document.getElementById('menuFlutuante').style.display = 'flex';
         carregarFeeds();
-        escutarNotificacoes();
     }
 
-    // --- CHAT LOGIC ---
-    window.abrirChat = (destId, destNome) => {
+    // --- LOGICA DE PERFIL (O QUE VOCÊ PEDIU) ---
+    window.verPerfilUsuario = async (uidAlvo) => {
+        uidSendoVisualizado = uidAlvo;
+        const snap = await get(ref(db, `usuarios/${uidAlvo}`));
+        const alvo = snap.val();
+        if(!alvo) return;
+
         fecharTelas();
-        document.getElementById('telaChat').style.display = 'block';
-        document.getElementById('chatNomeDestino').innerText = destNome;
-        chatAtivoId = [window.user.uid, destId].sort().join('_');
+        document.getElementById('telaPerfil').style.display = 'block';
         
-        onValue(ref(db, `conversas/${chatAtivoId}`), snap => {
-            const box = document.getElementById('chatMensagens');
-            box.innerHTML = "";
-            snap.forEach(m => {
-                const msg = m.val();
-                const classe = msg.uid === window.user.uid ? 'me' : 'them';
-                box.innerHTML += `<div class="msg ${classe}">${msg.texto}</div>`;
-            });
-            box.scrollTop = box.scrollHeight;
-        });
-    };
+        const cont = document.getElementById('perfilConteudo');
+        cont.innerHTML = `
+            <i class="fas fa-user-circle" style="font-size:70px; color:var(--mod-blue); margin-bottom:10px;"></i>
+            <h2 style="margin:0;">${alvo.nome}</h2>
+            <p style="color:var(--gold); font-weight:bold; margin:5px 0;">${alvo.cargo.toUpperCase()}</p>
+            <div style="background:var(--ice); padding:10px; border-radius:10px; display:inline-block; margin-top:10px;">
+                <b style="color:var(--mod-blue);">${alvo.moedasBlue || 0}</b> BLUES
+            </div>
+        `;
 
-    window.enviarMensagem = async () => {
-        const inp = document.getElementById('chatInput');
-        const txt = inp.value.trim();
-        if(!txt || !chatAtivoId) return;
-        await push(ref(db, `conversas/${chatAtivoId}`), { uid: window.user.uid, texto: txt, time: Date.now() });
-        inp.value = "";
-    };
-
-    function escutarNotificacoes() {
-        onValue(ref(db, 'conversas'), snap => {
-            let temNova = false;
-            snap.forEach(conversa => {
-                if(conversa.key.includes(window.user.uid)) {
-                    // Lógica simples: se mudar algo na conversa e não for eu, brilha
-                }
-            });
-        });
-    }
-
-    // --- LEILÃO & FEED ---
-    window.finalizarLeilao = async (lid, criadorUid, ganhadorUid) => {
-        if(!ganhadorUid) return alert("Ninguém deu lance ainda!");
-        if(confirm("Deseja encerrar este leilão e falar com o ganhador?")) {
-            await update(ref(db, `leiloes/${lid}`), { ativo: false });
-            const s = await get(ref(db, `usuarios/${ganhadorUid}`));
-            const g = s.val();
-            window.abrirChat(ganhadorUid, g.nome);
+        // MOSTRA PAINEL ADM SE VOCÊ FOR ADM1 E NÃO FOR O SEU PRÓPRIO PERFIL
+        const painel = document.getElementById('painelAdmControle');
+        if(window.user.cargo === 'ADM1' && uidAlvo !== window.user.uid) {
+            painel.style.display = 'block';
+        } else {
+            painel.style.display = 'none';
         }
+
+        // Carrega fotos só desse user
+        const grid = document.getElementById('gridUser');
+        grid.innerHTML = "";
+        const pSnap = await get(ref(db, 'posts'));
+        pSnap.forEach(p => {
+            const pt = p.val();
+            if(pt.uid === uidAlvo) {
+                grid.innerHTML += `<img src="${pt.i1}" style="width:100%; height:100px; object-fit:cover; border-radius:5px;">`;
+            }
+        });
     };
 
+    window.abrirMeuPerfilProprio = () => {
+        if(window.user) window.verPerfilUsuario(window.user.uid);
+    };
+
+    // --- OPERAÇÕES ADM ---
+    window.mudarCargo = async (novo) => {
+        if(!uidSendoVisualizado) return;
+        await update(ref(db, `usuarios/${uidSendoVisualizado}`), { cargo: novo });
+        alert("Cargo alterado!");
+        window.verPerfilUsuario(uidSendoVisualizado);
+    };
+
+    window.ajustarBlues = async (qtd) => {
+        if(!uidSendoVisualizado) return;
+        const s = await get(ref(db, `usuarios/${uidSendoVisualizado}`));
+        const atual = s.val().moedasBlue || 0;
+        await update(ref(db, `usuarios/${uidSendoVisualizado}`), { moedasBlue: atual + qtd });
+        window.verPerfilUsuario(uidSendoVisualizado);
+    };
+
+    // --- FEEDS ---
     function carregarFeeds() {
         onValue(ref(db, 'leiloes'), snap => {
             const div = document.getElementById('feed-leiloes'); div.innerHTML = "";
             snap.forEach(l => {
                 const le = l.val();
-                const lid = l.key;
-                const ehDono = window.user && window.user.uid === le.criadorUid;
-                const ehStaff = window.user && (window.user.cargo !== 'user');
-
-                if(le.privado && !ehDono && !ehStaff) return;
-
                 div.innerHTML = `
                 <div class="card-leilao">
                     ${!le.ativo ? '<div class="leilao-encerrado">ARREMATADO</div>' : ''}
-                    ${le.ativo ? `<button class="btn-voz" onclick="window.entrarVoz('${lid}', '${le.item}')"><i class="fas fa-headset"></i></button>` : ''}
                     <img src="${le.imagem}">
                     <div class="info-leilao">
-                        <h3>${le.item}</h3>
+                        <h3 onclick="window.verPerfilUsuario('${le.criadorUid}')" style="cursor:pointer; text-decoration:underline;">${le.item}</h3>
                         <div class="valor-lance">R$ ${le.lanceAtual}</div>
-                        ${le.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="window.darLance('${lid}', ${le.lanceAtual})">LANCE + R$ 50</button>` : ''}
-                        ${le.ativo && ehDono ? `<button class="btn-action" style="background:var(--purple); margin-top:5px;" onclick="window.finalizarLeilao('${lid}', '${le.criadorUid}', '${le.maiorLicitante}')"><i class="fas fa-gavel"></i> FINALIZAR E ABRIR CHAT</button>` : ''}
-                        ${!le.ativo && ehDono ? `<button class="btn-action" style="background:var(--blue); margin-top:5px;" onclick="window.abrirChat('${le.maiorLicitante}', 'Ganhador')">FALAR COM GANHADOR</button>` : ''}
+                        ${le.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="window.darLance('${l.key}', ${le.lanceAtual})">LANCE + R$ 50</button>` : ''}
                     </div>
                 </div>` + div.innerHTML;
             });
@@ -349,13 +351,13 @@
             const div = document.getElementById('feed'); div.innerHTML = "";
             snap.forEach(p => {
                 const pt = p.val();
-                const midia = pt.tipoMidia === 'video' ? `<video src="${pt.i1}" controls style="width:100%"></video>` : `<img src="${pt.i1}" style="width:100%">`;
+                const midia = pt.tipoMidia === 'video' ? `<video src="${pt.i1}" controls></video>` : `<img src="${pt.i1}">`;
                 div.innerHTML = `
                 <div class="card-timeline">
                     ${midia}
                     <div style="padding:15px;">
-                        <b>${pt.u1}</b>
-                        <p style="font-size:14px; color:#ccc;">${pt.descricao || ""}</p>
+                        <b onclick="window.verPerfilUsuario('${pt.uid}')" style="cursor:pointer; color:var(--mod-blue); text-decoration:underline;">${pt.u1}</b>
+                        <p style="font-size:14px; color:#ccc; margin:5px 0;">${pt.descricao || ""}</p>
                         <button class="btn-action" style="background:var(--sea);" onclick="window.abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button>
                     </div>
                 </div>` + div.innerHTML;
@@ -363,40 +365,7 @@
         });
     }
 
-    // --- OUTRAS FUNÇÕES (MANTIDAS) ---
-    window.prepararPost = (input) => {
-        const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = e => { 
-            fotoPostBase64 = e.target.result; 
-            tipoMidiaPost = file.type.startsWith('video') ? 'video' : 'image';
-            document.getElementById(tipoMidiaPost === 'video' ? 'previewPostVid' : 'previewPostImg').src = e.target.result;
-            document.getElementById(tipoMidiaPost === 'video' ? 'previewPostVid' : 'previewPostImg').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    };
-
-    window.publicarPost = async () => {
-        const desc = document.getElementById('postDescricao').value;
-        if(!fotoPostBase64) return alert("Selecione uma mídia!");
-        await push(ref(db, 'posts'), { u1: window.user.nome, uid: window.user.uid, i1: fotoPostBase64, tipoMidia: tipoMidiaPost, descricao: desc });
-        fecharTelas();
-    };
-
-    window.girarBau = async () => {
-        if (window.user.moedasBlue < 5) return alert("Sem Blues!");
-        const icone = document.getElementById('iconeBau');
-        icone.classList.add('animar-bau');
-        somGiro.play();
-        setTimeout(async () => {
-            icone.classList.remove('animar-bau');
-            const premio = Math.random() > 0.8 ? 10 : 0;
-            await update(ref(db, `usuarios/${window.user.uid}`), { moedasBlue: window.user.moedasBlue - 5 + premio });
-            document.getElementById('resultadoDrop').innerText = premio > 0 ? "GANHOU 10 BLUES!" : "Tente novamente";
-            if(premio > 0) somVitoria.play();
-        }, 2000);
-    };
-
+    // --- FUNÇÕES GERAIS ---
     window.fecharTelas = () => {
         document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
         document.getElementById('app').style.display = 'block';
@@ -404,7 +373,62 @@
     window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
     window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
     window.abrirPostar = () => { fecharTelas(); document.getElementById('telaPostar').style.display = 'block'; };
-    window.abrirMeuPerfil = () => { fecharTelas(); document.getElementById('telaPerfil').style.display = 'block'; };
+    
+    window.abrirChat = (destId, destNome) => {
+        fecharTelas();
+        document.getElementById('telaChat').style.display = 'block';
+        document.getElementById('chatNomeDestino').innerText = destNome;
+        chatAtivoId = [window.user.uid, destId].sort().join('_');
+        onValue(ref(db, `conversas/${chatAtivoId}`), snap => {
+            const box = document.getElementById('chatMensagens');
+            box.innerHTML = "";
+            snap.forEach(m => {
+                const msg = m.val();
+                box.innerHTML += `<div class="msg ${msg.uid === window.user.uid ? 'me' : 'them'}">${msg.texto}</div>`;
+            });
+            box.scrollTop = box.scrollHeight;
+        });
+    };
+
+    window.enviarMensagem = async () => {
+        const inp = document.getElementById('chatInput');
+        if(!inp.value.trim()) return;
+        await push(ref(db, `conversas/${chatAtivoId}`), { uid: window.user.uid, texto: inp.value, time: Date.now() });
+        inp.value = "";
+    };
+
+    window.prepararPost = (input) => {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = e => { 
+            fotoPostBase64 = e.target.result; 
+            tipoMidiaPost = file.type.startsWith('video') ? 'video' : 'image';
+            const prev = document.getElementById(tipoMidiaPost === 'video' ? 'previewPostVid' : 'previewPostImg');
+            prev.src = e.target.result; prev.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.publicarPost = async () => {
+        if(!fotoPostBase64) return alert("Mídia vazia!");
+        await push(ref(db, 'posts'), { u1: window.user.nome, uid: window.user.uid, i1: fotoPostBase64, tipoMidia: tipoMidiaPost, descricao: document.getElementById('postDescricao').value });
+        fecharTelas();
+    };
+
+    window.girarBau = async () => {
+        if (window.user.moedasBlue < 5) return alert("Sem Blues!");
+        document.getElementById('iconeBau').classList.add('animar-bau');
+        somGiro.play();
+        setTimeout(async () => {
+            document.getElementById('iconeBau').classList.remove('animar-bau');
+            const ganhou = Math.random() > 0.8;
+            const premio = ganhou ? 10 : 0;
+            await update(ref(db, `usuarios/${window.user.uid}`), { moedasBlue: window.user.moedasBlue - 5 + premio });
+            document.getElementById('resultadoDrop').innerText = ganhou ? "GANHOU 10 BLUES!" : "Tente novamente";
+            if(ganhou) somVitoria.play();
+        }, 2000);
+    };
+
     window.darLance = async (lid, atual) => await update(ref(db, `leiloes/${lid}`), { lanceAtual: atual + 50, maiorLicitante: window.user.uid });
     window.comprar = (t, v) => window.open(`https://wa.me/5511983602504?text=Quero ${t}`);
     window.compartilharSite = () => navigator.share({title: 'ICE TROCAS', url: location.href});
