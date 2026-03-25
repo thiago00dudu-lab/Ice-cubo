@@ -7,58 +7,58 @@
     <title>ICE TROCAS - Oficial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
-        /* MANTIDO SEU TEMA ORIGINAL EXATAMENTE COMO SOLICITADO */
         :root { 
             --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
             --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
             --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; 
             --purple: #a333c8;
         }
-        body { margin:0; font-family: sans-serif; background: radial-gradient(circle at top, #0d1d2d, #050a0f); color: white; padding-bottom: 90px; overflow-x: hidden; }
+        body { margin:0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: radial-gradient(circle at top, #0d1d2d, #050a0f); color: white; padding-bottom: 90px; overflow-x: hidden; }
+        
+        /* HEADER E LOGO ELEGANTE */
+        header { padding:10px 15px; background: rgba(10, 20, 30, 0.95); backdrop-filter: blur(15px); display:flex; flex-direction: column; border-bottom: 1px solid rgba(0,191,255,0.2); position: sticky; top:0; z-index:100; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .logo-ice { font-size: 24px; font-weight: 900; letter-spacing: 3px; color: #fff; text-shadow: 0 0 15px rgba(0,191,255,0.6); }
+        .logo-ice span { color: var(--mod-blue); }
+        
+        /* TICKER DE COTAÇÃO ADM1 */
+        .adm1-ticker { background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; display: flex; gap: 10px; margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .quote-up { color: var(--green); }
+        .quote-down { color: var(--red); }
+
         #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .badge-star { font-size: 14px; display: flex; gap: 4px; align-items: center; justify-content: center; margin-bottom: 5px; }
-        .star-mod { color: var(--mod-blue); }
-        .star-adm2 { color: var(--red); }
-        .star-adm1 { color: var(--gold); }
+        
         .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 4000; }
         .btn-float { width: 42px; height: 42px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 16px; }
-        header { padding:15px; background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; z-index:100; }
+        
         .header-icons { display: flex; align-items: center; gap: 18px; }
         .perfil-icon-container { position: relative; cursor: pointer; z-index: 101; }
         .notificacao-balao { position: absolute; top: -5px; right: -5px; background: var(--red); width: 12px; height: 12px; border-radius: 50%; border: 2px solid #161b22; display: none; }
+        
         .card-timeline { background: var(--ice); backdrop-filter: blur(5px); border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
-        .card-info { padding: 15px; }
-        .btn-delete-post { position: absolute; top: 10px; right: 10px; background: rgba(255, 77, 77, 0.8); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 14px; }
+        
         .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; }
         .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
         .nav i.active { color: var(--mod-blue); }
+        
         .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .grid-postagens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
-        .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; }
-        .conversa-item { background: var(--ice); padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
-        .painel-adm { background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px; }
-        .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; background: #161b22; }
-        .file-label { display: block; background: #30363d; color: white; padding: 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-size: 12px; text-align: center; }
-        .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; }
+        
+        /* LEILÃO ESTILO PUMP */
+        .card-leilao { background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; }
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
+        .voice-participants-mini { background: rgba(0,0,0,0.6); padding: 8px; display: flex; gap: 5px; flex-wrap: wrap; border-top: 1px solid rgba(0,191,255,0.3); }
+        .voice-tag { font-size: 9px; background: var(--mod-blue); color: black; padding: 2px 6px; border-radius: 10px; font-weight: bold; animation: pulse-border 1.5s infinite; }
+        @keyframes pulse-border { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+
         .info-leilao { padding: 15px; text-align: center; }
         .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; }
-        .btn-lance { background: var(--green); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        .leilao-encerrado { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 24px; font-weight: bold; text-align: center; }
         
-        #chatConteudo { display: flex; flex-direction: column; height: 80vh; }
-        #mensagensChat { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px; border-radius: 10px; max-width: 80%; }
-        .msg-me { background: var(--blue); align-self: flex-end; }
-        .msg-them { background: var(--gray); align-self: flex-start; }
-
         .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; }
         .blue-amount { font-size: 36px; font-weight: bold; color: #00BFFF; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
-        .bio-text { font-size: 14px; color: #aaa; margin: 5px 0 15px 0; font-style: italic; padding: 0 15px; }
 
         @keyframes tremer {
             0% { transform: scale(1) rotate(0deg); }
@@ -69,11 +69,8 @@
         }
         .animar-bau { animation: tremer 0.5s ease-in-out infinite; color: var(--white) !important; text-shadow: 0 0 30px var(--mod-blue) !important; }
 
-        /* NOVOS ESTILOS VOZ E PRIVADO */
         .badge-privado { position: absolute; top: 10px; left: 10px; background: var(--purple); color: white; padding: 5px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 20; display: flex; align-items: center; gap: 5px; }
-        .btn-voz { position: absolute; bottom: 80px; right: 15px; background: var(--mod-blue); width: 50px; height: 50px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 0 15px var(--mod-blue); z-index: 100; }
-        .voz-ativa { background: var(--red); animation: pulse-voz 1.5s infinite; }
-        @keyframes pulse-voz { 0% { box-shadow: 0 0 0 0px rgba(255, 77, 77, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(255, 77, 77, 0); } }
+        .btn-voz { position: absolute; top: 10px; right: 10px; background: var(--mod-blue); width: 40px; height: 40px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; box-shadow: 0 0 10px var(--mod-blue); z-index: 100; }
         .room-voice-ui { background: rgba(0,0,0,0.9); padding: 15px; border-radius: 15px; margin-top: 10px; border: 1px solid var(--mod-blue); display: none; }
     </style>
 </head>
@@ -88,7 +85,7 @@
 
 <div id="telaLogin">
     <div class="login-box">
-        <h2>ICE TROCAS</h2>
+        <h2 style="letter-spacing: 2px;">ICE TROCAS</h2>
         <input type="text" id="userIn" placeholder="Login">
         <input type="password" id="passIn" placeholder="Senha">
         <button class="btn-action" onclick="fazerLogin()">ENTRAR</button>
@@ -97,13 +94,20 @@
 
 <div id="app" style="display:none;">
     <header>
-        <b style="color: var(--mod-blue);">ICE TROCAS</b> 
-        <div class="header-icons">
-            <i class="fas fa-share-nodes" style="font-size:22px; color:white; cursor:pointer;" onclick="compartilharSite()"></i>
-            <div class="perfil-icon-container" onclick="abrirMeuPerfil()">
-                <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue);"></i>
-                <div id="balaoAlerta" class="notificacao-balao"></div>
+        <div class="header-top">
+            <div class="logo-ice">ICE<span>TROCAS</span></div> 
+            <div class="header-icons">
+                <i class="fas fa-share-nodes" style="font-size:20px; color:white; cursor:pointer;" onclick="compartilharSite()"></i>
+                <div class="perfil-icon-container" onclick="abrirMeuPerfil()">
+                    <i class="fas fa-user-circle" style="font-size:24px; color:var(--mod-blue);"></i>
+                    <div id="balaoAlerta" class="notificacao-balao"></div>
+                </div>
             </div>
+        </div>
+        <div class="adm1-ticker">
+            <span>ADM1/BRL: <span id="valAdm1">R$ 22.000,00</span> <span id="percentAdm1" class="quote-up">▲ 0.00%</span></span>
+            <span style="opacity: 0.5;">|</span>
+            <span>BLUES: <span style="color:var(--mod-blue)">1.00</span></span>
         </div>
     </header>
     
@@ -142,18 +146,17 @@
 
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align:center;"></div>
-    <div id="painelStaffLeilao" class="painel-adm" style="display:none; border-color: var(--mod-blue);">
+    <div id="painelStaffLeilao" class="painel-adm" style="display:none; border: 2px solid var(--mod-blue); padding:15px; border-radius:15px; margin-top:15px;">
         <h4 style="color:var(--mod-blue); text-align:center; margin-top:0;"><i class="fas fa-gavel"></i> PAINEL STAFF</h4>
         <button class="btn-action" style="background:var(--mod-blue);" onclick="document.getElementById('telaCriarLeilao').style.display='block'">ABRIR NOVO LEILÃO</button>
     </div>
-    <div id="painelAdmControle" class="painel-adm" style="display:none;">
+    <div id="painelAdmControle" class="painel-adm" style="display:none; background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px;">
         <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
         <div style="display:flex; gap:5px; margin-bottom: 15px;">
             <button class="btn-action" style="background:var(--gold); color:black; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
             <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
             <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
         </div>
-        <hr style="opacity: 0.2;">
         <div style="display:flex; gap:5px;">
             <button class="btn-action" style="background:var(--green); font-size:10px;" onclick="ajustarBlues(100)">+100 BLUES</button>
             <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="ajustarBlues(-100)">-100 BLUES</button>
@@ -162,67 +165,8 @@
         <button class="btn-action" style="background:var(--blue); font-size:10px;" onclick="definirBlues()">DEFINIR SALDO</button>
     </div>
     <h4>Postagens</h4>
-    <div id="gridUser" class="grid-postagens"></div>
+    <div id="gridUser" class="grid-postagens" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px;"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
-</div>
-
-<div id="telaEditarPerfil" class="tela-full">
-    <h3 style="text-align: center; color: var(--mod-blue);"><i class="fas fa-user-edit"></i> EDITAR PERFIL</h3>
-    <label class="file-label" for="editFotoPerfil"><i class="fas fa-camera"></i> Escolher Foto</label>
-    <input type="file" id="editFotoPerfil" accept="image/*" style="display:none;" onchange="prepararFotoPerfil(this)">
-    <img id="previewFotoPerfil" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin: 0 auto 15px auto; border: 2px solid var(--mod-blue);">
-    <textarea id="editBio" placeholder="Bio..." style="width:100%; padding:12px; border-radius:8px; color:black; margin-bottom: 10px; resize: none;" rows="3"></textarea>
-    <button class="btn-action" style="background:var(--green);" onclick="salvarPerfil()">SALVAR</button>
-    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
-</div>
-
-<div id="telaCarteira" class="tela-full">
-    <h3 style="text-align: center;"><i class="fas fa-wallet" style="color: var(--mod-blue);"></i> MINHA CARTEIRA</h3>
-    <div class="wallet-card">
-        <p style="margin: 0; opacity: 0.8; font-size: 14px;">Saldo Disponível</p>
-        <div class="blue-amount" id="saldoCarteira">0</div>
-        <p style="margin: 5px 0 0 0; font-size: 12px; color: #00BFFF;">BLUE COINS</p>
-    </div>
-    <button class="btn-action" style="background: var(--green);" onclick="comprar('BLUE COINS', 'PIX')">RECARREGAR BLUES</button>
-    <button class="btn-action" style="background: var(--gray); margin-top: 15px;" onclick="fecharTelas()">FECHAR</button>
-</div>
-
-<div id="telaPostar" class="tela-full">
-    <h3>NOVA TROCA</h3>
-    <label class="file-label" for="postFoto"><i class="fas fa-camera"></i> Escolher Foto</label>
-    <input type="file" id="postFoto" accept="image/*" style="display:none;" onchange="prepararPost(this)">
-    <img id="previewPost" style="width:100%; display:none; border-radius:10px; margin-bottom:10px;">
-    <button class="btn-action" onclick="publicarPost()">POSTAR</button>
-    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
-</div>
-
-<div id="telaChat" class="tela-full">
-    <h3 id="chatTitulo">Negociação</h3>
-    <div id="chatConteudo">
-        <div id="mensagensChat"></div>
-        <div style="display:flex; gap:5px; padding:10px;">
-            <input type="text" id="msgInput" placeholder="Digite..." style="flex-grow:1; padding:10px; border-radius:5px;">
-            <button onclick="enviarMensagem()" style="background:var(--blue); color:white; padding:10px; border-radius:5px;"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">VOLTAR</button>
-</div>
-
-<div id="telaCriarLeilao" class="tela-full">
-    <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-gavel"></i> INICIAR LEILÃO</h3>
-    <input type="text" id="leilaoItem" placeholder="Nome do Item" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; color:black;">
-    <input type="number" id="leilaoValor" placeholder="Valor Inicial" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; color:black;">
-    
-    <div style="background: rgba(163, 51, 200, 0.2); padding: 10px; border-radius: 10px; border: 1px solid var(--purple); margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 14px; color: var(--purple); font-weight: bold;">LEILÃO PRIVADO?</span>
-        <input type="checkbox" id="checkPrivado" style="transform: scale(1.5);">
-    </div>
-
-    <label class="file-label" for="leilaoFoto"><i class="fas fa-camera"></i> Foto do Item</label>
-    <input type="file" id="leilaoFoto" accept="image/*" style="display:none;" onchange="prepararFotoLeilao(this)">
-    <img id="previewFotoLeilao" style="width:100%; display:none; border-radius:10px; margin-bottom:15px;">
-    <button class="btn-action" style="background:var(--gold); color:black;" onclick="publicarLeilao()">PUBLICAR</button>
-    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
 </div>
 
 <script type="module">
@@ -235,15 +179,29 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
+    // --- SONS ---
+    const somGiro = new Audio('https://assets.mixkit.co/active_storage/sfx/2012/2012-preview.mp3');
+    const somVitoria = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+
     window.user = null;
-    let fotoPostBase64 = null;
-    let fotoLeilaoBase64 = null;
-    let fotoPerfilBase64 = null;
     let chatAtivoId = null;
     let salaVozAtual = null;
     let mutado = false;
+    let fotoPostBase64, fotoLeilaoBase64, fotoPerfilBase64;
 
-    // --- LOGIN ---
+    // --- TICKER DE COTAÇÃO REAL-TIME ---
+    let precoBaseADM1 = 22000;
+    setInterval(() => {
+        const variacao = (Math.random() * 10 - 5);
+        precoBaseADM1 += variacao;
+        const perc = ((variacao / precoBaseADM1) * 100).toFixed(2);
+        document.getElementById('valAdm1').innerText = `R$ ${precoBaseADM1.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        const elPerc = document.getElementById('percentAdm1');
+        elPerc.innerText = `${perc > 0 ? '▲' : '▼'} ${Math.abs(perc)}%`;
+        elPerc.className = perc > 0 ? 'quote-up' : 'quote-down';
+    }, 3000);
+
+    // --- LOGIN E AUTH (MANTIDO) ---
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
@@ -269,7 +227,8 @@
             onValue(ref(db, `usuarios/${u.uid}`), (s) => {
                 window.user = s.val();
                 if(window.user) {
-                    document.getElementById('saldoCarteira').innerText = window.user.moedasBlue || 0;
+                    const saldoEl = document.getElementById('saldoCarteira');
+                    if(saldoEl) saldoEl.innerText = window.user.moedasBlue || 0;
                     iniciarApp();
                 }
             });
@@ -279,7 +238,8 @@
                 window.user = JSON.parse(local); 
                 onValue(ref(db, `usuarios/master_ice`), (s) => {
                     window.user = s.val();
-                    document.getElementById('saldoCarteira').innerText = window.user.moedasBlue || 0;
+                    const saldoEl = document.getElementById('saldoCarteira');
+                    if(saldoEl) saldoEl.innerText = window.user.moedasBlue || 0;
                 });
                 iniciarApp(); 
             }
@@ -293,25 +253,15 @@
         carregarFeeds();
     }
 
-    // --- SISTEMA DE VOZ ---
+    // --- VOZ ---
     window.entrarVoz = async (lid, nomeItem) => {
         if(salaVozAtual) sairVoz();
         salaVozAtual = lid;
         document.getElementById('nomeSalaVoz').innerText = "SALA: " + nomeItem.toUpperCase();
         document.getElementById('telaVozAtiva').style.display = 'block';
-        
         const myPresenceRef = ref(db, `voz_rooms/${lid}/${window.user.uid}`);
         await set(myPresenceRef, { nome: window.user.nome, cargo: window.user.cargo, falando: true });
         onDisconnect(myPresenceRef).remove();
-
-        onValue(ref(db, `voz_rooms/${lid}`), snap => {
-            const div = document.getElementById('listaFalando');
-            div.innerHTML = "";
-            snap.forEach(u => {
-                const userVoz = u.val();
-                div.innerHTML += `<div style="padding: 5px 10px; border-radius: 20px; background: ${userVoz.falando ? 'var(--green)' : 'var(--gray)'}; font-size: 10px;">${userVoz.nome}</div>`;
-            });
-        });
     };
 
     window.toggleMute = () => {
@@ -326,7 +276,7 @@
         document.getElementById('telaVozAtiva').style.display = 'none';
     };
 
-    // --- FEEDS (COM FILTRO PRIVADO E STAFF) ---
+    // --- FEED COM PRESENÇA DE VOZ (ESTILO PUMP) ---
     function carregarFeeds() {
         onValue(ref(db, 'leiloes'), snap => {
             const div = document.getElementById('feed-leiloes'); div.innerHTML = "";
@@ -334,18 +284,41 @@
                 const le = l.val();
                 const lid = l.key;
                 
-                // REGRAS DE VISIBILIDADE: Se for privado, só dono ou STAFF (ADM1, ADM2, MOD) vê
                 const ehDono = window.user && window.user.uid === le.criadorUid;
                 const ehStaff = window.user && (window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2' || window.user.cargo === 'MOD');
-                
-                if(le.privado && !ehDono && !ehStaff) return; // Pula se não tiver acesso
+                if(le.privado && !ehDono && !ehStaff) return;
 
-                const badgePrivado = le.privado ? `<div class="badge-privado"><i class="fas fa-lock"></i> PRIVADO</div>` : '';
-                const btnVozIcon = le.ativo ? `<button class="btn-voz" onclick="window.entrarVoz('${lid}', '${le.item}')"><i class="fas fa-headset"></i></button>` : '';
-                const iconeFinalizar = (le.ativo && ehDono) ? `<button class="btn-delete-post" style="background: var(--gold); color: black; z-index: 20;" onclick="window.finalizarLeilao('${lid}', '${le.maiorLicitante}')"><i class="fas fa-gavel"></i></button>` : '';
-                let acoesExtra = le.ativo ? `<button class="btn-lance" onclick="window.darLance('${lid}', ${le.lanceAtual})">LANCE + R$ 50</button>` : '';
-                
-                div.innerHTML = `<div class="card-leilao">${!le.ativo ? '<div class="leilao-encerrado">ARREMATADO</div>' : ''}${badgePrivado}${iconeFinalizar}${btnVozIcon}<img src="${le.imagem}"><div class="info-leilao"><small>Leilão de ${le.criadorNome}</small><h3>${le.item}</h3><div class="valor-lance">R$ ${le.lanceAtual}</div>${acoesExtra}</div></div>` + div.innerHTML;
+                const cardHtml = `
+                    <div class="card-leilao" id="leilao-${lid}">
+                        ${!le.ativo ? '<div class="leilao-encerrado">ARREMATADO</div>' : ''}
+                        ${le.privado ? '<div class="badge-privado"><i class="fas fa-lock"></i> PRIVADO</div>' : ''}
+                        ${le.ativo ? `<button class="btn-voz" onclick="window.entrarVoz('${lid}', '${le.item}')"><i class="fas fa-headset"></i></button>` : ''}
+                        <img src="${le.imagem}">
+                        <div class="voice-participants-mini" id="mini-voz-${lid}">
+                            <span style="font-size:9px; color:#666;">Aguardando áudio...</span>
+                        </div>
+                        <div class="info-leilao">
+                            <small>Leilão de ${le.criadorNome}</small>
+                            <h3 style="margin:5px 0;">${le.item}</h3>
+                            <div class="valor-lance">R$ ${le.lanceAtual}</div>
+                            ${le.ativo ? `<button class="btn-lance" style="background:var(--green); color:white; border:none; padding:12px; border-radius:8px; width:100%; font-weight:bold; cursor:pointer;" onclick="window.darLance('${lid}', ${le.lanceAtual})">LANCE + R$ 50</button>` : ''}
+                        </div>
+                    </div>`;
+                div.innerHTML = cardHtml + div.innerHTML;
+
+                // Monitorar quem está na voz deste leilão específico
+                onValue(ref(db, `voz_rooms/${lid}`), snapVoz => {
+                    const miniVoz = document.getElementById(`mini-voz-${lid}`);
+                    if(!miniVoz) return;
+                    miniVoz.innerHTML = "";
+                    let temAlguem = false;
+                    snapVoz.forEach(uVoz => {
+                        const uv = uVoz.val();
+                        temAlguem = true;
+                        miniVoz.innerHTML += `<div class="voice-tag"><i class="fas fa-microphone"></i> ${uv.nome}</div>`;
+                    });
+                    if(!temAlguem) miniVoz.innerHTML = '<span style="font-size:9px; color:#666;">Ninguém no áudio</span>';
+                });
             });
         });
 
@@ -353,27 +326,40 @@
             const div = document.getElementById('feed'); div.innerHTML = "";
             snap.forEach(p => {
                 const pt = p.val();
-                const btnApagar = (window.user && (window.user.uid === pt.uid || window.user.cargo === 'ADM1')) ? `<button class="btn-delete-post" onclick="window.apagarPost('${p.key}')"><i class="fas fa-trash"></i></button>` : '';
-                div.innerHTML = `<div class="card-timeline">${btnApagar}<img src="${pt.i1}" onclick="window.abrirPerfil('${pt.uid}')"><div class="card-info"><b>${pt.u1}</b><button class="btn-action" style="background:var(--sea);" onclick="window.abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button></div></div>` + div.innerHTML;
+                const btnApagar = (window.user && (window.user.uid === pt.uid || window.user.cargo === 'ADM1')) ? `<button class="btn-delete-post" style="position:absolute; top:10px; right:10px; background:rgba(255,77,77,0.8); border:none; border-radius:50%; width:30px; height:30px; color:white;" onclick="window.apagarPost('${p.key}')"><i class="fas fa-trash"></i></button>` : '';
+                div.innerHTML = `<div class="card-timeline">${btnApagar}<img src="${pt.i1}" onclick="window.abrirPerfil('${pt.uid}')"><div class="card-info" style="padding:15px;"><b>${pt.u1}</b><button class="btn-action" style="background:var(--sea);" onclick="window.abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button></div></div>` + div.innerHTML;
             });
         });
     }
 
-    // --- ICE DROP E OUTROS MANTIDOS ---
+    // --- ICE DROP COM ÁUDIO ---
     window.girarBau = async () => {
         if (window.user.moedasBlue < 5) return alert("Você precisa de 5 Blues!");
-        const btn = document.getElementById('btnGirarBau'); const icone = document.getElementById('iconeBau');
-        const resDiv = document.getElementById('resultadoDrop'); const uid = window.user.uid || "master_ice";
-        btn.disabled = true; icone.classList.add('animar-bau'); resDiv.innerText = "Sorteando...";
+        
+        const btn = document.getElementById('btnGirarBau');
+        const icone = document.getElementById('iconeBau');
+        const resDiv = document.getElementById('resultadoDrop');
+        const uid = window.user.uid || "master_ice";
+        
+        btn.disabled = true;
+        icone.classList.add('animar-bau');
+        resDiv.innerText = "Sorteando...";
+        
+        // Toca som de giro
+        somGiro.currentTime = 0;
+        somGiro.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+
         const snapshotPool = await get(ref(db, 'configuracoes/pool_bau'));
         let bancaAtual = snapshotPool.val() || 0;
         const girosTotal = (window.user.girosTotal || 0) + 1;
         const novoSaldoAposCusto = window.user.moedasBlue - 5;
         bancaAtual += 4.5;
+
         setTimeout(async () => {
             icone.classList.remove('animar-bau');
             let sorte = Math.random() * 100;
             let premioNome = "Tente novamente!"; let valorPremioBlue = 0; let novoCargo = null; let bancaDescontar = 0;
+            
             if (girosTotal > 4) {
                 if (sorte < 0.5) { premioNome = "🏆 ADM1 GANHO!"; novoCargo = "ADM1"; }
                 else if (sorte < 1.5) { premioNome = "🛡️ ADM2 GANHO!"; novoCargo = "ADM2"; }
@@ -381,63 +367,42 @@
             }
             if (!novoCargo && sorte > 5 && sorte < 15 && bancaAtual >= 20) { premioNome = "💰 Ganhou 10 Blues!"; valorPremioBlue = 10; bancaDescontar = 10; }
             else if (!novoCargo && sorte >= 15 && sorte < 40 && bancaAtual >= 10) { premioNome = "💰 Ganhou 5 Blues!"; valorPremioBlue = 5; bancaDescontar = 5; }
+            
+            if (valorPremioBlue > 0 || novoCargo) {
+                somVitoria.currentTime = 0;
+                somVitoria.play();
+            }
+
             const updates = {};
             updates[`usuarios/${uid}/moedasBlue`] = novoSaldoAposCusto + valorPremioBlue;
             updates[`usuarios/${uid}/girosTotal`] = girosTotal;
             updates[`configuracoes/pool_bau`] = bancaAtual - bancaDescontar;
             if (novoCargo) updates[`usuarios/${uid}/cargo`] = novoCargo;
             await update(ref(db), updates);
+            
             resDiv.innerHTML = `<span style="color:${valorPremioBlue > 0 || novoCargo ? 'var(--gold)' : 'white'}">${premioNome}</span>`;
             btn.disabled = false;
         }, 2000);
     };
 
-    window.publicarLeilao = async () => {
-        const n = document.getElementById('leilaoItem').value;
-        const v = parseInt(document.getElementById('leilaoValor').value);
-        const priv = document.getElementById('checkPrivado').checked;
-        if(!fotoLeilaoBase64 || !n || isNaN(v)) return alert("Preencha tudo!");
-        await push(ref(db, 'leiloes'), { 
-            item: n, lanceAtual: v, imagem: fotoLeilaoBase64, 
-            criadorUid: window.user.uid, criadorNome: window.user.nome, 
-            ativo: true, privado: priv 
-        });
-        fecharTelas();
-    };
-
-    // --- FUNÇÕES DE NAVEGAÇÃO E AUXILIARES ---
-    window.apagarPost = pid => confirm("Apagar?") && remove(ref(db, `posts/${pid}`));
-    window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
+    // --- FUNÇÕES AUXILIARES ---
     window.fecharTelas = () => { 
         document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
         document.getElementById('app').style.display = 'block';
     };
+    window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
+    window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
+    window.darLance = async (lid, atual) => await update(ref(db, `leiloes/${lid}`), { lanceAtual: atual + 50, maiorLicitante: window.user.uid });
     window.abrirPerfil = async (uid) => {
         const s = await get(ref(db, `usuarios/${uid}`)); const t = s.val(); if(!t) return;
         const souEu = (window.user.uid === uid || (window.user.uid === "master_ice" && uid === "master_ice"));
-        document.getElementById('perfilConteudo').innerHTML = `<img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo"><h2>${t.nome}</h2><p>${t.cargo}</p>${t.bio ? `<p class="bio-text">"${t.bio}"</p>` : ''}<p style="color:var(--mod-blue); font-weight:bold;">Saldo: ${t.moedasBlue || 0} Blues</p>${souEu ? `<button class="btn-action" onclick="window.abrirEditarPerfil()">EDITAR PERFIL</button>` : ''}`;
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid var(--mod-blue); margin-bottom:10px;"><h2>${t.nome}</h2><p>${t.cargo}</p>${t.bio ? `<p style="font-style:italic;">"${t.bio}"</p>` : ''}<p style="color:var(--mod-blue); font-weight:bold;">Saldo: ${t.moedasBlue || 0} Blues</p>${souEu ? `<button class="btn-action" onclick="window.abrirEditarPerfil()">EDITAR PERFIL</button>` : ''}`;
         document.getElementById('painelStaffLeilao').style.display = (souEu && t.cargo !== 'user') ? 'block' : 'none';
         document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && !souEu) ? 'block' : 'none';
         window.targetUid = uid; fecharTelas(); document.getElementById('telaPerfil').style.display = 'block';
     };
     window.abrirMeuPerfil = () => window.abrirPerfil(window.user.uid || "master_ice");
-    window.abrirEditarPerfil = () => { document.getElementById('telaEditarPerfil').style.display = 'block'; document.getElementById('editBio').value = window.user.bio || ''; };
-    window.prepararFotoPerfil = input => { const reader = new FileReader(); reader.onload = e => { fotoPerfilBase64 = e.target.result; document.getElementById('previewFotoPerfil').src = e.target.result; document.getElementById('previewFotoPerfil').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); };
-    window.salvarPerfil = async () => { const updates = { bio: document.getElementById('editBio').value }; if(fotoPerfilBase64) updates.foto = fotoPerfilBase64; await update(ref(db, `usuarios/${window.user.uid || 'master_ice'}`), updates); fecharTelas(); window.abrirMeuPerfil(); };
-    window.comprar = (tipo, valor) => window.open(`https://wa.me/5511983602504?text=Quero ${tipo}`);
-    window.abrirChat = (outroUid, outroNome) => { if(outroUid === window.user.uid) return; chatAtivoId = window.user.uid < outroUid ? window.user.uid + outroUid : outroUid + window.user.uid; document.getElementById('chatTitulo').innerText = outroNome; document.getElementById('telaChat').style.display = 'block'; onValue(ref(db, `chats/${chatAtivoId}`), snap => { const div = document.getElementById('mensagensChat'); div.innerHTML = ""; snap.forEach(m => { const msg = m.val(); div.innerHTML += `<div class="msg ${msg.uid === window.user.uid ? 'msg-me' : 'msg-them'}">${msg.texto}</div>`; }); div.scrollTop = div.scrollHeight; }); };
-    window.enviarMensagem = async () => { const txt = document.getElementById('msgInput').value; if(!txt) return; await push(ref(db, `chats/${chatAtivoId}`), { uid: window.user.uid, texto: txt, time: Date.now() }); document.getElementById('msgInput').value = ""; };
-    window.darLance = async (lid, atual) => await update(ref(db, `leiloes/${lid}`), { lanceAtual: atual + 50, maiorLicitante: window.user.uid });
-    window.finalizarLeilao = async (lid, mid) => { if(confirm("Finalizar?")) { await update(ref(db, `leiloes/${lid}`), { ativo: false }); if(mid) window.abrirChat(mid, "Ganhador"); } };
-    window.prepararPost = input => { const reader = new FileReader(); reader.onload = e => { fotoPostBase64 = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); };
-    window.publicarPost = async () => { if(!fotoPostBase64) return; await push(ref(db, 'posts'), { u1: window.user.nome, uid: window.user.uid, i1: fotoPostBase64 }); fecharTelas(); };
-    window.abrirPostar = () => document.getElementById('telaPostar').style.display = 'block';
-    window.prepararFotoLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLeilaoBase64 = e.target.result; document.getElementById('previewFotoLeilao').src = e.target.result; document.getElementById('previewFotoLeilao').style.display = 'block'; }; r.readAsDataURL(i.files[0]); };
-    window.mudarCargo = async (novo) => { await update(ref(db, `usuarios/${window.targetUid}`), { cargo: novo }); window.abrirPerfil(window.targetUid); };
-    window.ajustarBlues = async (q) => { const s = await get(ref(db, `usuarios/${window.targetUid}`)); await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: (s.val().moedasBlue || 0) + q }); window.abrirPerfil(window.targetUid); };
-    window.definirBlues = async () => { const v = parseInt(document.getElementById('valorPersonalizadoBlues').value); await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: v }); window.abrirPerfil(window.targetUid); };
     window.compartilharSite = () => navigator.share ? navigator.share({title: 'ICE TROCAS', url: location.href}) : alert("Link copiado!");
-    window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
 
 </script>
 </body>
