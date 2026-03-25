@@ -12,6 +12,7 @@
             --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
             --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
             --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; 
+            --purple: #a333c8;
         }
         body { margin:0; font-family: sans-serif; background: radial-gradient(circle at top, #0d1d2d, #050a0f); color: white; padding-bottom: 90px; overflow-x: hidden; }
         #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
@@ -55,14 +56,10 @@
         .msg-me { background: var(--blue); align-self: flex-end; }
         .msg-them { background: var(--gray); align-self: flex-start; }
 
-        /* ESTILO DA CARTEIRA */
         .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; }
         .blue-amount { font-size: 36px; font-weight: bold; color: #00BFFF; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
-        
-        /* ESTILO BIO */
         .bio-text { font-size: 14px; color: #aaa; margin: 5px 0 15px 0; font-style: italic; padding: 0 15px; }
 
-        /* ANIMAÇÃO DO BAÚ (NOVO) */
         @keyframes tremer {
             0% { transform: scale(1) rotate(0deg); }
             25% { transform: scale(1.1) rotate(-15deg); }
@@ -71,6 +68,13 @@
             100% { transform: scale(1) rotate(0deg); }
         }
         .animar-bau { animation: tremer 0.5s ease-in-out infinite; color: var(--white) !important; text-shadow: 0 0 30px var(--mod-blue) !important; }
+
+        /* NOVOS ESTILOS VOZ E PRIVADO */
+        .badge-privado { position: absolute; top: 10px; left: 10px; background: var(--purple); color: white; padding: 5px 10px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 20; display: flex; align-items: center; gap: 5px; }
+        .btn-voz { position: absolute; bottom: 80px; right: 15px; background: var(--mod-blue); width: 50px; height: 50px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 0 15px var(--mod-blue); z-index: 100; }
+        .voz-ativa { background: var(--red); animation: pulse-voz 1.5s infinite; }
+        @keyframes pulse-voz { 0% { box-shadow: 0 0 0 0px rgba(255, 77, 77, 0.7); } 100% { box-shadow: 0 0 0 15px rgba(255, 77, 77, 0); } }
+        .room-voice-ui { background: rgba(0,0,0,0.9); padding: 15px; border-radius: 15px; margin-top: 10px; border: 1px solid var(--mod-blue); display: none; }
     </style>
 </head>
 <body>
@@ -114,31 +118,34 @@
     </div>
 </div>
 
+<div id="telaVozAtiva" style="display:none; position: fixed; bottom: 100px; left: 20px; right: 20px; z-index: 4500;">
+    <div class="room-voice-ui" id="painelVoz" style="display: block;">
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <span id="nomeSalaVoz" style="font-size: 12px; color: var(--mod-blue); font-weight: bold;">SALA: Carregando...</span>
+            <button onclick="toggleMute()" id="btnMute" style="background:none; border:none; color:white;"><i class="fas fa-microphone"></i></button>
+        </div>
+        <div id="listaFalando" style="margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap;"></div>
+        <button class="btn-action" style="background: var(--red); margin-top: 10px; padding: 5px; font-size: 10px;" onclick="sairVoz()">SAIR DA CONVERSA</button>
+    </div>
+</div>
+
 <div id="telaIceDrop" class="tela-full">
     <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-box-open"></i> ICE DROP</h3>
     <div style="text-align: center; margin-top: 20px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,215,0,0.3);">
         <i id="iconeBau" class="fas fa-gift" style="font-size: 90px; color: var(--gold); text-shadow: 0 0 20px var(--gold); margin-bottom: 20px; display: inline-block;"></i>
         <p style="color: var(--mod-blue); font-size: 14px;">Custo: 5 Blue Coins por giro</p>
-        
-        <div id="resultadoDrop" style="min-height: 80px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin: 15px 0;">
-            Gire para tentar ganhar ADM ou Blues!
-        </div>
-        
-        <button id="btnGirarBau" class="btn-action" style="background:var(--gold); color:black; font-size: 18px; padding: 15px;" onclick="window.girarBau()">
-            <i class="fas fa-sync"></i> ABRIR BAÚ
-        </button>
+        <div id="resultadoDrop" style="min-height: 80px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin: 15px 0;">Gire para ganhar prêmios!</div>
+        <button id="btnGirarBau" class="btn-action" style="background:var(--gold); color:black; font-size: 18px; padding: 15px;" onclick="window.girarBau()"><i class="fas fa-sync"></i> ABRIR BAÚ</button>
     </div>
     <button class="btn-action" style="background:var(--gray); margin-top: 30px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align:center;"></div>
-    
     <div id="painelStaffLeilao" class="painel-adm" style="display:none; border-color: var(--mod-blue);">
         <h4 style="color:var(--mod-blue); text-align:center; margin-top:0;"><i class="fas fa-gavel"></i> PAINEL STAFF</h4>
         <button class="btn-action" style="background:var(--mod-blue);" onclick="document.getElementById('telaCriarLeilao').style.display='block'">ABRIR NOVO LEILÃO</button>
     </div>
-
     <div id="painelAdmControle" class="painel-adm" style="display:none;">
         <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
         <div style="display:flex; gap:5px; margin-bottom: 15px;">
@@ -147,7 +154,6 @@
             <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
         </div>
         <hr style="opacity: 0.2;">
-        <p style="text-align: center; font-size: 12px; color: var(--gold);">GERENCIAR BLUE COINS</p>
         <div style="display:flex; gap:5px;">
             <button class="btn-action" style="background:var(--green); font-size:10px;" onclick="ajustarBlues(100)">+100 BLUES</button>
             <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="ajustarBlues(-100)">-100 BLUES</button>
@@ -155,7 +161,6 @@
         <input type="number" id="valorPersonalizadoBlues" placeholder="Valor exato" style="width:100%; margin-top:10px; padding:8px; border-radius:5px; background:#161b22; color:white; border:1px solid var(--gray);">
         <button class="btn-action" style="background:var(--blue); font-size:10px;" onclick="definirBlues()">DEFINIR SALDO</button>
     </div>
-
     <h4>Postagens</h4>
     <div id="gridUser" class="grid-postagens"></div>
     <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
@@ -163,13 +168,11 @@
 
 <div id="telaEditarPerfil" class="tela-full">
     <h3 style="text-align: center; color: var(--mod-blue);"><i class="fas fa-user-edit"></i> EDITAR PERFIL</h3>
-    <label class="file-label" for="editFotoPerfil"><i class="fas fa-camera"></i> Escolher Foto da Galeria</label>
+    <label class="file-label" for="editFotoPerfil"><i class="fas fa-camera"></i> Escolher Foto</label>
     <input type="file" id="editFotoPerfil" accept="image/*" style="display:none;" onchange="prepararFotoPerfil(this)">
     <img id="previewFotoPerfil" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin: 0 auto 15px auto; border: 2px solid var(--mod-blue);">
-    
-    <textarea id="editBio" placeholder="Escreva algo sobre você ou sua loja..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black; margin-bottom: 10px; resize: none; font-family:sans-serif;" rows="3"></textarea>
-    
-    <button class="btn-action" style="background:var(--green);" onclick="salvarPerfil()">SALVAR ALTERAÇÕES</button>
+    <textarea id="editBio" placeholder="Bio..." style="width:100%; padding:12px; border-radius:8px; color:black; margin-bottom: 10px; resize: none;" rows="3"></textarea>
+    <button class="btn-action" style="background:var(--green);" onclick="salvarPerfil()">SALVAR</button>
     <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
 </div>
 
@@ -180,7 +183,7 @@
         <div class="blue-amount" id="saldoCarteira">0</div>
         <p style="margin: 5px 0 0 0; font-size: 12px; color: #00BFFF;">BLUE COINS</p>
     </div>
-    <button class="btn-action" style="background: var(--green);" onclick="comprar('BLUE COINS', 'PIX')"><i class="fas fa-plus-circle"></i> RECARREGAR BLUES</button>
+    <button class="btn-action" style="background: var(--green);" onclick="comprar('BLUE COINS', 'PIX')">RECARREGAR BLUES</button>
     <button class="btn-action" style="background: var(--gray); margin-top: 15px;" onclick="fecharTelas()">FECHAR</button>
 </div>
 
@@ -198,8 +201,8 @@
     <div id="chatConteudo">
         <div id="mensagensChat"></div>
         <div style="display:flex; gap:5px; padding:10px;">
-            <input type="text" id="msgInput" placeholder="Digite sua proposta..." style="flex-grow:1; padding:10px; border-radius:5px; border:none;">
-            <button onclick="enviarMensagem()" style="background:var(--blue); border:none; color:white; padding:10px; border-radius:5px;"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="msgInput" placeholder="Digite..." style="flex-grow:1; padding:10px; border-radius:5px;">
+            <button onclick="enviarMensagem()" style="background:var(--blue); color:white; padding:10px; border-radius:5px;"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
     <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">VOLTAR</button>
@@ -207,8 +210,14 @@
 
 <div id="telaCriarLeilao" class="tela-full">
     <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-gavel"></i> INICIAR LEILÃO</h3>
-    <input type="text" id="leilaoItem" placeholder="Nome do Item" class="input-leilao" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black;">
-    <input type="number" id="leilaoValor" placeholder="Valor Inicial" class="input-leilao" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black;">
+    <input type="text" id="leilaoItem" placeholder="Nome do Item" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; color:black;">
+    <input type="number" id="leilaoValor" placeholder="Valor Inicial" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; color:black;">
+    
+    <div style="background: rgba(163, 51, 200, 0.2); padding: 10px; border-radius: 10px; border: 1px solid var(--purple); margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 14px; color: var(--purple); font-weight: bold;">LEILÃO PRIVADO?</span>
+        <input type="checkbox" id="checkPrivado" style="transform: scale(1.5);">
+    </div>
+
     <label class="file-label" for="leilaoFoto"><i class="fas fa-camera"></i> Foto do Item</label>
     <input type="file" id="leilaoFoto" accept="image/*" style="display:none;" onchange="prepararFotoLeilao(this)">
     <img id="previewFotoLeilao" style="width:100%; display:none; border-radius:10px; margin-bottom:15px;">
@@ -218,7 +227,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, update, set, push, get, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, set, push, get, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = { apiKey: "AIzaSyDM5M1_O-wfcBDGYJIiYgiHVbqhiKC-0dw", databaseURL: "https://icek-9cdd7-default-rtdb.firebaseio.com", projectId: "icek-9cdd7" };
@@ -227,32 +236,26 @@
     const auth = getAuth(app);
 
     window.user = null;
-    window.targetUid = null;
     let fotoPostBase64 = null;
     let fotoLeilaoBase64 = null;
     let fotoPerfilBase64 = null;
     let chatAtivoId = null;
+    let salaVozAtual = null;
+    let mutado = false;
 
     // --- LOGIN ---
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
         if(!u || !p) return alert("Preencha tudo!");
-
-        // LOGIN ESPECIAL ADM (CONSERTADO)
         if(u.toUpperCase() === "ADM" && p === "1533") {
             const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 22000000 };
             await set(ref(db, `usuarios/master_ice`), m);
             localStorage.setItem('ice_user_master', JSON.stringify(m));
-            window.user = m;
-            location.reload();
-            return;
+            window.user = m; location.reload(); return;
         }
-
         const email = u.includes('@') ? u : u + "@ice.com";
-        try { 
-            await signInWithEmailAndPassword(auth, email, p); 
-        } catch (e) { 
+        try { await signInWithEmailAndPassword(auth, email, p); } catch (e) { 
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, p);
                 const novo = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, girosTotal: 0 };
@@ -290,101 +293,59 @@
         carregarFeeds();
     }
 
-    // --- SISTEMA ICE DROP (ATUALIZADO COM REGRAS DE BANCA E TRAVA) ---
-    window.abrirIceDrop = () => {
-        fecharTelas();
-        document.getElementById('telaIceDrop').style.display = 'block';
+    // --- SISTEMA DE VOZ ---
+    window.entrarVoz = async (lid, nomeItem) => {
+        if(salaVozAtual) sairVoz();
+        salaVozAtual = lid;
+        document.getElementById('nomeSalaVoz').innerText = "SALA: " + nomeItem.toUpperCase();
+        document.getElementById('telaVozAtiva').style.display = 'block';
+        
+        const myPresenceRef = ref(db, `voz_rooms/${lid}/${window.user.uid}`);
+        await set(myPresenceRef, { nome: window.user.nome, cargo: window.user.cargo, falando: true });
+        onDisconnect(myPresenceRef).remove();
+
+        onValue(ref(db, `voz_rooms/${lid}`), snap => {
+            const div = document.getElementById('listaFalando');
+            div.innerHTML = "";
+            snap.forEach(u => {
+                const userVoz = u.val();
+                div.innerHTML += `<div style="padding: 5px 10px; border-radius: 20px; background: ${userVoz.falando ? 'var(--green)' : 'var(--gray)'}; font-size: 10px;">${userVoz.nome}</div>`;
+            });
+        });
     };
 
-    window.girarBau = async () => {
-        if (window.user.moedasBlue < 5) return alert("Você precisa de pelo menos 5 Blues para girar!");
-        
-        const btn = document.getElementById('btnGirarBau');
-        const icone = document.getElementById('iconeBau');
-        const resDiv = document.getElementById('resultadoDrop');
-        const uid = window.user.uid || "master_ice";
-
-        btn.disabled = true;
-        icone.classList.add('animar-bau');
-        resDiv.innerText = "Sorteando...";
-
-        // Coleta dados da Banca (Pool) e Giros do Usuário
-        const snapshotPool = await get(ref(db, 'configuracoes/pool_bau'));
-        let bancaAtual = snapshotPool.val() || 0;
-        
-        const girosTotal = (window.user.girosTotal || 0) + 1;
-        const novoSaldoAposCusto = window.user.moedasBlue - 5;
-        
-        // Adiciona 90% do custo (4.5 Blues) para a banca
-        bancaAtual += 4.5;
-
-        setTimeout(async () => {
-            icone.classList.remove('animar-bau');
-            
-            let sorte = Math.random() * 100;
-            let premioNome = "Não foi dessa vez! Tente novamente.";
-            let valorPremioBlue = 0;
-            let novoCargo = null;
-            let bancaDescontar = 0;
-
-            // --- LÓGICA DE PREMIAÇÃO ---
-            // Regra de Cargos: Só ganha se tiver MAIS de 4 giros
-            if (girosTotal > 4) {
-                if (sorte < 0.5) {
-                    premioNome = "🏆 ABSURDO! VOCÊ GANHOU ADM1!";
-                    novoCargo = "ADM1";
-                } else if (sorte < 1.5) {
-                    premioNome = "🛡️ INCRÍVEL! VOCÊ GANHOU ADM2!";
-                    novoCargo = "ADM2";
-                } else if (sorte < 4) {
-                    premioNome = "⭐ BOA! VOCÊ GANHOU MODERADOR!";
-                    novoCargo = "MOD";
-                }
-            }
-
-            // Regra de Blues: Só libera se a banca tiver o DOBRO do prêmio
-            if (!novoCargo && sorte > 5 && sorte < 15) {
-                if (bancaAtual >= 20) { 
-                    premioNome = "💰 SORTE! Ganhou 10 Blues!";
-                    valorPremioBlue = 10;
-                    bancaDescontar = 10;
-                }
-            } else if (!novoCargo && sorte >= 15 && sorte < 40) {
-                if (bancaAtual >= 10) { 
-                    premioNome = "💰 Ganhou 5 Blues!";
-                    valorPremioBlue = 5;
-                    bancaDescontar = 5;
-                }
-            }
-
-            // Atualização Firebase
-            const updates = {};
-            updates[`usuarios/${uid}/moedasBlue`] = novoSaldoAposCusto + valorPremioBlue;
-            updates[`usuarios/${uid}/girosTotal`] = girosTotal;
-            updates[`configuracoes/pool_bau`] = bancaAtual - bancaDescontar;
-            
-            if (novoCargo) {
-                updates[`usuarios/${uid}/cargo`] = novoCargo;
-            }
-
-            await update(ref(db), updates);
-
-            resDiv.innerHTML = `<span style="color:${valorPremioBlue > 0 || novoCargo ? 'var(--gold)' : 'white'}">${premioNome}</span>`;
-            btn.disabled = false;
-        }, 2000);
+    window.toggleMute = () => {
+        mutado = !mutado;
+        document.getElementById('btnMute').innerHTML = mutado ? '<i class="fas fa-microphone-slash" style="color:var(--red)"></i>' : '<i class="fas fa-microphone"></i>';
+        update(ref(db, `voz_rooms/${salaVozAtual}/${window.user.uid}`), { falando: !mutado });
     };
 
-    // --- FEEDS ---
+    window.sairVoz = () => {
+        if(salaVozAtual) remove(ref(db, `voz_rooms/${salaVozAtual}/${window.user.uid}`));
+        salaVozAtual = null;
+        document.getElementById('telaVozAtiva').style.display = 'none';
+    };
+
+    // --- FEEDS (COM FILTRO PRIVADO E STAFF) ---
     function carregarFeeds() {
         onValue(ref(db, 'leiloes'), snap => {
             const div = document.getElementById('feed-leiloes'); div.innerHTML = "";
             snap.forEach(l => {
                 const le = l.val();
-                const ehCriador = window.user && window.user.uid === le.criadorUid;
-                const ehGanhador = window.user && window.user.uid === le.maiorLicitante;
-                const iconeFinalizar = (le.ativo && ehCriador) ? `<button class="btn-delete-post" style="background: var(--gold); color: black; z-index: 20;" onclick="window.finalizarLeilao('${l.key}', '${le.maiorLicitante}')"><i class="fas fa-gavel"></i></button>` : '';
-                let acoesExtra = le.ativo ? `<button class="btn-lance" onclick="window.darLance('${l.key}', ${le.lanceAtual})">LANCE + R$ 50</button>` : '';
-                div.innerHTML = `<div class="card-leilao">${!le.ativo ? '<div class="leilao-encerrado">ARREMATADO</div>' : ''}${iconeFinalizar}<img src="${le.imagem}"><div class="info-leilao"><small>Leilão de ${le.criadorNome}</small><h3>${le.item}</h3><div class="valor-lance">R$ ${le.lanceAtual}</div>${acoesExtra}</div></div>` + div.innerHTML;
+                const lid = l.key;
+                
+                // REGRAS DE VISIBILIDADE: Se for privado, só dono ou STAFF (ADM1, ADM2, MOD) vê
+                const ehDono = window.user && window.user.uid === le.criadorUid;
+                const ehStaff = window.user && (window.user.cargo === 'ADM1' || window.user.cargo === 'ADM2' || window.user.cargo === 'MOD');
+                
+                if(le.privado && !ehDono && !ehStaff) return; // Pula se não tiver acesso
+
+                const badgePrivado = le.privado ? `<div class="badge-privado"><i class="fas fa-lock"></i> PRIVADO</div>` : '';
+                const btnVozIcon = le.ativo ? `<button class="btn-voz" onclick="window.entrarVoz('${lid}', '${le.item}')"><i class="fas fa-headset"></i></button>` : '';
+                const iconeFinalizar = (le.ativo && ehDono) ? `<button class="btn-delete-post" style="background: var(--gold); color: black; z-index: 20;" onclick="window.finalizarLeilao('${lid}', '${le.maiorLicitante}')"><i class="fas fa-gavel"></i></button>` : '';
+                let acoesExtra = le.ativo ? `<button class="btn-lance" onclick="window.darLance('${lid}', ${le.lanceAtual})">LANCE + R$ 50</button>` : '';
+                
+                div.innerHTML = `<div class="card-leilao">${!le.ativo ? '<div class="leilao-encerrado">ARREMATADO</div>' : ''}${badgePrivado}${iconeFinalizar}${btnVozIcon}<img src="${le.imagem}"><div class="info-leilao"><small>Leilão de ${le.criadorNome}</small><h3>${le.item}</h3><div class="valor-lance">R$ ${le.lanceAtual}</div>${acoesExtra}</div></div>` + div.innerHTML;
             });
         });
 
@@ -398,42 +359,85 @@
         });
     }
 
-    // --- FUNÇÕES GLOBAIS ---
-    window.apagarPost = pid => confirm("Apagar postagem?") && remove(ref(db, `posts/${pid}`));
+    // --- ICE DROP E OUTROS MANTIDOS ---
+    window.girarBau = async () => {
+        if (window.user.moedasBlue < 5) return alert("Você precisa de 5 Blues!");
+        const btn = document.getElementById('btnGirarBau'); const icone = document.getElementById('iconeBau');
+        const resDiv = document.getElementById('resultadoDrop'); const uid = window.user.uid || "master_ice";
+        btn.disabled = true; icone.classList.add('animar-bau'); resDiv.innerText = "Sorteando...";
+        const snapshotPool = await get(ref(db, 'configuracoes/pool_bau'));
+        let bancaAtual = snapshotPool.val() || 0;
+        const girosTotal = (window.user.girosTotal || 0) + 1;
+        const novoSaldoAposCusto = window.user.moedasBlue - 5;
+        bancaAtual += 4.5;
+        setTimeout(async () => {
+            icone.classList.remove('animar-bau');
+            let sorte = Math.random() * 100;
+            let premioNome = "Tente novamente!"; let valorPremioBlue = 0; let novoCargo = null; let bancaDescontar = 0;
+            if (girosTotal > 4) {
+                if (sorte < 0.5) { premioNome = "🏆 ADM1 GANHO!"; novoCargo = "ADM1"; }
+                else if (sorte < 1.5) { premioNome = "🛡️ ADM2 GANHO!"; novoCargo = "ADM2"; }
+                else if (sorte < 4) { premioNome = "⭐ MOD GANHO!"; novoCargo = "MOD"; }
+            }
+            if (!novoCargo && sorte > 5 && sorte < 15 && bancaAtual >= 20) { premioNome = "💰 Ganhou 10 Blues!"; valorPremioBlue = 10; bancaDescontar = 10; }
+            else if (!novoCargo && sorte >= 15 && sorte < 40 && bancaAtual >= 10) { premioNome = "💰 Ganhou 5 Blues!"; valorPremioBlue = 5; bancaDescontar = 5; }
+            const updates = {};
+            updates[`usuarios/${uid}/moedasBlue`] = novoSaldoAposCusto + valorPremioBlue;
+            updates[`usuarios/${uid}/girosTotal`] = girosTotal;
+            updates[`configuracoes/pool_bau`] = bancaAtual - bancaDescontar;
+            if (novoCargo) updates[`usuarios/${uid}/cargo`] = novoCargo;
+            await update(ref(db), updates);
+            resDiv.innerHTML = `<span style="color:${valorPremioBlue > 0 || novoCargo ? 'var(--gold)' : 'white'}">${premioNome}</span>`;
+            btn.disabled = false;
+        }, 2000);
+    };
+
+    window.publicarLeilao = async () => {
+        const n = document.getElementById('leilaoItem').value;
+        const v = parseInt(document.getElementById('leilaoValor').value);
+        const priv = document.getElementById('checkPrivado').checked;
+        if(!fotoLeilaoBase64 || !n || isNaN(v)) return alert("Preencha tudo!");
+        await push(ref(db, 'leiloes'), { 
+            item: n, lanceAtual: v, imagem: fotoLeilaoBase64, 
+            criadorUid: window.user.uid, criadorNome: window.user.nome, 
+            ativo: true, privado: priv 
+        });
+        fecharTelas();
+    };
+
+    // --- FUNÇÕES DE NAVEGAÇÃO E AUXILIARES ---
+    window.apagarPost = pid => confirm("Apagar?") && remove(ref(db, `posts/${pid}`));
     window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
-    window.fecharTelas = () => document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
-    
+    window.fecharTelas = () => { 
+        document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
+        document.getElementById('app').style.display = 'block';
+    };
     window.abrirPerfil = async (uid) => {
-        const s = await get(ref(db, `usuarios/${uid}`));
-        const t = s.val();
-        if(!t) return;
-        const souEu = window.user.uid === uid || (window.user.uid === "master_ice" && uid === "master_ice");
+        const s = await get(ref(db, `usuarios/${uid}`)); const t = s.val(); if(!t) return;
+        const souEu = (window.user.uid === uid || (window.user.uid === "master_ice" && uid === "master_ice"));
         document.getElementById('perfilConteudo').innerHTML = `<img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo"><h2>${t.nome}</h2><p>${t.cargo}</p>${t.bio ? `<p class="bio-text">"${t.bio}"</p>` : ''}<p style="color:var(--mod-blue); font-weight:bold;">Saldo: ${t.moedasBlue || 0} Blues</p>${souEu ? `<button class="btn-action" onclick="window.abrirEditarPerfil()">EDITAR PERFIL</button>` : ''}`;
         document.getElementById('painelStaffLeilao').style.display = (souEu && t.cargo !== 'user') ? 'block' : 'none';
         document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && !souEu) ? 'block' : 'none';
-        window.targetUid = uid;
-        fecharTelas();
-        document.getElementById('telaPerfil').style.display = 'block';
+        window.targetUid = uid; fecharTelas(); document.getElementById('telaPerfil').style.display = 'block';
     };
-
     window.abrirMeuPerfil = () => window.abrirPerfil(window.user.uid || "master_ice");
     window.abrirEditarPerfil = () => { document.getElementById('telaEditarPerfil').style.display = 'block'; document.getElementById('editBio').value = window.user.bio || ''; };
     window.prepararFotoPerfil = input => { const reader = new FileReader(); reader.onload = e => { fotoPerfilBase64 = e.target.result; document.getElementById('previewFotoPerfil').src = e.target.result; document.getElementById('previewFotoPerfil').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); };
     window.salvarPerfil = async () => { const updates = { bio: document.getElementById('editBio').value }; if(fotoPerfilBase64) updates.foto = fotoPerfilBase64; await update(ref(db, `usuarios/${window.user.uid || 'master_ice'}`), updates); fecharTelas(); window.abrirMeuPerfil(); };
-    window.comprar = (tipo, valor) => window.open(`https://wa.me/5511983602504?text=Quero comprar ${tipo} - Valor: ${valor}`);
-    window.abrirChat = (outroUid, outroNome) => { if(outroUid === window.user.uid) return; chatAtivoId = window.user.uid < outroUid ? window.user.uid + outroUid : outroUid + window.user.uid; document.getElementById('chatTitulo').innerText = "Negociar com " + outroNome; document.getElementById('telaChat').style.display = 'block'; onValue(ref(db, `chats/${chatAtivoId}`), snap => { const div = document.getElementById('mensagensChat'); div.innerHTML = ""; snap.forEach(m => { const msg = m.val(); div.innerHTML += `<div class="msg ${msg.uid === window.user.uid ? 'msg-me' : 'msg-them'}">${msg.texto}</div>`; }); div.scrollTop = div.scrollHeight; }); };
+    window.comprar = (tipo, valor) => window.open(`https://wa.me/5511983602504?text=Quero ${tipo}`);
+    window.abrirChat = (outroUid, outroNome) => { if(outroUid === window.user.uid) return; chatAtivoId = window.user.uid < outroUid ? window.user.uid + outroUid : outroUid + window.user.uid; document.getElementById('chatTitulo').innerText = outroNome; document.getElementById('telaChat').style.display = 'block'; onValue(ref(db, `chats/${chatAtivoId}`), snap => { const div = document.getElementById('mensagensChat'); div.innerHTML = ""; snap.forEach(m => { const msg = m.val(); div.innerHTML += `<div class="msg ${msg.uid === window.user.uid ? 'msg-me' : 'msg-them'}">${msg.texto}</div>`; }); div.scrollTop = div.scrollHeight; }); };
     window.enviarMensagem = async () => { const txt = document.getElementById('msgInput').value; if(!txt) return; await push(ref(db, `chats/${chatAtivoId}`), { uid: window.user.uid, texto: txt, time: Date.now() }); document.getElementById('msgInput').value = ""; };
     window.darLance = async (lid, atual) => await update(ref(db, `leiloes/${lid}`), { lanceAtual: atual + 50, maiorLicitante: window.user.uid });
-    window.finalizarLeilao = async (lid, mid) => { if(confirm("Arrematar item?")) { await update(ref(db, `leiloes/${lid}`), { ativo: false }); alert("Finalizado!"); if(mid) window.abrirChat(mid, "Ganhador"); } };
+    window.finalizarLeilao = async (lid, mid) => { if(confirm("Finalizar?")) { await update(ref(db, `leiloes/${lid}`), { ativo: false }); if(mid) window.abrirChat(mid, "Ganhador"); } };
     window.prepararPost = input => { const reader = new FileReader(); reader.onload = e => { fotoPostBase64 = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); };
     window.publicarPost = async () => { if(!fotoPostBase64) return; await push(ref(db, 'posts'), { u1: window.user.nome, uid: window.user.uid, i1: fotoPostBase64 }); fecharTelas(); };
     window.abrirPostar = () => document.getElementById('telaPostar').style.display = 'block';
     window.prepararFotoLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLeilaoBase64 = e.target.result; document.getElementById('previewFotoLeilao').src = e.target.result; document.getElementById('previewFotoLeilao').style.display = 'block'; }; r.readAsDataURL(i.files[0]); };
-    window.publicarLeilao = async () => { const n = document.getElementById('leilaoItem').value; const v = parseInt(document.getElementById('leilaoValor').value); if(!fotoLeilaoBase64 || !n || isNaN(v)) return; await push(ref(db, 'leiloes'), { item: n, lanceAtual: v, imagem: fotoLeilaoBase64, criadorUid: window.user.uid, criadorNome: window.user.nome, ativo: true }); fecharTelas(); };
     window.mudarCargo = async (novo) => { await update(ref(db, `usuarios/${window.targetUid}`), { cargo: novo }); window.abrirPerfil(window.targetUid); };
     window.ajustarBlues = async (q) => { const s = await get(ref(db, `usuarios/${window.targetUid}`)); await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: (s.val().moedasBlue || 0) + q }); window.abrirPerfil(window.targetUid); };
     window.definirBlues = async () => { const v = parseInt(document.getElementById('valorPersonalizadoBlues').value); await update(ref(db, `usuarios/${window.targetUid}`), { moedasBlue: v }); window.abrirPerfil(window.targetUid); };
     window.compartilharSite = () => navigator.share ? navigator.share({title: 'ICE TROCAS', url: location.href}) : alert("Link copiado!");
+    window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
 
 </script>
 </body>
