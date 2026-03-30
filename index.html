@@ -485,6 +485,66 @@
         fecharTelas();
     };
 
+    // ==========================================================
+    // --- NOVAS FUNÇÕES DO PAINEL DE ADMINISTRAÇÃO ADICIONADAS ---
+    // ==========================================================
+
+    window.mudarCargo = async (novoCargo) => {
+        if (!window.targetUid) return alert("Nenhum usuário selecionado.");
+        if (!confirm(`Deseja alterar o cargo deste usuário para ${novoCargo}?`)) return;
+        
+        try {
+            await update(ref(db, `usuarios/${window.targetUid}`), {
+                cargo: novoCargo
+            });
+            alert(`Cargo atualizado para ${novoCargo} com sucesso!`);
+            window.abrirPerfil(window.targetUid); // Atualiza a tela para mostrar o novo cargo
+        } catch (error) {
+            alert("Erro ao alterar cargo: " + error.message);
+        }
+    };
+
+    window.ajustarBlues = async (quantidade) => {
+        if (!window.targetUid) return alert("Nenhum usuário selecionado.");
+        
+        try {
+            // Pega o saldo atual do usuário aberto no perfil
+            const snapshot = await get(ref(db, `usuarios/${window.targetUid}/moedasBlue`));
+            let saldoAtual = snapshot.val() || 0;
+            let novoSaldo = saldoAtual + quantidade;
+            
+            if (novoSaldo < 0) novoSaldo = 0; // Evita que o saldo fique negativo
+            
+            await update(ref(db, `usuarios/${window.targetUid}`), {
+                moedasBlue: novoSaldo
+            });
+            alert(`Saldo ajustado com sucesso! Novo saldo: ${novoSaldo}`);
+            window.abrirPerfil(window.targetUid); // Atualiza a tela
+        } catch (error) {
+            alert("Erro ao ajustar saldo: " + error.message);
+        }
+    };
+
+    window.definirBlues = async () => {
+        if (!window.targetUid) return alert("Nenhum usuário selecionado.");
+        
+        const inputValor = document.getElementById('valorPersonalizadoBlues').value;
+        if (inputValor === '') return alert("Por favor, digite um valor numérico válido.");
+        
+        const novoSaldo = Number(inputValor);
+        
+        try {
+            await update(ref(db, `usuarios/${window.targetUid}`), {
+                moedasBlue: novoSaldo
+            });
+            alert(`Saldo definido para ${novoSaldo} com sucesso!`);
+            document.getElementById('valorPersonalizadoBlues').value = ''; // Limpa o campo
+            window.abrirPerfil(window.targetUid); // Atualiza a tela
+        } catch (error) {
+            alert("Erro ao definir saldo: " + error.message);
+        }
+    };
+
 </script>
 </body>
 </html>
