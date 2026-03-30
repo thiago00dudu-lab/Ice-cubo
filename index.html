@@ -10,7 +10,6 @@
             --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
             --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
             --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; 
-            --casino-dark: #1a1a1a;
         }
         body { margin:0; font-family: sans-serif; background: radial-gradient(circle at top, #0d1d2d, #050a0f); color: white; padding-bottom: 90px; overflow-x: hidden; }
         
@@ -41,13 +40,13 @@
         .btn-del { color: var(--red); cursor: pointer; font-size: 18px; }
         .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; }
 
-        /* DESIGN CASINO ROLETTA */
-        .casino-container { background: #000; padding: 20px; border-radius: 20px; border: 4px solid var(--gold); box-shadow: 0 0 20px var(--gold); text-align: center; margin-top: 20px; position: relative; overflow: hidden; }
-        .roleta-wrapper { width: 100%; overflow: hidden; background: #111; border: 2px solid #333; margin: 20px 0; position: relative; height: 100px; display: flex; align-items: center; }
-        .roleta-trilho { display: flex; transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); will-change: transform; }
-        .slot { min-width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #222; font-size: 12px; font-weight: bold; }
-        .slot i { font-size: 24px; margin-bottom: 5px; }
-        .marcador { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: var(--red); z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px var(--red); }
+        /* --- NOVO DESIGN CASINO --- */
+        .casino-box { background: #000; padding: 20px; border-radius: 15px; border: 2px solid var(--gold); text-align: center; position: relative; overflow: hidden; }
+        .roleta-container { width: 100%; height: 80px; background: #111; margin: 15px 0; position: relative; border: 1px solid #333; overflow: hidden; display: flex; align-items: center; }
+        .roleta-trilho { display: flex; position: absolute; left: 0; transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        .item-roleta { min-width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; border-right: 1px solid #222; }
+        .item-roleta i { font-size: 20px; margin-bottom: 4px; }
+        .pointer { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: red; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px red; }
 
         .btn-comprar-cargo { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); background: var(--gold); color: black; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); z-index: 1000; cursor: pointer; }
 
@@ -80,7 +79,7 @@
     <header>
         <div>
             <b style="color: var(--mod-blue); display: block;">ICE TROCAS</b>
-            <small id="displayMasterSaldo" style="color: var(--gold); font-size: 10px;">Master: R$ 0</small>
+            <small id="displayMasterSaldo" style="color: var(--gold); font-size: 10px;">Bolsa: 0 Blues</small>
         </div>
         <div class="header-icons">
             <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue); cursor:pointer;" onclick="abrirMeuPerfil()"></i>
@@ -99,24 +98,16 @@
 </div>
 
 <div id="telaIceDrop" class="tela-full">
-    <h3 style="color: var(--gold); text-align: center; margin-bottom: 0;">ICE CASINO</h3>
-    <p style="text-align: center; font-size: 12px; color: #8b949e;">Tente a sorte e mude de vida!</p>
-    
-    <div class="casino-container">
-        <div class="marcador"></div>
-        <div class="roleta-wrapper">
-            <div id="trilhoRoleta" class="roleta-trilho"></div>
+    <h3 style="color: var(--gold); text-align: center;">ICE CASINO</h3>
+    <div class="casino-box">
+        <div class="pointer"></div>
+        <div class="roleta-container">
+            <div id="trilho" class="roleta-trilho"></div>
         </div>
-        <p id="resDrop" style="color: var(--gold); font-weight: bold; height: 20px;">Aposte 5 Blues</p>
-        <button id="btnGirar" class="btn-action" style="background: linear-gradient(to bottom, #FFD700, #b8860b); color: black; border-radius: 30px; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);" onclick="girarRoleta()">GIRAR AGORA</button>
+        <p id="resDrop" style="font-weight: bold; color: #8b949e;">Custo: 5 Blues</p>
+        <button id="btnGirar" class="btn-action" style="background: var(--gold); color: black;" onclick="jogarCasino()">GIRAR ROLETA</button>
     </div>
-
-    <div style="margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
-        <p style="margin: 0; color: var(--gold);"><i class="fas fa-info-circle"></i> Regras:</p>
-        <small style="color: #ccc;">- Cada giro custa 5 Blues.<br>- Prêmios de até 1000 Blues (Raro).<br>- Boa sorte!</small>
-    </div>
-
-    <button class="btn-action" style="background: var(--gray); margin-top: 20px;" onclick="fecharTelas()">VOLTAR</button>
+    <button class="btn-action" style="background: var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaEscolhaPost" class="tela-full" style="display:none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.9);">
@@ -149,7 +140,9 @@
         <h1 id="saldoCarteira">0</h1>
         <p>BLUE COINS</p>
     </div>
-    <button class="btn-action" style="background: var(--green); margin-top:20px;" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
+    <input type="number" id="valorRetirar" placeholder="Valor para Retirar" style="width:100%; padding:12px; margin-top:15px; border-radius:8px; border:none; background:#eee; color:black;">
+    <button class="btn-action" style="background: #b8860b;" onclick="alert('Solicitação enviada para análise!')">SOLICITAR RETIRADA</button>
+    <button class="btn-action" style="background: var(--green); margin-top:10px;" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
 
@@ -197,7 +190,6 @@
     let fotoLei = null;
     let chatAtivoId = null;
 
-    // --- SISTEMA DE LOGIN ---
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
@@ -227,81 +219,69 @@
         document.getElementById('app').style.display = 'block';
         document.getElementById('saldoCarteira').innerText = user.moedasBlue || 0;
         onValue(ref(db, 'usuarios/master_ice/moedasBlue'), s => {
-            document.getElementById('displayMasterSaldo').innerText = "Arrecadado: " + (s.val() || 0) + " Blues";
+            document.getElementById('displayMasterSaldo').innerText = "Bolsa: " + (s.val() || 0) + " Blues";
         });
         carregarFeeds();
-        setupRoleta();
+        prepararRoleta();
     }
 
-    // --- ROLETA CASINO (DITADORA) ---
+    /* --- LÓGICA DO CASINO --- */
     const premios = [
-        {txt: "MUDAR VIDA", val: 0, cor: "gold", icon: "fa-crown"},
-        {txt: "0", val: 0, cor: "gray", icon: "fa-times"},
-        {txt: "1 BLUE", val: 1, cor: "blue", icon: "fa-coins"},
-        {txt: "X", val: 0, cor: "gray", icon: "fa-skull"},
-        {txt: "5 BLUES", val: 5, cor: "green", icon: "fa-money-bill-wave"},
-        {txt: "0", val: 0, cor: "gray", icon: "fa-frown"},
-        {txt: "10 BLUES", val: 10, cor: "gold", icon: "fa-gem"},
-        {txt: "0", val: 0, cor: "gray", icon: "fa-sad-tear"},
-        {txt: "SORTE", val: 0, cor: "gray", icon: "fa-dice"}
+        { t: "X", v: 0, c: "gray", i: "fa-skull" },
+        { t: "1 BLUE", v: 1, c: "blue", i: "fa-coins" },
+        { t: "0", v: 0, c: "gray", i: "fa-frown" },
+        { t: "5 BLUES", v: 5, c: "green", i: "fa-money-bill" },
+        { t: "X", v: 0, c: "gray", i: "fa-times" },
+        { t: "10 BLUES", v: 10, c: "gold", i: "fa-gem" },
+        { t: "SORTE", v: 0, c: "gray", i: "fa-dice" },
+        { t: "VIDA", v: 0, c: "gold", i: "fa-crown" }
     ];
 
-    function setupRoleta() {
-        const trilho = document.getElementById('trilhoRoleta');
+    function prepararRoleta() {
+        const trilho = document.getElementById('trilho');
         trilho.innerHTML = "";
-        for(let i=0; i<60; i++) {
+        for(let i=0; i<80; i++) {
             const p = premios[Math.floor(Math.random()*premios.length)];
             const div = document.createElement('div');
-            div.className = "slot";
-            div.style.color = `var(--${p.cor})`;
-            div.innerHTML = `<i class="fas ${p.icon}"></i><span>${p.txt}</span>`;
+            div.className = "item-roleta";
+            div.style.color = `var(--${p.c})`;
+            div.innerHTML = `<i class="fas ${p.i}"></i><span>${p.t}</span>`;
             trilho.appendChild(div);
         }
     }
 
-    window.girarRoleta = async () => {
-        if(user.moedasBlue < 5) return alert("Saldo insuficiente (5 Blues necessários)");
+    window.jogarCasino = async () => {
+        if(user.moedasBlue < 5) return alert("Sem saldo!");
         const btn = document.getElementById('btnGirar');
-        const trilho = document.getElementById('trilhoRoleta');
+        const trilho = document.getElementById('trilho');
         btn.disabled = true;
-        document.getElementById('resDrop').innerText = "Girando...";
 
         // SORTEIO REAL (CONTROLADO)
-        const sorte = Math.random();
-        let resultado;
-        
-        // Probabilidade: 1% de ganhar 10, 10% de ganhar 5, 20% de ganhar 1, o resto perde.
-        if(sorte < 0.01) resultado = premios.find(p => p.val === 10);
-        else if(sorte < 0.10) resultado = premios.find(p => p.val === 5);
-        else if(sorte < 0.30) resultado = premios.find(p => p.val === 1);
-        else resultado = premios.find(p => p.val === 0);
+        const s = Math.random();
+        let win = 0;
+        if(s < 0.05) win = 10; else if(s < 0.2) win = 5; else if(s < 0.4) win = 1;
 
-        // Animação: Forçar parar em um slot que condiz com o resultado
-        const slotWidth = 80;
-        const totalSlots = 60;
-        const paradaFinal = (totalSlots - 5) * slotWidth;
-        
-        // Resetar posição sem transição
         trilho.style.transition = "none";
-        trilho.style.transform = `translateX(0px)`;
+        trilho.style.transform = "translateX(0)";
         
-        // Aplicar transição de giro
         setTimeout(() => {
             trilho.style.transition = "transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)";
-            trilho.style.transform = `translateX(-${paradaFinal}px)`;
+            trilho.style.transform = `translateX(-${3500 + (win * 10)}px)`; // Para num lugar "aleatorio" mas controlado
         }, 50);
 
         setTimeout(async () => {
-            const meuUid = user.uid || "master_ice";
-            const ganho = resultado.val;
-            await update(ref(db, `usuarios/${meuUid}`), { moedasBlue: user.moedasBlue - 5 + ganho });
-            
-            document.getElementById('resDrop').innerText = ganho > 0 ? `GANHOU ${ganho} BLUES!` : "Tente na próxima!";
+            const lucroCasa = 5 - win;
+            const snapMaster = await get(ref(db, 'usuarios/master_ice/moedasBlue'));
+            const saldoMaster = snapMaster.val() || 0;
+
+            await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - 5 + win });
+            await update(ref(db, `usuarios/master_ice`), { moedasBlue: saldoMaster + lucroCasa });
+
+            document.getElementById('resDrop').innerText = win > 0 ? `GANHOU ${win} BLUES!` : "TENTE NOVAMENTE";
             btn.disabled = false;
         }, 4100);
     };
 
-    // --- RESTANTE DAS FUNÇÕES (IGUAIS AO ANTERIOR) ---
     function carregarFeeds() {
         onValue(ref(db, 'leiloes'), s => {
             const d = document.getElementById('feed-leiloes'); d.innerHTML = "";
@@ -309,38 +289,21 @@
                 const i = l.val();
                 const isDono = (user.uid === i.criadorUid || user.uid === 'master_ice');
                 let card = `<div class="card-leilao">
-                    ${!i.ativo ? `<div class="leilao-encerrado">
-                        ARREMATADO POR: ${i.ultimoLicitante}<br>
-                        <button class="btn-action" style="background:var(--green);" onclick="window.open('https://wa.me/5511983602504?text=Arrematei o item ${i.item}')">FALAR COM VENDEDOR</button>
-                    </div>` : ''}
-                    <img src="${i.imagem}">
-                    <div class="info-leilao">
-                        <h3>${i.item}</h3>
-                        <p><small>Licitante: ${i.ultimoLicitante || "Ninguém"}</small></p>
-                        <div class="valor-lance">R$ ${i.lanceAtual}</div>
-                        ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
-                        ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR LEILÃO</button>` : ''}
-                    </div>
-                </div>`;
+                    ${!i.ativo ? `<div class="leilao-encerrado">ARREMATADO POR: ${i.ultimoLicitante}<br><button class="btn-action" style="background:var(--green);" onclick="window.open('https://wa.me/5511983602504')">FALAR COM VENDEDOR</button></div>` : ''}
+                    <img src="${i.imagem}"><div class="info-leilao"><h3>${i.item}</h3><div class="valor-lance">R$ ${i.lanceAtual}</div>
+                    ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
+                    ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR</button>` : ''}
+                    </div></div>`;
                 d.innerHTML = card + d.innerHTML;
             });
         });
-
         onValue(ref(db, 'posts'), s => {
             const d = document.getElementById('feed'); d.innerHTML = "";
             s.forEach(p => {
                 const i = p.val();
-                const canDel = (user.cargo === 'adm' || user.cargo === 'mod');
-                d.innerHTML = `<div class="card-timeline">
-                    <img src="${i.i1}">
-                    <div class="card-info">
-                        <b onclick="verPerfilAlheio('${i.uid}')" style="cursor:pointer; color:var(--mod-blue);">@${i.u1}</b>
-                        <div style="display:flex; gap:15px; align-items:center;">
-                            <i class="fas fa-comments" style="color:var(--green); cursor:pointer; font-size:20px;" onclick="abrirNegociacao('${p.key}', '${i.u1}')"></i>
-                            ${canDel ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}
-                        </div>
-                    </div>
-                </div>` + d.innerHTML;
+                d.innerHTML = `<div class="card-timeline"><img src="${i.i1}"><div class="card-info"><b onclick="verPerfilAlheio('${i.uid}')">@${i.u1}</b>
+                <div style="display:flex; gap:15px;"><i class="fas fa-comments" style="color:var(--green);" onclick="abrirNegociacao('${p.key}', '${i.u1}')"></i>
+                ${(user.cargo === 'adm') ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}</div></div></div>` + d.innerHTML;
             });
         });
     }
@@ -349,91 +312,43 @@
         if(!uid || uid === (user.uid || "master_ice")) return abrirMeuPerfil();
         const snap = await get(ref(db, `usuarios/${uid}`));
         const alvo = snap.val();
-        if(!alvo) return;
         fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `
-            <img src="${alvo.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-            <h2>${alvo.nome}</h2>
-            <p style="color:var(--gold);">${alvo.cargo.toUpperCase()}</p>
-            <p><i>"${alvo.bio || ''}"</i></p>
-            <p>Saldo: ${alvo.moedasBlue} Blues</p>`;
-        document.getElementById('editPerfilArea').style.display = 'none';
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${alvo.foto}" class="user-photo"><h2>${alvo.nome}</h2><p>${alvo.cargo}</p><p>${alvo.moedasBlue} Blues</p>`;
         if(user.cargo === 'adm') {
-            document.getElementById('admActions').innerHTML = `
-                <div style="background:var(--gray); padding:15px; border-radius:10px; margin-top:10px;">
-                   <p><small>CONTROLE DE SALDO</small></p>
-                   <input type="number" id="valorAcaoAdm" placeholder="Quantidade de Blues" style="width:100%; padding:10px; margin-bottom:10px; color:black; border-radius:5px; border:none;">
-                   <div style="display:flex; gap:5px;">
-                      <button class="btn-action" style="background:var(--green); margin:0;" onclick="gerenciarSaldo('${uid}', 'dar')">DAR BLUES</button>
-                      <button class="btn-action" style="background:var(--red); margin:0;" onclick="gerenciarSaldo('${uid}', 'tirar')">RETIRAR BLUES</button>
-                   </div>
-                   <button class="btn-action" style="background:var(--mod-blue); margin-top:10px;" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER CARGO</button>
-                </div>`;
-        } else { document.getElementById('admActions').innerHTML = ""; }
+            document.getElementById('admActions').innerHTML = `<input type="number" id="valorAcaoAdm" placeholder="Valor"><button class="btn-action" onclick="gerenciarSaldo('${uid}', 'dar')">DAR</button><button class="btn-action" style="background:red" onclick="gerenciarSaldo('${uid}', 'tirar')">TIRAR</button>`;
+        }
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
     window.gerenciarSaldo = async (uid, acao) => {
         const val = Number(document.getElementById('valorAcaoAdm').value);
-        if(!val || val <= 0) return alert("Digite um valor!");
         const snap = await get(ref(db, `usuarios/${uid}/moedasBlue`));
-        let saldoAtual = snap.val() || 0;
-        let novoSaldo = acao === 'dar' ? saldoAtual + val : saldoAtual - val;
-        if(novoSaldo < 0) novoSaldo = 0;
-        await update(ref(db, `usuarios/${uid}`), { moedasBlue: novoSaldo });
-        alert(acao === 'dar' ? "Blues adicionados!" : "Blues retirados!");
+        let novo = acao === 'dar' ? snap.val() + val : snap.val() - val;
+        await update(ref(db, `usuarios/${uid}`), { moedasBlue: novo < 0 ? 0 : novo });
         verPerfilAlheio(uid);
     };
 
     window.abrirMeuPerfil = () => {
         fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `
-            <img src="${user.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-            <h2>${user.nome}</h2>
-            <p style="color:var(--gold);">${user.cargo.toUpperCase()}</p>
-            <p><i>"${user.bio || ''}"</i></p>
-            <p>Saldo: ${user.moedasBlue} Blues</p>`;
-        document.getElementById('admActions').innerHTML = ""; 
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${user.foto}" class="user-photo"><h2>${user.nome}</h2><p>${user.cargo}</p><p>${user.moedasBlue} Blues</p>`;
         document.getElementById('editPerfilArea').style.display = 'block';
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    window.salvarNovaFoto = i => {
-        const r = new FileReader();
-        r.onload = async e => {
-            await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { foto: e.target.result });
-            alert("Foto atualizada!"); abrirMeuPerfil();
-        };
-        r.readAsDataURL(i.files[0]);
-    };
-
     window.salvarBio = async () => {
-        const b = document.getElementById('novaBio').value;
-        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { bio: b });
-        alert("Bio atualizada!"); abrirMeuPerfil();
-    };
-
-    window.mudarCargo = async (uid, cargoAtu) => {
-        let n = cargoAtu === 'user' ? 'mod' : (cargoAtu === 'mod' ? 'adm' : 'user');
-        await update(ref(db, `usuarios/${uid}`), { cargo: n });
-        alert("Novo cargo: " + n); verPerfilAlheio(uid);
+        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { bio: document.getElementById('novaBio').value });
+        alert("Bio Salva!");
     };
 
     window.abrirNegociacao = (postId, donoNome) => {
-        fecharTelas();
-        chatAtivoId = postId;
-        document.getElementById('chatTitle').innerText = "CHAT COM " + donoNome.toUpperCase();
+        fecharTelas(); chatAtivoId = postId;
+        document.getElementById('chatTitle').innerText = "CHAT: " + donoNome;
         document.getElementById('telaChat').style.display = 'block';
         onValue(ref(db, `chats/${postId}`), s => {
             const d = document.getElementById('mensagensChat'); d.innerHTML = "";
             s.forEach(m => {
                 const msg = m.val();
-                const souEu = msg.uid === (user.uid || "master_ice");
-                d.innerHTML += `<div class="msg ${souEu ? 'msg-me' : 'msg-them'}">
-                    <small style="font-size:8px; display:block;">${msg.nome}</small>
-                    ${msg.texto ? `<span>${msg.texto}</span>` : ''}
-                    ${msg.img ? `<img src="${msg.img}">` : ''}
-                </div>`;
+                d.innerHTML += `<div class="msg ${msg.uid===(user.uid||'master_ice')?'msg-me':'msg-them'}">${msg.texto || ''}</div>`;
             });
             d.scrollTop = d.scrollHeight;
         });
@@ -441,46 +356,27 @@
 
     window.enviarTextoChat = () => {
         const t = document.getElementById('msgIn').value;
-        if(!t) return;
-        push(ref(db, `chats/${chatAtivoId}`), { nome: user.nome, uid: user.uid || "master_ice", texto: t, time: Date.now() });
+        push(ref(db, `chats/${chatAtivoId}`), { nome: user.nome, uid: user.uid || "master_ice", texto: t });
         document.getElementById('msgIn').value = "";
     };
 
-    window.enviarMidiaChat = (i) => {
-        const r = new FileReader();
-        r.onload = e => {
-            push(ref(db, `chats/${chatAtivoId}`), { nome: user.nome, uid: user.uid || "master_ice", img: e.target.result, time: Date.now() });
-        };
-        r.readAsDataURL(i.files[0]);
-    };
-
-    window.darLance = (id, atual) => { 
-        update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome, ultimoLicitanteUid: user.uid || 'master_ice' }); 
-    };
-
-    window.finalizarLeilao = (id, item, vencedor) => {
-        if(!confirm("Deseja encerrar este leilão agora?")) return;
-        update(ref(db, `leiloes/${id}`), { ativo: false });
-        alert("Leilão Finalizado! Vencedor: " + vencedor);
-    };
-
+    window.darLance = (id, atual) => { update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome }); };
+    window.finalizarLeilao = (id) => { update(ref(db, `leiloes/${id}`), { ativo: false }); };
     window.prepararPost = i => { const r = new FileReader(); r.onload = e => { fotoPost = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display='block'; }; r.readAsDataURL(i.files[0]); };
-    window.publicarPost = async () => { if(!fotoPost) return; await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice', time: Date.now() }); fecharTelas(); };
+    window.publicarPost = async () => { await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice' }); fecharTelas(); };
     window.prepararLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLei = e.target.result; document.getElementById('previewLei').src = e.target.result; document.getElementById('previewLei').style.display='block'; }; r.readAsDataURL(i.files[0]); };
     window.publicarLeilao = async () => {
-        const n = document.getElementById('leiNome').value; const v = document.getElementById('leiValor').value;
-        if(!n || !v || !fotoLei) return alert("Erro!");
-        await push(ref(db, 'leiloes'), { item: n, lanceAtual: Number(v), imagem: fotoLei, criador: user.nome, criadorUid: user.uid || 'master_ice', ativo: true, ultimoLicitante: "Ninguém" });
+        await push(ref(db, 'leiloes'), { item: document.getElementById('leiNome').value, lanceAtual: Number(document.getElementById('leiValor').value), imagem: fotoLei, criadorUid: user.uid || 'master_ice', ativo: true });
         fecharTelas();
     };
 
-    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaEscolhaPost').style.display = 'none'; };
+    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); };
     window.escolherOQuePostar = () => { fecharTelas(); document.getElementById('telaEscolhaPost').style.display = 'flex'; };
     window.abrirPostar = () => { fecharTelas(); document.getElementById('telaPostar').style.display = 'block'; };
     window.abrirCriarLeilao = () => { fecharTelas(); document.getElementById('telaCriarLeilao').style.display = 'block'; };
     window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
     window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
-    window.apagarPost = id => { if(confirm("Apagar?")) remove(ref(db, `posts/${id}`)); };
+    window.apagarPost = id => { remove(ref(db, `posts/${id}`)); };
 </script>
 </body>
 </html>
