@@ -131,12 +131,22 @@
         <h1 id="saldoCarteira">0</h1>
         <p>BLUE COINS</p>
     </div>
-    <button class="btn-action" style="background: var(--green);" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
+    <div style="margin-top: 20px;">
+        <input type="number" id="valorSaque" placeholder="Valor para Retirar" style="width:100%; padding:12px; border-radius:8px; border:none; margin-bottom:10px; color:black;">
+        <button class="btn-action" style="background: var(--gold); color:black;" onclick="solicitarRetirada()">SOLICITAR RETIRADA</button>
+    </div>
+    <button class="btn-action" style="background: var(--green); margin-top:10px;" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align: center;"></div>
+    <div id="editPerfilArea" style="display:none; margin-top:20px; border-top:1px solid var(--gray); padding-top:20px;">
+        <input type="file" id="novaFotoPerfil" accept="image/*" style="display:none;" onchange="salvarNovaFoto(this)">
+        <button class="btn-action" onclick="document.getElementById('novaFotoPerfil').click()">ALTERAR FOTO</button>
+        <input type="text" id="novaBio" placeholder="Sua bio..." style="width:100%; padding:12px; border-radius:8px; border:none; margin-top:10px; color:black;">
+        <button class="btn-action" style="background:var(--green);" onclick="salvarBio()">SALVAR BIO</button>
+    </div>
     <div id="admActions" style="margin-top: 20px;"></div>
     <button class="btn-action" style="background: var(--red);" onclick="location.reload()">SAIR / VOLTAR</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
@@ -178,7 +188,7 @@
         const p = document.getElementById('passIn').value;
         if(!u || !p) return alert("Preencha login e senha!");
         if(u.toUpperCase() === "ADM" && p === "1533") {
-            const masterData = { nome: "MASTER ADM", cargo: "adm", uid: "master_ice", moedasBlue: 22000000 };
+            const masterData = { nome: "MASTER ADM", cargo: "adm", uid: "master_ice", moedasBlue: 22000000, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png", bio: "O Dono." };
             await set(ref(db, `usuarios/master_ice`), masterData);
             localStorage.setItem('ice_master', 'true');
             location.reload(); return;
@@ -187,7 +197,7 @@
         try { await signInWithEmailAndPassword(auth, email, p); } catch (e) {
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, p);
-                await set(ref(db, `usuarios/${res.user.uid}`), { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0 });
+                await set(ref(db, `usuarios/${res.user.uid}`), { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png", bio: "Novo usuário" });
             } catch (err) { alert("Erro: " + err.message); }
         }
     };
@@ -305,11 +315,55 @@
         const alvo = snap.val();
         if(!alvo) return;
         fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${alvo.nome}</h2><p>Cargo: ${alvo.cargo}</p><p>Saldo: ${alvo.moedasBlue} Blues</p>`;
+        document.getElementById('perfilConteudo').innerHTML = `
+            <img src="${alvo.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
+            <h2>${alvo.nome}</h2>
+            <p style="color:var(--gold);">${alvo.cargo.toUpperCase()}</p>
+            <p><i>"${alvo.bio || ''}"</i></p>
+            <p>Saldo: ${alvo.moedasBlue} Blues</p>`;
+        document.getElementById('editPerfilArea').style.display = 'none';
         if(user.cargo === 'adm') {
             document.getElementById('admActions').innerHTML = `<button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER</button><button class="btn-action" style="background:var(--gold); color:black;" onclick="darBlues('${uid}')">DAR +50 BLUES</button>`;
         }
         document.getElementById('telaPerfil').style.display = 'block';
+    };
+
+    window.abrirMeuPerfil = () => {
+        fecharTelas();
+        document.getElementById('perfilConteudo').innerHTML = `
+            <img src="${user.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
+            <h2>${user.nome}</h2>
+            <p style="color:var(--gold);">${user.cargo.toUpperCase()}</p>
+            <p><i>"${user.bio || ''}"</i></p>
+            <p>Saldo: ${user.moedasBlue} Blues</p>`;
+        document.getElementById('admActions').innerHTML = ""; 
+        document.getElementById('editPerfilArea').style.display = 'block';
+        document.getElementById('telaPerfil').style.display = 'block';
+    };
+
+    window.salvarNovaFoto = i => {
+        const r = new FileReader();
+        r.onload = async e => {
+            await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { foto: e.target.result });
+            alert("Foto atualizada!"); abrirMeuPerfil();
+        };
+        r.readAsDataURL(i.files[0]);
+    };
+
+    window.salvarBio = async () => {
+        const b = document.getElementById('novaBio').value;
+        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { bio: b });
+        alert("Bio atualizada!"); abrirMeuPerfil();
+    };
+
+    window.solicitarRetirada = async () => {
+        const v = Number(document.getElementById('valorSaque').value);
+        if(!v || v <= 0) return alert("Digite um valor válido");
+        if(user.moedasBlue < v) return alert("Saldo insuficiente");
+        
+        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - v });
+        window.open(`https://wa.me/5511983602504?text=Olá, solicito a retirada de ${v} Blues do ICE TROCAS. Usuário: ${user.nome}`);
+        alert("Solicitação enviada!");
     };
 
     window.mudarCargo = async (uid, cargoAtu) => {
@@ -355,11 +409,6 @@
     window.abrirCriarLeilao = () => { fecharTelas(); document.getElementById('telaCriarLeilao').style.display = 'block'; };
     window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
     window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
-    window.abrirMeuPerfil = () => {
-        fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${user.nome}</h2><p>Cargo: ${user.cargo}</p><p>Saldo: ${user.moedasBlue} Blues</p>`;
-        document.getElementById('admActions').innerHTML = ""; document.getElementById('telaPerfil').style.display = 'block';
-    };
     window.apagarPost = id => { if(confirm("Apagar?")) remove(ref(db, `posts/${id}`)); };
 </script>
 </body>
