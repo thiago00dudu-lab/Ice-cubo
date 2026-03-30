@@ -131,23 +131,22 @@
         <h1 id="saldoCarteira">0</h1>
         <p>BLUE COINS</p>
     </div>
-    <div style="margin-top: 20px;">
-        <input type="number" id="valorSaque" placeholder="Valor para Retirar" style="width:100%; padding:12px; border-radius:8px; border:none; margin-bottom:10px; color:black;">
-        <button class="btn-action" style="background: var(--gold); color:black;" onclick="solicitarRetirada()">SOLICITAR RETIRADA</button>
-    </div>
-    <button class="btn-action" style="background: var(--green); margin-top:10px;" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
+    <button class="btn-action" style="background: var(--green); margin-top:20px;" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align: center;"></div>
+    
     <div id="editPerfilArea" style="display:none; margin-top:20px; border-top:1px solid var(--gray); padding-top:20px;">
         <input type="file" id="novaFotoPerfil" accept="image/*" style="display:none;" onchange="salvarNovaFoto(this)">
         <button class="btn-action" onclick="document.getElementById('novaFotoPerfil').click()">ALTERAR FOTO</button>
         <input type="text" id="novaBio" placeholder="Sua bio..." style="width:100%; padding:12px; border-radius:8px; border:none; margin-top:10px; color:black;">
         <button class="btn-action" style="background:var(--green);" onclick="salvarBio()">SALVAR BIO</button>
     </div>
+
     <div id="admActions" style="margin-top: 20px;"></div>
+
     <button class="btn-action" style="background: var(--red);" onclick="location.reload()">SAIR / VOLTAR</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
@@ -260,6 +259,85 @@
         });
     }
 
+    window.verPerfilAlheio = async (uid) => {
+        if(!uid || uid === (user.uid || "master_ice")) return abrirMeuPerfil();
+        const snap = await get(ref(db, `usuarios/${uid}`));
+        const alvo = snap.val();
+        if(!alvo) return;
+        fecharTelas();
+        document.getElementById('perfilConteudo').innerHTML = `
+            <img src="${alvo.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
+            <h2>${alvo.nome}</h2>
+            <p style="color:var(--gold);">${alvo.cargo.toUpperCase()}</p>
+            <p><i>"${alvo.bio || ''}"</i></p>
+            <p>Saldo: ${alvo.moedasBlue} Blues</p>`;
+        
+        document.getElementById('editPerfilArea').style.display = 'none';
+
+        // SE VOCÊ FOR ADM, PODE CONTROLAR O SALDO DELE AQUI
+        if(user.cargo === 'adm') {
+            document.getElementById('admActions').innerHTML = `
+                <div style="background:var(--gray); padding:15px; border-radius:10px; margin-top:10px;">
+                   <p><small>CONTROLE DE SALDO</small></p>
+                   <input type="number" id="valorAcaoAdm" placeholder="Quantidade de Blues" style="width:100%; padding:10px; margin-bottom:10px; color:black; border-radius:5px; border:none;">
+                   <div style="display:flex; gap:5px;">
+                      <button class="btn-action" style="background:var(--green); margin:0;" onclick="gerenciarSaldo('${uid}', 'dar')">DAR BLUES</button>
+                      <button class="btn-action" style="background:var(--red); margin:0;" onclick="gerenciarSaldo('${uid}', 'tirar')">RETIRAR BLUES</button>
+                   </div>
+                   <button class="btn-action" style="background:var(--mod-blue); margin-top:10px;" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER CARGO</button>
+                </div>`;
+        } else {
+            document.getElementById('admActions').innerHTML = "";
+        }
+        document.getElementById('telaPerfil').style.display = 'block';
+    };
+
+    window.gerenciarSaldo = async (uid, acao) => {
+        const val = Number(document.getElementById('valorAcaoAdm').value);
+        if(!val || val <= 0) return alert("Digite um valor!");
+        const snap = await get(ref(db, `usuarios/${uid}/moedasBlue`));
+        let saldoAtual = snap.val() || 0;
+        let novoSaldo = acao === 'dar' ? saldoAtual + val : saldoAtual - val;
+        if(novoSaldo < 0) novoSaldo = 0;
+        await update(ref(db, `usuarios/${uid}`), { moedasBlue: novoSaldo });
+        alert(acao === 'dar' ? "Blues adicionados!" : "Blues retirados!");
+        verPerfilAlheio(uid);
+    };
+
+    window.abrirMeuPerfil = () => {
+        fecharTelas();
+        document.getElementById('perfilConteudo').innerHTML = `
+            <img src="${user.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
+            <h2>${user.nome}</h2>
+            <p style="color:var(--gold);">${user.cargo.toUpperCase()}</p>
+            <p><i>"${user.bio || ''}"</i></p>
+            <p>Saldo: ${user.moedasBlue} Blues</p>`;
+        document.getElementById('admActions').innerHTML = ""; 
+        document.getElementById('editPerfilArea').style.display = 'block';
+        document.getElementById('telaPerfil').style.display = 'block';
+    };
+
+    window.salvarNovaFoto = i => {
+        const r = new FileReader();
+        r.onload = async e => {
+            await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { foto: e.target.result });
+            alert("Foto atualizada!"); abrirMeuPerfil();
+        };
+        r.readAsDataURL(i.files[0]);
+    };
+
+    window.salvarBio = async () => {
+        const b = document.getElementById('novaBio').value;
+        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { bio: b });
+        alert("Bio atualizada!"); abrirMeuPerfil();
+    };
+
+    window.mudarCargo = async (uid, cargoAtu) => {
+        let n = cargoAtu === 'user' ? 'mod' : (cargoAtu === 'mod' ? 'adm' : 'user');
+        await update(ref(db, `usuarios/${uid}`), { cargo: n });
+        alert("Novo cargo: " + n); verPerfilAlheio(uid);
+    };
+
     window.abrirNegociacao = (postId, donoNome) => {
         fecharTelas();
         chatAtivoId = postId;
@@ -296,93 +374,13 @@
     };
 
     window.darLance = (id, atual) => { 
-        update(ref(db, `leiloes/${id}`), { 
-            lanceAtual: atual + 50, 
-            ultimoLicitante: user.nome, 
-            ultimoLicitanteUid: user.uid || 'master_ice' 
-        }); 
+        update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome, ultimoLicitanteUid: user.uid || 'master_ice' }); 
     };
 
     window.finalizarLeilao = (id, item, vencedor) => {
         if(!confirm("Deseja encerrar este leilão agora?")) return;
         update(ref(db, `leiloes/${id}`), { ativo: false });
         alert("Leilão Finalizado! Vencedor: " + vencedor);
-    };
-
-    window.verPerfilAlheio = async (uid) => {
-        if(!uid) return;
-        const snap = await get(ref(db, `usuarios/${uid}`));
-        const alvo = snap.val();
-        if(!alvo) return;
-        fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `
-            <img src="${alvo.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-            <h2>${alvo.nome}</h2>
-            <p style="color:var(--gold);">${alvo.cargo.toUpperCase()}</p>
-            <p><i>"${alvo.bio || ''}"</i></p>
-            <p>Saldo: ${alvo.moedasBlue} Blues</p>`;
-        document.getElementById('editPerfilArea').style.display = 'none';
-        if(user.cargo === 'adm') {
-            document.getElementById('admActions').innerHTML = `<button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER</button><button class="btn-action" style="background:var(--gold); color:black;" onclick="darBlues('${uid}')">DAR +50 BLUES</button>`;
-        }
-        document.getElementById('telaPerfil').style.display = 'block';
-    };
-
-    window.abrirMeuPerfil = () => {
-        fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `
-            <img src="${user.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-            <h2>${user.nome}</h2>
-            <p style="color:var(--gold);">${user.cargo.toUpperCase()}</p>
-            <p><i>"${user.bio || ''}"</i></p>
-            <p>Saldo: ${user.moedasBlue} Blues</p>`;
-        document.getElementById('admActions').innerHTML = ""; 
-        document.getElementById('editPerfilArea').style.display = 'block';
-        document.getElementById('telaPerfil').style.display = 'block';
-    };
-
-    window.salvarNovaFoto = i => {
-        const r = new FileReader();
-        r.onload = async e => {
-            await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { foto: e.target.result });
-            alert("Foto atualizada!"); abrirMeuPerfil();
-        };
-        r.readAsDataURL(i.files[0]);
-    };
-
-    window.salvarBio = async () => {
-        const b = document.getElementById('novaBio').value;
-        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { bio: b });
-        alert("Bio atualizada!"); abrirMeuPerfil();
-    };
-
-    window.solicitarRetirada = async () => {
-        const v = Number(document.getElementById('valorSaque').value);
-        if(!v || v <= 0) return alert("Digite um valor válido");
-        if(user.moedasBlue < v) return alert("Saldo insuficiente");
-        
-        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - v });
-        window.open(`https://wa.me/5511983602504?text=Olá, solicito a retirada de ${v} Blues do ICE TROCAS. Usuário: ${user.nome}`);
-        alert("Solicitação enviada!");
-    };
-
-    window.mudarCargo = async (uid, cargoAtu) => {
-        let n = cargoAtu === 'user' ? 'mod' : (cargoAtu === 'mod' ? 'adm' : 'user');
-        await update(ref(db, `usuarios/${uid}`), { cargo: n });
-        alert("Novo cargo: " + n); verPerfilAlheio(uid);
-    };
-
-    window.darBlues = async (uid) => {
-        const s = await get(ref(db, `usuarios/${uid}/moedasBlue`));
-        await update(ref(db, `usuarios/${uid}`), { moedasBlue: (s.val() || 0) + 50 });
-        alert("Blues enviados!"); verPerfilAlheio(uid);
-    };
-
-    window.publicarLeilao = async () => {
-        const n = document.getElementById('leiNome').value; const v = document.getElementById('leiValor').value;
-        if(!n || !v || !fotoLei) return alert("Erro!");
-        await push(ref(db, 'leiloes'), { item: n, lanceAtual: Number(v), imagem: fotoLei, criador: user.nome, criadorUid: user.uid || 'master_ice', ativo: true, ultimoLicitante: "Ninguém" });
-        fecharTelas();
     };
 
     window.girarBau = async () => {
@@ -402,7 +400,13 @@
     window.prepararPost = i => { const r = new FileReader(); r.onload = e => { fotoPost = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display='block'; }; r.readAsDataURL(i.files[0]); };
     window.publicarPost = async () => { if(!fotoPost) return; await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice', time: Date.now() }); fecharTelas(); };
     window.prepararLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLei = e.target.result; document.getElementById('previewLei').src = e.target.result; document.getElementById('previewLei').style.display='block'; }; r.readAsDataURL(i.files[0]); };
-    
+    window.publicarLeilao = async () => {
+        const n = document.getElementById('leiNome').value; const v = document.getElementById('leiValor').value;
+        if(!n || !v || !fotoLei) return alert("Erro!");
+        await push(ref(db, 'leiloes'), { item: n, lanceAtual: Number(v), imagem: fotoLei, criador: user.nome, criadorUid: user.uid || 'master_ice', ativo: true, ultimoLicitante: "Ninguém" });
+        fecharTelas();
+    };
+
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaEscolhaPost').style.display = 'none'; };
     window.escolherOQuePostar = () => { fecharTelas(); document.getElementById('telaEscolhaPost').style.display = 'flex'; };
     window.abrirPostar = () => { fecharTelas(); document.getElementById('telaPostar').style.display = 'block'; };
