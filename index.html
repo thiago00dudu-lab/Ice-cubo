@@ -7,6 +7,7 @@
     <title>ICE TROCAS - Oficial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
+        /* MANTIDO SEU TEMA ORIGINAL EXATAMENTE COMO SOLICITADO */
         :root { 
             --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
             --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
@@ -16,50 +17,75 @@
         #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        
+        .badge-star { font-size: 14px; display: flex; gap: 4px; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .star-mod { color: var(--mod-blue); }
+        .star-adm2 { color: var(--red); }
+        .star-adm1 { color: var(--gold); }
+        .side-menu { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 4000; }
+        .btn-float { width: 42px; height: 42px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); font-size: 16px; }
         header { padding:15px; background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; z-index:100; }
-        .brand-ice { font-size: 22px; font-weight: 800; background: linear-gradient(45deg, #fff, #00BFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .adm1-ticker { font-size: 10px; background: rgba(255, 215, 0, 0.1); color: var(--gold); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255, 215, 0, 0.3); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
-        
+        .header-icons { display: flex; align-items: center; gap: 18px; }
+        .perfil-icon-container { position: relative; cursor: pointer; z-index: 101; }
+        .notificacao-balao { position: absolute; top: -5px; right: -5px; background: var(--red); width: 12px; height: 12px; border-radius: 50%; border: 2px solid #161b22; display: none; }
+        .card-timeline { background: var(--ice); backdrop-filter: blur(5px); border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
+        .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
+        .card-info { padding: 15px; }
+        .btn-delete-post { position: absolute; top: 10px; right: 10px; background: rgba(255, 77, 77, 0.8); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 14px; }
         .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; }
-        .nav i { color: #8b949e; font-size: 22px; cursor: pointer; transition: 0.3s; }
-        .nav i:hover { color: var(--mod-blue); }
+        .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
+        .nav i.active { color: var(--mod-blue); }
+        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .grid-postagens { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 15px; }
+        .grid-postagens img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 5px; }
+        .conversa-item { background: var(--ice); padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
+        .painel-adm { background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); padding: 15px; border-radius: 15px; margin-top: 15px; }
+        .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; background: #161b22; }
+        .file-label { display: block; background: #30363d; color: white; padding: 10px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-size: 12px; text-align: center; }
+        .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; }
+        .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
+        .info-leilao { padding: 15px; text-align: center; }
+        .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; }
+        .btn-lance { background: var(--green); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        .leilao-encerrado { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gold); font-size: 20px; font-weight: bold; text-align: center; }
         
-        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; padding-top: 80px; }
+        #chatConteudo { display: flex; flex-direction: column; height: 80vh; }
+        #mensagensChat { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px; border-radius: 10px; max-width: 80%; }
+        .msg-me { background: var(--blue); align-self: flex-end; }
+        .msg-them { background: var(--gray); align-self: flex-start; }
+
+        /* ESTILO DA CARTEIRA */
+        .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        .blue-amount { font-size: 36px; font-weight: bold; color: #00BFFF; text-shadow: 0 0 10px rgba(0,191,255,0.5); }
         
-        /* ESTILOS DO FEED E POSTS */
-        #feed { padding: 15px; }
-        .create-post { background: var(--gray); padding: 15px; border-radius: 12px; margin-bottom: 20px; }
-        .create-post textarea, .create-post input { width: 100%; padding: 10px; border-radius: 8px; border: none; background: #161b22; color: white; margin-bottom: 10px; box-sizing: border-box; resize: none;}
-        
-        .post-card { background: #161b22; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
-        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
-        .post-header i { font-size: 30px; color: var(--mod-blue); }
-        .post-header strong { color: white; font-size: 16px; }
-        .post-content { color: #ddd; font-size: 14px; margin-bottom: 15px; }
-        
-        /* ESTILOS DO LEILÃO */
-        .auction-box { border: 1px solid var(--gold); background: rgba(255, 215, 0, 0.05); padding: 15px; border-radius: 10px; text-align: center; }
-        .auction-item { font-size: 18px; font-weight: bold; color: var(--gold); margin-bottom: 10px;}
-        .auction-status { font-size: 14px; color: #aaa; margin-bottom: 15px; }
-        .auction-status span { color: var(--green); font-weight: bold; font-size: 18px; }
-        
-        .painel-adm, .wallet-card { padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
-        .painel-adm { background: rgba(255, 215, 0, 0.05); border: 2px solid var(--gold); }
-        .wallet-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
-        .blue-amount { font-size: 36px; font-weight: bold; color: #00BFFF; margin-top: 10px; }
-        
-        /* Botão fechar para telas sobrepostas */
-        .btn-close-top { position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; }
+        /* ESTILO BIO */
+        .bio-text { font-size: 14px; color: #aaa; margin: 5px 0 15px 0; font-style: italic; padding: 0 15px; }
+
+        /* ANIMAÇÃO DO BAÚ (NOVO) */
+        @keyframes tremer {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-15deg); }
+            50% { transform: scale(1.1) rotate(15deg); }
+            75% { transform: scale(1.1) rotate(-15deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        .animar-bau { animation: tremer 0.5s ease-in-out infinite; color: var(--white) !important; text-shadow: 0 0 30px var(--mod-blue) !important; }
     </style>
 </head>
 <body>
 
+<div class="side-menu" id="menuFlutuante" style="display:none;">
+    <button class="btn-float" style="background: var(--gold); color:black;" onclick="comprar('ADM1', 'R$ 22.000.000')"><i class="fas fa-crown"></i></button>
+    <button class="btn-float" style="background: var(--red);" onclick="comprar('ADM2', 'R$ 50')"><i class="fas fa-shield-alt"></i></button>
+    <button class="btn-float" style="background: var(--mod-blue);" onclick="comprar('MOD', 'R$ 20')"><i class="fas fa-star"></i></button>
+    <button class="btn-float" style="background: var(--green);" onclick="window.open('https://wa.me/5511983602504')"><i class="fab fa-whatsapp"></i></button>
+</div>
+
 <div id="telaLogin">
     <div class="login-box">
         <h2>ICE TROCAS</h2>
-        <input type="text" id="userIn" placeholder="Usuário">
+        <input type="text" id="userIn" placeholder="Login">
         <input type="password" id="passIn" placeholder="Senha">
         <button class="btn-action" onclick="fazerLogin()">ENTRAR</button>
     </div>
@@ -67,86 +93,132 @@
 
 <div id="app" style="display:none;">
     <header>
-        <div>
-            <span class="brand-ice">ICE TROCAS</span>
-            <div class="adm1-ticker">
-                <i class="fas fa-chart-line"></i> ADM1: <span id="valorAdm1">R$ 22.000.000,00</span>
-                <small style="color:var(--green)">▲ 0.12%</small>
+        <b style="color: var(--mod-blue);">ICE TROCAS</b> 
+        <div class="header-icons">
+            <i class="fas fa-share-nodes" style="font-size:22px; color:white; cursor:pointer;" onclick="compartilharSite()"></i>
+            <div class="perfil-icon-container" onclick="abrirMeuPerfil()">
+                <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue);"></i>
+                <div id="balaoAlerta" class="notificacao-balao"></div>
             </div>
         </div>
-        <div onclick="abrirMeuPerfil()"><i class="fas fa-user-circle" style="font-size:28px; color:var(--mod-blue); cursor: pointer;"></i></div>
     </header>
     
-    <div id="feed">
-        <div class="create-post">
-            <textarea id="textoPost" rows="2" placeholder="O que você está pensando?"></textarea>
-            <button class="btn-action" onclick="publicarPost()">Publicar no Feed</button>
-        </div>
-        <div id="feedContent"></div>
-    </div>
+    <div id="feed-leiloes"></div>
+    <div id="feed"></div>
 
     <div class="nav">
-        <i class="fas fa-home" style="color: white;" onclick="mostrarFeed()"></i>
-        <i class="fas fa-gift" onclick="abrirIceDrop()" style="color:var(--gold);"></i>
+        <i class="fas fa-home active" onclick="fecharTelas()"></i>
+        <i class="fas fa-gift" onclick="window.abrirIceDrop()" style="color:var(--gold); font-size: 26px;"></i>
+        <i class="fas fa-plus-circle" onclick="abrirPostar()" style="color:var(--mod-blue); font-size: 28px;"></i>
         <i class="fas fa-wallet" onclick="abrirCarteira()"></i>
     </div>
 </div>
 
-<div id="telaPerfil" class="tela-full">
-    <button class="btn-close-top" onclick="mostrarFeed()"><i class="fas fa-times"></i></button>
-    <div style="text-align: center; margin-bottom: 20px;">
-        <i class="fas fa-user-circle" style="font-size: 80px; color: var(--mod-blue);"></i>
-        <h2 id="meuNomePerfil" style="margin: 10px 0;">Meu Perfil</h2>
-    </div>
-
-    <div class="create-post" style="border: 1px solid var(--gold);">
-        <h3 style="color: var(--gold); margin-top: 0;">Criar Leilão</h3>
-        <input type="text" id="itemLeilao" placeholder="Nome do item (ex: Conta Level 50)">
-        <input type="number" id="valorInicialLeilao" placeholder="Valor inicial em Blue Coins">
-        <button class="btn-action" style="background:var(--gold); color:black;" onclick="publicarLeilao()">Iniciar Leilão</button>
-    </div>
-
-    <div id="painelAdmResumo" class="painel-adm" style="display:none;">
-        <h3 style="color:var(--gold); margin:0;">💰 COFRE ADM1</h3>
-        <p style="font-size:12px; color:gray;">Total Arrecadado no Baú</p>
-        <h2 id="totalBluesAdm" style="color:white;">0.00 BLUE</h2>
-        <button class="btn-action" style="background:var(--gold); color:black;" onclick="transferirParaConta()">SACAR PARA CARTEIRA</button>
-    </div>
-</div>
-
-<div id="telaOutroPerfil" class="tela-full">
-    <button class="btn-close-top" onclick="mostrarFeed()"><i class="fas fa-times"></i></button>
-    <div style="text-align: center; margin-bottom: 20px;">
-        <i class="fas fa-user-circle" style="font-size: 80px; color: #8b949e;"></i>
-        <h2 id="nomeOutroPerfil" style="margin: 10px 0;">Perfil</h2>
-    </div>
-    <div style="text-align: center; padding: 20px; background: var(--gray); border-radius: 10px;">
-        <p>Negociações e posts deste usuário aparecerão aqui.</p>
-    </div>
-</div>
-
 <div id="telaIceDrop" class="tela-full">
-    <button class="btn-close-top" onclick="mostrarFeed()"><i class="fas fa-times"></i></button>
-    <h2 style="text-align:center; color:var(--gold);">ICE DROP</h2>
-    <div style="text-align:center; padding:40px; background:var(--ice); border-radius:20px;">
-        <i class="fas fa-box-open" style="font-size:80px; color:var(--gold);"></i>
-        <p>Custo: 5 Blues</p>
-        <button class="btn-action" style="background:var(--gold); color:black;" onclick="girarBau()">ABRIR BAÚ</button>
+    <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-box-open"></i> ICE DROP</h3>
+    <div style="text-align: center; margin-top: 20px; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,215,0,0.3);">
+        <i id="iconeBau" class="fas fa-gift" style="font-size: 90px; color: var(--gold); text-shadow: 0 0 20px var(--gold); margin-bottom: 20px; display: inline-block;"></i>
+        <p style="color: var(--mod-blue); font-size: 14px;">Custo: 5 Blue Coins por giro</p>
+        
+        <div id="resultadoDrop" style="min-height: 80px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin: 15px 0;">
+            Gire para tentar ganhar ADM ou Blues!
+        </div>
+        
+        <button id="btnGirarBau" class="btn-action" style="background:var(--gold); color:black; font-size: 18px; padding: 15px;" onclick="window.girarBau()">
+            <i class="fas fa-sync"></i> ABRIR BAÚ
+        </button>
     </div>
+    <button class="btn-action" style="background:var(--gray); margin-top: 30px;" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
+<div id="telaPerfil" class="tela-full">
+    <div id="perfilConteudo" style="text-align:center;"></div>
+    
+    <div id="painelStaffLeilao" class="painel-adm" style="display:none; border-color: var(--mod-blue);">
+        <h4 style="color:var(--mod-blue); text-align:center; margin-top:0;"><i class="fas fa-gavel"></i> MEUS LEILÕES</h4>
+        <button class="btn-action" style="background:var(--mod-blue);" onclick="document.getElementById('telaCriarLeilao').style.display='block'">ABRIR NOVO LEILÃO</button>
+    </div>
+
+    <div id="painelAdmControle" class="painel-adm" style="display:none;">
+        <h4 style="color:var(--gold); text-align:center; margin-top:0;">👑 MASTER CONTROL</h4>
+        <div style="display:flex; gap:5px; margin-bottom: 15px;">
+            <button class="btn-action" style="background:var(--gold); color:black; font-size:10px;" onclick="mudarCargo('ADM1')">ADM1</button>
+            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="mudarCargo('ADM2')">ADM2</button>
+            <button class="btn-action" style="background:var(--mod-blue); font-size:10px;" onclick="mudarCargo('MOD')">MOD</button>
+        </div>
+        <hr style="opacity: 0.2;">
+        <p style="text-align: center; font-size: 12px; color: var(--gold);">GERENCIAR BLUE COINS</p>
+        <div style="display:flex; gap:5px;">
+            <button class="btn-action" style="background:var(--green); font-size:10px;" onclick="ajustarBlues(100)">+100 BLUES</button>
+            <button class="btn-action" style="background:var(--red); font-size:10px;" onclick="ajustarBlues(-100)">-100 BLUES</button>
+        </div>
+        <input type="number" id="valorPersonalizadoBlues" placeholder="Valor exato" style="width:100%; margin-top:10px; padding:8px; border-radius:5px; background:#161b22; color:white; border:1px solid var(--gray);">
+        <button class="btn-action" style="background:var(--blue); font-size:10px;" onclick="definirBlues()">DEFINIR SALDO</button>
+    </div>
+
+    <h4>Postagens</h4>
+    <div id="gridUser" class="grid-postagens"></div>
+    <button class="btn-action" style="background:var(--gray); margin-top:20px;" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
+<div id="telaEditarPerfil" class="tela-full">
+    <h3 style="text-align: center; color: var(--mod-blue);"><i class="fas fa-user-edit"></i> EDITAR PERFIL</h3>
+    <label class="file-label" for="editFotoPerfil"><i class="fas fa-camera"></i> Escolher Foto da Galeria</label>
+    <input type="file" id="editFotoPerfil" accept="image/*" style="display:none;" onchange="prepararFotoPerfil(this)">
+    <img id="previewFotoPerfil" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin: 0 auto 15px auto; border: 2px solid var(--mod-blue);">
+    
+    <textarea id="editBio" placeholder="Escreva algo sobre você ou sua loja..." style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black; margin-bottom: 10px; resize: none; font-family:sans-serif;" rows="3"></textarea>
+    
+    <button class="btn-action" style="background:var(--green);" onclick="salvarPerfil()">SALVAR ALTERAÇÕES</button>
+    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
 </div>
 
 <div id="telaCarteira" class="tela-full">
-    <button class="btn-close-top" onclick="mostrarFeed()"><i class="fas fa-times"></i></button>
+    <h3 style="text-align: center;"><i class="fas fa-wallet" style="color: var(--mod-blue);"></i> MINHA CARTEIRA</h3>
     <div class="wallet-card">
-        <p>Saldo Blue Coins</p>
+        <p style="margin: 0; opacity: 0.8; font-size: 14px;">Saldo Disponível</p>
         <div class="blue-amount" id="saldoCarteira">0</div>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #00BFFF;">BLUE COINS</p>
     </div>
+    <button class="btn-action" style="background: var(--green);" onclick="comprar('BLUE COINS', 'PIX')"><i class="fas fa-plus-circle"></i> RECARREGAR BLUES</button>
+    <button class="btn-action" style="background: var(--gray); margin-top: 15px;" onclick="fecharTelas()">FECHAR</button>
+</div>
+
+<div id="telaPostar" class="tela-full">
+    <h3>NOVA TROCA</h3>
+    <label class="file-label" for="postFoto"><i class="fas fa-camera"></i> Escolher Foto</label>
+    <input type="file" id="postFoto" accept="image/*" style="display:none;" onchange="prepararPost(this)">
+    <img id="previewPost" style="width:100%; display:none; border-radius:10px; margin-bottom:10px;">
+    <button class="btn-action" onclick="publicarPost()">POSTAR</button>
+    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
+</div>
+
+<div id="telaChat" class="tela-full">
+    <h3 id="chatTitulo">Negociação</h3>
+    <div id="chatConteudo">
+        <div id="mensagensChat"></div>
+        <div style="display:flex; gap:5px; padding:10px;">
+            <input type="text" id="msgInput" placeholder="Digite sua proposta..." style="flex-grow:1; padding:10px; border-radius:5px; border:none;">
+            <button onclick="enviarMensagem()" style="background:var(--blue); border:none; color:white; padding:10px; border-radius:5px;"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
+<div id="telaCriarLeilao" class="tela-full">
+    <h3 style="color: var(--gold); text-align: center;"><i class="fas fa-gavel"></i> INICIAR LEILÃO</h3>
+    <input type="text" id="leilaoItem" placeholder="Nome do Item" class="input-leilao" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black;">
+    <input type="number" id="leilaoValor" placeholder="Valor Inicial" class="input-leilao" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; color:black;">
+    <label class="file-label" for="leilaoFoto"><i class="fas fa-camera"></i> Foto do Item</label>
+    <input type="file" id="leilaoFoto" accept="image/*" style="display:none;" onchange="prepararFotoLeilao(this)">
+    <img id="previewFotoLeilao" style="width:100%; display:none; border-radius:10px; margin-bottom:15px;">
+    <button class="btn-action" style="background:var(--gold); color:black;" onclick="publicarLeilao()">PUBLICAR</button>
+    <button class="btn-action" style="background:var(--gray);" onclick="fecharTelas()">CANCELAR</button>
 </div>
 
 <script type="module">
-    // Módulo Firebase (Mantido para sua conexão futura, mas rodando com simulação local para o feed funcionar de imediato)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, onValue, update, set, push, get, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = { apiKey: "AIzaSyDM5M1_O-wfcBDGYJIiYgiHVbqhiKC-0dw", databaseURL: "https://icek-9cdd7-default-rtdb.firebaseio.com", projectId: "icek-9cdd7" };
@@ -155,177 +227,264 @@
     const auth = getAuth(app);
 
     window.user = null;
-    let bauAcumulado = 0;
-    
-    // Arrays locais para simular o banco de dados do Feed e Leilões (Você pode linkar isso ao Firebase depois)
-    window.postagens = [
-        { id: 1, tipo: 'normal', autor: 'Sistema', texto: 'Bem-vindo ao novo Ice Trocas!' }
-    ];
+    window.targetUid = null;
+    let fotoPostBase64 = null;
+    let fotoLeilaoBase64 = null;
+    let fotoPerfilBase64 = null;
+    let chatAtivoId = null;
 
+    // --- LOGIN ---
     window.fazerLogin = async () => {
-        const u = document.getElementById('userIn').value;
+        const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
-        
-        if(!u || !p) return alert("Preencha usuário e senha!");
+        if(!u || !p) return alert("Preencha tudo!");
 
-        // Hardcode ADM
-        if(u === "ADM" && p === "1533") {
-            window.user = { nome: "ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 22000000 };
-            iniciarApp();
-            document.getElementById('painelAdmResumo').style.display='block';
+        if(u.toUpperCase() === "ADM" && p === "1533") {
+            const m = { nome: "MASTER ADM1", cargo: "ADM1", uid: "master_ice", moedasBlue: 22000000 };
+            await set(ref(db, `usuarios/master_ice`), m);
+            localStorage.setItem('ice_user_master', JSON.stringify(m));
+            window.user = m;
+            location.reload();
             return;
         }
 
+        const email = u.includes('@') ? u : u + "@ice.com";
         try { 
-            await signInWithEmailAndPassword(auth, u + "@ice.com", p); 
-        } catch { 
-            const res = await createUserWithEmailAndPassword(auth, u + "@ice.com", p);
-            await set(ref(db, `usuarios/${res.user.uid}`), { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 100 });
+            await signInWithEmailAndPassword(auth, email, p); 
+        } catch (e) { 
+            try {
+                const res = await createUserWithEmailAndPassword(auth, email, p);
+                const novo = { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, girosTotal: 0 };
+                await set(ref(db, `usuarios/${res.user.uid}`), novo);
+            } catch (err) { alert("Erro: " + err.message); }
         }
     };
 
-    onAuthStateChanged(auth, u => { 
+    onAuthStateChanged(auth, async (u) => {
         if(u) {
-            onValue(ref(db, `usuarios/${u.uid}`), s => { 
-                window.user = s.val(); 
-                if(!window.user) window.user = { nome: u.email.split('@')[0], moedasBlue: 100 }; // Fallback de segurança
-                iniciarApp();
-            }); 
+            onValue(ref(db, `usuarios/${u.uid}`), (s) => {
+                window.user = s.val();
+                if(window.user) {
+                    document.getElementById('saldoCarteira').innerText = window.user.moedasBlue || 0;
+                    iniciarApp();
+                }
+            });
+        } else {
+            const local = localStorage.getItem('ice_user_master');
+            if(local) { 
+                window.user = JSON.parse(local); 
+                onValue(ref(db, `usuarios/master_ice`), (s) => {
+                    window.user = s.val();
+                    document.getElementById('saldoCarteira').innerText = window.user.moedasBlue || 0;
+                });
+                iniciarApp(); 
+            }
         }
     });
 
     function iniciarApp() {
-        document.getElementById('telaLogin').style.display='none'; 
-        document.getElementById('app').style.display='block'; 
-        document.getElementById('saldoCarteira').innerText = window.user.moedasBlue;
-        document.getElementById('meuNomePerfil').innerText = window.user.nome;
-        renderizarFeed();
+        document.getElementById('telaLogin').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('menuFlutuante').style.display = 'flex';
+        carregarFeeds();
     }
 
-    // --- SISTEMA DE FEED E LEILÃO ---
+    // --- SISTEMA ICE DROP ---
+    window.abrirIceDrop = () => {
+        fecharTelas();
+        document.getElementById('telaIceDrop').style.display = 'block';
+    };
 
-    window.publicarPost = () => {
-        const texto = document.getElementById('textoPost').value;
-        if(!texto) return;
+    window.girarBau = async () => {
+        if (window.user.moedasBlue < 5) return alert("Você precisa de pelo menos 5 Blues para girar!");
         
-        postagens.unshift({ id: Date.now(), tipo: 'normal', autor: window.user.nome, texto: texto });
-        document.getElementById('textoPost').value = '';
-        renderizarFeed();
-    };
+        const btn = document.getElementById('btnGirarBau');
+        const icone = document.getElementById('iconeBau');
+        const resDiv = document.getElementById('resultadoDrop');
+        const uid = window.user.uid || "master_ice";
 
-    window.publicarLeilao = () => {
-        const item = document.getElementById('itemLeilao').value;
-        const valorInit = parseInt(document.getElementById('valorInicialLeilao').value);
+        btn.disabled = true;
+        icone.classList.add('animar-bau');
+        resDiv.innerText = "Sorteando...";
+
+        const snapshotPool = await get(ref(db, 'configuracoes/pool_bau'));
+        let bancaAtual = snapshotPool.val() || 0;
         
-        if(!item || isNaN(valorInit)) return alert("Preencha os dados do leilão corretamente.");
+        const girosTotal = (window.user.girosTotal || 0) + 1;
+        const novoSaldoAposCusto = window.user.moedasBlue - 5;
+        bancaAtual += 4.5;
 
-        postagens.unshift({
-            id: Date.now(), tipo: 'leilao', autor: window.user.nome, item: item,
-            valorAtual: valorInit, ultimoDono: 'Ninguém', ativo: true
-        });
-        
-        document.getElementById('itemLeilao').value = '';
-        document.getElementById('valorInicialLeilao').value = '';
-        alert("Leilão publicado no Feed!");
-        mostrarFeed();
-    };
+        setTimeout(async () => {
+            icone.classList.remove('animar-bau');
+            
+            let sorte = Math.random() * 100;
+            let premioNome = "Não foi dessa vez! Tente novamente.";
+            let valorPremioBlue = 0;
+            let novoCargo = null;
+            let bancaDescontar = 0;
 
-    window.darLance = (id) => {
-        const post = postagens.find(p => p.id === id);
-        if(!post || !post.ativo) return alert("Leilão encerrado!");
-        if(post.autor === window.user.nome) return alert("Você não pode dar lance no próprio leilão!");
-        
-        const novoLance = post.valorAtual + 10; // Incremento fixo ou você pode colocar um input
-        if(window.user.moedasBlue < novoLance) return alert("Você não tem Blue Coins suficientes para cobrir o lance!");
-
-        post.valorAtual = novoLance;
-        post.ultimoDono = window.user.nome;
-        renderizarFeed();
-    };
-
-    window.finalizarLeilao = (id) => {
-        const post = postagens.find(p => p.id === id);
-        if(post && post.autor === window.user.nome) {
-            post.ativo = false;
-            alert(`Leilão finalizado! Ganhador: ${post.ultimoDono} por ${post.valorAtual} Blues.`);
-            renderizarFeed();
-        }
-    };
-
-    window.abrirPerfilFeed = (nomeAutor) => {
-        if(nomeAutor === window.user.nome) {
-            abrirMeuPerfil();
-        } else {
-            document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
-            document.getElementById('telaOutroPerfil').style.display = 'block';
-            document.getElementById('nomeOutroPerfil').innerText = nomeAutor;
-        }
-    };
-
-    window.renderizarFeed = () => {
-        const feedContainer = document.getElementById('feedContent');
-        feedContainer.innerHTML = '';
-
-        postagens.forEach(post => {
-            let html = `
-                <div class="post-card">
-                    <div class="post-header" onclick="abrirPerfilFeed('${post.autor}')">
-                        <i class="fas fa-user-circle"></i>
-                        <strong>${post.autor}</strong>
-                    </div>`;
-
-            if(post.tipo === 'normal') {
-                html += `<div class="post-content">${post.texto}</div>`;
-            } else if (post.tipo === 'leilao') {
-                html += `
-                    <div class="auction-box">
-                        <div class="auction-item">🔨 Leilão: ${post.item}</div>
-                        ${post.ativo ? 
-                            `<div class="auction-status">Lance Atual: <span>${post.valorAtual} Blues</span><br><small>Último lance: ${post.ultimoDono}</small></div>
-                             ${post.autor === window.user.nome ? 
-                                `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao(${post.id})">Encerrar Leilão</button>` :
-                                `<button class="btn-action" style="background:var(--green);" onclick="darLance(${post.id})">Dar Lance (+10)</button>`
-                             }` 
-                            : 
-                            `<div class="auction-status" style="color:var(--red);">ENCERRADO<br>Arrematado por: <strong>${post.ultimoDono}</strong> (${post.valorAtual} Blues)</div>`
-                        }
-                    </div>`;
+            if (girosTotal > 4) {
+                if (sorte < 0.5) { premioNome = "🏆 ABSURDO! VOCÊ GANHOU ADM1!"; novoCargo = "ADM1"; }
+                else if (sorte < 1.5) { premioNome = "🛡️ INCRÍVEL! VOCÊ GANHOU ADM2!"; novoCargo = "ADM2"; }
+                else if (sorte < 4) { premioNome = "⭐ BOA! VOCÊ GANHOU MODERADOR!"; novoCargo = "MOD"; }
             }
-            html += `</div>`;
-            feedContainer.innerHTML += html;
+
+            if (!novoCargo && sorte > 5 && sorte < 15) {
+                if (bancaAtual >= 20) { premioNome = "💰 SORTE! Ganhou 10 Blues!"; valorPremioBlue = 10; bancaDescontar = 10; }
+            } else if (!novoCargo && sorte >= 15 && sorte < 40) {
+                if (bancaAtual >= 10) { premioNome = "💰 Ganhou 5 Blues!"; valorPremioBlue = 5; bancaDescontar = 5; }
+            }
+
+            const updates = {};
+            updates[`usuarios/${uid}/moedasBlue`] = novoSaldoAposCusto + valorPremioBlue;
+            updates[`usuarios/${uid}/girosTotal`] = girosTotal;
+            updates[`configuracoes/pool_bau`] = bancaAtual - bancaDescontar;
+            
+            if (novoCargo) updates[`usuarios/${uid}/cargo`] = novoCargo;
+            await update(ref(db), updates);
+
+            resDiv.innerHTML = `<span style="color:${valorPremioBlue > 0 || novoCargo ? 'var(--gold)' : 'white'}">${premioNome}</span>`;
+            btn.disabled = false;
+        }, 2000);
+    };
+
+    // --- FEEDS (ATUALIZADO PARA EXIBIR ÚLTIMO LANCE E VENCEDOR) ---
+    function carregarFeeds() {
+        onValue(ref(db, 'leiloes'), snap => {
+            const div = document.getElementById('feed-leiloes'); div.innerHTML = "";
+            snap.forEach(l => {
+                const le = l.val();
+                const ehCriador = window.user && window.user.uid === le.criadorUid;
+                
+                // Botão de finalizar agora só aparece para quem criou e se o leilão estiver ativo
+                const iconeFinalizar = (le.ativo && ehCriador) ? `<button class="btn-delete-post" style="background: var(--gold); color: black; z-index: 20; right: 50px;" onclick="window.finalizarLeilao('${l.key}')"><i class="fas fa-gavel"></i></button>` : '';
+                
+                // Botão de apagar
+                const btnApagar = ehCriador ? `<button class="btn-delete-post" onclick="window.apagarLeilao('${l.key}')"><i class="fas fa-trash"></i></button>` : '';
+                
+                let acoesExtra = le.ativo ? `<button class="btn-lance" onclick="window.darLance('${l.key}', ${le.lanceAtual})">LANCE + R$ 50</button>` : '';
+                
+                // Novo visual: Mostra quem arrematou na tela preta
+                const telaArrematado = !le.ativo ? `<div class="leilao-encerrado">ARREMATADO POR:<br><span style="color:white; font-size:24px;">${le.maiorLicitanteNome || 'Ninguém'}</span></div>` : '';
+
+                div.innerHTML = `
+                <div class="card-leilao">
+                    ${telaArrematado}
+                    ${iconeFinalizar}
+                    ${btnApagar}
+                    <img src="${le.imagem}">
+                    <div class="info-leilao">
+                        <small>Leilão de ${le.criadorNome}</small>
+                        <h3>${le.item}</h3>
+                        <div class="valor-lance">R$ ${le.lanceAtual}</div>
+                        
+                        <div style="font-size: 14px; color: var(--gold); margin-bottom: 15px;">Último lance: <b>${le.maiorLicitanteNome || 'Nenhum'}</b></div>
+                        
+                        ${acoesExtra}
+                    </div>
+                </div>` + div.innerHTML;
+            });
+        });
+
+        onValue(ref(db, 'posts'), snap => {
+            const div = document.getElementById('feed'); div.innerHTML = "";
+            snap.forEach(p => {
+                const pt = p.val();
+                const btnApagar = (window.user && (window.user.uid === pt.uid || window.user.cargo === 'ADM1')) ? `<button class="btn-delete-post" onclick="window.apagarPost('${p.key}')"><i class="fas fa-trash"></i></button>` : '';
+                div.innerHTML = `<div class="card-timeline">${btnApagar}<img src="${pt.i1}" onclick="window.abrirPerfil('${pt.uid}')"><div class="card-info"><b>${pt.u1}</b><button class="btn-action" style="background:var(--sea);" onclick="window.abrirChat('${pt.uid}', '${pt.u1}')">NEGOCIAR</button></div></div>` + div.innerHTML;
+            });
+        });
+    }
+
+    // --- FUNÇÕES GLOBAIS E DE LANCE (ATUALIZADO) ---
+    window.apagarPost = pid => confirm("Apagar postagem?") && remove(ref(db, `posts/${pid}`));
+    window.apagarLeilao = lid => confirm("Apagar leilão?") && remove(ref(db, `leiloes/${lid}`));
+    
+    window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
+    window.fecharTelas = () => document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none');
+    
+    window.abrirPerfil = async (uid) => {
+        const s = await get(ref(db, `usuarios/${uid}`));
+        const t = s.val();
+        if(!t) return;
+        const souEu = window.user.uid === uid || (window.user.uid === "master_ice" && uid === "master_ice");
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${t.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo"><h2>${t.nome}</h2><p>${t.cargo}</p>${t.bio ? `<p class="bio-text">"${t.bio}"</p>` : ''}<p style="color:var(--mod-blue); font-weight:bold;">Saldo: ${t.moedasBlue || 0} Blues</p>${souEu ? `<button class="btn-action" onclick="window.abrirEditarPerfil()">EDITAR PERFIL</button>` : ''}`;
+        
+        // AGORA O BOTAO DE LEILÃO APARECE PRA TODOS OS USUARIOS NO PRÓPRIO PERFIL
+        document.getElementById('painelStaffLeilao').style.display = souEu ? 'block' : 'none';
+        document.getElementById('painelAdmControle').style.display = (window.user.cargo === 'ADM1' && !souEu) ? 'block' : 'none';
+        
+        window.targetUid = uid;
+        fecharTelas();
+        document.getElementById('telaPerfil').style.display = 'block';
+    };
+
+    window.abrirMeuPerfil = () => window.abrirPerfil(window.user.uid || "master_ice");
+    window.abrirEditarPerfil = () => { document.getElementById('telaEditarPerfil').style.display = 'block'; document.getElementById('editBio').value = window.user.bio || ''; };
+    window.prepararFotoPerfil = input => { const reader = new FileReader(); reader.onload = e => { fotoPerfilBase64 = e.target.result; document.getElementById('previewFotoPerfil').src = e.target.result; document.getElementById('previewFotoPerfil').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); };
+    window.salvarPerfil = async () => { const updates = { bio: document.getElementById('editBio').value }; if(fotoPerfilBase64) updates.foto = fotoPerfilBase64; await update(ref(db, `usuarios/${window.user.uid || 'master_ice'}`), updates); fecharTelas(); window.abrirMeuPerfil(); };
+    window.comprar = (tipo, valor) => window.open(`https://wa.me/5511983602504?text=Quero comprar ${tipo} - Valor: ${valor}`);
+    window.abrirChat = (outroUid, outroNome) => { if(outroUid === window.user.uid) return; chatAtivoId = window.user.uid < outroUid ? window.user.uid + outroUid : outroUid + window.user.uid; document.getElementById('chatTitulo').innerText = "Negociar com " + outroNome; document.getElementById('telaChat').style.display = 'block'; onValue(ref(db, `chats/${chatAtivoId}`), snap => { const div = document.getElementById('mensagensChat'); div.innerHTML = ""; snap.forEach(m => { const msg = m.val(); div.innerHTML += `<div class="msg ${msg.uid === window.user.uid ? 'msg-me' : 'msg-them'}">${msg.texto}</div>`; }); div.scrollTop = div.scrollHeight; }); };
+    window.enviarMensagem = async () => { const txt = document.getElementById('msgInput').value; if(!txt) return; await push(ref(db, `chats/${chatAtivoId}`), { uid: window.user.uid, texto: txt, time: Date.now() }); document.getElementById('msgInput').value = ""; };
+    
+    // --- LÓGICA DO LEILÃO RESTAURADA E ATUALIZADA ---
+    
+    // Agora salva o NOME de quem deu o lance, não só o UID
+    window.darLance = async (lid, atual) => {
+        await update(ref(db, `leiloes/${lid}`), { 
+            lanceAtual: atual + 50, 
+            maiorLicitante: window.user.uid,
+            maiorLicitanteNome: window.user.nome 
         });
     };
 
-    // --- NAVEGAÇÃO BÁSICA ---
-    window.mostrarFeed = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); renderizarFeed(); };
-    window.abrirIceDrop = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaIceDrop').style.display='block'; };
-    window.abrirMeuPerfil = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaPerfil').style.display='block'; };
-    window.abrirCarteira = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaCarteira').style.display='block'; };
-
-    // --- FUNÇÕES DE MOEDAS ---
-    window.girarBau = () => {
-        if(window.user.moedasBlue < 5) return alert("Sem saldo!");
-        window.user.moedasBlue -= 5;
-        bauAcumulado += 5;
-        document.getElementById('totalBluesAdm').innerText = bauAcumulado.toFixed(2) + " BLUE";
-        document.getElementById('saldoCarteira').innerText = window.user.moedasBlue;
-        alert("Baú aberto! O ADM1 recebeu sua taxa.");
+    // Finalizar o leilão muda o status para ativo: false (encerra e mostra o ganhador)
+    window.finalizarLeilao = async (lid) => {
+        if(confirm("Deseja encerrar este leilão e vender para o último lance?")) {
+            await update(ref(db, `leiloes/${lid}`), { ativo: false });
+        }
     };
 
-    window.transferirParaConta = () => {
-        window.user.moedasBlue += bauAcumulado;
-        bauAcumulado = 0;
-        document.getElementById('totalBluesAdm').innerText = "0.00 BLUE";
-        document.getElementById('saldoCarteira').innerText = window.user.moedasBlue;
-        alert("Blues transferidos para sua conta!");
+    window.prepararFotoLeilao = input => { const reader = new FileReader(); reader.onload = e => { fotoLeilaoBase64 = e.target.result; document.getElementById('previewFotoLeilao').src = e.target.result; document.getElementById('previewFotoLeilao').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); };
+    
+    window.publicarLeilao = async () => {
+        const item = document.getElementById('leilaoItem').value;
+        const valor = Number(document.getElementById('leilaoValor').value);
+        if(!item || !valor || !fotoLeilaoBase64) return alert("Preencha todos os dados e coloque uma foto do item!");
+        
+        await push(ref(db, 'leiloes'), {
+            item: item,
+            lanceAtual: valor,
+            imagem: fotoLeilaoBase64,
+            criadorUid: window.user.uid || 'master_ice',
+            criadorNome: window.user.nome,
+            ativo: true,
+            time: Date.now()
+        });
+        
+        alert("Leilão criado com sucesso!");
+        document.getElementById('leilaoItem').value = '';
+        document.getElementById('leilaoValor').value = '';
+        fotoLeilaoBase64 = null;
+        fecharTelas();
     };
 
-    // Ticker visual do ADM
-    let valorM = 22000000;
-    setInterval(() => {
-        valorM += (Math.random() * 0.2) - 0.1;
-        document.getElementById('valorAdm1').innerText = valorM.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
-    }, 3000);
+    // --- LÓGICA DE POSTAGENS NORMAL (QUE ESTAVA CORTADA) ---
+    window.abrirPostar = () => { fecharTelas(); document.getElementById('telaPostar').style.display = 'block'; };
+    window.prepararPost = input => { const reader = new FileReader(); reader.onload = e => { fotoPostBase64 = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display = 'block'; }; reader.readAsDataURL(input.files[0]); };
+    window.publicarPost = async () => {
+        if(!fotoPostBase64) return alert("Por favor, adicione uma foto para postar!");
+        await push(ref(db, 'posts'), {
+            i1: fotoPostBase64,
+            uid: window.user.uid || 'master_ice',
+            u1: window.user.nome,
+            time: Date.now()
+        });
+        alert("Troca postada com sucesso!");
+        fotoPostBase64 = null;
+        fecharTelas();
+    };
+
 </script>
 </body>
 </html>
