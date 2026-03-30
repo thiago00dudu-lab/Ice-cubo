@@ -16,9 +16,9 @@
         #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        
+        .login-box small { display: block; margin-bottom: 15px; color: #666; font-size: 12px; }
+
         header { padding:15px; background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; z-index:100; }
-        .header-icons { display: flex; align-items: center; gap: 18px; }
         
         .card-timeline { background: var(--ice); border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
@@ -28,7 +28,7 @@
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
         .info-leilao { padding: 15px; text-align: center; }
         .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; }
-        .leilao-encerrado { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; color: var(--gold); font-weight: bold; text-align: center; padding: 20px; z-index: 5; }
+        .leilao-encerrado { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gold); font-weight: bold; text-align: center; padding: 20px; z-index: 5; }
 
         .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 25px; padding: 12px 30px; border-radius: 40px; z-index: 3000; }
         .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
@@ -37,10 +37,7 @@
         .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
         
-        .btn-del { color: var(--red); cursor: pointer; font-size: 18px; }
-        .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; }
-
-        /* --- NOVO DESIGN CASINO --- */
+        /* --- CASINO --- */
         .casino-box { background: #000; padding: 20px; border-radius: 15px; border: 2px solid var(--gold); text-align: center; position: relative; overflow: hidden; }
         .roleta-container { width: 100%; height: 80px; background: #111; margin: 15px 0; position: relative; border: 1px solid #333; overflow: hidden; display: flex; align-items: center; }
         .roleta-trilho { display: flex; position: absolute; left: 0; transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); }
@@ -50,14 +47,10 @@
 
         .btn-comprar-cargo { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); background: var(--gold); color: black; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); z-index: 1000; cursor: pointer; }
 
-        #chatBox { display: flex; flex-direction: column; height: 80vh; }
-        #mensagensChat { flex: 1; overflow-y: auto; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; }
+        #mensagensChat { height: 300px; overflow-y: auto; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
         .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
-        .msg-me { align-self: flex-end; background: var(--blue); color: white; }
-        .msg-them { align-self: flex-start; background: var(--gray); color: white; }
-        .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; }
-        .chat-input-area { display: flex; gap: 5px; }
-        .chat-input-area input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
+        .msg-me { align-self: flex-end; background: var(--blue); margin-left: auto; }
+        .msg-them { align-self: flex-start; background: var(--gray); }
     </style>
 </head>
 <body>
@@ -65,8 +58,9 @@
 <div id="telaLogin">
     <div class="login-box">
         <h2 style="margin-top:0;">ICE TROCAS</h2>
-        <input type="text" id="userIn" placeholder="Login (Nome)">
-        <input type="password" id="passIn" placeholder="Senha">
+        <small>Entra com email e uma senha de 6 dígitos</small>
+        <input type="text" id="userIn" placeholder="Seu Nome ou Email">
+        <input type="password" id="passIn" placeholder="Senha de 6 dígitos">
         <button class="btn-action" onclick="fazerLogin()">ENTRAR / CRIAR</button>
     </div>
 </div>
@@ -81,9 +75,7 @@
             <b style="color: var(--mod-blue); display: block;">ICE TROCAS</b>
             <small id="displayMasterSaldo" style="color: var(--gold); font-size: 10px;">Bolsa: 0 Blues</small>
         </div>
-        <div class="header-icons">
-            <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue); cursor:pointer;" onclick="abrirMeuPerfil()"></i>
-        </div>
+        <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue); cursor:pointer;" onclick="abrirMeuPerfil()"></i>
     </header>
     
     <div id="feed-leiloes"></div>
@@ -101,9 +93,7 @@
     <h3 style="color: var(--gold); text-align: center;">ICE CASINO</h3>
     <div class="casino-box">
         <div class="pointer"></div>
-        <div class="roleta-container">
-            <div id="trilho" class="roleta-trilho"></div>
-        </div>
+        <div class="roleta-container"><div id="trilho" class="roleta-trilho"></div></div>
         <p id="resDrop" style="font-weight: bold; color: #8b949e;">Custo: 5 Blues</p>
         <button id="btnGirar" class="btn-action" style="background: var(--gold); color: black;" onclick="jogarCasino()">GIRAR ROLETA</button>
     </div>
@@ -128,6 +118,7 @@
     <h3>CRIAR LEILÃO</h3>
     <input type="text" id="leiNome" placeholder="Nome do Item" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px;">
     <input type="number" id="leiValor" placeholder="Valor Inicial (R$)" style="width:100%; padding:10px; margin-bottom:10px;">
+    <input type="text" id="leiWhats" placeholder="Seu WhatsApp (Ex: 5511999999999)" style="width:100%; padding:10px; margin-bottom:10px;">
     <input type="file" id="leiFoto" accept="image/*" onchange="prepararLeilao(this)">
     <img id="previewLei" style="width:100%; display:none;">
     <button class="btn-action" onclick="publicarLeilao()">LANÇAR LEILÃO</button>
@@ -137,42 +128,33 @@
 <div id="telaCarteira" class="tela-full">
     <h3>MINHA CARTEIRA</h3>
     <div style="background: var(--blue); padding: 30px; border-radius: 15px; text-align: center;">
-        <h1 id="saldoCarteira">0</h1>
-        <p>BLUE COINS</p>
+        <h1 id="saldoCarteira">0</h1><p>BLUE COINS</p>
     </div>
     <input type="number" id="valorRetirar" placeholder="Valor para Retirar" style="width:100%; padding:12px; margin-top:15px; border-radius:8px; border:none; background:#eee; color:black;">
     <button class="btn-action" style="background: #b8860b;" onclick="alert('Solicitação enviada para análise!')">SOLICITAR RETIRADA</button>
-    <button class="btn-action" style="background: var(--green); margin-top:10px;" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
+    <button class="btn-action" style="background: var(--green); margin-top:10px;" onclick="window.open('https://wa.me/5511983602504?text=Quero recarregar Blues')">RECARREGAR VIA PIX</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align: center;"></div>
-    <div id="editPerfilArea" style="display:none; margin-top:20px; border-top:1px solid var(--gray); padding-top:20px;">
-        <input type="file" id="novaFotoPerfil" accept="image/*" style="display:none;" onchange="salvarNovaFoto(this)">
+    <div id="editPerfilArea" style="display:none; margin-top:20px;">
+        <input type="file" id="novaFotoPerfil" style="display:none;" onchange="salvarNovaFoto(this)">
         <button class="btn-action" onclick="document.getElementById('novaFotoPerfil').click()">ALTERAR FOTO</button>
-        <input type="text" id="novaBio" placeholder="Sua bio..." style="width:100%; padding:12px; border-radius:8px; border:none; margin-top:10px; color:black;">
-        <button class="btn-action" style="background:var(--green);" onclick="salvarBio()">SALVAR BIO</button>
+        <input type="text" id="novaBio" placeholder="Sua bio..." style="width:100%; padding:12px; margin-top:10px; color:black;">
+        <button class="btn-action" style="background:var(--green);" onclick="salvarBio()">SALVAR</button>
     </div>
-    <div id="admActions" style="margin-top: 20px;"></div>
-    <button class="btn-action" style="background: var(--red);" onclick="location.reload()">SAIR / VOLTAR</button>
-    <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
+    <div id="admActions"></div>
+    <button class="btn-action" style="background: var(--red);" onclick="location.reload()">SAIR</button>
+    <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaChat" class="tela-full">
     <h3 id="chatTitle">NEGOCIAR</h3>
-    <div id="chatBox">
-        <div id="mensagensChat"></div>
-        <div class="chat-input-area">
-            <input type="text" id="msgIn" placeholder="Sua mensagem...">
-            <label class="btn-action" style="width:45px; margin:0; display:flex; align-items:center; justify-content:center; background:var(--gray);">
-                <i class="fas fa-camera"></i>
-                <input type="file" accept="image/*" style="display:none;" onchange="enviarMidiaChat(this)">
-            </label>
-            <button class="btn-action" style="width:60px; margin:0;" onclick="enviarTextoChat()"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-    <button class="btn-action" style="background: var(--gray); margin-top:15px;" onclick="fecharTelas()">VOLTAR</button>
+    <div id="mensagensChat"></div>
+    <input type="text" id="msgIn" placeholder="Sua mensagem..." style="width:70%; padding:10px; border-radius:5px;">
+    <button class="btn-action" style="width:25%; margin:0;" onclick="enviarTextoChat()">ENVIAR</button>
+    <button class="btn-action" style="background: var(--gray); margin-top:10px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <script type="module">
@@ -193,18 +175,18 @@
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
-        if(!u || !p) return alert("Preencha login e senha!");
-        if(u.toUpperCase() === "ADM" && p === "1533") {
-            const masterData = { nome: "MASTER ADM", cargo: "adm", uid: "master_ice", moedasBlue: 22000000, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png", bio: "O Dono." };
-            await set(ref(db, `usuarios/master_ice`), masterData);
+        if(!u || p.length < 6) return alert("Email/Nome e Senha de no mínimo 6 dígitos!");
+        
+        if(u.toUpperCase() === "ADM" && p === "15331533") {
             localStorage.setItem('ice_master', 'true');
             location.reload(); return;
         }
-        const email = u.toLowerCase() + "@ice.com";
+
+        const email = u.includes("@") ? u : u.toLowerCase() + "@ice.com";
         try { await signInWithEmailAndPassword(auth, email, p); } catch (e) {
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, p);
-                await set(ref(db, `usuarios/${res.user.uid}`), { nome: u, cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png", bio: "Novo usuário" });
+                await set(ref(db, `usuarios/${res.user.uid}`), { nome: u.split('@')[0], cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png" });
             } catch (err) { alert("Erro: " + err.message); }
         }
     };
@@ -225,58 +207,39 @@
         prepararRoleta();
     }
 
-    /* --- LÓGICA DO CASINO --- */
-    const premios = [
-        { t: "X", v: 0, c: "gray", i: "fa-skull" },
-        { t: "1 BLUE", v: 1, c: "blue", i: "fa-coins" },
-        { t: "0", v: 0, c: "gray", i: "fa-frown" },
-        { t: "5 BLUES", v: 5, c: "green", i: "fa-money-bill" },
-        { t: "X", v: 0, c: "gray", i: "fa-times" },
-        { t: "10 BLUES", v: 10, c: "gold", i: "fa-gem" },
-        { t: "SORTE", v: 0, c: "gray", i: "fa-dice" },
-        { t: "VIDA", v: 0, c: "gold", i: "fa-crown" }
-    ];
+    const premios = [{t:"X",v:0,c:"gray",i:"fa-skull"},{t:"1 BLUE",v:1,c:"blue",i:"fa-coins"},{t:"0",v:0,c:"gray",i:"fa-frown"},{t:"5 BLUES",v:5,c:"green",i:"fa-money-bill"},{t:"10 BLUES",v:10,c:"gold",i:"fa-gem"}];
 
     function prepararRoleta() {
-        const trilho = document.getElementById('trilho');
-        trilho.innerHTML = "";
+        const trilho = document.getElementById('trilho'); trilho.innerHTML = "";
         for(let i=0; i<80; i++) {
             const p = premios[Math.floor(Math.random()*premios.length)];
-            const div = document.createElement('div');
-            div.className = "item-roleta";
-            div.style.color = `var(--${p.c})`;
-            div.innerHTML = `<i class="fas ${p.i}"></i><span>${p.t}</span>`;
+            const div = document.createElement('div'); div.className = "item-roleta";
+            div.style.color = `var(--${p.c})`; div.innerHTML = `<i class="fas ${p.i}"></i><span>${p.t}</span>`;
             trilho.appendChild(div);
         }
     }
 
     window.jogarCasino = async () => {
-        if(user.moedasBlue < 5) return alert("Sem saldo!");
+        if(user.moedasBlue < 5) return alert("Saldo insuficiente!");
         const btn = document.getElementById('btnGirar');
         const trilho = document.getElementById('trilho');
         btn.disabled = true;
 
-        // SORTEIO REAL (CONTROLADO)
         const s = Math.random();
         let win = 0;
         if(s < 0.05) win = 10; else if(s < 0.2) win = 5; else if(s < 0.4) win = 1;
 
-        trilho.style.transition = "none";
-        trilho.style.transform = "translateX(0)";
-        
+        trilho.style.transition = "none"; trilho.style.transform = "translateX(0)";
         setTimeout(() => {
             trilho.style.transition = "transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)";
-            trilho.style.transform = `translateX(-${3500 + (win * 10)}px)`; // Para num lugar "aleatorio" mas controlado
+            trilho.style.transform = `translateX(-${3500 + (win * 7)}px)`;
         }, 50);
 
         setTimeout(async () => {
             const lucroCasa = 5 - win;
             const snapMaster = await get(ref(db, 'usuarios/master_ice/moedasBlue'));
-            const saldoMaster = snapMaster.val() || 0;
-
             await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - 5 + win });
-            await update(ref(db, `usuarios/master_ice`), { moedasBlue: saldoMaster + lucroCasa });
-
+            await update(ref(db, `usuarios/master_ice`), { moedasBlue: (snapMaster.val() || 0) + lucroCasa });
             document.getElementById('resDrop').innerText = win > 0 ? `GANHOU ${win} BLUES!` : "TENTE NOVAMENTE";
             btn.disabled = false;
         }, 4100);
@@ -287,14 +250,13 @@
             const d = document.getElementById('feed-leiloes'); d.innerHTML = "";
             s.forEach(l => {
                 const i = l.val();
-                const isDono = (user.uid === i.criadorUid || user.uid === 'master_ice');
-                let card = `<div class="card-leilao">
-                    ${!i.ativo ? `<div class="leilao-encerrado">ARREMATADO POR: ${i.ultimoLicitante}<br><button class="btn-action" style="background:var(--green);" onclick="window.open('https://wa.me/5511983602504')">FALAR COM VENDEDOR</button></div>` : ''}
+                const isDonoLeilao = (user.uid === i.criadorUid || user.uid === 'master_ice');
+                d.innerHTML = `<div class="card-leilao">
+                    ${!i.ativo ? `<div class="leilao-encerrado">ARREMATADO POR: ${i.ultimoLicitante}<br><button class="btn-action" style="background:var(--green);" onclick="window.open('https://wa.me/${i.whatsVendedor}?text=Arrematei o item ${i.item} no ICE')">FALAR COM VENDEDOR</button></div>` : ''}
                     <img src="${i.imagem}"><div class="info-leilao"><h3>${i.item}</h3><div class="valor-lance">R$ ${i.lanceAtual}</div>
                     ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
-                    ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR</button>` : ''}
-                    </div></div>`;
-                d.innerHTML = card + d.innerHTML;
+                    ${i.ativo && isDonoLeilao ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}')">ENCERRAR</button>` : ''}
+                    </div></div>` + d.innerHTML;
             });
         });
         onValue(ref(db, 'posts'), s => {
@@ -302,8 +264,7 @@
             s.forEach(p => {
                 const i = p.val();
                 d.innerHTML = `<div class="card-timeline"><img src="${i.i1}"><div class="card-info"><b onclick="verPerfilAlheio('${i.uid}')">@${i.u1}</b>
-                <div style="display:flex; gap:15px;"><i class="fas fa-comments" style="color:var(--green);" onclick="abrirNegociacao('${p.key}', '${i.u1}')"></i>
-                ${(user.cargo === 'adm') ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}</div></div></div>` + d.innerHTML;
+                <i class="fas fa-comments" style="color:var(--green);" onclick="abrirNegociacao('${p.key}', '${i.u1}')"></i></div></div>` + d.innerHTML;
             });
         });
     }
@@ -313,52 +274,27 @@
         const snap = await get(ref(db, `usuarios/${uid}`));
         const alvo = snap.val();
         fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `<img src="${alvo.foto}" class="user-photo"><h2>${alvo.nome}</h2><p>${alvo.cargo}</p><p>${alvo.moedasBlue} Blues</p>`;
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${alvo.foto}" class="user-photo"><h2>${alvo.nome}</h2><p>${alvo.cargo}</p>`;
         if(user.cargo === 'adm') {
-            document.getElementById('admActions').innerHTML = `<input type="number" id="valorAcaoAdm" placeholder="Valor"><button class="btn-action" onclick="gerenciarSaldo('${uid}', 'dar')">DAR</button><button class="btn-action" style="background:red" onclick="gerenciarSaldo('${uid}', 'tirar')">TIRAR</button>`;
+            document.getElementById('admActions').innerHTML = `<input type="number" id="vAdm" placeholder="Valor"><button class="btn-action" onclick="gerenciarSaldo('${uid}', 'dar')">DAR</button><button class="btn-action" style="background:red" onclick="gerenciarSaldo('${uid}', 'tirar')">TIRAR</button>`;
         }
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
     window.gerenciarSaldo = async (uid, acao) => {
-        const val = Number(document.getElementById('valorAcaoAdm').value);
-        const snap = await get(ref(db, `usuarios/${uid}/moedasBlue`));
-        let novo = acao === 'dar' ? snap.val() + val : snap.val() - val;
-        await update(ref(db, `usuarios/${uid}`), { moedasBlue: novo < 0 ? 0 : novo });
+        const v = Number(document.getElementById('vAdm').value);
+        const s = await get(ref(db, `usuarios/${uid}/moedasBlue`));
+        let n = acao === 'dar' ? s.val() + v : s.val() - v;
+        await update(ref(db, `usuarios/${uid}`), { moedasBlue: n < 0 ? 0 : n });
         verPerfilAlheio(uid);
     };
 
     window.abrirMeuPerfil = () => {
         fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `<img src="${user.foto}" class="user-photo"><h2>${user.nome}</h2><p>${user.cargo}</p><p>${user.moedasBlue} Blues</p>`;
+        document.getElementById('perfilConteudo').innerHTML = `<img src="${user.foto}" class="user-photo"><h2>${user.nome}</h2><p>${user.cargo}</p>`;
         document.getElementById('editPerfilArea').style.display = 'block';
         document.getElementById('telaPerfil').style.display = 'block';
-    };
-
-    window.salvarBio = async () => {
-        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { bio: document.getElementById('novaBio').value });
-        alert("Bio Salva!");
-    };
-
-    window.abrirNegociacao = (postId, donoNome) => {
-        fecharTelas(); chatAtivoId = postId;
-        document.getElementById('chatTitle').innerText = "CHAT: " + donoNome;
-        document.getElementById('telaChat').style.display = 'block';
-        onValue(ref(db, `chats/${postId}`), s => {
-            const d = document.getElementById('mensagensChat'); d.innerHTML = "";
-            s.forEach(m => {
-                const msg = m.val();
-                d.innerHTML += `<div class="msg ${msg.uid===(user.uid||'master_ice')?'msg-me':'msg-them'}">${msg.texto || ''}</div>`;
-            });
-            d.scrollTop = d.scrollHeight;
-        });
-    };
-
-    window.enviarTextoChat = () => {
-        const t = document.getElementById('msgIn').value;
-        push(ref(db, `chats/${chatAtivoId}`), { nome: user.nome, uid: user.uid || "master_ice", texto: t });
-        document.getElementById('msgIn').value = "";
-    };
+    }
 
     window.darLance = (id, atual) => { update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome }); };
     window.finalizarLeilao = (id) => { update(ref(db, `leiloes/${id}`), { ativo: false }); };
@@ -366,7 +302,8 @@
     window.publicarPost = async () => { await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice' }); fecharTelas(); };
     window.prepararLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLei = e.target.result; document.getElementById('previewLei').src = e.target.result; document.getElementById('previewLei').style.display='block'; }; r.readAsDataURL(i.files[0]); };
     window.publicarLeilao = async () => {
-        await push(ref(db, 'leiloes'), { item: document.getElementById('leiNome').value, lanceAtual: Number(document.getElementById('leiValor').value), imagem: fotoLei, criadorUid: user.uid || 'master_ice', ativo: true });
+        const whats = document.getElementById('leiWhats').value.replace(/\D/g,'');
+        await push(ref(db, 'leiloes'), { item: document.getElementById('leiNome').value, lanceAtual: Number(document.getElementById('leiValor').value), imagem: fotoLei, criadorUid: user.uid || 'master_ice', ativo: true, whatsVendedor: whats });
         fecharTelas();
     };
 
@@ -376,7 +313,6 @@
     window.abrirCriarLeilao = () => { fecharTelas(); document.getElementById('telaCriarLeilao').style.display = 'block'; };
     window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
     window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
-    window.apagarPost = id => { remove(ref(db, `posts/${id}`)); };
 </script>
 </body>
 </html>
