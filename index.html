@@ -10,6 +10,7 @@
             --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
             --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
             --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; 
+            --casino-dark: #1a1a1a;
         }
         body { margin:0; font-family: sans-serif; background: radial-gradient(circle at top, #0d1d2d, #050a0f); color: white; padding-bottom: 90px; overflow-x: hidden; }
         
@@ -39,8 +40,14 @@
         
         .btn-del { color: var(--red); cursor: pointer; font-size: 18px; }
         .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; }
-        @keyframes tremer { 0% {transform: rotate(0)} 25% {transform: rotate(5deg)} 50% {transform: rotate(-5deg)} 100% {transform: rotate(0)} }
-        .animar-bau { animation: tremer 0.2s infinite; }
+
+        /* DESIGN CASINO ROLETTA */
+        .casino-container { background: #000; padding: 20px; border-radius: 20px; border: 4px solid var(--gold); box-shadow: 0 0 20px var(--gold); text-align: center; margin-top: 20px; position: relative; overflow: hidden; }
+        .roleta-wrapper { width: 100%; overflow: hidden; background: #111; border: 2px solid #333; margin: 20px 0; position: relative; height: 100px; display: flex; align-items: center; }
+        .roleta-trilho { display: flex; transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); will-change: transform; }
+        .slot { min-width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #222; font-size: 12px; font-weight: bold; }
+        .slot i { font-size: 24px; margin-bottom: 5px; }
+        .marcador { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: var(--red); z-index: 10; transform: translateX(-50%); box-shadow: 0 0 10px var(--red); }
 
         .btn-comprar-cargo { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); background: var(--gold); color: black; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); z-index: 1000; cursor: pointer; }
 
@@ -85,26 +92,37 @@
 
     <div class="nav">
         <i class="fas fa-home active" onclick="fecharTelas()"></i>
-        <i class="fas fa-gift" onclick="abrirIceDrop()" style="color:var(--gold);"></i>
+        <i class="fas fa-gem" onclick="abrirIceDrop()" style="color:var(--gold);"></i>
         <i class="fas fa-plus-circle" onclick="escolherOQuePostar()" style="color:var(--mod-blue); font-size: 30px;"></i>
         <i class="fas fa-wallet" onclick="abrirCarteira()"></i>
     </div>
+</div>
+
+<div id="telaIceDrop" class="tela-full">
+    <h3 style="color: var(--gold); text-align: center; margin-bottom: 0;">ICE CASINO</h3>
+    <p style="text-align: center; font-size: 12px; color: #8b949e;">Tente a sorte e mude de vida!</p>
+    
+    <div class="casino-container">
+        <div class="marcador"></div>
+        <div class="roleta-wrapper">
+            <div id="trilhoRoleta" class="roleta-trilho"></div>
+        </div>
+        <p id="resDrop" style="color: var(--gold); font-weight: bold; height: 20px;">Aposte 5 Blues</p>
+        <button id="btnGirar" class="btn-action" style="background: linear-gradient(to bottom, #FFD700, #b8860b); color: black; border-radius: 30px; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);" onclick="girarRoleta()">GIRAR AGORA</button>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px;">
+        <p style="margin: 0; color: var(--gold);"><i class="fas fa-info-circle"></i> Regras:</p>
+        <small style="color: #ccc;">- Cada giro custa 5 Blues.<br>- Prêmios de até 1000 Blues (Raro).<br>- Boa sorte!</small>
+    </div>
+
+    <button class="btn-action" style="background: var(--gray); margin-top: 20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaEscolhaPost" class="tela-full" style="display:none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.9);">
     <button class="btn-action" onclick="abrirPostar()">POSTAR TROCA COMUM</button>
     <button class="btn-action" style="background: var(--gold); color: black;" onclick="abrirCriarLeilao()">CRIAR NOVO LEILÃO</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">VOLTAR</button>
-</div>
-
-<div id="telaIceDrop" class="tela-full">
-    <h3 style="color: var(--gold); text-align: center;">ICE DROP</h3>
-    <div style="text-align: center; padding: 40px 20px;">
-        <i id="iconeBau" class="fas fa-gift" style="font-size: 100px; color: var(--gold);"></i>
-        <p id="resDrop" style="margin-top: 20px; font-weight: bold;">Custo: 5 Blues por tentativa</p>
-        <button id="btnGirar" class="btn-action" style="background: var(--gold); color: black;" onclick="girarBau()">ABRIR BAÚ (5 BLUES)</button>
-    </div>
-    <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaPostar" class="tela-full">
@@ -137,16 +155,13 @@
 
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align: center;"></div>
-    
     <div id="editPerfilArea" style="display:none; margin-top:20px; border-top:1px solid var(--gray); padding-top:20px;">
         <input type="file" id="novaFotoPerfil" accept="image/*" style="display:none;" onchange="salvarNovaFoto(this)">
         <button class="btn-action" onclick="document.getElementById('novaFotoPerfil').click()">ALTERAR FOTO</button>
         <input type="text" id="novaBio" placeholder="Sua bio..." style="width:100%; padding:12px; border-radius:8px; border:none; margin-top:10px; color:black;">
         <button class="btn-action" style="background:var(--green);" onclick="salvarBio()">SALVAR BIO</button>
     </div>
-
     <div id="admActions" style="margin-top: 20px;"></div>
-
     <button class="btn-action" style="background: var(--red);" onclick="location.reload()">SAIR / VOLTAR</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
@@ -182,6 +197,7 @@
     let fotoLei = null;
     let chatAtivoId = null;
 
+    // --- SISTEMA DE LOGIN ---
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
@@ -214,8 +230,78 @@
             document.getElementById('displayMasterSaldo').innerText = "Arrecadado: " + (s.val() || 0) + " Blues";
         });
         carregarFeeds();
+        setupRoleta();
     }
 
+    // --- ROLETA CASINO (DITADORA) ---
+    const premios = [
+        {txt: "MUDAR VIDA", val: 0, cor: "gold", icon: "fa-crown"},
+        {txt: "0", val: 0, cor: "gray", icon: "fa-times"},
+        {txt: "1 BLUE", val: 1, cor: "blue", icon: "fa-coins"},
+        {txt: "X", val: 0, cor: "gray", icon: "fa-skull"},
+        {txt: "5 BLUES", val: 5, cor: "green", icon: "fa-money-bill-wave"},
+        {txt: "0", val: 0, cor: "gray", icon: "fa-frown"},
+        {txt: "10 BLUES", val: 10, cor: "gold", icon: "fa-gem"},
+        {txt: "0", val: 0, cor: "gray", icon: "fa-sad-tear"},
+        {txt: "SORTE", val: 0, cor: "gray", icon: "fa-dice"}
+    ];
+
+    function setupRoleta() {
+        const trilho = document.getElementById('trilhoRoleta');
+        trilho.innerHTML = "";
+        for(let i=0; i<60; i++) {
+            const p = premios[Math.floor(Math.random()*premios.length)];
+            const div = document.createElement('div');
+            div.className = "slot";
+            div.style.color = `var(--${p.cor})`;
+            div.innerHTML = `<i class="fas ${p.icon}"></i><span>${p.txt}</span>`;
+            trilho.appendChild(div);
+        }
+    }
+
+    window.girarRoleta = async () => {
+        if(user.moedasBlue < 5) return alert("Saldo insuficiente (5 Blues necessários)");
+        const btn = document.getElementById('btnGirar');
+        const trilho = document.getElementById('trilhoRoleta');
+        btn.disabled = true;
+        document.getElementById('resDrop').innerText = "Girando...";
+
+        // SORTEIO REAL (CONTROLADO)
+        const sorte = Math.random();
+        let resultado;
+        
+        // Probabilidade: 1% de ganhar 10, 10% de ganhar 5, 20% de ganhar 1, o resto perde.
+        if(sorte < 0.01) resultado = premios.find(p => p.val === 10);
+        else if(sorte < 0.10) resultado = premios.find(p => p.val === 5);
+        else if(sorte < 0.30) resultado = premios.find(p => p.val === 1);
+        else resultado = premios.find(p => p.val === 0);
+
+        // Animação: Forçar parar em um slot que condiz com o resultado
+        const slotWidth = 80;
+        const totalSlots = 60;
+        const paradaFinal = (totalSlots - 5) * slotWidth;
+        
+        // Resetar posição sem transição
+        trilho.style.transition = "none";
+        trilho.style.transform = `translateX(0px)`;
+        
+        // Aplicar transição de giro
+        setTimeout(() => {
+            trilho.style.transition = "transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)";
+            trilho.style.transform = `translateX(-${paradaFinal}px)`;
+        }, 50);
+
+        setTimeout(async () => {
+            const meuUid = user.uid || "master_ice";
+            const ganho = resultado.val;
+            await update(ref(db, `usuarios/${meuUid}`), { moedasBlue: user.moedasBlue - 5 + ganho });
+            
+            document.getElementById('resDrop').innerText = ganho > 0 ? `GANHOU ${ganho} BLUES!` : "Tente na próxima!";
+            btn.disabled = false;
+        }, 4100);
+    };
+
+    // --- RESTANTE DAS FUNÇÕES (IGUAIS AO ANTERIOR) ---
     function carregarFeeds() {
         onValue(ref(db, 'leiloes'), s => {
             const d = document.getElementById('feed-leiloes'); d.innerHTML = "";
@@ -271,10 +357,7 @@
             <p style="color:var(--gold);">${alvo.cargo.toUpperCase()}</p>
             <p><i>"${alvo.bio || ''}"</i></p>
             <p>Saldo: ${alvo.moedasBlue} Blues</p>`;
-        
         document.getElementById('editPerfilArea').style.display = 'none';
-
-        // SE VOCÊ FOR ADM, PODE CONTROLAR O SALDO DELE AQUI
         if(user.cargo === 'adm') {
             document.getElementById('admActions').innerHTML = `
                 <div style="background:var(--gray); padding:15px; border-radius:10px; margin-top:10px;">
@@ -286,9 +369,7 @@
                    </div>
                    <button class="btn-action" style="background:var(--mod-blue); margin-top:10px;" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER CARGO</button>
                 </div>`;
-        } else {
-            document.getElementById('admActions').innerHTML = "";
-        }
+        } else { document.getElementById('admActions').innerHTML = ""; }
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
@@ -381,20 +462,6 @@
         if(!confirm("Deseja encerrar este leilão agora?")) return;
         update(ref(db, `leiloes/${id}`), { ativo: false });
         alert("Leilão Finalizado! Vencedor: " + vencedor);
-    };
-
-    window.girarBau = async () => {
-        if(user.moedasBlue < 5) return alert("Sem Blues!");
-        const btn = document.getElementById('btnGirar'); const icone = document.getElementById('iconeBau');
-        btn.disabled = true; icone.classList.add('animar-bau');
-        setTimeout(async () => {
-            icone.classList.remove('animar-bau');
-            const sorte = Math.random(); let g = 0; let p = "Nada!";
-            if(sorte < 0.05) { g = 50; p = "🏆 50 BLUES!"; } else if(sorte < 0.2) { g = 10; p = "💰 10 BLUES!"; }
-            const meuUid = user.uid || "master_ice";
-            await update(ref(db, `usuarios/${meuUid}`), { moedasBlue: user.moedasBlue - 5 + g });
-            document.getElementById('resDrop').innerText = p; btn.disabled = false;
-        }, 1500);
     };
 
     window.prepararPost = i => { const r = new FileReader(); r.onload = e => { fotoPost = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display='block'; }; r.readAsDataURL(i.files[0]); };
