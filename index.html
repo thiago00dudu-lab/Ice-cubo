@@ -16,7 +16,7 @@
         #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
-        .login-box small { display: block; margin-bottom: 15px; color: #666; font-size: 12px; }
+        .login-box small { display: block; margin-bottom: 15px; color: #666; font-size: 12px; font-weight: bold; }
 
         header { padding:15px; background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; z-index:100; }
         
@@ -37,7 +37,6 @@
         .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
         .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
         
-        /* --- CASINO --- */
         .casino-box { background: #000; padding: 20px; border-radius: 15px; border: 2px solid var(--gold); text-align: center; position: relative; overflow: hidden; }
         .roleta-container { width: 100%; height: 80px; background: #111; margin: 15px 0; position: relative; border: 1px solid #333; overflow: hidden; display: flex; align-items: center; }
         .roleta-trilho { display: flex; position: absolute; left: 0; transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); }
@@ -58,9 +57,9 @@
 <div id="telaLogin">
     <div class="login-box">
         <h2 style="margin-top:0;">ICE TROCAS</h2>
-        <small>Entra com email e uma senha de 6 dígitos</small>
+        <small>Entra com email e uma senha de 6 dígitos pfv</small>
         <input type="text" id="userIn" placeholder="Seu Nome ou Email">
-        <input type="password" id="passIn" placeholder="Senha de 6 dígitos">
+        <input type="password" id="passIn" placeholder="Senha">
         <button class="btn-action" onclick="fazerLogin()">ENTRAR / CRIAR</button>
     </div>
 </div>
@@ -175,9 +174,12 @@
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
-        if(!u || p.length < 6) return alert("Email/Nome e Senha de no mínimo 6 dígitos!");
+        if(!u || !p) return alert("Preencha os campos!");
         
-        if(u.toUpperCase() === "ADM" && p === "15331533") {
+        // CORREÇÃO DO LOGIN ADM
+        if(u.toUpperCase() === "ADM" && (p === "1533" || p === "15331533")) {
+            const masterData = { nome: "MASTER ADM", cargo: "adm", uid: "master_ice", moedasBlue: 22000000, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png", bio: "O Dono." };
+            await set(ref(db, `usuarios/master_ice`), masterData);
             localStorage.setItem('ice_master', 'true');
             location.reload(); return;
         }
@@ -185,6 +187,7 @@
         const email = u.includes("@") ? u : u.toLowerCase() + "@ice.com";
         try { await signInWithEmailAndPassword(auth, email, p); } catch (e) {
             try {
+                if(p.length < 6) return alert("Para criar conta, a senha deve ter 6 dígitos!");
                 const res = await createUserWithEmailAndPassword(auth, email, p);
                 await set(ref(db, `usuarios/${res.user.uid}`), { nome: u.split('@')[0], cargo: 'user', uid: res.user.uid, moedasBlue: 0, foto: "https://cdn-icons-png.flaticon.com/512/149/149071.png" });
             } catch (err) { alert("Erro: " + err.message); }
@@ -264,10 +267,15 @@
             s.forEach(p => {
                 const i = p.val();
                 d.innerHTML = `<div class="card-timeline"><img src="${i.i1}"><div class="card-info"><b onclick="verPerfilAlheio('${i.uid}')">@${i.u1}</b>
-                <i class="fas fa-comments" style="color:var(--green);" onclick="abrirNegociacao('${p.key}', '${i.u1}')"></i></div></div>` + d.innerHTML;
+                <div style="display:flex; gap:10px;">
+                    <i class="fas fa-comments" style="color:var(--green);" onclick="abrirNegociacao('${p.key}', '${i.u1}')"></i>
+                    ${user.cargo === 'adm' ? `<i class="fas fa-trash" style="color:var(--red);" onclick="apagarPost('${p.key}')"></i>` : ''}
+                </div></div></div>` + d.innerHTML;
             });
         });
     }
+
+    window.apagarPost = id => { if(confirm("Apagar post?")) remove(ref(db, `posts/${id}`)); };
 
     window.verPerfilAlheio = async (uid) => {
         if(!uid || uid === (user.uid || "master_ice")) return abrirMeuPerfil();
