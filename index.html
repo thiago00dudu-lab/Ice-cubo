@@ -42,8 +42,17 @@
         @keyframes tremer { 0% {transform: rotate(0)} 25% {transform: rotate(5deg)} 50% {transform: rotate(-5deg)} 100% {transform: rotate(0)} }
         .animar-bau { animation: tremer 0.2s infinite; }
 
-        /* Icone Comprar Cargo */
         .btn-comprar-cargo { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); background: var(--gold); color: black; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); z-index: 1000; cursor: pointer; }
+
+        /* Estilos do Chat */
+        #chatBox { display: flex; flex-direction: column; height: 80vh; }
+        #mensagensChat { flex: 1; overflow-y: auto; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; }
+        .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
+        .msg-me { align-self: flex-end; background: var(--blue); color: white; }
+        .msg-them { align-self: flex-start; background: var(--gray); color: white; }
+        .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; }
+        .chat-input-area { display: flex; gap: 5px; }
+        .chat-input-area input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
     </style>
 </head>
 <body>
@@ -54,7 +63,6 @@
         <input type="text" id="userIn" placeholder="Login (Nome)">
         <input type="password" id="passIn" placeholder="Senha">
         <button class="btn-action" onclick="fazerLogin()">ENTRAR / CRIAR</button>
-        <p style="font-size: 10px; color: gray; margin-top: 15px;">Login "ADM" senha "1533" para Master</p>
     </div>
 </div>
 
@@ -135,6 +143,22 @@
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
 
+<div id="telaChat" class="tela-full">
+    <h3 id="chatTitle">NEGOCIAR</h3>
+    <div id="chatBox">
+        <div id="mensagensChat"></div>
+        <div class="chat-input-area">
+            <input type="text" id="msgIn" placeholder="Sua mensagem...">
+            <label class="btn-action" style="width:45px; margin:0; display:flex; align-items:center; justify-content:center; background:var(--gray);">
+                <i class="fas fa-camera"></i>
+                <input type="file" accept="image/*" style="display:none;" onchange="enviarMidiaChat(this)">
+            </label>
+            <button class="btn-action" style="width:60px; margin:0;" onclick="enviarTextoChat()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    <button class="btn-action" style="background: var(--gray); margin-top:15px;" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, update, set, push, get, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -148,6 +172,7 @@
     let user = null;
     let fotoPost = null;
     let fotoLei = null;
+    let chatAtivoId = null;
 
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
@@ -183,7 +208,6 @@
         carregarFeeds();
     }
 
-    // --- CARREGAR FEEDS ---
     function carregarFeeds() {
         onValue(ref(db, 'leiloes'), s => {
             const d = document.getElementById('feed-leiloes'); d.innerHTML = "";
@@ -198,10 +222,8 @@
                     <img src="${i.imagem}">
                     <div class="info-leilao">
                         <h3>${i.item}</h3>
-                        <p><small>Licitante: ${i.ultimoLicitante}</small></p>
                         <div class="valor-lance">R$ ${i.lanceAtual}</div>
                         ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
-                        ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR LEILÃO</button>` : ''}
                     </div>
                 </div>`;
                 d.innerHTML = card + d.innerHTML;
@@ -217,109 +239,111 @@
                     <img src="${i.i1}">
                     <div class="card-info">
                         <b onclick="verPerfilAlheio('${i.uid}')" style="cursor:pointer; color:var(--mod-blue);">@${i.u1}</b>
-                        ${canDel ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}
+                        <div style="display:flex; gap:15px; align-items:center;">
+                            <i class="fas fa-comments" style="color:var(--green); cursor:pointer; font-size:20px;" onclick="abrirNegociacao('${p.key}', '${i.u1}')"></i>
+                            ${canDel ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}
+                        </div>
                     </div>
                 </div>` + d.innerHTML;
             });
         });
     }
 
-    // --- SISTEMA DE PERFIL E ADM ---
+    // --- CHAT LÓGICA ---
+    window.abrirNegociacao = (postId, donoNome) => {
+        fecharTelas();
+        chatAtivoId = postId;
+        document.getElementById('chatTitle').innerText = "CHAT COM " + donoNome.toUpperCase();
+        document.getElementById('telaChat').style.display = 'block';
+        
+        onValue(ref(db, `chats/${postId}`), s => {
+            const d = document.getElementById('mensagensChat'); d.innerHTML = "";
+            s.forEach(m => {
+                const msg = m.val();
+                const souEu = msg.uid === (user.uid || "master_ice");
+                d.innerHTML += `<div class="msg ${souEu ? 'msg-me' : 'msg-them'}">
+                    <small style="font-size:8px; display:block;">${msg.nome}</small>
+                    ${msg.texto ? `<span>${msg.texto}</span>` : ''}
+                    ${msg.img ? `<img src="${msg.img}">` : ''}
+                </div>`;
+            });
+            d.scrollTop = d.scrollHeight;
+        });
+    };
+
+    window.enviarTextoChat = () => {
+        const t = document.getElementById('msgIn').value;
+        if(!t) return;
+        push(ref(db, `chats/${chatAtivoId}`), {
+            nome: user.nome, uid: user.uid || "master_ice", texto: t, time: Date.now()
+        });
+        document.getElementById('msgIn').value = "";
+    };
+
+    window.enviarMidiaChat = (i) => {
+        const r = new FileReader();
+        r.onload = e => {
+            push(ref(db, `chats/${chatAtivoId}`), {
+                nome: user.nome, uid: user.uid || "master_ice", img: e.target.result, time: Date.now()
+            });
+        };
+        r.readAsDataURL(i.files[0]);
+    };
+
     window.verPerfilAlheio = async (uid) => {
         if(!uid) return;
         const snap = await get(ref(db, `usuarios/${uid}`));
         const alvo = snap.val();
         if(!alvo) return;
-
         fecharTelas();
-        const perfilDiv = document.getElementById('perfilConteudo');
-        const admDiv = document.getElementById('admActions');
-        admDiv.innerHTML = "";
-
-        perfilDiv.innerHTML = `
+        document.getElementById('perfilConteudo').innerHTML = `
             <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo">
             <h2>${alvo.nome}</h2>
-            <p>Cargo: <span id="cargoAlvo">${alvo.cargo}</span></p>
-            <p>Saldo: <span id="saldoAlvo">${alvo.moedasBlue}</span> Blues</p>
-        `;
-
-        // Se quem está vendo for ADM, mostra ferramentas de gestão
+            <p>Cargo: ${alvo.cargo}</p><p>Saldo: ${alvo.moedasBlue} Blues</p>`;
         if(user.cargo === 'adm') {
-            admDiv.innerHTML = `
-                <hr style="border: 0.5px solid var(--gray);">
-                <p>PAINEL ADMINISTRATIVO</p>
-                <button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER CARGO</button>
-                <button class="btn-action" style="background:var(--gold); color:black;" onclick="darBlues('${uid}')">DAR +50 BLUES</button>
-            `;
+            document.getElementById('admActions').innerHTML = `
+                <button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER</button>
+                <button class="btn-action" style="background:var(--gold); color:black;" onclick="darBlues('${uid}')">DAR +50 BLUES</button>`;
         }
         document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    window.mudarCargo = async (uid, cargoAtual) => {
-        let novoCargo = cargoAtual === 'user' ? 'mod' : 'adm';
-        if(cargoAtual === 'adm') novoCargo = 'user';
-        await update(ref(db, `usuarios/${uid}`), { cargo: novoCargo });
-        alert("Cargo alterado para: " + novoCargo);
-        verPerfilAlheio(uid);
+    window.mudarCargo = async (uid, cargoAtu) => {
+        let n = cargoAtu === 'user' ? 'mod' : (cargoAtu === 'mod' ? 'adm' : 'user');
+        await update(ref(db, `usuarios/${uid}`), { cargo: n });
+        alert("Novo cargo: " + n); verPerfilAlheio(uid);
     };
 
     window.darBlues = async (uid) => {
-        const snap = await get(ref(db, `usuarios/${uid}/moedasBlue`));
-        const saldoAtu = snap.val() || 0;
-        await update(ref(db, `usuarios/${uid}`), { moedasBlue: saldoAtu + 50 });
-        alert("Enviado 50 Blues!");
-        verPerfilAlheio(uid);
+        const s = await get(ref(db, `usuarios/${uid}/moedasBlue`));
+        await update(ref(db, `usuarios/${uid}`), { moedasBlue: (s.val() || 0) + 50 });
+        alert("Blues enviados!"); verPerfilAlheio(uid);
     };
 
-    // --- LEILÃO LÓGICA ---
+    window.darLance = (id, atual) => { update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome, ultimoLicitanteUid: user.uid || 'master_ice' }); };
     window.publicarLeilao = async () => {
-        const n = document.getElementById('leiNome').value;
-        const v = document.getElementById('leiValor').value;
-        if(!n || !v || !fotoLei) return alert("Preencha tudo!");
-        await push(ref(db, 'leiloes'), { 
-            item: n, lanceAtual: Number(v), imagem: fotoLei, 
-            criador: user.nome, criadorUid: user.uid || 'master_ice', 
-            ativo: true, ultimoLicitante: "Ninguém", ultimoLicitanteUid: "" 
-        });
+        const n = document.getElementById('leiNome').value; const v = document.getElementById('leiValor').value;
+        if(!n || !v || !fotoLei) return alert("Erro!");
+        await push(ref(db, 'leiloes'), { item: n, lanceAtual: Number(v), imagem: fotoLei, criador: user.nome, criadorUid: user.uid || 'master_ice', ativo: true });
         fecharTelas();
     };
-
-    window.darLance = (id, atual) => {
-        update(ref(db, `leiloes/${id}`), { 
-            lanceAtual: atual + 50, 
-            ultimoLicitante: user.nome,
-            ultimoLicitanteUid: user.uid || 'master_ice'
-        });
-    };
-
-    window.finalizarLeilao = (id, item, vencedor) => {
-        if(!confirm("Deseja encerrar este leilão agora?")) return;
-        update(ref(db, `leiloes/${id}`), { ativo: false });
-        alert("Leilão Finalizado! O vencedor foi: " + vencedor);
-    };
-
-    window.apagarPost = id => { if(confirm("Apagar postagem?")) remove(ref(db, `posts/${id}`)); };
 
     window.girarBau = async () => {
         if(user.moedasBlue < 5) return alert("Sem Blues!");
         const btn = document.getElementById('btnGirar'); const icone = document.getElementById('iconeBau');
         btn.disabled = true; icone.classList.add('animar-bau');
-        const masterSnap = await get(ref(db, 'usuarios/master_ice/moedasBlue'));
-        let masterSaldo = masterSnap.val() || 0;
         setTimeout(async () => {
             icone.classList.remove('animar-bau');
-            const sorte = Math.random(); let premio = "Nada!"; let ganhou = 0;
-            if(sorte < 0.05) { premio = "🏆 50 BLUES!"; ganhou = 50; } else if(sorte < 0.2) { premio = "💰 10 BLUES!"; ganhou = 10; }
-            const updates = {}; const meuUid = user.uid || "master_ice";
-            updates[`usuarios/${meuUid}/moedasBlue`] = user.moedasBlue - 5 + ganhou;
-            if(meuUid !== "master_ice") updates[`usuarios/master_ice/moedasBlue`] = masterSaldo + 5;
-            await update(ref(db), updates);
-            document.getElementById('resDrop').innerText = premio; btn.disabled = false;
+            const sorte = Math.random(); let g = 0; let p = "Nada!";
+            if(sorte < 0.05) { g = 50; p = "🏆 50 BLUES!"; } else if(sorte < 0.2) { g = 10; p = "💰 10 BLUES!"; }
+            const meuUid = user.uid || "master_ice";
+            await update(ref(db, `usuarios/${meuUid}`), { moedasBlue: user.moedasBlue - 5 + g });
+            document.getElementById('resDrop').innerText = p; btn.disabled = false;
         }, 1500);
     };
 
     window.prepararPost = i => { const r = new FileReader(); r.onload = e => { fotoPost = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display='block'; }; r.readAsDataURL(i.files[0]); };
-    window.publicarPost = async () => { if(!fotoPost) return alert("Foto!"); await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice', time: Date.now() }); fecharTelas(); };
+    window.publicarPost = async () => { if(!fotoPost) return; await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice', time: Date.now() }); fecharTelas(); };
     window.prepararLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLei = e.target.result; document.getElementById('previewLei').src = e.target.result; document.getElementById('previewLei').style.display='block'; }; r.readAsDataURL(i.files[0]); };
     
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaEscolhaPost').style.display = 'none'; };
@@ -331,9 +355,9 @@
     window.abrirMeuPerfil = () => {
         fecharTelas();
         document.getElementById('perfilConteudo').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${user.nome}</h2><p>Cargo: ${user.cargo}</p><p>Saldo: ${user.moedasBlue} Blues</p>`;
-        document.getElementById('admActions').innerHTML = ""; 
-        document.getElementById('telaPerfil').style.display = 'block';
+        document.getElementById('admActions').innerHTML = ""; document.getElementById('telaPerfil').style.display = 'block';
     };
+    window.apagarPost = id => { if(confirm("Apagar?")) remove(ref(db, `posts/${id}`)); };
 </script>
 </body>
 </html>
