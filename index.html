@@ -44,7 +44,6 @@
 
         .btn-comprar-cargo { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); background: var(--gold); color: black; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); z-index: 1000; cursor: pointer; }
 
-        /* Estilos do Chat */
         #chatBox { display: flex; flex-direction: column; height: 80vh; }
         #mensagensChat { flex: 1; overflow-y: auto; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; }
         .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
@@ -222,8 +221,10 @@
                     <img src="${i.imagem}">
                     <div class="info-leilao">
                         <h3>${i.item}</h3>
+                        <p><small>Licitante: ${i.ultimoLicitante || "Ninguém"}</small></p>
                         <div class="valor-lance">R$ ${i.lanceAtual}</div>
                         ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
+                        ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR LEILÃO</button>` : ''}
                     </div>
                 </div>`;
                 d.innerHTML = card + d.innerHTML;
@@ -249,13 +250,11 @@
         });
     }
 
-    // --- CHAT LÓGICA ---
     window.abrirNegociacao = (postId, donoNome) => {
         fecharTelas();
         chatAtivoId = postId;
         document.getElementById('chatTitle').innerText = "CHAT COM " + donoNome.toUpperCase();
         document.getElementById('telaChat').style.display = 'block';
-        
         onValue(ref(db, `chats/${postId}`), s => {
             const d = document.getElementById('mensagensChat'); d.innerHTML = "";
             s.forEach(m => {
@@ -274,20 +273,30 @@
     window.enviarTextoChat = () => {
         const t = document.getElementById('msgIn').value;
         if(!t) return;
-        push(ref(db, `chats/${chatAtivoId}`), {
-            nome: user.nome, uid: user.uid || "master_ice", texto: t, time: Date.now()
-        });
+        push(ref(db, `chats/${chatAtivoId}`), { nome: user.nome, uid: user.uid || "master_ice", texto: t, time: Date.now() });
         document.getElementById('msgIn').value = "";
     };
 
     window.enviarMidiaChat = (i) => {
         const r = new FileReader();
         r.onload = e => {
-            push(ref(db, `chats/${chatAtivoId}`), {
-                nome: user.nome, uid: user.uid || "master_ice", img: e.target.result, time: Date.now()
-            });
+            push(ref(db, `chats/${chatAtivoId}`), { nome: user.nome, uid: user.uid || "master_ice", img: e.target.result, time: Date.now() });
         };
         r.readAsDataURL(i.files[0]);
+    };
+
+    window.darLance = (id, atual) => { 
+        update(ref(db, `leiloes/${id}`), { 
+            lanceAtual: atual + 50, 
+            ultimoLicitante: user.nome, 
+            ultimoLicitanteUid: user.uid || 'master_ice' 
+        }); 
+    };
+
+    window.finalizarLeilao = (id, item, vencedor) => {
+        if(!confirm("Deseja encerrar este leilão agora?")) return;
+        update(ref(db, `leiloes/${id}`), { ativo: false });
+        alert("Leilão Finalizado! Vencedor: " + vencedor);
     };
 
     window.verPerfilAlheio = async (uid) => {
@@ -296,14 +305,9 @@
         const alvo = snap.val();
         if(!alvo) return;
         fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `
-            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo">
-            <h2>${alvo.nome}</h2>
-            <p>Cargo: ${alvo.cargo}</p><p>Saldo: ${alvo.moedasBlue} Blues</p>`;
+        document.getElementById('perfilConteudo').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${alvo.nome}</h2><p>Cargo: ${alvo.cargo}</p><p>Saldo: ${alvo.moedasBlue} Blues</p>`;
         if(user.cargo === 'adm') {
-            document.getElementById('admActions').innerHTML = `
-                <button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER</button>
-                <button class="btn-action" style="background:var(--gold); color:black;" onclick="darBlues('${uid}')">DAR +50 BLUES</button>`;
+            document.getElementById('admActions').innerHTML = `<button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">PROMOVER</button><button class="btn-action" style="background:var(--gold); color:black;" onclick="darBlues('${uid}')">DAR +50 BLUES</button>`;
         }
         document.getElementById('telaPerfil').style.display = 'block';
     };
@@ -320,11 +324,10 @@
         alert("Blues enviados!"); verPerfilAlheio(uid);
     };
 
-    window.darLance = (id, atual) => { update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome, ultimoLicitanteUid: user.uid || 'master_ice' }); };
     window.publicarLeilao = async () => {
         const n = document.getElementById('leiNome').value; const v = document.getElementById('leiValor').value;
         if(!n || !v || !fotoLei) return alert("Erro!");
-        await push(ref(db, 'leiloes'), { item: n, lanceAtual: Number(v), imagem: fotoLei, criador: user.nome, criadorUid: user.uid || 'master_ice', ativo: true });
+        await push(ref(db, 'leiloes'), { item: n, lanceAtual: Number(v), imagem: fotoLei, criador: user.nome, criadorUid: user.uid || 'master_ice', ativo: true, ultimoLicitante: "Ninguém" });
         fecharTelas();
     };
 
