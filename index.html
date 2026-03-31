@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Feed e Bingo</title>
+    <title>ICE TROCAS - Feed e Jogos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -16,15 +16,15 @@
         }
         body { background-color: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 20px; }
         
-        /* Estilos base herdados do seu sistema */
         .card-leilao, .card-timeline { background: #1e1e1e; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
         .card-leilao img, .card-timeline img { max-width: 100px; border-radius: 8px; }
         .btn-action { border: none; padding: 10px; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px;}
         .tela { display: none; background: #1e1e1e; padding: 20px; border-radius: 8px; margin-bottom: 20px;}
         .user-photo { width: 80px; height: 80px; border-radius: 50%; }
         
-        /* Painel Administrativo no Perfil */
+        /* Painéis de Administração */
         .admin-panel { background: #2a2a2a; padding: 15px; margin-top: 15px; border-radius: 8px; border-left: 4px solid var(--mod-blue); }
+        .admin-panel.master { border-left: 4px solid #ffeb3b; }
         .admin-panel input, .admin-panel select { padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #444; background: #333; color: white; width: calc(100% - 20px);}
 
         /* Estilos do Bingo */
@@ -42,7 +42,7 @@
         @keyframes cair {
             0% { top: -50px; }
             80% { top: 60px; }
-            100% { top: 50px; } /* Quicada leve */
+            100% { top: 50px; } 
         }
         #numeros-sorteados-lista { font-size: 12px; color: gray; margin-top: 10px; word-wrap: break-word;}
 
@@ -54,7 +54,6 @@
         }
         .mostrar-anuncio { right: 20px !important; }
 
-        /* Menu de Navegação Rápido para Teste */
         .menu-topo { display: flex; gap: 10px; margin-bottom: 20px; }
         .btn-menu { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
         .btn-menu:hover { background: #555; }
@@ -63,7 +62,7 @@
 <body>
 
     <div class="menu-topo">
-        <button class="btn-menu" onclick="abrirTela('telaFeeds')">🏠 Feeds</button>
+        <button class="btn-menu" onclick="fecharTelas(); document.getElementById('telaFeeds').style.display = 'block';">🏠 Feeds</button>
         <button class="btn-menu" style="background: var(--mod-blue);" onclick="abrirJogos()">🎰 Jogos / Baú</button>
     </div>
 
@@ -75,21 +74,20 @@
     </div>
 
     <div id="telaPerfil" class="tela">
-        <button class="btn-action" style="background:#555; margin-bottom:15px;" onclick="abrirTela('telaFeeds')">Voltar</button>
+        <button class="btn-action" style="background:#555; margin-bottom:15px;" onclick="fecharTelas(); document.getElementById('telaFeeds').style.display = 'block';">Voltar aos Feeds</button>
         <div id="perfilConteudo"></div>
     </div>
 
     <div id="telaJogos" class="tela">
-        <button class="btn-action" style="background:#555; margin-bottom:15px;" onclick="abrirTela('telaFeeds')">Voltar</button>
-        <h2>🎰 Área de Jogos e Baú</h2>
+        <button class="btn-action" style="background:#555; margin-bottom:15px;" onclick="fecharTelas(); document.getElementById('telaFeeds').style.display = 'block';">Voltar aos Feeds</button>
+        <h2>🎰 Área de Jogos e ICE DROP</h2>
         <hr style="border-color:#333">
         
         <h3>BINGO PREMIADO - R$ 1.000,00 na Cartela Cheia!</h3>
         <button class="btn-action" style="background:var(--blue);" onclick="iniciarBingo()">GERAR CARTELA E INICIAR</button>
         
         <div id="container-bingo" style="display: none; margin-top: 20px;">
-            <div class="area-bolinhas" id="area-bolinhas">
-                </div>
+            <div class="area-bolinhas" id="area-bolinhas"></div>
             <div id="cartela-bingo"></div>
             <p>Números Sorteados:</p>
             <div id="numeros-sorteados-lista">Nenhum número ainda...</div>
@@ -102,36 +100,19 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURAÇÃO SIMULADA PARA O CÓDIGO RODAR
-        // Substitua pelo seu auth e db do Firebase
-        // ==========================================
-        const db = {}; // Seu const db = getDatabase();
-        const ref = (db, path) => path;
-        const onValue = (ref, callback) => {}; // Seu onValue original
-        const update = (ref, data) => Promise.resolve(); 
-        const remove = (ref) => Promise.resolve();
-        
-        // VARIÁVEL DO USUÁRIO LOGADO (Simule para testes, ajuste para o seu sistema)
-        // Se colocar 'adm1', verá todas as funções de liberar Blues e Cargos
-        let user = { 
-            uid: "meu_uid_logado", 
-            nome: "Usuário Atual",
-            cargo: "adm1" // Pode ser 'membro', 'funcionario', 'mod', 'adm', 'adm1'
-        };
+        // ======================================================================
+        // AQUI FICA A SUA CONFIGURAÇÃO ORIGINAL DO FIREBASE
+        // (import das bibliotecas, initializeApp, const db = getDatabase(), etc)
+        // NÃO COLOQUE SIMULAÇÕES AQUI. DEIXE O SEU CÓDIGO REAL DE CONEXÃO.
+        // ======================================================================
 
-        // Função auxiliar de navegação
         function fecharTelas() {
-            document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
-        }
-        function abrirTela(id) {
-            fecharTelas();
-            document.getElementById(id).style.display = 'block';
+            document.getElementById('telaFeeds').style.display = 'none';
+            document.getElementById('telaPerfil').style.display = 'none';
+            document.getElementById('telaJogos').style.display = 'none';
         }
 
-        // ==========================================
-        // 1. O SEU CÓDIGO ORIGINAL (INTACTO)
-        // ==========================================
+        // --- CARREGA FEEDS (SEU CÓDIGO ORIGINAL COMPLETO) ---
         function carregarFeeds() {
             // Feed Leilões (Mantido)
             onValue(ref(db, 'leiloes'), s => {
@@ -162,7 +143,7 @@
                 const d = document.getElementById('feed'); d.innerHTML = "";
                 s.forEach(p => {
                     const i = p.val();
-                    const canDel = (user.cargo === 'adm' || user.cargo === 'mod');
+                    const canDel = (user.cargo === 'adm' || user.cargo === 'mod' || user.cargo === 'adm1');
                     d.innerHTML = `<div class="card-timeline">
                         <img src="${i.i1}" onclick="abrirPerfilAlheio('${i.uid}')" style="cursor:pointer;">
                         <div class="card-info">
@@ -178,91 +159,85 @@
                 });
             });
         }
+
         window.apagarPost = id => { if(confirm("Apagar postagem?")) remove(ref(db, `posts/${id}`)); };
 
-        // ==========================================
-        // 2. SISTEMA DE PERFIL ATUALIZADO
-        // ==========================================
+        // --- NOVA FUNÇÃO DE PERFIL COM PAINEL ADM FUNCIONAL ---
         window.abrirPerfilAlheio = (outroUid) => {
             if(!outroUid) return;
             
-            // Simulação de busca no Firebase (Substitua pela estrutura real do seu app)
-            // onValue(ref(db, `usuarios/${outroUid}`), s => {
-            // const outro = s.val(); 
-            // Para fim de visualização sem banco conectado, criamos um mock:
-            const outro = { nome: "Usuário Exemplo", cargo: "membro", moedasBlue: 150 }; 
-            
-            if(!outro) return;
-            fecharTelas();
+            // Usando o onValue REAL do seu banco de dados
+            onValue(ref(db, `usuarios/${outroUid}`), s => {
+                const outro = s.val();
+                if(!outro) return;
+                fecharTelas();
 
-            // Lógica de visualização de painéis baseada no cargo do usuário logado (user)
-            let painelEquipe = '';
-            let painelBlues = '';
+                let painelCargos = '';
+                let painelBanco = '';
 
-            const cargosPermitidosGeral = ['funcionario', 'mod', 'adm', 'adm1'];
-            if (cargosPermitidosGeral.includes(user.cargo)) {
-                painelEquipe = `
-                    <div class="admin-panel">
-                        <h4 style="margin-top:0;">🔧 Painel da Equipe</h4>
-                        <label>Alterar Função do Usuário:</label>
-                        <select id="selectCargo_${outroUid}">
-                            <option value="membro" ${outro.cargo==='membro'?'selected':''}>Membro</option>
-                            <option value="funcionario" ${outro.cargo==='funcionario'?'selected':''}>Funcionário</option>
-                            <option value="mod" ${outro.cargo==='mod'?'selected':''}>Moderador</option>
-                            <option value="adm" ${outro.cargo==='adm'?'selected':''}>Administrador</option>
-                            <option value="adm1" ${outro.cargo==='adm1'?'selected':''}>ADM1 (Dono)</option>
-                        </select>
-                        <button class="btn-action" style="background:var(--blue); width:100%;" onclick="atualizarCargoUsuario('${outroUid}')">Salvar Função</button>
+                // Verifica se o usuário logado tem permissão para alterar cargos
+                if (user.cargo === 'adm1' || user.cargo === 'adm' || user.cargo === 'mod') {
+                    painelCargos = `
+                        <div class="admin-panel">
+                            <h4>🔧 Gerenciar Equipe</h4>
+                            <label>Promover/Rebaixar Usuário:</label>
+                            <select id="selectCargo_${outroUid}">
+                                <option value="membro" ${outro.cargo==='membro'?'selected':''}>Membro Comum</option>
+                                <option value="mod" ${outro.cargo==='mod'?'selected':''}>Moderador</option>
+                                <option value="adm" ${outro.cargo==='adm'?'selected':''}>Administrador</option>
+                                ${user.cargo === 'adm1' ? `<option value="adm1" ${outro.cargo==='adm1'?'selected':''}>ADM1 (Dono)</option>` : ''}
+                            </select>
+                            <button class="btn-action" style="background:var(--blue); width:100%;" onclick="atualizarCargo('${outroUid}')">Atualizar Função</button>
+                        </div>
+                    `;
+                }
+
+                // O Banco Central só aparece se o usuário logado for ADM1
+                if (user.cargo === 'adm1') {
+                    painelBanco = `
+                        <div class="admin-panel master">
+                            <h4 style="color:#ffeb3b; margin-top:0;">🏦 BANCO CENTRAL - ADM1</h4>
+                            <p style="font-size:12px; margin:0 0 10px 0;">Reserva Total: <b>22.000.000 Blues</b></p>
+                            <label>Injetar ou Remover Blues do Usuário:</label>
+                            <input type="number" id="inputBlues_${outroUid}" placeholder="Valor (ex: 500 para dar, -100 tirar)">
+                            <button class="btn-action" style="background:var(--green); width:100%;" onclick="movimentarBlues('${outroUid}', ${outro.moedasBlue || 0})">Transferir da Reserva</button>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('perfilConteudo').innerHTML = `
+                    <div style="text-align:center;">
+                        <img src="${outro.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
+                        <h2>${outro.nome}</h2>
+                        <p style="color:gray; font-size:12px;">ID: ${outroUid}</p>
+                        <p>Função atual: <b style="color:var(--mod-blue); text-transform:uppercase;">${outro.cargo || 'membro'}</b></p>
+                        <p>Carteira: <b style="font-size:18px; color:var(--green);">${outro.moedasBlue || 0} Blues</b></p>
                     </div>
+                    ${painelCargos}
+                    ${painelBanco}
                 `;
-            }
-
-            if (user.cargo === 'adm1' || user.cargo === 'adm') {
-                painelBlues = `
-                    <div class="admin-panel" style="border-left-color:var(--green);">
-                        <h4 style="margin-top:0;">💎 Banco Central (ADM1)</h4>
-                        <label>Adicionar/Remover Blues (Saldo: ${outro.moedasBlue || 0}):</label>
-                        <input type="number" id="inputBlues_${outroUid}" placeholder="Ex: 500 para dar, -100 para tirar">
-                        <button class="btn-action" style="background:var(--green); width:100%;" onclick="atualizarBluesUsuario('${outroUid}', ${outro.moedasBlue || 0})">Processar Blues</button>
-                    </div>
-                `;
-            }
-
-            document.getElementById('perfilConteudo').innerHTML = `
-                <div style="text-align:center;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo">
-                    <h2 style="margin:10px 0 5px 0;">${outro.nome}</h2>
-                    <p style="margin:0; color:#aaa;">ID: <small>${outroUid}</small></p>
-                    <p style="margin:5px 0;">Cargo: <b><span style="color:var(--mod-blue)">${outro.cargo.toUpperCase()}</span></b></p>
-                    <p>Saldo: <b>${outro.moedasBlue || 0} Blues</b></p>
-                </div>
-                ${painelEquipe}
-                ${painelBlues}
-            `;
-            document.getElementById('telaPerfil').style.display = 'block';
-            // }); // Fim do onValue original
+                document.getElementById('telaPerfil').style.display = 'block';
+            });
         };
 
-        // Funções para salvar as alterações do Painel (Firebase Update)
-        window.atualizarCargoUsuario = (uid) => {
+        // Funções REAIS de gravação no Firebase para o Painel ADM
+        window.atualizarCargo = (uid) => {
             const novoCargo = document.getElementById(`selectCargo_${uid}`).value;
-            // Descomente no seu código:
-            // update(ref(db, `usuarios/${uid}`), { cargo: novoCargo }).then(() => {
-                alert("Função atualizada com sucesso no banco de dados!");
-            // });
+            update(ref(db, `usuarios/${uid}`), { cargo: novoCargo }).then(() => {
+                alert("Cargo atualizado com sucesso no sistema!");
+            }).catch(e => alert("Erro ao atualizar: " + e.message));
         };
 
-        window.atualizarBluesUsuario = (uid, saldoAtual) => {
-            const valorInput = parseInt(document.getElementById(`inputBlues_${uid}`).value) || 0;
-            const novoSaldo = saldoAtual + valorInput;
-            // Descomente no seu código:
-            // update(ref(db, `usuarios/${uid}`), { moedasBlue: novoSaldo }).then(() => {
-                alert(`Blues atualizados! Novo saldo: ${novoSaldo}`);
-            // });
+        window.movimentarBlues = (uid, saldoAtual) => {
+            const valor = parseInt(document.getElementById(`inputBlues_${uid}`).value) || 0;
+            const novoSaldo = saldoAtual + valor;
+            update(ref(db, `usuarios/${uid}`), { moedasBlue: novoSaldo }).then(() => {
+                alert(`Transação concluída! O saldo do usuário agora é ${novoSaldo} Blues.`);
+            }).catch(e => alert("Erro na transferência: " + e.message));
         };
 
         // ==========================================
-        // 3. SISTEMA DE BINGO (BANCA SEMPRE GANHA)
+        // SISTEMA DE BINGO (Lógica que a Banca sempre ganha)
         // ==========================================
         let intervaloBingo;
         let numerosSorteados = [];
@@ -270,7 +245,8 @@
         let numeroImpossivel = 0;
 
         function abrirJogos() {
-            abrirTela('telaJogos');
+            fecharTelas();
+            document.getElementById('telaJogos').style.display = 'block';
         }
 
         function iniciarBingo() {
@@ -282,21 +258,15 @@
             numerosSorteados = [];
             numerosCartela = [];
             
-            // Gerar 25 números únicos para a cartela (de 1 a 75)
             while(numerosCartela.length < 25) {
                 let r = Math.floor(Math.random() * 75) + 1;
                 if(numerosCartela.indexOf(r) === -1) numerosCartela.push(r);
             }
 
-            // O SEGREDO: A BANCA NUNCA PERDE
-            // Escolhemos um número da cartela do usuário que NUNCA será sorteado.
-            // A pessoa vai marcar 24 de 25 e ficar louca esperando o último.
             const indexMaldade = Math.floor(Math.random() * numerosCartela.length);
             numeroImpossivel = numerosCartela[indexMaldade];
 
             renderizarCartela();
-
-            // Começa o sorteio das bolinhas caindo
             intervaloBingo = setInterval(sortearBolinha, 3000); 
         }
 
@@ -310,30 +280,24 @@
         }
 
         function sortearBolinha() {
-            // Se já sorteou os 74 números possíveis, encerra (o 75º é o impossível)
             if(numerosSorteados.length >= 74) {
                 clearInterval(intervaloBingo);
-                alert("O bingo encerrou e ninguém fez a cartela cheia dessa vez. Tente novamente!");
+                alert("Sorteio encerrado. Ninguém completou a cartela cheia desta vez!");
                 return;
             }
 
             let numSorteado;
-            // Fica procurando um número aleatório de 1 a 75
-            // Verifica se já foi sorteado OU se é o "número impossível"
             do {
                 numSorteado = Math.floor(Math.random() * 75) + 1;
             } while (numerosSorteados.includes(numSorteado) || numSorteado === numeroImpossivel);
 
             numerosSorteados.push(numSorteado);
             
-            // Animação da bolinha caindo
             const area = document.getElementById('area-bolinhas');
             area.innerHTML = `<div class="bolinha-animada">${numSorteado}</div>`;
 
-            // Atualiza o histórico
             document.getElementById('numeros-sorteados-lista').innerText = numerosSorteados.join(' - ');
 
-            // Marca na cartela (delay pra coincidir com a bolinha caindo)
             setTimeout(() => {
                 const celula = document.getElementById(`celula-${numSorteado}`);
                 if(celula) celula.classList.add('numero-marcado');
@@ -341,32 +305,21 @@
         }
 
         // ==========================================
-        // 4. ANÚNCIOS FLUTUANTES (COMERCIAIS)
+        // ANÚNCIOS FLUTUANTES
         // ==========================================
         const anuncio = document.getElementById('comercial-flutuante');
         const mensagensComerciais = [
             "💸 Jogue o Bingo Premium!<br><small>Cartela cheia leva R$ 1.000! Clique!</small>",
-            "💰 Baú Misterioso Aberto!<br><small>Clique aqui para tentar a sorte agora!</small>",
-            "🎲 Sorte ou Azar?<br><small>Seus Blues estão te esperando nos jogos!</small>"
+            "💰 ICE DROP Aberto!<br><small>Abra seu baú misterioso agora!</small>",
+            "🎲 Sorte ou Azar?<br><small>Multiplique seus Blues na área de jogos!</small>"
         ];
 
         setInterval(() => {
-            // Escolhe mensagem aleatória
             const msg = mensagensComerciais[Math.floor(Math.random() * mensagensComerciais.length)];
             anuncio.innerHTML = msg;
-            
-            // Desliza para dentro da tela
             anuncio.classList.add('mostrar-anuncio');
-            
-            // Esconde depois de 7 segundos
-            setTimeout(() => {
-                anuncio.classList.remove('mostrar-anuncio');
-            }, 7000);
-            
-        }, 20000); // Aparece a cada 20 segundos
-
-        // Inicializa o feed assim que a página carrega (seu fluxo original)
-        // carregarFeeds();
+            setTimeout(() => { anuncio.classList.remove('mostrar-anuncio'); }, 7000);
+        }, 20000); 
 
     </script>
 </body>
