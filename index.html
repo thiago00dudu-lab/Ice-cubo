@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ICE TROCAS - Feed e Jogos</title>
+    <title>ICE TROCAS - Oficial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -14,313 +14,244 @@
             --bg: #121212;
             --text: #ffffff;
         }
-        body { background-color: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        body { background-color: var(--bg); color: var(--text); font-family: Arial, sans-serif; margin: 0; padding: 10px; }
         
-        .card-leilao, .card-timeline { background: #1e1e1e; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
-        .card-leilao img, .card-timeline img { max-width: 100px; border-radius: 8px; }
-        .btn-action { border: none; padding: 10px; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px;}
-        .tela { display: none; background: #1e1e1e; padding: 20px; border-radius: 8px; margin-bottom: 20px;}
-        .user-photo { width: 80px; height: 80px; border-radius: 50%; }
-        
-        /* Painéis de Administração */
-        .admin-panel { background: #2a2a2a; padding: 15px; margin-top: 15px; border-radius: 8px; border-left: 4px solid var(--mod-blue); }
-        .admin-panel.master { border-left: 4px solid #ffeb3b; }
-        .admin-panel input, .admin-panel select { padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #444; background: #333; color: white; width: calc(100% - 20px);}
+        /* Estilos Originais */
+        .card-leilao, .card-timeline { background: #1e1e1e; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
+        .card-leilao img, .card-timeline img { max-width: 100%; border-radius: 8px; display: block; margin-bottom: 10px; }
+        .btn-action { border: none; padding: 10px; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
+        .tela { display: none; padding: 10px; }
+        .user-photo { width: 80px; height: 80px; border-radius: 50%; margin: 10px auto; display: block; border: 3px solid var(--blue); }
 
-        /* Estilos do Bingo */
-        #cartela-bingo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 15px; max-width: 300px; }
-        .numero-bingo { background: #333; padding: 15px 5px; text-align: center; border-radius: 5px; font-weight: bold; font-size: 18px; border: 1px solid #555; }
-        .numero-marcado { background: var(--green); color: white; border-color: white; }
-        .area-bolinhas { position: relative; height: 100px; background: #111; overflow: hidden; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444; }
-        
-        .bolinha-animada {
-            position: absolute; width: 40px; height: 40px; background: radial-gradient(circle, #ffeb3b, #fbc02d);
-            border-radius: 50%; color: black; display: flex; align-items: center; justify-content: center;
-            font-weight: bold; top: -50px; left: 50%; transform: translateX(-50%);
-            animation: cair 1.5s forwards ease-in; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-        }
-        @keyframes cair {
-            0% { top: -50px; }
-            80% { top: 60px; }
-            100% { top: 50px; } 
-        }
-        #numeros-sorteados-lista { font-size: 12px; color: gray; margin-top: 10px; word-wrap: break-word;}
+        /* Painéis ADM */
+        .admin-box { background: #222; border-radius: 8px; padding: 15px; margin-top: 15px; border-left: 4px solid var(--mod-blue); text-align: left; }
+        .admin-box.master { border-left-color: var(--green); }
+        .admin-box input, .admin-box select { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #444; border-radius: 5px; }
 
-        /* Anúncio Flutuante */
-        #comercial-flutuante {
-            position: fixed; bottom: 20px; right: -300px; width: 250px; background: linear-gradient(45deg, #ff007b, #6600ff);
-            color: white; padding: 15px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            transition: right 0.5s ease-in-out; z-index: 9999; text-align: center; font-weight: bold; cursor: pointer;
-        }
-        .mostrar-anuncio { right: 20px !important; }
+        /* Bingo e Jogos */
+        #cartela-bingo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 20px auto; max-width: 300px; }
+        .num-bingo { background: #333; padding: 12px 5px; text-align: center; border-radius: 5px; font-weight: bold; font-size: 14px; border: 1px solid #444; }
+        .num-marcado { background: var(--green); border-color: #fff; }
+        .area-sorteio { height: 100px; background: #000; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; position: relative; border: 2px dashed #444; }
+        .bola { width: 50px; height: 50px; background: radial-gradient(circle, #ffeb3b, #fbc02d); border-radius: 50%; color: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; box-shadow: 0 0 15px var(--blue); animation: quicar 0.5s infinite alternate; }
+        @keyframes quicar { from { transform: translateY(-5px); } to { transform: translateY(5px); } }
 
-        .menu-topo { display: flex; gap: 10px; margin-bottom: 20px; }
-        .btn-menu { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
-        .btn-menu:hover { background: #555; }
+        /* Comercial Flutuante */
+        #comercial { position: fixed; bottom: 20px; right: -300px; width: 200px; background: linear-gradient(45deg, #ff007b, #6600ff); color: white; padding: 15px; border-radius: 12px; transition: 0.7s; z-index: 10000; text-align: center; cursor: pointer; font-weight: bold; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .show-comercial { right: 20px !important; }
+
+        .menu-nav { display: flex; justify-content: space-around; background: #1e1e1e; padding: 15px; position: sticky; top: 0; z-index: 999; border-bottom: 1px solid #333; margin-bottom: 15px; }
+        .btn-nav { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="menu-topo">
-        <button class="btn-menu" onclick="fecharTelas(); document.getElementById('telaFeeds').style.display = 'block';">🏠 Feeds</button>
-        <button class="btn-menu" style="background: var(--mod-blue);" onclick="abrirJogos()">🎰 Jogos / Baú</button>
-    </div>
+    <nav class="menu-nav">
+        <button class="btn-nav" onclick="irPara('telaFeeds')"><i class="fas fa-home"></i></button>
+        <button class="btn-nav" onclick="irPara('telaJogos')" style="color: var(--mod-blue);"><i class="fas fa-gamepad"></i></button>
+        <button class="btn-nav" onclick="irPara('telaPerfil')"><i class="fas fa-user"></i></button>
+    </nav>
 
     <div id="telaFeeds" class="tela" style="display: block;">
-        <h2>Leilões</h2>
-        <div id="feed-leiloes"></div>
-        <h2>Postagens</h2>
+        <h2 style="color:var(--mod-blue)">🔥 Feed de Trocas</h2>
         <div id="feed"></div>
-    </div>
-
-    <div id="telaPerfil" class="tela">
-        <button class="btn-action" style="background:#555; margin-bottom:15px;" onclick="fecharTelas(); document.getElementById('telaFeeds').style.display = 'block';">Voltar aos Feeds</button>
-        <div id="perfilConteudo"></div>
+        <hr style="border-color:#333">
+        <h2 style="color:var(--green)">🔨 Leilões Ativos</h2>
+        <div id="feed-leiloes"></div>
     </div>
 
     <div id="telaJogos" class="tela">
-        <button class="btn-action" style="background:#555; margin-bottom:15px;" onclick="fecharTelas(); document.getElementById('telaFeeds').style.display = 'block';">Voltar aos Feeds</button>
-        <h2>🎰 Área de Jogos e ICE DROP</h2>
-        <hr style="border-color:#333">
-        
-        <h3>BINGO PREMIADO - R$ 1.000,00 na Cartela Cheia!</h3>
-        <button class="btn-action" style="background:var(--blue);" onclick="iniciarBingo()">GERAR CARTELA E INICIAR</button>
-        
-        <div id="container-bingo" style="display: none; margin-top: 20px;">
-            <div class="area-bolinhas" id="area-bolinhas"></div>
-            <div id="cartela-bingo"></div>
-            <p>Números Sorteados:</p>
-            <div id="numeros-sorteados-lista">Nenhum número ainda...</div>
+        <h2 style="text-align:center;">🎰 ICE GAMES</h2>
+        <div class="card-timeline" style="text-align:center;">
+            <h3>BINGO PREMIADO</h3>
+            <p>Cartela cheia ganha <b>R$ 1.000,00</b></p>
+            <button class="btn-action" style="background:var(--blue);" onclick="jogarBingo()">GERAR CARTELA (10 BLUES)</button>
+            
+            <div id="jogo-bingo-area" style="display:none;">
+                <div class="area-sorteio" id="bolinha-box"></div>
+                <div id="cartela-bingo"></div>
+                <p><small>Sorteados: <span id="lista-sorteados"></span></small></p>
+            </div>
+        </div>
+        <div class="card-timeline" style="text-align:center;">
+            <h3>📦 ICE DROP (BAÚ)</h3>
+            <button class="btn-action" style="background:var(--green);">ABRIR BAÚ MISTERIOSO</button>
         </div>
     </div>
 
-    <div id="comercial-flutuante" onclick="abrirJogos()">
-        💸 Jogue o Bingo Premium!<br>
-        <small>Cartela cheia leva R$ 1.000! Clique aqui!</small>
+    <div id="telaPerfil" class="tela">
+        <div id="perfilConteudo"></div>
     </div>
 
-    <script>
-        // ======================================================================
-        // AQUI FICA A SUA CONFIGURAÇÃO ORIGINAL DO FIREBASE
-        // (import das bibliotecas, initializeApp, const db = getDatabase(), etc)
-        // NÃO COLOQUE SIMULAÇÕES AQUI. DEIXE O SEU CÓDIGO REAL DE CONEXÃO.
-        // ======================================================================
+    <div id="comercial" onclick="irPara('telaJogos')">
+        💰 GANHE R$ 1.000 <br> No Bingo do ICE! <br> <small>Clique para jogar</small>
+    </div>
 
-        function fecharTelas() {
-            document.getElementById('telaFeeds').style.display = 'none';
-            document.getElementById('telaPerfil').style.display = 'none';
-            document.getElementById('telaJogos').style.display = 'none';
-        }
+    <script type="module">
+        // --- COLE AQUI SUA CONFIGURAÇÃO DO FIREBASE (IMPORTANTE PARA NÃO SAIR DO AR) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getDatabase, ref, onValue, update, remove, push } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
 
-        // --- CARREGA FEEDS (SEU CÓDIGO ORIGINAL COMPLETO) ---
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJETO.firebaseapp.com",
+            databaseURL: "https://SEU_PROJETO.firebaseio.com",
+            projectId: "SEU_PROJETO",
+            storageBucket: "SEU_PROJETO.appspot.com",
+            messagingSenderId: "SEU_ID",
+            appId: "SEU_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Variável global do usuário (deve ser alimentada pelo seu Auth)
+        let user = { uid: "ID_LOGADO", cargo: "adm1" }; // Exemplo: mude para adm1 para testar o painel
+
+        // --- NAVEGAÇÃO ---
+        window.irPara = (id) => {
+            document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+        };
+
+        // --- CARREGA FEEDS (SEU CÓDIGO ORIGINAL) ---
         function carregarFeeds() {
-            // Feed Leilões (Mantido)
             onValue(ref(db, 'leiloes'), s => {
                 const d = document.getElementById('feed-leiloes'); d.innerHTML = "";
                 s.forEach(l => {
                     const i = l.val();
-                    const isDono = (user.uid === i.criadorUid || user.uid === 'master_ice');
+                    const isDono = (user && (user.uid === i.criadorUid || user.uid === 'master_ice'));
                     let card = `<div class="card-leilao">
-                        ${!i.ativo ? `<div class="leilao-encerrado">
-                            ARREMATADO POR: ${i.ultimoLicitante}<br>
-                            <button class="btn-action" style="background:var(--green);" onclick="window.open('https://wa.me/5511983602504?text=Arrematei o item ${i.item}')">FALAR COM VENDEDOR</button>
-                        </div>` : ''}
+                        ${!i.ativo ? `<div class="leilao-encerrado" style="background:rgba(0,0,0,0.8); padding:10px; border-radius:5px;">ARREMATADO POR: ${i.ultimoLicitante}<br><button class="btn-action" style="background:var(--green);" onclick="window.open('https://wa.me/5511983602504?text=Arrematei o item ${i.item}')">FALAR COM VENDEDOR</button></div>` : ''}
                         <img src="${i.imagem}">
                         <div class="info-leilao">
-                            <h3 onclick="abrirPerfilAlheio('${i.criadorUid}')" style="cursor:pointer; text-decoration:underline;">${i.item}</h3>
-                            <p><small>Criador: ${i.criador}</small></p>
-                            <div class="valor-lance">R$ ${i.lanceAtual}</div>
+                            <h3 onclick="abrirPerfilAlheio('${i.criadorUid}')" style="cursor:pointer;">${i.item}</h3>
+                            <p><small>Dono: ${i.criador}</small></p>
+                            <div style="color:var(--green); font-weight:bold;">R$ ${i.lanceAtual}</div>
                             ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
-                            ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR LEILÃO</button>` : ''}
+                            ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR</button>` : ''}
                         </div>
                     </div>`;
                     d.innerHTML = card + d.innerHTML;
                 });
             });
 
-            // Feed Posts (COM NEGOCIAR E CLICK NO NOME)
             onValue(ref(db, 'posts'), s => {
                 const d = document.getElementById('feed'); d.innerHTML = "";
                 s.forEach(p => {
                     const i = p.val();
-                    const canDel = (user.cargo === 'adm' || user.cargo === 'mod' || user.cargo === 'adm1');
+                    const canDel = (user && (user.cargo === 'adm' || user.cargo === 'mod' || user.cargo === 'adm1'));
                     d.innerHTML = `<div class="card-timeline">
                         <img src="${i.i1}" onclick="abrirPerfilAlheio('${i.uid}')" style="cursor:pointer;">
                         <div class="card-info">
-                            <div onclick="abrirPerfilAlheio('${i.uid}')" style="cursor:pointer;">
-                                <b style="color:var(--mod-blue)">${i.u1}</b>
-                            </div>
-                            <div style="display:flex; gap:15px; align-items:center;">
-                                <button class="btn-action" style="background:var(--green); margin:0; padding:5px 15px; font-size:12px;" onclick="window.open('https://wa.me/5511983602504?text=Vi seu post no ICE')">NEGOCIAR</button>
-                                ${canDel ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}
+                            <b onclick="abrirPerfilAlheio('${i.uid}')" style="color:var(--mod-blue); cursor:pointer;">${i.u1}</b>
+                            <div style="display:flex; gap:10px; margin-top:10px;">
+                                <button class="btn-action" style="background:var(--green); font-size:12px;" onclick="window.open('https://wa.me/5511983602504?text=Vi seu post')">NEGOCIAR</button>
+                                ${canDel ? `<button class="btn-action" style="background:var(--red); width:40px;" onclick="apagarPost('${p.key}')"><i class="fas fa-trash"></i></button>` : ''}
                             </div>
                         </div>
                     </div>` + d.innerHTML;
                 });
             });
         }
+        window.apagarPost = id => { if(confirm("Apagar?")) remove(ref(db, `posts/${id}`)); };
 
-        window.apagarPost = id => { if(confirm("Apagar postagem?")) remove(ref(db, `posts/${id}`)); };
-
-        // --- NOVA FUNÇÃO DE PERFIL COM PAINEL ADM FUNCIONAL ---
+        // --- PAINEL DE PERFIL (ADM1 / ADM / MOD) ---
         window.abrirPerfilAlheio = (outroUid) => {
             if(!outroUid) return;
-            
-            // Usando o onValue REAL do seu banco de dados
             onValue(ref(db, `usuarios/${outroUid}`), s => {
                 const outro = s.val();
                 if(!outro) return;
-                fecharTelas();
+                irPara('telaPerfil');
 
-                let painelCargos = '';
-                let painelBanco = '';
-
-                // Verifica se o usuário logado tem permissão para alterar cargos
-                if (user.cargo === 'adm1' || user.cargo === 'adm' || user.cargo === 'mod') {
-                    painelCargos = `
-                        <div class="admin-panel">
-                            <h4>🔧 Gerenciar Equipe</h4>
-                            <label>Promover/Rebaixar Usuário:</label>
-                            <select id="selectCargo_${outroUid}">
-                                <option value="membro" ${outro.cargo==='membro'?'selected':''}>Membro Comum</option>
+                let htmlPainel = '';
+                // Se o logado for equipe, mostra troca de cargo
+                if (['adm','mod','adm1'].includes(user.cargo)) {
+                    htmlPainel += `
+                        <div class="admin-box">
+                            <h4>⚙️ Controle de Equipe</h4>
+                            <select id="setCargo">
+                                <option value="membro" ${outro.cargo==='membro'?'selected':''}>Membro</option>
                                 <option value="mod" ${outro.cargo==='mod'?'selected':''}>Moderador</option>
                                 <option value="adm" ${outro.cargo==='adm'?'selected':''}>Administrador</option>
-                                ${user.cargo === 'adm1' ? `<option value="adm1" ${outro.cargo==='adm1'?'selected':''}>ADM1 (Dono)</option>` : ''}
+                                ${user.cargo==='adm1'?'<option value="adm1">ADM1 (Dono)</option>':''}
                             </select>
-                            <button class="btn-action" style="background:var(--blue); width:100%;" onclick="atualizarCargo('${outroUid}')">Atualizar Função</button>
-                        </div>
-                    `;
+                            <button class="btn-action" style="background:var(--blue);" onclick="salvarCargo('${outroUid}')">Salvar Função</button>
+                        </div>`;
                 }
-
-                // O Banco Central só aparece se o usuário logado for ADM1
+                // Se for ADM1, mostra o Banco Central (22 Milhões)
                 if (user.cargo === 'adm1') {
-                    painelBanco = `
-                        <div class="admin-panel master">
-                            <h4 style="color:#ffeb3b; margin-top:0;">🏦 BANCO CENTRAL - ADM1</h4>
-                            <p style="font-size:12px; margin:0 0 10px 0;">Reserva Total: <b>22.000.000 Blues</b></p>
-                            <label>Injetar ou Remover Blues do Usuário:</label>
-                            <input type="number" id="inputBlues_${outroUid}" placeholder="Valor (ex: 500 para dar, -100 tirar)">
-                            <button class="btn-action" style="background:var(--green); width:100%;" onclick="movimentarBlues('${outroUid}', ${outro.moedasBlue || 0})">Transferir da Reserva</button>
-                        </div>
-                    `;
+                    htmlPainel += `
+                        <div class="admin-box master">
+                            <h4 style="color:var(--green)">🏦 BANCO CENTRAL (Reserva 22M)</h4>
+                            <input type="number" id="qtdBlues" placeholder="Qtd de Blues">
+                            <button class="btn-action" style="background:var(--green);" onclick="darBlues('${outroUid}', ${outro.moedasBlue || 0})">Liberar Blues</button>
+                        </div>`;
                 }
 
                 document.getElementById('perfilConteudo').innerHTML = `
-                    <div style="text-align:center;">
-                        <img src="${outro.foto || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="user-photo">
-                        <h2>${outro.nome}</h2>
-                        <p style="color:gray; font-size:12px;">ID: ${outroUid}</p>
-                        <p>Função atual: <b style="color:var(--mod-blue); text-transform:uppercase;">${outro.cargo || 'membro'}</b></p>
-                        <p>Carteira: <b style="font-size:18px; color:var(--green);">${outro.moedasBlue || 0} Blues</b></p>
-                    </div>
-                    ${painelCargos}
-                    ${painelBanco}
+                    <button class="btn-action" style="background:#444; margin-bottom:10px;" onclick="irPara('telaFeeds')">Voltar</button>
+                    <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo">
+                    <h2 style="text-align:center;">${outro.nome}</h2>
+                    <p style="text-align:center;">Cargo: <b>${outro.cargo.toUpperCase()}</b><br>Saldo: <b>${outro.moedasBlue || 0} Blues</b></p>
+                    ${htmlPainel}
                 `;
-                document.getElementById('telaPerfil').style.display = 'block';
             });
         };
 
-        // Funções REAIS de gravação no Firebase para o Painel ADM
-        window.atualizarCargo = (uid) => {
-            const novoCargo = document.getElementById(`selectCargo_${uid}`).value;
-            update(ref(db, `usuarios/${uid}`), { cargo: novoCargo }).then(() => {
-                alert("Cargo atualizado com sucesso no sistema!");
-            }).catch(e => alert("Erro ao atualizar: " + e.message));
+        window.salvarCargo = (uid) => {
+            const novo = document.getElementById('setCargo').value;
+            update(ref(db, `usuarios/${uid}`), { cargo: novo }).then(()=>alert("Sucesso!"));
         };
 
-        window.movimentarBlues = (uid, saldoAtual) => {
-            const valor = parseInt(document.getElementById(`inputBlues_${uid}`).value) || 0;
-            const novoSaldo = saldoAtual + valor;
-            update(ref(db, `usuarios/${uid}`), { moedasBlue: novoSaldo }).then(() => {
-                alert(`Transação concluída! O saldo do usuário agora é ${novoSaldo} Blues.`);
-            }).catch(e => alert("Erro na transferência: " + e.message));
+        window.darBlues = (uid, atual) => {
+            const val = parseInt(document.getElementById('qtdBlues').value) || 0;
+            update(ref(db, `usuarios/${uid}`), { moedasBlue: atual + val }).then(()=>alert("Blues enviados!"));
         };
 
-        // ==========================================
-        // SISTEMA DE BINGO (Lógica que a Banca sempre ganha)
-        // ==========================================
-        let intervaloBingo;
-        let numerosSorteados = [];
-        let numerosCartela = [];
-        let numeroImpossivel = 0;
+        // --- BINGO (LÓGICA BANCA GANHA) ---
+        let bingoNumeros = [];
+        let bingoSorteados = [];
+        let bloqueado = 0;
 
-        function abrirJogos() {
-            fecharTelas();
-            document.getElementById('telaJogos').style.display = 'block';
-        }
-
-        function iniciarBingo() {
-            clearInterval(intervaloBingo);
-            document.getElementById('container-bingo').style.display = 'block';
-            document.getElementById('numeros-sorteados-lista').innerHTML = '';
-            document.getElementById('area-bolinhas').innerHTML = '';
-            
-            numerosSorteados = [];
-            numerosCartela = [];
-            
-            while(numerosCartela.length < 25) {
+        window.jogarBingo = () => {
+            document.getElementById('jogo-bingo-area').style.display = 'block';
+            bingoNumeros = [];
+            bingoSorteados = [];
+            while(bingoNumeros.length < 25) {
                 let r = Math.floor(Math.random() * 75) + 1;
-                if(numerosCartela.indexOf(r) === -1) numerosCartela.push(r);
+                if(!bingoNumeros.includes(r)) bingoNumeros.push(r);
             }
+            // A maldade: um número da cartela do usuário nunca será sorteado
+            bloqueado = bingoNumeros[Math.floor(Math.random() * 25)];
+            
+            desenharCartela();
+            const loop = setInterval(() => {
+                if(bingoSorteados.length > 70) { clearInterval(loop); alert("Bingo encerrado!"); return; }
+                let s;
+                do { s = Math.floor(Math.random() * 75) + 1; } while(bingoSorteados.includes(s) || s === bloqueado);
+                bingoSorteados.push(s);
+                document.getElementById('bolinha-box').innerHTML = `<div class="bola">${s}</div>`;
+                document.getElementById('lista-sorteados').innerText = bingoSorteados.join(', ');
+                desenharCartela();
+            }, 3000);
+        };
 
-            const indexMaldade = Math.floor(Math.random() * numerosCartela.length);
-            numeroImpossivel = numerosCartela[indexMaldade];
-
-            renderizarCartela();
-            intervaloBingo = setInterval(sortearBolinha, 3000); 
-        }
-
-        function renderizarCartela() {
-            const divCartela = document.getElementById('cartela-bingo');
-            divCartela.innerHTML = '';
-            numerosCartela.forEach(num => {
-                const classe = numerosSorteados.includes(num) ? 'numero-bingo numero-marcado' : 'numero-bingo';
-                divCartela.innerHTML += `<div class="${classe}" id="celula-${num}">${num}</div>`;
+        function desenharCartela() {
+            const d = document.getElementById('cartela-bingo'); d.innerHTML = "";
+            bingoNumeros.forEach(n => {
+                d.innerHTML += `<div class="num-bingo ${bingoSorteados.includes(n)?'num-marcado':''}">${n}</div>`;
             });
         }
 
-        function sortearBolinha() {
-            if(numerosSorteados.length >= 74) {
-                clearInterval(intervaloBingo);
-                alert("Sorteio encerrado. Ninguém completou a cartela cheia desta vez!");
-                return;
-            }
-
-            let numSorteado;
-            do {
-                numSorteado = Math.floor(Math.random() * 75) + 1;
-            } while (numerosSorteados.includes(numSorteado) || numSorteado === numeroImpossivel);
-
-            numerosSorteados.push(numSorteado);
-            
-            const area = document.getElementById('area-bolinhas');
-            area.innerHTML = `<div class="bolinha-animada">${numSorteado}</div>`;
-
-            document.getElementById('numeros-sorteados-lista').innerText = numerosSorteados.join(' - ');
-
-            setTimeout(() => {
-                const celula = document.getElementById(`celula-${numSorteado}`);
-                if(celula) celula.classList.add('numero-marcado');
-            }, 1000);
-        }
-
-        // ==========================================
-        // ANÚNCIOS FLUTUANTES
-        // ==========================================
-        const anuncio = document.getElementById('comercial-flutuante');
-        const mensagensComerciais = [
-            "💸 Jogue o Bingo Premium!<br><small>Cartela cheia leva R$ 1.000! Clique!</small>",
-            "💰 ICE DROP Aberto!<br><small>Abra seu baú misterioso agora!</small>",
-            "🎲 Sorte ou Azar?<br><small>Multiplique seus Blues na área de jogos!</small>"
-        ];
-
+        // --- COMERCIAL ---
         setInterval(() => {
-            const msg = mensagensComerciais[Math.floor(Math.random() * mensagensComerciais.length)];
-            anuncio.innerHTML = msg;
-            anuncio.classList.add('mostrar-anuncio');
-            setTimeout(() => { anuncio.classList.remove('mostrar-anuncio'); }, 7000);
-        }, 20000); 
+            const c = document.getElementById('comercial');
+            c.classList.add('show-comercial');
+            setTimeout(() => c.classList.remove('show-comercial'), 6000);
+        }, 20000);
 
+        carregarFeeds();
     </script>
 </body>
 </html>
