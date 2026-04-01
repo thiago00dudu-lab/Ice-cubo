@@ -7,59 +7,104 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         :root { 
-            --bg: #050a0f; --sea: rgba(15, 52, 82, 0.7); --blue: #1877f2; 
-            --ice: rgba(255, 255, 255, 0.08); --gold: #FFD700; --white: #fff; 
-            --green: #25d366; --red: #ff4d4d; --mod-blue: #00BFFF; --gray: #30363d; 
+            --bg: #050a0f; 
+            --sea: rgba(15, 52, 82, 0.7); 
+            --blue: #1877f2; 
+            --ice: rgba(255, 255, 255, 0.15); 
+            --frost: rgba(173, 216, 230, 0.3);
+            --gold: #FFD700; 
+            --white: #fff; 
+            --green: #25d366; 
+            --red: #ff4d4d; 
+            --mod-blue: #00BFFF; 
+            --gray: #30363d; 
         }
-        body { margin:0; font-family: sans-serif; background: radial-gradient(circle at top, #0d1d2d, #050a0f); color: white; padding-bottom: 90px; overflow-x: hidden; }
+        
+        /* Estética Salitre / Fundo Glacial */
+        body { 
+            margin:0; 
+            font-family: sans-serif; 
+            background: radial-gradient(circle at top, #0d1d2d, #050a0f), repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px); 
+            color: white; 
+            padding-bottom: 90px; 
+            overflow-x: hidden; 
+        }
         
         #telaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; }
+        .login-box { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: center; color: black; box-shadow: 0 0 20px rgba(0, 191, 255, 0.5); border: 2px solid white; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         
-        header { padding:15px; background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(10px); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top:0; z-index:100; }
+        header { padding:15px; background: rgba(22, 27, 34, 0.6); backdrop-filter: blur(15px); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.2); position: sticky; top:0; z-index:100; box-shadow: 0 2px 10px rgba(0, 191, 255, 0.2); }
         .header-icons { display: flex; align-items: center; gap: 18px; }
         
-        .card-timeline { background: var(--ice); border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
+        /* Cards Congelados */
+        .card-timeline { background: var(--ice); border-radius: 15px; overflow: hidden; margin: 15px; border: 1px solid rgba(255,255,255,0.3); position: relative; backdrop-filter: blur(8px); box-shadow: inset 0 0 15px rgba(255,255,255,0.1), 0 5px 15px rgba(0,0,0,0.5); }
         .card-timeline img { width: 100%; height: 320px; object-fit: cover; }
         .card-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .post-actions { display: flex; align-items: center; gap: 15px; }
         
-        .card-leilao { background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; }
+        .card-leilao { background: rgba(255, 215, 0, 0.05); border: 1px solid var(--gold); border-radius: 15px; overflow: hidden; margin: 15px; position: relative; backdrop-filter: blur(5px); }
         .card-leilao img { width: 100%; height: 250px; object-fit: cover; }
         .info-leilao { padding: 15px; text-align: center; }
-        .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; }
-        .leilao-encerrado { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; color: var(--gold); font-weight: bold; text-align: center; padding: 20px; z-index: 5; }
+        .valor-lance { font-size: 26px; color: var(--green); font-weight: bold; margin: 10px 0; text-shadow: 0 0 5px rgba(37, 211, 102, 0.5); }
+        
+        /* Cubo de Gelo - Leilão Encerrado */
+        .leilao-encerrado { 
+            position: absolute; inset: 0; 
+            background: rgba(173, 216, 230, 0.25); 
+            backdrop-filter: blur(12px); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            color: var(--white); font-weight: bold; text-align: center; padding: 20px; z-index: 5; 
+            border: 3px solid rgba(255,255,255,0.6); border-radius: 15px;
+            box-shadow: inset 0 0 30px rgba(255,255,255,0.4);
+            text-shadow: 0px 2px 5px rgba(0,0,0,0.8);
+        }
+        .leilao-encerrado::before { content: '❄️ CONGELADO / ARREMATADO ❄️'; color: var(--mod-blue); font-size: 14px; margin-bottom: 10px; text-shadow: none; background: white; padding: 5px 10px; border-radius: 10px;}
 
-        .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.9); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 20px; padding: 12px 25px; border-radius: 40px; z-index: 3000; }
-        .nav i { color: #8b949e; font-size: 22px; cursor: pointer; }
-        .nav i.active { color: var(--mod-blue); }
+        .nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); display: flex; gap: 20px; padding: 12px 25px; border-radius: 40px; z-index: 3000; box-shadow: 0 0 15px rgba(0, 191, 255, 0.3); }
+        .nav i { color: #8b949e; font-size: 22px; cursor: pointer; transition: color 0.3s; }
+        .nav i.active, .nav i:hover { color: var(--mod-blue); text-shadow: 0 0 10px var(--mod-blue); }
 
-        .tela-full { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .btn-action { background: var(--blue); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .tela-full { display: none; position: fixed; inset: 0; background: rgba(5, 10, 15, 0.95); backdrop-filter: blur(15px); z-index: 2000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .btn-action { background: linear-gradient(135deg, var(--blue), var(--mod-blue)); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-transform: uppercase; }
         
         .btn-del { color: var(--red); cursor: pointer; font-size: 18px; }
-        .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--mod-blue); margin-bottom: 10px; }
+        .user-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--white); box-shadow: 0 0 15px var(--mod-blue); margin-bottom: 10px; }
         @keyframes tremer { 0% {transform: rotate(0)} 25% {transform: rotate(5deg)} 50% {transform: rotate(-5deg)} 100% {transform: rotate(0)} }
-        .animar-bau { animation: tremer 0.2s infinite; }
+        .animar-bau { animation: tremer 0.2s infinite; text-shadow: 0 0 20px white; }
 
-        .btn-comprar-cargo { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); background: var(--gold); color: black; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); z-index: 1000; cursor: pointer; }
+        .btn-comprar-cargo { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, #FFD700, #FFA500); color: black; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); z-index: 1000; cursor: pointer; border: 2px solid white; }
 
-        /* --- ESTILOS NOVOS DO BINGO --- */
-        #container-bingo { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin-top: 20px; }
+        /* BINGO */
+        #container-bingo { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; margin-top: 20px; border: 1px solid var(--frost); }
         #cartela-bingo { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 15px; }
-        .num-bingo { background: #1a1a1a; padding: 10px 2px; text-align: center; border-radius: 5px; font-weight: bold; font-size: 14px; border: 1px solid #333; }
-        .num-marcado { background: var(--green) !important; color: white; border-color: white; }
-        .bola-sorteada { width: 60px; height: 60px; background: radial-gradient(circle, #ffeb3b, #fbc02d); border-radius: 50%; color: black; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; margin: 0 auto 15px; border: 3px solid white; box-shadow: 0 0 15px var(--gold); }
+        .num-bingo { background: rgba(0,0,0,0.5); padding: 10px 2px; text-align: center; border-radius: 5px; font-weight: bold; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); }
+        .num-marcado { background: var(--green) !important; color: white; border-color: white; box-shadow: 0 0 10px var(--green); }
+        .bola-sorteada { width: 60px; height: 60px; background: radial-gradient(circle, #fff, #87CEFA); border-radius: 50%; color: black; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; margin: 0 auto 15px; border: 3px solid white; box-shadow: 0 0 20px var(--mod-blue); }
         
         .painel-adm1 { background: rgba(255,215,0,0.1); border: 1px solid var(--gold); padding: 15px; border-radius: 10px; margin-top: 15px; text-align: left; }
         .painel-adm1 h4 { color: var(--gold); margin: 0 0 10px 0; }
+
+        /* --- ESTILOS DO CHAT --- */
+        #telaChat { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 4000; flex-direction: column; }
+        .chat-header { background: rgba(22, 27, 34, 0.9); padding: 15px; display: flex; align-items: center; border-bottom: 1px solid var(--ice); }
+        .chat-header i { font-size: 20px; margin-right: 15px; cursor: pointer; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg-box { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; position: relative; }
+        .msg-minha { align-self: flex-end; background: var(--mod-blue); color: white; border-bottom-right-radius: 2px; box-shadow: 0 2px 5px rgba(0,191,255,0.3); }
+        .msg-outra { align-self: flex-start; background: var(--gray); color: white; border-bottom-left-radius: 2px; border: 1px solid var(--ice); }
+        .msg-box img, .msg-box video { max-width: 100%; border-radius: 10px; margin-top: 5px; border: 1px solid rgba(255,255,255,0.2); }
+        .chat-input-area { background: rgba(22, 27, 34, 0.9); padding: 10px 15px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--ice); padding-bottom: 25px; }
+        .chat-input-area input[type="text"] { flex: 1; padding: 12px; border-radius: 20px; border: none; background: #1c2128; color: white; outline: none; }
+        .chat-btn { background: var(--mod-blue); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .chat-btn-file { background: transparent; color: var(--gold); font-size: 20px; cursor: pointer; border: none; }
     </style>
 </head>
 <body>
 
 <div id="telaLogin">
     <div class="login-box">
-        <h2 style="margin-top:0;">ICE TROCAS</h2>
+        <h2 style="margin-top:0; color: var(--mod-blue);">ICE TROCAS</h2>
         <input type="text" id="userIn" placeholder="Login (Nome)">
         <input type="password" id="passIn" placeholder="Senha">
         <button class="btn-action" onclick="fazerLogin()">ENTRAR / CRIAR</button>
@@ -73,11 +118,11 @@
 <div id="app" style="display:none;">
     <header>
         <div>
-            <b style="color: var(--mod-blue); display: block;">ICE TROCAS</b>
-            <small id="displayMasterSaldo" style="color: var(--gold); font-size: 10px;">Master: R$ 0</small>
+            <b style="color: var(--white); text-shadow: 0 0 10px var(--mod-blue); display: block; font-size: 18px;">❄️ ICE TROCAS</b>
+            <small id="displayMasterSaldo" style="color: var(--gold); font-size: 10px; font-weight:bold;">Master: R$ 0</small>
         </div>
         <div class="header-icons">
-            <i class="fas fa-user-circle" style="font-size:26px; color:var(--mod-blue); cursor:pointer;" onclick="abrirMeuPerfil()"></i>
+            <i class="fas fa-user-circle" style="font-size:26px; color:var(--white); text-shadow: 0 0 8px var(--mod-blue); cursor:pointer;" onclick="abrirMeuPerfil()"></i>
         </div>
     </header>
     
@@ -88,14 +133,14 @@
         <i class="fas fa-home active" onclick="fecharTelas()"></i>
         <i class="fas fa-gift" onclick="abrirIceDrop()" style="color:var(--gold);"></i>
         <i class="fas fa-gamepad" onclick="abrirBingo()" style="color:var(--mod-blue);"></i>
-        <i class="fas fa-plus-circle" onclick="escolherOQuePostar()" style="color:var(--mod-blue); font-size: 30px;"></i>
+        <i class="fas fa-plus-circle" onclick="escolherOQuePostar()" style="color:var(--white); text-shadow: 0 0 10px white; font-size: 30px;"></i>
         <i class="fas fa-wallet" onclick="abrirCarteira()"></i>
     </div>
 </div>
 
 <div id="telaEscolhaPost" class="tela-full" style="display:none; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.9);">
     <button class="btn-action" onclick="abrirPostar()">POSTAR TROCA COMUM</button>
-    <button class="btn-action" style="background: var(--gold); color: black;" onclick="abrirCriarLeilao()">CRIAR NOVO LEILÃO</button>
+    <button class="btn-action" style="background: linear-gradient(135deg, var(--gold), #b8860b); color: black;" onclick="abrirCriarLeilao()">CRIAR NOVO LEILÃO</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
@@ -104,47 +149,47 @@
     <div style="text-align: center; padding: 40px 20px;">
         <i id="iconeBau" class="fas fa-gift" style="font-size: 100px; color: var(--gold);"></i>
         <p id="resDrop" style="margin-top: 20px; font-weight: bold;">Custo: 5 Blues por tentativa</p>
-        <button id="btnGirar" class="btn-action" style="background: var(--gold); color: black;" onclick="girarBau()">ABRIR BAÚ (5 BLUES)</button>
+        <button id="btnGirar" class="btn-action" style="background: linear-gradient(135deg, var(--gold), #b8860b); color: black;" onclick="girarBau()">ABRIR BAÚ (5 BLUES)</button>
     </div>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
 </div>
 
 <div id="telaBingo" class="tela-full">
     <h3 style="color: var(--mod-blue); text-align: center;">BINGO ICE PREMIUM</h3>
-    <p style="text-align: center; font-size: 12px;">Cartela Cheia ganha <b>R$ 1.000,00</b></p>
+    <p style="text-align: center; font-size: 12px;">Cartela Cheia ganha <b style="color:var(--green);">R$ 1.000,00</b></p>
     
     <div id="container-bingo" style="text-align: center;">
         <div id="bolaSorteadaArea"></div>
         <button id="btnBingo" class="btn-action" style="background: var(--mod-blue);" onclick="iniciarSorteioBingo()">GERAR CARTELA E JOGAR (10 BLUES)</button>
         <div id="cartela-bingo"></div>
-        <p style="margin-top: 15px; font-size: 10px; color: gray;">Sorteados: <span id="numsSorteadosTxt">...</span></p>
+        <p style="margin-top: 15px; font-size: 10px; color: #aaa;">Sorteados: <span id="numsSorteadosTxt">...</span></p>
     </div>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaPostar" class="tela-full">
     <h3>NOVA TROCA</h3>
-    <input type="file" id="postFoto" accept="image/*" onchange="prepararPost(this)">
-    <img id="previewPost" style="width:100%; display:none; margin-top: 10px;">
-    <button class="btn-action" onclick="publicarPost()">PUBLICA</button>
+    <input type="file" id="postFoto" accept="image/*" onchange="prepararPost(this)" style="margin-bottom:10px; width:100%; color:white;">
+    <img id="previewPost" style="width:100%; border-radius:10px; border:1px solid white; display:none; margin-top: 10px;">
+    <button class="btn-action" onclick="publicarPost()">PUBLICAR TROCA</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">CANCELAR</button>
 </div>
 
 <div id="telaCriarLeilao" class="tela-full">
-    <h3>CRIAR LEILÃO</h3>
-    <input type="text" id="leiNome" placeholder="Nome do Item" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px;">
-    <input type="number" id="leiValor" placeholder="Valor Inicial (R$)" style="width:100%; padding:10px; margin-bottom:10px;">
-    <input type="file" id="leiFoto" accept="image/*" onchange="prepararLeilao(this)">
-    <img id="previewLei" style="width:100%; display:none;">
-    <button class="btn-action" onclick="publicarLeilao()">LANÇAR LEILÃO</button>
+    <h3 style="color:var(--gold);">CRIAR LEILÃO</h3>
+    <input type="text" id="leiNome" placeholder="Nome do Item" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none;">
+    <input type="number" id="leiValor" placeholder="Valor Inicial (R$)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none;">
+    <input type="file" id="leiFoto" accept="image/*" onchange="prepararLeilao(this)" style="margin-bottom:10px; color:white;">
+    <img id="previewLei" style="width:100%; border-radius:10px; border:1px solid var(--gold); display:none;">
+    <button class="btn-action" style="background: linear-gradient(135deg, var(--gold), #b8860b); color:black;" onclick="publicarLeilao()">LANÇAR LEILÃO</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaCarteira" class="tela-full">
     <h3>MINHA CARTEIRA</h3>
-    <div style="background: var(--blue); padding: 30px; border-radius: 15px; text-align: center;">
-        <h1 id="saldoCarteira">0</h1>
-        <p>BLUE COINS</p>
+    <div style="background: linear-gradient(135deg, var(--blue), var(--mod-blue)); padding: 30px; border-radius: 15px; text-align: center; border: 2px solid white; box-shadow: inset 0 0 10px rgba(255,255,255,0.5);">
+        <h1 id="saldoCarteira" style="font-size: 40px; margin: 0;">0</h1>
+        <p style="margin-top:5px; font-weight:bold;">BLUE COINS</p>
     </div>
     <button class="btn-action" style="background: var(--green);" onclick="window.open('https://wa.me/5511983602504')">RECARREGAR VIA PIX</button>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
@@ -153,8 +198,23 @@
 <div id="telaPerfil" class="tela-full">
     <div id="perfilConteudo" style="text-align: center;"></div>
     <div id="admActions" style="margin-top: 20px;"></div>
-    <button class="btn-action" style="background: var(--red);" onclick="location.reload()">SAIR / VOLTAR</button>
-    <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR</button>
+    <button class="btn-action" style="background: var(--red);" onclick="location.reload()">SAIR DA CONTA</button>
+    <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">FECHAR PERFIL</button>
+</div>
+
+<div id="telaChat">
+    <div class="chat-header">
+        <i class="fas fa-arrow-left" onclick="fecharChat()"></i>
+        <b id="nomeChatAlvo" style="font-size: 16px;">Usuário</b>
+    </div>
+    <div class="chat-messages" id="listaMensagens">
+        </div>
+    <div class="chat-input-area">
+        <input type="file" id="chatFileInput" accept="image/*,video/*" style="display:none;" onchange="enviarMidiaChat(this)">
+        <button class="chat-btn-file" onclick="document.getElementById('chatFileInput').click()"><i class="fas fa-paperclip"></i></button>
+        <input type="text" id="chatTexto" placeholder="Digite uma mensagem...">
+        <button class="chat-btn" onclick="enviarTextoChat()"><i class="fas fa-paper-plane"></i></button>
+    </div>
 </div>
 
 <script type="module">
@@ -170,6 +230,10 @@
     let user = null;
     let fotoPost = null;
     let fotoLei = null;
+
+    // Variáveis do Chat
+    let chatAtualID = null;
+    let chatListener = null;
 
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
@@ -213,11 +277,11 @@
                 const i = l.val();
                 const isDono = (user.uid === i.criadorUid || user.uid === 'master_ice');
                 let card = `<div class="card-leilao">
-                    ${!i.ativo ? `<div class="leilao-encerrado">ARREMATADO POR: ${i.ultimoLicitante}<br><button class="btn-action" style="background:var(--green);" onclick="window.open('https://wa.me/5511983602504?text=Arrematei o item ${i.item}')">FALAR COM VENDEDOR</button></div>` : ''}
+                    ${!i.ativo ? `<div class="leilao-encerrado"><span style="color:#111;">ARREMATADO POR:</span> <span style="font-size:20px; color:var(--mod-blue); text-shadow: 0 0 5px white;">${i.ultimoLicitante}</span><br><button class="btn-action" style="background:var(--green); margin-top:15px; width:auto; padding: 10px 20px; border-radius: 20px;" onclick="window.open('https://wa.me/5511983602504?text=Arrematei o item ${i.item}')">FALAR COM SUPORTE</button></div>` : ''}
                     <img src="${i.imagem}">
                     <div class="info-leilao">
                         <h3>${i.item}</h3>
-                        <p><small>Licitante: ${i.ultimoLicitante}</small></p>
+                        <p><small>Último Licitante: <b>${i.ultimoLicitante}</b></small></p>
                         <div class="valor-lance">R$ ${i.lanceAtual}</div>
                         ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
                         ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR LEILÃO</button>` : ''}
@@ -226,21 +290,107 @@
                 d.innerHTML = card + d.innerHTML;
             });
         });
+        
         onValue(ref(db, 'posts'), s => {
             const d = document.getElementById('feed'); d.innerHTML = "";
             s.forEach(p => {
                 const i = p.val();
                 const canDel = (user.cargo === 'adm' || user.cargo === 'mod' || user.cargo === 'adm1');
+                const isMe = (i.uid === (user.uid || 'master_ice'));
+                
                 d.innerHTML = `<div class="card-timeline">
                     <img src="${i.i1}">
                     <div class="card-info">
-                        <b onclick="verPerfilAlheio('${i.uid}')" style="cursor:pointer; color:var(--mod-blue);">@${i.u1}</b>
-                        ${canDel ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}
+                        <div>
+                            <b onclick="verPerfilAlheio('${i.uid}')" style="cursor:pointer; color:var(--mod-blue); font-size:16px;">@${i.u1}</b>
+                            ${!isMe ? `<i class="fas fa-comments" style="margin-left: 15px; color: var(--gold); font-size:20px; cursor:pointer;" onclick="abrirChat('${i.uid}', '${i.u1}')"></i>` : ''}
+                        </div>
+                        <div class="post-actions">
+                            ${canDel ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}
+                        </div>
                     </div>
                 </div>` + d.innerHTML;
             });
         });
     }
+
+    // --- FUNÇÕES DO CHAT ---
+    window.abrirChat = (uidAlvo, nomeAlvo) => {
+        let meuUid = user.uid || 'master_ice';
+        if(uidAlvo === meuUid) return alert("Você não pode conversar consigo mesmo.");
+        
+        document.getElementById('nomeChatAlvo').innerText = nomeAlvo;
+        document.getElementById('telaChat').style.display = 'flex';
+        
+        // ID único para a conversa entre as duas pessoas
+        chatAtualID = meuUid < uidAlvo ? `${meuUid}_${uidAlvo}` : `${uidAlvo}_${meuUid}`;
+        
+        // Carregar mensagens
+        const chatRef = ref(db, `chats/${chatAtualID}`);
+        onValue(chatRef, (snapshot) => {
+            const painel = document.getElementById('listaMensagens');
+            painel.innerHTML = "";
+            snapshot.forEach(child => {
+                const msg = child.val();
+                const isMinha = msg.remetente === meuUid;
+                const classe = isMinha ? 'msg-minha' : 'msg-outra';
+                
+                let conteudoHTML = '';
+                if(msg.tipo === 'texto') conteudoHTML = msg.conteudo;
+                else if(msg.tipo === 'imagem') conteudoHTML = `<img src="${msg.conteudo}">`;
+                else if(msg.tipo === 'video') conteudoHTML = `<video src="${msg.conteudo}" controls></video>`;
+
+                painel.innerHTML += `<div class="msg-box ${classe}">
+                    <small style="opacity:0.6; font-size:10px; display:block; margin-bottom:2px;">${msg.nome}</small>
+                    ${conteudoHTML}
+                </div>`;
+            });
+            // Rolar para o final
+            setTimeout(() => { painel.scrollTop = painel.scrollHeight; }, 100);
+        });
+    };
+
+    window.fecharChat = () => {
+        document.getElementById('telaChat').style.display = 'none';
+        chatAtualID = null;
+    };
+
+    window.enviarTextoChat = async () => {
+        const input = document.getElementById('chatTexto');
+        const txt = input.value.trim();
+        if(!txt || !chatAtualID) return;
+        
+        input.value = "";
+        await push(ref(db, `chats/${chatAtualID}`), {
+            remetente: user.uid || 'master_ice',
+            nome: user.nome,
+            tipo: 'texto',
+            conteudo: txt,
+            timestamp: Date.now()
+        });
+    };
+
+    window.enviarMidiaChat = (input) => {
+        const file = input.files[0];
+        if(!file || !chatAtualID) return;
+        
+        const r = new FileReader();
+        r.onload = async (e) => {
+            const base64 = e.target.result;
+            const tipo = file.type.startsWith('video') ? 'video' : 'imagem';
+            
+            await push(ref(db, `chats/${chatAtualID}`), {
+                remetente: user.uid || 'master_ice',
+                nome: user.nome,
+                tipo: tipo,
+                conteudo: base64,
+                timestamp: Date.now()
+            });
+        };
+        r.readAsDataURL(file);
+        input.value = ''; // Reset do input file
+    };
+
 
     // --- PERFIL E ADM1 (BANCO CENTRAL) ---
     window.verPerfilAlheio = async (uid) => {
@@ -252,19 +402,18 @@
         const perfilDiv = document.getElementById('perfilConteudo');
         const admDiv = document.getElementById('admActions');
         admDiv.innerHTML = "";
-        perfilDiv.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${alvo.nome}</h2><p>Cargo: <b>${alvo.cargo}</b></p><p>Saldo: <b>${alvo.moedasBlue}</b> Blues</p>`;
+        perfilDiv.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${alvo.nome}</h2><p>Cargo: <b style="color:var(--gold);">${alvo.cargo.toUpperCase()}</b></p><p>Saldo: <b style="color:var(--mod-blue);">${alvo.moedasBlue}</b> Blues</p>`;
 
         if(user.cargo === 'adm' || user.cargo === 'mod' || user.cargo === 'adm1') {
             admDiv.innerHTML += `<hr style="border: 0.5px solid var(--gray);"><p>GERENCIAR USUÁRIO</p>
                 <button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">ALTERAR CARGO</button>`;
         }
         
-        // PAINEL EXCLUSIVO ADM1 - BANCO CENTRAL
         if(user.cargo === 'adm1') {
             admDiv.innerHTML += `<div class="painel-adm1">
                 <h4>🏦 BANCO CENTRAL ADM1</h4>
                 <p>Carteira ADM: 22 Milhões</p>
-                <input type="number" id="qtdBluesAdm1" placeholder="Qtd Blues" style="width:100%; padding:8px; border-radius:5px; margin-bottom:5px;">
+                <input type="number" id="qtdBluesAdm1" placeholder="Qtd Blues" style="width:100%; padding:8px; border-radius:5px; margin-bottom:5px; border:none;">
                 <button class="btn-action" style="background:var(--green);" onclick="injetarBlues('${uid}', ${alvo.moedasBlue})">LIBERAR BLUES</button>
             </div>`;
         }
@@ -280,9 +429,9 @@
 
     window.mudarCargo = async (uid, cargoAtual) => {
         let novoCargo = cargoAtual === 'user' ? 'mod' : (cargoAtual === 'mod' ? 'adm' : 'user');
-        if(user.cargo === 'adm1' && cargoAtual === 'adm') novoCargo = 'adm1'; // Só ADM1 cria outro ADM1
+        if(user.cargo === 'adm1' && cargoAtual === 'adm') novoCargo = 'adm1'; 
         await update(ref(db, `usuarios/${uid}`), { cargo: novoCargo });
-        alert("Cargo alterado!");
+        alert("Cargo alterado para: " + novoCargo);
         verPerfilAlheio(uid);
     };
 
@@ -296,7 +445,6 @@
     window.iniciarSorteioBingo = async () => {
         if(user.moedasBlue < 10) return alert("Você precisa de 10 Blues para jogar o Bingo!");
         
-        // Cobrar a entrada
         await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - 10 });
         
         document.getElementById('btnBingo').style.display = 'none';
@@ -306,7 +454,6 @@
             let r = Math.floor(Math.random() * 75) + 1;
             if(!numerosCartela.includes(r)) numerosCartela.push(r);
         }
-        // O número que nunca será sorteado para ninguém ganhar fácil
         numeroImpossivel = numerosCartela[Math.floor(Math.random() * 25)];
         renderizarCartela();
 
@@ -329,9 +476,7 @@
 
     function renderizarCartela() {
         const d = document.getElementById('cartela-bingo'); d.innerHTML = "";
-        numerosCartela.forEach(n => {
-            d.innerHTML += `<div class="num-bingo" id="num-${n}">${n}</div>`;
-        });
+        numerosCartela.forEach(n => { d.innerHTML += `<div class="num-bingo" id="num-${n}">${n}</div>`; });
     }
 
     function marcarNaCartela(n) {
@@ -348,16 +493,16 @@
         fecharTelas();
     };
     window.darLance = (id, atual) => { update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome }); };
-    window.finalizarLeilao = (id, item, vencedor) => { if(confirm("Encerrar?")) update(ref(db, `leiloes/${id}`), { ativo: false }); };
-    window.apagarPost = id => { if(confirm("Apagar?")) remove(ref(db, `posts/${id}`)); };
+    window.finalizarLeilao = (id, item, vencedor) => { if(confirm("Encerrar leilão?")) update(ref(db, `leiloes/${id}`), { ativo: false }); };
+    window.apagarPost = id => { if(confirm("Apagar postagem?")) remove(ref(db, `posts/${id}`)); };
 
     window.girarBau = async () => {
-        if(user.moedasBlue < 5) return alert("Sem Blues!");
+        if(user.moedasBlue < 5) return alert("Você precisa de 5 Blues!");
         const btn = document.getElementById('btnGirar'); const icone = document.getElementById('iconeBau');
         btn.disabled = true; icone.classList.add('animar-bau');
         setTimeout(async () => {
             icone.classList.remove('animar-bau');
-            const sorte = Math.random(); let premio = "Nada!"; let ganhou = 0;
+            const sorte = Math.random(); let premio = "Nada dessa vez 🧊"; let ganhou = 0;
             if(sorte < 0.05) { premio = "🏆 50 BLUES!"; ganhou = 50; } else if(sorte < 0.2) { premio = "💰 10 BLUES!"; ganhou = 10; }
             await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - 5 + ganhou });
             document.getElementById('resDrop').innerText = premio; btn.disabled = false;
@@ -365,7 +510,7 @@
     };
 
     window.prepararPost = i => { const r = new FileReader(); r.onload = e => { fotoPost = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display='block'; }; r.readAsDataURL(i.files[0]); };
-    window.publicarPost = async () => { if(!fotoPost) return alert("Foto!"); await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice' }); fecharTelas(); };
+    window.publicarPost = async () => { if(!fotoPost) return alert("Selecione uma foto!"); await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice' }); fecharTelas(); };
     window.prepararLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLei = e.target.result; document.getElementById('previewLei').src = e.target.result; document.getElementById('previewLei').style.display='block'; }; r.readAsDataURL(i.files[0]); };
     
     window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaEscolhaPost').style.display = 'none'; };
@@ -376,7 +521,7 @@
     window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
     window.abrirMeuPerfil = () => {
         fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${user.nome}</h2><p>Cargo: ${user.cargo}</p><p>Saldo: ${user.moedasBlue} Blues</p>`;
+        document.getElementById('perfilConteudo').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${user.nome}</h2><p>Cargo: <b style="color:var(--gold);">${user.cargo.toUpperCase()}</b></p><p>Saldo: <b style="color:var(--mod-blue);">${user.moedasBlue}</b> Blues</p>`;
         document.getElementById('admActions').innerHTML = ""; 
         document.getElementById('telaPerfil').style.display = 'block';
     };
