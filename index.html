@@ -98,6 +98,13 @@
         .chat-input-area input[type="text"] { flex: 1; padding: 12px; border-radius: 20px; border: none; background: #1c2128; color: white; outline: none; }
         .chat-btn { background: var(--mod-blue); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .chat-btn-file { background: transparent; color: var(--gold); font-size: 20px; cursor: pointer; border: none; }
+
+        /* ESTILOS DO SISTEMA DE ÁUDIO DO LEILÃO */
+        .container-audio-leilao { margin-top: 12px; padding: 8px; background: rgba(0,0,0,0.4); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .btn-mic-leilao { background: #222; color: #fff; width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--mod-blue); display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer; box-shadow: 0 0 10px rgba(0,191,255,0.3); user-select: none; -webkit-user-select: none; transition: all 0.2s; }
+        .btn-mic-leilao.gravando { background: var(--red); border-color: #fff; transform: scale(1.1); animation: tremer 0.3s infinite; box-shadow: 0 0 20px var(--red); }
+        .btn-mic-leilao.ocupado { background: #444; border-color: var(--gray); color: #777; cursor: not-allowed; opacity: 0.6; }
+        .status-audio-txt { font-size: 11px; color: #aaa; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -235,6 +242,12 @@
     let chatAtualID = null;
     let chatListener = null;
 
+    // Gerenciamento Globais do Microfone de Leilão
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let gravandoMicId = null;
+    let horaInicioGravacao = 0;
+
     window.fazerLogin = async () => {
         const u = document.getElementById('userIn').value.trim();
         const p = document.getElementById('passIn').value;
@@ -268,6 +281,7 @@
             document.getElementById('displayMasterSaldo').innerText = "Arrecadado: " + (s.val() || 0) + " Blues";
         });
         carregarFeeds();
+        inicializarOuvintesAudioLeilao();
     }
 
     function carregarFeeds() {
@@ -276,6 +290,24 @@
             s.forEach(l => {
                 const i = l.val();
                 const isDono = (user.uid === i.criadorUid || user.uid === 'master_ice');
+                
+                // Monitoramento em tempo real de quem está com a palavra no áudio
+                let statusMicHtml = '';
+                if(i.ativo) {
+                    statusMicHtml = `
+                        <div class="container-audio-leilao">
+                            <div class="btn-mic-leilao" id="mic-${l.key}" 
+                                 onmousedown="iniciarAudioLeilao('${l.key}')" 
+                                 onmouseup="pararAudioLeilao('${l.key}')" 
+                                 ontouchstart="iniciarAudioLeilao('${l.key}')" 
+                                 ontouchend="pararAudioLeilao('${l.key}')">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <span class="status-audio-txt" id="status-txt-${l.key}">Toque e Segure (Mín. 5s)</span>
+                        </div>
+                    `;
+                }
+
                 let card = `<div class="card-leilao">
                     ${!i.ativo ? `<div class="leilao-encerrado"><span style="color:#111;">ARREMATADO POR:</span> <span style="font-size:20px; color:var(--mod-blue); text-shadow: 0 0 5px white;">${i.ultimoLicitante}</span><br><button class="btn-action" style="background:var(--green); margin-top:15px; width:auto; padding: 10px 20px; border-radius: 20px;" onclick="window.open('https://wa.me/5511983602504?text=Arrematei o item ${i.item}')">FALAR COM SUPORTE</button></div>` : ''}
                     <img src="${i.imagem}">
@@ -284,246 +316,333 @@
                         <p><small>Último Licitante: <b>${i.ultimoLicitante}</b></small></p>
                         <div class="valor-lance">R$ ${i.lanceAtual}</div>
                         ${i.ativo ? `<button class="btn-action" style="background:var(--green);" onclick="darLance('${l.key}', ${i.lanceAtual})">LANCE +50</button>` : ''}
-                        ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">ENCERRAR LEILÃO</button>` : ''}
+                        ${statusMicHtml}
+                        ${i.ativo && isDono ? `<button class="btn-action" style="background:var(--red);" onclick="finalizarLeilao('${l.key}', '${i.item}', '${i.ultimoLicitante}')">FINALIZAR LEILÃO</button>` : ''}
                     </div>
                 </div>`;
-                d.innerHTML = card + d.innerHTML;
+                d.innerHTML += card;
             });
+            atualizarVisualMicsGlobais();
         });
-        
+
+        // Feed de Trocas Comuns
         onValue(ref(db, 'posts'), s => {
             const d = document.getElementById('feed'); d.innerHTML = "";
             s.forEach(p => {
                 const i = p.val();
-                const canDel = (user.cargo === 'adm' || user.cargo === 'mod' || user.cargo === 'adm1');
-                const isMe = (i.uid === (user.uid || 'master_ice'));
-                
-                d.innerHTML = `<div class="card-timeline">
-                    <img src="${i.i1}">
+                const isDono = (user.uid === i.uid || user.uid === 'master_ice');
+                let card = `<div class="card-timeline">
+                    <img src="${i.imagem}">
                     <div class="card-info">
                         <div>
-                            <b onclick="verPerfilAlheio('${i.uid}')" style="cursor:pointer; color:var(--mod-blue); font-size:16px;">@${i.u1}</b>
-                            ${!isMe ? `<i class="fas fa-comments" style="margin-left: 15px; color: var(--gold); font-size:20px; cursor:pointer;" onclick="abrirChat('${i.uid}', '${i.u1}')"></i>` : ''}
+                            <b>${i.autor}</b><br>
+                            <small onclick="abrirChatDireto('${i.uid}', '${i.autor}')" style="color:var(--mod-blue); cursor:pointer;"><i class="fas fa-comments"></i> Chamar no Chat</small>
                         </div>
                         <div class="post-actions">
-                            ${canDel ? `<i class="fas fa-trash-alt btn-del" onclick="apagarPost('${p.key}')"></i>` : ''}
+                            ${isDono ? `<i class="fas fa-trash btn-del" onclick="deletarPost('${p.key}')"></i>` : ''}
                         </div>
                     </div>
-                </div>` + d.innerHTML;
+                </div>`;
+                d.innerHTML += card;
             });
         });
     }
 
-    // --- FUNÇÕES DO CHAT ---
-    window.abrirChat = (uidAlvo, nomeAlvo) => {
-        let meuUid = user.uid || 'master_ice';
-        if(uidAlvo === meuUid) return alert("Você não pode conversar consigo mesmo.");
-        
-        document.getElementById('nomeChatAlvo').innerText = nomeAlvo;
-        document.getElementById('telaChat').style.display = 'flex';
-        
-        // ID único para a conversa entre as duas pessoas
-        chatAtualID = meuUid < uidAlvo ? `${meuUid}_${uidAlvo}` : `${uidAlvo}_${meuUid}`;
-        
-        // Carregar mensagens
-        const chatRef = ref(db, `chats/${chatAtualID}`);
-        onValue(chatRef, (snapshot) => {
-            const painel = document.getElementById('listaMensagens');
-            painel.innerHTML = "";
-            snapshot.forEach(child => {
-                const msg = child.val();
-                const isMinha = msg.remetente === meuUid;
-                const classe = isMinha ? 'msg-minha' : 'msg-outra';
-                
-                let conteudoHTML = '';
-                if(msg.tipo === 'texto') conteudoHTML = msg.conteudo;
-                else if(msg.tipo === 'imagem') conteudoHTML = `<img src="${msg.conteudo}">`;
-                else if(msg.tipo === 'video') conteudoHTML = `<video src="${msg.conteudo}" controls></video>`;
+    // --- ENGENHARIA DE TRANSMISSÃO DE ÁUDIO EM TEMPO REAL ---
+    window.iniciarAudioLeilao = async (leilaoId) => {
+        const snap = await get(ref(db, `leiloes/${leilaoId}/transmissaoAudio`));
+        const tx = snap.val();
+        if(tx && tx.ativo && tx.uid !== user.uid) return; // Canal ocupado por outro
 
-                painel.innerHTML += `<div class="msg-box ${classe}">
-                    <small style="opacity:0.6; font-size:10px; display:block; margin-bottom:2px;">${msg.nome}</small>
-                    ${conteudoHTML}
-                </div>`;
-            });
-            // Rolar para o final
-            setTimeout(() => { painel.scrollTop = painel.scrollHeight; }, 100);
-        });
-    };
+        gravandoMicId = leilaoId;
+        horaInicioGravacao = Date.now();
+        audioChunks = [];
 
-    window.fecharChat = () => {
-        document.getElementById('telaChat').style.display = 'none';
-        chatAtualID = null;
-    };
-
-    window.enviarTextoChat = async () => {
-        const input = document.getElementById('chatTexto');
-        const txt = input.value.trim();
-        if(!txt || !chatAtualID) return;
-        
-        input.value = "";
-        await push(ref(db, `chats/${chatAtualID}`), {
-            remetente: user.uid || 'master_ice',
-            nome: user.nome,
-            tipo: 'texto',
-            conteudo: txt,
-            timestamp: Date.now()
-        });
-    };
-
-    window.enviarMidiaChat = (input) => {
-        const file = input.files[0];
-        if(!file || !chatAtualID) return;
-        
-        const r = new FileReader();
-        r.onload = async (e) => {
-            const base64 = e.target.result;
-            const tipo = file.type.startsWith('video') ? 'video' : 'imagem';
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = e => { if(e.data.size > 0) audioChunks.push(e.data); };
             
-            await push(ref(db, `chats/${chatAtualID}`), {
-                remetente: user.uid || 'master_ice',
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64Audio = reader.result;
+                    // Envia pacote de voz e limpa o canal imediatamente
+                    await update(ref(db, `leiloes/${leilaoId}/transmissaoAudio`), {
+                        ativo: false,
+                        uid: "",
+                        nome: "",
+                        audioData: base64Audio,
+                        timestamp: Date.now()
+                    });
+                };
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            // Sinaliza globalmente que este usuário pegou a posição de fala
+            await set(ref(db, `leiloes/${leilaoId}/transmissaoAudio`), {
+                ativo: true,
+                uid: user.uid,
                 nome: user.nome,
-                tipo: tipo,
-                conteudo: base64,
+                audioData: "",
                 timestamp: Date.now()
             });
-        };
-        r.readAsDataURL(file);
-        input.value = ''; // Reset do input file
-    };
 
-
-    // --- PERFIL E ADM1 (BANCO CENTRAL) ---
-    window.verPerfilAlheio = async (uid) => {
-        if(!uid) return;
-        const snap = await get(ref(db, `usuarios/${uid}`));
-        const alvo = snap.val();
-        if(!alvo) return;
-        fecharTelas();
-        const perfilDiv = document.getElementById('perfilConteudo');
-        const admDiv = document.getElementById('admActions');
-        admDiv.innerHTML = "";
-        perfilDiv.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${alvo.nome}</h2><p>Cargo: <b style="color:var(--gold);">${alvo.cargo.toUpperCase()}</b></p><p>Saldo: <b style="color:var(--mod-blue);">${alvo.moedasBlue}</b> Blues</p>`;
-
-        if(user.cargo === 'adm' || user.cargo === 'mod' || user.cargo === 'adm1') {
-            admDiv.innerHTML += `<hr style="border: 0.5px solid var(--gray);"><p>GERENCIAR USUÁRIO</p>
-                <button class="btn-action" style="background:var(--mod-blue);" onclick="mudarCargo('${uid}', '${alvo.cargo}')">ALTERAR CARGO</button>`;
+            mediaRecorder.start();
+        } catch (err) {
+            console.log("Acesso ao microfone negado ou indisponível.");
+            gravandoMicId = null;
         }
-        
-        if(user.cargo === 'adm1') {
-            admDiv.innerHTML += `<div class="painel-adm1">
-                <h4>🏦 BANCO CENTRAL ADM1</h4>
-                <p>Carteira ADM: 22 Milhões</p>
-                <input type="number" id="qtdBluesAdm1" placeholder="Qtd Blues" style="width:100%; padding:8px; border-radius:5px; margin-bottom:5px; border:none;">
-                <button class="btn-action" style="background:var(--green);" onclick="injetarBlues('${uid}', ${alvo.moedasBlue})">LIBERAR BLUES</button>
-            </div>`;
-        }
-        document.getElementById('telaPerfil').style.display = 'block';
     };
 
-    window.injetarBlues = async (uid, atual) => {
-        const qtd = parseInt(document.getElementById('qtdBluesAdm1').value) || 0;
-        await update(ref(db, `usuarios/${uid}`), { moedasBlue: atual + qtd });
-        alert("Blues injetados com sucesso!");
-        verPerfilAlheio(uid);
-    };
-
-    window.mudarCargo = async (uid, cargoAtual) => {
-        let novoCargo = cargoAtual === 'user' ? 'mod' : (cargoAtual === 'mod' ? 'adm' : 'user');
-        if(user.cargo === 'adm1' && cargoAtual === 'adm') novoCargo = 'adm1'; 
-        await update(ref(db, `usuarios/${uid}`), { cargo: novoCargo });
-        alert("Cargo alterado para: " + novoCargo);
-        verPerfilAlheio(uid);
-    };
-
-    // --- LÓGICA DO BINGO ---
-    let numerosCartela = [];
-    let numerosSorteados = [];
-    let numeroImpossivel = 0;
-
-    window.abrirBingo = () => { fecharTelas(); document.getElementById('telaBingo').style.display = 'block'; };
-
-    window.iniciarSorteioBingo = async () => {
-        if(user.moedasBlue < 10) return alert("Você precisa de 10 Blues para jogar o Bingo!");
+    window.pararAudioLeilao = (leilaoId) => {
+        if(!mediaRecorder || gravandoMicId !== leilaoId) return;
         
-        await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - 10 });
-        
-        document.getElementById('btnBingo').style.display = 'none';
-        numerosCartela = [];
-        numerosSorteados = [];
-        while(numerosCartela.length < 25) {
-            let r = Math.floor(Math.random() * 75) + 1;
-            if(!numerosCartela.includes(r)) numerosCartela.push(r);
-        }
-        numeroImpossivel = numerosCartela[Math.floor(Math.random() * 25)];
-        renderizarCartela();
-
-        const intervalo = setInterval(() => {
-            if(numerosSorteados.length >= 70) { 
-                clearInterval(intervalo); 
-                alert("Sorteio Finalizado!"); 
-                document.getElementById('btnBingo').style.display = 'block';
-                return; 
+        const duracao = Date.now() - horaInicioGravacao;
+        if(duracao < 5000) {
+            // Se falou menos de 5 segundos, segura o encerramento até bater 5s mínimos
+            const restante = 5000 - duracao;
+            setTimeout(() => {
+                if(mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                }
+                gravandoMicId = null;
+            }, restante);
+        } else {
+            if(mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
             }
-            let sorteio;
-            do { sorteio = Math.floor(Math.random() * 75) + 1; } while (numerosSorteados.includes(sorteio) || sorteio === numeroImpossivel);
-            
-            numerosSorteados.push(sorteio);
-            document.getElementById('bolaSorteadaArea').innerHTML = `<div class="bola-sorteada">${sorteio}</div>`;
-            document.getElementById('numsSorteadosTxt').innerText = numerosSorteados.join(', ');
-            marcarNaCartela(sorteio);
-        }, 3000);
+            gravandoMicId = null;
+        }
     };
 
-    function renderizarCartela() {
-        const d = document.getElementById('cartela-bingo'); d.innerHTML = "";
-        numerosCartela.forEach(n => { d.innerHTML += `<div class="num-bingo" id="num-${n}">${n}</div>`; });
+    function inicializarOuvintesAudioLeilao() {
+        // Escuta novas entradas de áudio para dar play instantâneo em tempo real
+        onValue(ref(db, 'leiloes'), s => {
+            s.forEach(l => {
+                const i = l.val();
+                if(i.transmissaoAudio && i.transmissaoAudio.audioData && !i.transmissaoAudio.ativo) {
+                    const cacheKey = `played_${l.key}_${i.transmissaoAudio.timestamp}`;
+                    if(!localStorage.getItem(cacheKey)) {
+                        localStorage.setItem(cacheKey, 'true');
+                        if(i.transmissaoAudio.uid !== user.uid) {
+                            const audio = new Audio(i.transmissaoAudio.audioData);
+                            audio.play().catch(e => console.log("Interação pendente para tocar áudio."));
+                        }
+                    }
+                }
+            });
+            atualizarVisualMicsGlobais();
+        });
     }
 
-    function marcarNaCartela(n) {
-        const el = document.getElementById(`num-${n}`);
-        if(el) el.classList.add('num-marcado');
+    function atualizarVisualMicsGlobais() {
+        get(ref(db, 'leiloes')).then(s => {
+            s.forEach(l => {
+                const i = l.val();
+                const micBtn = document.getElementById(`mic-${l.key}`);
+                const statusTxt = document.getElementById(`status-txt-${l.key}`);
+                if(!micBtn || !statusTxt) return;
+
+                if(i.transmissaoAudio && i.transmissaoAudio.ativo) {
+                    if(i.transmissaoAudio.uid === user.uid) {
+                        micBtn.className = "btn-mic-leilao gravando";
+                        statusTxt.innerText = "VOCÊ ESTÁ FALANDO...";
+                        statusTxt.style.color = "var(--red)";
+                    } else {
+                        micBtn.className = "btn-mic-leilao ocupado";
+                        statusTxt.innerText = `${i.transmissaoAudio.nome} FALANDO...`;
+                        statusTxt.style.color = "var(--gold)";
+                    }
+                } else {
+                    micBtn.className = "btn-mic-leilao";
+                    statusTxt.innerText = "Toque e Segure (Mín. 5s)";
+                    statusTxt.style.color = "#aaa";
+                }
+            });
+        });
     }
 
-    // --- LEILÃO E OUTROS ---
-    window.publicarLeilao = async () => {
-        const n = document.getElementById('leiNome').value;
-        const v = document.getElementById('leiValor').value;
-        if(!n || !v || !fotoLei) return alert("Preencha tudo!");
-        await push(ref(db, 'leiloes'), { item: n, lanceAtual: Number(v), imagem: fotoLei, criador: user.nome, criadorUid: user.uid || 'master_ice', ativo: true, ultimoLicitante: "Ninguém" });
-        fecharTelas();
+    // --- FUNÇÕES OPERACIONAIS DO SISTEMA ---
+    window.darLance = async (key, lanceAtual) => {
+        if(user.moedasBlue < 5) return alert("Você precisa de pelo menos 5 Blues para dar um lance!");
+        const novoLance = lanceAtual + 50;
+        await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue - 5 });
+        await update(ref(db, `usuarios/master_ice`), { moedasBlue: (await get(ref(db, 'usuarios/master_ice/moedasBlue'))).val() + 5 });
+        await update(ref(db, `leiloes/${key}`), { lanceAtual: novoLance, ultimoLicitante: user.nome });
     };
-    window.darLance = (id, atual) => { update(ref(db, `leiloes/${id}`), { lanceAtual: atual + 50, ultimoLicitante: user.nome }); };
-    window.finalizarLeilao = (id, item, vencedor) => { if(confirm("Encerrar leilão?")) update(ref(db, `leiloes/${id}`), { ativo: false }); };
-    window.apagarPost = id => { if(confirm("Apagar postagem?")) remove(ref(db, `posts/${id}`)); };
+
+    window.finalizarLeilao = async (key, item, vencedor) => {
+        if(confirm(`Deseja encerrar o leilão de ${item}?`)) {
+            await update(ref(db, `leiloes/${key}`), { ativo: false, ultimoLicitante: vencedor });
+        }
+    };
+
+    window.deletarPost = async (key) => {
+        if(confirm("Deseja apagar esta troca?")) await remove(ref(db, `posts/${key}`));
+    };
 
     window.girarBau = async () => {
-        if(user.moedasBlue < 5) return alert("Você precisa de 5 Blues!");
-        const btn = document.getElementById('btnGirar'); const icone = document.getElementById('iconeBau');
-        btn.disabled = true; icone.classList.add('animar-bau');
+        if(user.moedasBlue < 5) return alert("Saldo insuficiente!");
+        document.getElementById('iconeBau').className = "fas fa-gift animar-bau";
+        document.getElementById('btnGirar').disabled = true;
+        
+        await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue - 5 });
+        await update(ref(db, `usuarios/master_ice`), { moedasBlue: (await get(ref(db, 'usuarios/master_ice/moedasBlue'))).val() + 5 });
+
         setTimeout(async () => {
-            icone.classList.remove('animar-bau');
-            const sorte = Math.random(); let premio = "Nada dessa vez 🧊"; let ganhou = 0;
-            if(sorte < 0.05) { premio = "🏆 50 BLUES!"; ganhou = 50; } else if(sorte < 0.2) { premio = "💰 10 BLUES!"; ganhou = 10; }
-            await update(ref(db, `usuarios/${user.uid || 'master_ice'}`), { moedasBlue: user.moedasBlue - 5 + ganhou });
-            document.getElementById('resDrop').innerText = premio; btn.disabled = false;
+            document.getElementById('iconeBau').className = "fas fa-gift";
+            document.getElementById('btnGirar').disabled = false;
+            const prem = Math.random() < 0.25 ? Math.floor(Math.random() * 25) + 1 : 0;
+            if(prem > 0) {
+                await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue - 5 + prem });
+                document.getElementById('resDrop').innerHTML = `<span style="color:var(--green)">GANHOU ${prem} BLUES! 🎉</span>`;
+            } else {
+                document.getElementById('resDrop').innerHTML = `<span style="color:var(--red)">BAÚ VAZIO! ❄️</span>`;
+            }
         }, 1500);
     };
 
-    window.prepararPost = i => { const r = new FileReader(); r.onload = e => { fotoPost = e.target.result; document.getElementById('previewPost').src = e.target.result; document.getElementById('previewPost').style.display='block'; }; r.readAsDataURL(i.files[0]); };
-    window.publicarPost = async () => { if(!fotoPost) return alert("Selecione uma foto!"); await push(ref(db, 'posts'), { i1: fotoPost, u1: user.nome, uid: user.uid || 'master_ice' }); fecharTelas(); };
-    window.prepararLeilao = i => { const r = new FileReader(); r.onload = e => { fotoLei = e.target.result; document.getElementById('previewLei').src = e.target.result; document.getElementById('previewLei').style.display='block'; }; r.readAsDataURL(i.files[0]); };
+    window.iniciarSorteioBingo = async () => {
+        if(user.moedasBlue < 10) return alert("Saldo insuficiente!");
+        await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue - 10 });
+        await update(ref(db, `usuarios/master_ice`), { moedasBlue: (await get(ref(db, 'usuarios/master_ice/moedasBlue'))).val() + 10 });
+
+        const cartela = [];
+        while(cartela.length < 25){
+            let n = Math.floor(Math.random() * 75) + 1;
+            if(!cartela.includes(n)) cartela.push(n);
+        }
+        cartela.sort((a,b)=>a-b);
+
+        const grid = document.getElementById('cartela-bingo'); grid.innerHTML = "";
+        cartela.forEach(n => { grid.innerHTML += `<div class="num-bingo" id="num-${n}">${n}</div>`; });
+
+        document.getElementById('btnBingo').style.display = 'none';
+        
+        let sorteados = [];
+        let intervalo = setInterval(() => {
+            if(sorteados.length >= 50) {
+                clearInterval(intervalo);
+                document.getElementById('bolaSorteadaArea').innerHTML = "FIM";
+                document.getElementById('btnBingo').style.display = 'block';
+                return;
+            }
+            let bola;
+            do { bola = Math.floor(Math.random() * 75) + 1; } while(sorteados.includes(bola));
+            sorteados.push(bola);
+
+            document.getElementById('bolaSorteadaArea').innerHTML = `<div class="bola-sorteada">${bola}</div>`;
+            document.getElementById('numsSorteadosTxt').innerText = sorteados.join(', ');
+
+            if(cartela.includes(bola)) {
+                document.getElementById(`num-${bola}`).classList.add('num-marcado');
+            }
+
+            const marcados = document.querySelectorAll('.num-marcado').length;
+            if(marcados === 25) {
+                clearInterval(intervalo);
+                alert("BINGO! Parabéns! Entre em contato com o suporte!");
+                document.getElementById('btnBingo').style.display = 'block';
+            }
+        }, 800);
+    };
+
+    // Preparação e Envios de Mídia em Base64
+    window.prepararPost = (el) => {
+        const r = new FileReader(); r.onload = () => { fotoPost = r.result; document.getElementById('previewPost').src = r.result; document.getElementById('previewPost').style.display='block'; }; r.readAsDataURL(el.files[0]);
+    };
+    window.publicarPost = async () => {
+        if(!fotoPost) return alert("Selecione uma foto!");
+        await push(ref(db, 'posts'), { uid: user.uid, autor: user.nome, imagem: fotoPost });
+        fecharTelas(); fotoPost = null; document.getElementById('previewPost').style.display='none';
+    };
+
+    window.prepararLeilao = (el) => {
+        const r = new FileReader(); r.onload = () => { fotoLei = r.result; document.getElementById('previewLei').src = r.result; document.getElementById('previewLei').style.display='block'; }; r.readAsDataURL(el.files[0]);
+    };
+    window.publicarLeilao = async () => {
+        const nome = document.getElementById('leiNome').value.trim();
+        const valor = parseFloat(document.getElementById('leiValor').value);
+        if(!nome || !valor || !fotoLei) return alert("Preencha todos os campos do Leilão!");
+        await push(ref(db, 'leiloes'), { 
+            criadorUid: user.uid, 
+            item: nome, 
+            lanceAtual: valor, 
+            imagem: fotoLei, 
+            ultimoLicitante: "Nenhum", 
+            ativo: true,
+            transmissaoAudio: { ativo: false, uid: "", nome: "", audioData: "", timestamp: 0 }
+        });
+        fecharTelas(); fotoLei = null; document.getElementById('previewLei').style.display='none';
+    };
+
+    // --- ENGENHARIA DO CHAT PRIVADO ---
+    window.abrirChatDireto = (alvoUid, alvoNome) => {
+        if(user.uid === alvoUid) return alert("Você não pode conversar consigo mesmo.");
+        chatAtualID = user.uid < alvoUid ? `${user.uid}_${alvoUid}` : `${alvoUid}_${user.uid}`;
+        document.getElementById('nomeChatAlvo').innerText = alvoNome;
+        document.getElementById('telaChat').style.display = 'flex';
+        
+        if(chatListener) chatListener();
+        chatListener = onValue(ref(db, `chats/${chatAtualID}`), s => {
+            const mBox = document.getElementById('listaMensagens'); mBox.innerHTML = "";
+            s.forEach(m => {
+                const msg = m.val();
+                const souEu = msg.senderId === user.uid;
+                let conteudo = msg.texto ? `<div>${msg.texto}</div>` : '';
+                if(msg.midia) {
+                    conteudo += msg.tipoMidia.includes('video') ? `<video src="${msg.midia}" controls></video>` : `<img src="${msg.midia}">`;
+                }
+                mBox.innerHTML += `<div class="msg-box ${souEu ? 'msg-minha' : 'msg-outra'}">${conteudo}</div>`;
+            });
+            mBox.scrollTop = mBox.scrollHeight;
+        });
+    };
+
+    window.enviarTextoChat = async () => {
+        const txt = document.getElementById('chatTexto').value.trim();
+        if(!txt) return;
+        document.getElementById('chatTexto').value = "";
+        await push(ref(db, `chats/${chatAtualID}`), { senderId: user.uid, texto: txt, timestamp: Date.now() });
+    };
+
+    window.enviarMidiaChat = (el) => {
+        const file = el.files[0]; if(!file) return;
+        const r = new FileReader();
+        r.onload = async () => {
+            await push(ref(db, `chats/${chatAtualID}`), { senderId: user.uid, midia: r.result, tipoMidia: file.type, timestamp: Date.now() });
+        };
+        r.readAsDataURL(file);
+    };
+
+    window.fecharChat = () => { document.getElementById('telaChat').style.display = 'none'; if(chatListener) chatListener(); };
+
+    // --- GERENCIAMENTO DE TELAS ---
+    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t=>t.style.display='none'); document.getElementById('telaEscolhaPost').style.display='none'; };
+    window.escolherOQuePostar = () => { fecharTelas(); document.getElementById('telaEscolhaPost').style.display='flex'; };
+    window.abrirPostar = () => { fecharTelas(); document.getElementById('telaPostar').style.display='block'; };
+    window.abrirCriarLeilao = () => { fecharTelas(); document.getElementById('telaCriarLeilao').style.display='block'; };
+    window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display='block'; };
+    window.abrirBingo = () => { fecharTelas(); document.getElementById('telaBingo').style.display='block'; };
+    window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display='block'; };
     
-    window.fecharTelas = () => { document.querySelectorAll('.tela-full').forEach(t => t.style.display = 'none'); document.getElementById('telaEscolhaPost').style.display = 'none'; };
-    window.escolherOQuePostar = () => { fecharTelas(); document.getElementById('telaEscolhaPost').style.display = 'flex'; };
-    window.abrirPostar = () => { fecharTelas(); document.getElementById('telaPostar').style.display = 'block'; };
-    window.abrirCriarLeilao = () => { fecharTelas(); document.getElementById('telaCriarLeilao').style.display = 'block'; };
-    window.abrirIceDrop = () => { fecharTelas(); document.getElementById('telaIceDrop').style.display = 'block'; };
-    window.abrirCarteira = () => { fecharTelas(); document.getElementById('telaCarteira').style.display = 'block'; };
     window.abrirMeuPerfil = () => {
-        fecharTelas();
-        document.getElementById('perfilConteudo').innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="user-photo"><h2>${user.nome}</h2><p>Cargo: <b style="color:var(--gold);">${user.cargo.toUpperCase()}</b></p><p>Saldo: <b style="color:var(--mod-blue);">${user.moedasBlue}</b> Blues</p>`;
-        document.getElementById('admActions').innerHTML = ""; 
-        document.getElementById('telaPerfil').style.display = 'block';
+        fecharTelas(); document.getElementById('telaPerfil').style.display='block';
+        let p = document.getElementById('perfilConteudo');
+        p.innerHTML = `<i class="fas fa-user-circle" style="font-size:70px; color:var(--mod-blue); margin-bottom:15px;"></i><h2>${user.nome}</h2><p>Cargo: <b style="color:var(--gold); text-transform:uppercase;">${user.cargo}</b></p>`;
+        
+        let adm = document.getElementById('admActions'); adm.innerHTML = "";
+        if(user.cargo === 'adm1') {
+            adm.innerHTML = `<div class="painel-adm1"><h4>PAINEL MASTER ADM</h4><button class="btn-action" style="background:var(--gold); color:black;" onclick="gerarCodigoRecarga()">GERAR 500 BLUES COINS</button></div>`;
+        }
+    };
+
+    window.gerarCodigoRecarga = async () => {
+        await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue + 500 });
+        alert("500 Blue Coins adicionados com sucesso ao saldo Master!");
     };
 </script>
 </body>
