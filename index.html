@@ -140,6 +140,7 @@
         <i class="fas fa-home active" onclick="fecharTelas()"></i>
         <i class="fas fa-gift" onclick="abrirIceDrop()" style="color:var(--gold);"></i>
         <i class="fas fa-gamepad" onclick="abrirBingo()" style="color:var(--mod-blue);"></i>
+        <i class="fas fa-fish" onclick="abrirPescaria()" style="color:#00BFFF;"></i>
         <i class="fas fa-plus-circle" onclick="escolherOQuePostar()" style="color:var(--white); text-shadow: 0 0 10px white; font-size: 30px;"></i>
         <i class="fas fa-wallet" onclick="abrirCarteira()"></i>
     </div>
@@ -172,6 +173,33 @@
         <p style="margin-top: 15px; font-size: 10px; color: #aaa;">Sorteados: <span id="numsSorteadosTxt">...</span></p>
     </div>
     <button class="btn-action" style="background: var(--gray);" onclick="fecharTelas()">VOLTAR</button>
+</div>
+
+<div id="telaPescaria" class="tela-full">
+    <h3 style="color: #00BFFF; text-align: center;">❄️ ICE FISHING - PESCARIA ❄️</h3>
+    <p style="text-align: center; font-size: 12px; margin-top: -10px;">Compre uma linha, lance a isca e cuidado para o molinete não estourar!</p>
+    
+    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; border: 1px solid var(--frost); margin-bottom: 15px;">
+        <span style="font-size: 12px; color: #aaa; display:block; margin-bottom: 5px;">Linha Equipada:</span>
+        <div id="linhaAtivaTxt" style="font-weight: bold; color: var(--red); font-size: 16px;">NENHUMA (COMPRE ABAIXO)</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+        <button class="btn-action" style="font-size:11px; margin:0; background: #3a4454;" onclick="comprarLinha('fraca', 5)">Linha Fraca (5B)</button>
+        <button class="btn-action" style="font-size:11px; margin:0; background: #2a5298;" onclick="comprarLinha('media', 10)">Linha Média (10B)</button>
+        <button class="btn-action" style="font-size:11px; margin:0; background: #1e3c72;" onclick="comprarLinha('forte', 50)">Linha Forte (50B)</button>
+        <button class="btn-action" style="font-size:11px; margin:0; background: linear-gradient(135deg, #00BFFF, #1877f2);" onclick="comprarLinha('especial', 100)">Linha Especial 100kg (100B)</button>
+    </div>
+    <button class="btn-action" style="background: linear-gradient(135deg, #FFD700, #FFA500); color: black; margin-bottom: 20px;" onclick="comprarLinha('aco', 250)">🛡️ CABO DE AÇO (250 BLUES)</button>
+
+    <div style="background: rgba(0,0,0,0.4); border: 2px dashed #00BFFF; border-radius: 15px; padding: 30px 10px; text-align: center; position: relative;">
+        <div id="pescariaAnimacao" style="font-size: 50px; margin-bottom: 15px;">🎣</div>
+        <div id="pescariaResultado" style="font-weight: bold; font-size: 16px; min-height: 24px;">Escolha seu equipamento acima!</div>
+        
+        <button id="btnLancarIsca" class="btn-action" style="background: var(--green); margin-top: 20px; display: none;" onclick="lancarAnzol()">LANÇAR ANZOL</button>
+    </div>
+
+    <button class="btn-action" style="background: var(--gray); margin-top: 20px;" onclick="fecharTelas()">VOLTAR</button>
 </div>
 
 <div id="telaPostar" class="tela-full">
@@ -643,6 +671,119 @@
     window.gerarCodigoRecarga = async () => {
         await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue + 500 });
         alert("500 Blue Coins adicionados com sucesso ao saldo Master!");
+    };
+
+    // --- LOGÍSTICA COMPLEMENTAR DO JOGO DE PESCARIA ---
+    let linhaEquipada = null;
+    if(!localStorage.getItem('ice_pescas_total')) localStorage.setItem('ice_pescas_total', '0');
+
+    window.abrirPescaria = () => {
+        fecharTelas();
+        document.getElementById('telaPescaria').style.display = 'block';
+        atualizarInterfacePesca();
+    };
+
+    function atualizarInterfacePesca() {
+        const txt = document.getElementById('linhaAtivaTxt');
+        const btn = document.getElementById('btnLancarIsca');
+        
+        if(!linhaEquipada) {
+            txt.innerText = "NENHUMA (COMPRE UMA LINHA)";
+            txt.style.color = "var(--red)";
+            btn.style.display = 'none';
+        } else {
+            const nomes = { fraca: "FRACA", media: "MÉDIA", forte: "FORTE", especial: "ESPECIAL (Até X100)", aco: "CABO DE AÇO 👑" };
+            txt.innerText = nomes[linhaEquipada];
+            txt.style.color = "var(--green)";
+            btn.style.display = 'block';
+        }
+    }
+
+    window.comprarLinha = async (tipo, custo) => {
+        if(user.moedasBlue < custo) return alert("Saldo insuficiente de Blue Coins!");
+        
+        await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue - custo });
+        await update(ref(db, `usuarios/master_ice`), { moedasBlue: (await get(ref(db, 'usuarios/master_ice/moedasBlue'))).val() + custo });
+        
+        linhaEquipada = tipo;
+        alert(`Linha comprada com sucesso!`);
+        atualizarInterfacePesca();
+        document.getElementById('pescariaResultado').innerText = "Linha pronta! Pode jogar na água.";
+    };
+
+    window.lancarAnzol = () => {
+        if(!linhaEquipada) return;
+        
+        const anim = document.getElementById('pescariaAnimacao');
+        const res = document.getElementById('pescariaResultado');
+        const btn = document.getElementById('btnLancarIsca');
+        
+        btn.disabled = true;
+        res.innerHTML = "<span style='color: #00BFFF;'>Aguardando o peixe puxar... 🌊</span>";
+        
+        let f = true;
+        let pular = setInterval(() => {
+            anim.innerText = f ? "🛶" : "🎣";
+            f = !f;
+        }, 300);
+
+        setTimeout(async () => {
+            clearInterval(pular);
+            btn.disabled = false;
+            anim.innerText = "🐟";
+            
+            let pescas = parseInt(localStorage.getItem('ice_pescas_total')) + 1;
+            localStorage.setItem('ice_pescas_total', pescas.toString());
+
+            let rng = Math.random() * 100;
+            let multiplicador = 0; 
+            let quebrou = false;
+            let msg = "";
+
+            if (rng < 3) {
+                let subRng = Math.random();
+                if (subRng < 0.5) multiplicador = 500;
+                else if (subRng < 0.85) multiplicador = 5000;
+                else multiplicador = 10000;
+            } else if (rng < 6) { multiplicador = 100; }
+            else if (rng < 11) { multiplicador = 50; }
+            else if (rng < 18) { multiplicador = 25; }
+            else if (rng < 28) { multiplicador = 10; }
+            else if (rng < 48) { 
+                if (pescas >= 100) { multiplicador = 2; } 
+                else { multiplicador = 1; }
+            }
+            else if (rng < 78) { multiplicador = 1; }
+            else { multiplicador = 0; }
+
+            if (multiplicador === 10 && (linhaEquipada === 'fraca')) quebrou = true;
+            if (multiplicador === 25 && (linhaEquipada === 'fraca' || linhaEquipada === 'media')) quebrou = true;
+            if (multiplicador === 50 && (linhaEquipada === 'fraca' || linhaEquipada === 'media')) quebrou = true;
+            if (multiplicador === 100 && (linhaEquipada !== 'especial' && linhaEquipada !== 'aco')) quebrou = true;
+
+            if ((multiplicador === 500 || multiplicador === 5000 || multiplicador === 10000) && linhaEquipada !== 'aco') {
+                quebrou = true;
+            }
+
+            if (linhaEquipada === 'aco' && Math.random() < 0.05) {
+                quebrou = true;
+                msg = "💥 PEIXE MONSTRO! Uma criatura colossal superou o seu Cabo de Aço e destruiu o molinete por completo!";
+            }
+
+            if (quebrou) {
+                anim.innerText = "❌";
+                res.innerHTML = `<span style='color:var(--red);'>${msg || `💥 SUA LINHA CORTOU! O peixe de força X${multiplicador} estourou o seu equipamento!`}</span>`;
+                linhaEquipada = null;
+                atualizarInterfacePesca();
+            } else {
+                if (multiplicador > 0) {
+                    await update(ref(db, `usuarios/${user.uid}`), { moedasBlue: user.moedasBlue + multiplicador });
+                    res.innerHTML = `<span style='color:var(--green);'>🎉 PESCOU! Peixe de tamanho X${multiplicador}! +${multiplicador} Blues para sua carteira!</span>`;
+                } else {
+                    res.innerHTML = `<span style='color:#aaa;'>🐢 Fisgou apenas uma bota velha (X0). Tente novamente!</span>`;
+                }
+            }
+        }, 2200);
     };
 </script>
 </body>
